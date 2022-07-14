@@ -1,4 +1,4 @@
-# refinery-submodule-s3
+# refinery-submodule-model
 [![refinery repository](https://uploads-ssl.webflow.com/61e47fafb12bd56b40022a49/62c2f30f935f4d37dc864eeb_Kern%20refinery.png)](https://github.com/code-kern-ai/refinery)
 
 Data model for [refinery](https://github.com/code-kern-ai/refinery). Manages entities and their access for multiple services, e.g. the [gateway](https://github.com/code-kern-ai/refinery-gateway).
@@ -10,7 +10,7 @@ If you like what we're working on, please leave a ⭐ for [refinery](https://git
 ## Usage
 
 Implement by using:
-`git submodule add git@github.com:code-kern-ai/submodule-model.git submodules/model`
+`git submodule add https://github.com/code-kern-ai/refinery-submodule-model.git submodules/model`
 
 This means the requirements of the project need to include:
 
