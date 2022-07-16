@@ -500,10 +500,10 @@ class RecordLabelAssociation(Base):
     is_valid_manual_label = Column(Boolean, index=True)
 
     tokens = parent_to_child_relationship(
-        # TODO: might need to be sorted by token_index
         Tablenames.RECORD_LABEL_ASSOCIATION,
         Tablenames.RECORD_LABEL_ASSOCIATION_TOKEN,
         CascadeBehaviour.DELETE_BOTH_IF_EITHER_IS_DELETED,
+        order_by="token_index.asc()",
     )
 
 
