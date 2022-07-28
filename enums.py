@@ -14,6 +14,7 @@ class ProjectStatus(Enum):
     INIT_UPLOAD = "INIT_UPLOAD"
     INIT_COMPLETE = "INIT_COMPLETE"
     IN_DELETION = "IN_DELETION"
+    INIT_SAMPLE_PROJECT = "INIT_SAMPLE_PROJECT"
 
 
 class RecordCategory(Enum):

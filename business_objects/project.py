@@ -130,6 +130,7 @@ def create(
     created_by: str,
     created_at: Optional[str] = None,
     with_commit: bool = False,
+    status: enums.ProjectStatus = enums.ProjectStatus.INIT_UPLOAD
 ) -> Project:
     project: Project = Project(
         name=name,
@@ -137,7 +138,7 @@ def create(
         organization_id=organization_id,
         created_by=created_by,
         created_at=created_at,
-        status=enums.ProjectStatus.INIT_UPLOAD.value,
+        status=status.value,
     )
     general.add(project, with_commit)
     return project
