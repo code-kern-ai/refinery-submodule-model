@@ -77,7 +77,7 @@ class AppVersion(Base):
     __tablename__ = Tablenames.APP_VERSION.value
     service = Column(String, primary_key=True)
     installed_version = Column(String)  # local/installed Tag
-    checked_version = Column(String)  # latest GitHub Tag
+    remote_version = Column(String)  # latest GitHub Tag
     last_checked = Column(DateTime)
 
 
