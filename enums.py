@@ -55,6 +55,7 @@ class PayloadState(Enum):
 
 
 class Tablenames(Enum):
+    APP_VERSION = "app_version"
     USER = "user"
     ORGANIZATION = "organization"
     PROJECT = "project"
