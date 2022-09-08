@@ -65,6 +65,8 @@ class Tablenames(Enum):
     LABELING_TASK_LABEL = "labeling_task_label"
     EMBEDDING = "embedding"
     EMBEDDING_TENSOR = "embedding_tensor"
+    EMBEDDER = "embedder"
+    EMBEDDER_PAYLOAD = "embedder_payload"
     RECORD = "record"
     RECORD_TOKENIZED = "record_tokenized"
     RECORD_TOKENIZATION_TASK = "record_tokenization_task"
