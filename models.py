@@ -261,6 +261,11 @@ class Project(Base):
         Tablenames.INFORMATION_SOURCE,
         order_by=["created_at.desc()", "name.asc()", "id.desc()"],
     )
+    embedders = parent_to_child_relationship(
+        Tablenames.PROJECT,
+        Tablenames.EMBEDDER,
+        order_by=["created_at.desc()", "name.asc()", "id.desc()"],
+    )
     knowledge_bases = parent_to_child_relationship(
         Tablenames.PROJECT,
         Tablenames.KNOWLEDGE_BASE,
