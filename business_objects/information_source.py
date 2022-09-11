@@ -179,7 +179,7 @@ def get_exclusion_record_ids_for_task(task_id: str) -> List[str]:
     return exclusion_ids
 
 
-def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
+def get_overview_data(project_id: str, operator: str) -> List[Dict[str, Any]]:
     query = f"""
     SELECT array_agg(row_to_json(data_select))
     FROM (
@@ -216,6 +216,7 @@ def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
             GROUP BY source_id) stats
             ON _is.id = stats.source_id
         WHERE _is.project_id = '{project_id}'
+        AND _is.type {operator} 'MODEL_CALLBACK'
         ORDER BY "createdAt" DESC,name
         )data_select """
     values = general.execute_first(query)
@@ -456,7 +457,10 @@ def update_quantity_stats(
 
 
 def update_is_selected_for_project(
-    project_id: str, update_value: bool, with_commit: bool = False
+    project_id: str,
+    update_value: bool,
+    with_commit: bool = False,
+    operator: Optional[str] = "!=",
 ) -> None:
     if update_value:
         str_value = "TRUE"
@@ -466,7 +470,9 @@ def update_is_selected_for_project(
     query = f"""
     UPDATE information_source
     SET is_selected = {str_value}
-    WHERE project_id = '{project_id}' """
+    WHERE project_id = '{project_id}'
+    AND type {operator} 'MODEL_CALLBACK'
+    """
     general.execute(query)
     general.flush_or_commit(with_commit)
 
