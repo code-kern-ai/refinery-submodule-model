@@ -27,6 +27,7 @@ class LabelSource(Enum):
     # WEAK_SUPERVISION = Output of the Weak Supervision Model - ehemeals "programmatic"
     WEAK_SUPERVISION = "WEAK_SUPERVISION"
     INFORMATION_SOURCE = "INFORMATION_SOURCE"
+    MODEL_CALLBACK = "MODEL_CALLBACK"
 
 
 class InformationSourceType(Enum):

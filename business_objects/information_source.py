@@ -22,6 +22,17 @@ def get(project_id: str, source_id: str) -> InformationSource:
     )
 
 
+def get_by_name(project_id: str, name: str) -> InformationSource:
+    return (
+        session.query(InformationSource)
+        .filter(
+            InformationSource.project_id == project_id,
+            InformationSource.name == name,
+        )
+        .first()
+    )
+
+
 def get_all(project_id: str) -> List[InformationSource]:
     return (
         session.query(InformationSource)
@@ -212,7 +223,8 @@ def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
     if values:
         return values[0]
 
-def continue_payload(project_id:str,source_id:str,payload_id:str)->bool:
+
+def continue_payload(project_id: str, source_id: str, payload_id: str) -> bool:
     query = f"""
     SELECT isp.state
     FROM information_source_payload isp
@@ -223,7 +235,7 @@ def continue_payload(project_id:str,source_id:str,payload_id:str)->bool:
     AND isp.project_id = '{project_id}' """
 
     value = general.execute_first(query)
-    if not value or value[0]!= "CREATED":
+    if not value or value[0] != "CREATED":
         return False
     return True
 

@@ -32,6 +32,14 @@ def get_task_name_id_dict(project_id: str) -> Dict[str, str]:
     return {labeling_task.name: labeling_task.id for labeling_task in labeling_tasks}
 
 
+def get_labeling_task_by_name(project_id: str, task_name: str) -> LabelingTask:
+    return (
+        session.query(LabelingTask)
+        .filter(LabelingTask.project_id == project_id, LabelingTask.name == task_name)
+        .first()
+    )
+
+
 def get_labeling_tasks_by_selected_sources(project_id: str) -> List[LabelingTask]:
     return (
         session.query(LabelingTask)
