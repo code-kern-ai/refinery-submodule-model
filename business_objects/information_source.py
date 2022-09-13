@@ -179,7 +179,13 @@ def get_exclusion_record_ids_for_task(task_id: str) -> List[str]:
     return exclusion_ids
 
 
-def get_overview_data(project_id: str, type_selection: str) -> List[Dict[str, Any]]:
+def get_overview_data(
+    project_id: str, is_model_callback: bool = False
+) -> List[Dict[str, Any]]:
+    if is_model_callback:
+        type_selection = " = 'MODEL_CALLBACK'"
+    else:
+        type_selection = " != 'MODEL_CALLBACK'"
     query = f"""
     SELECT array_agg(row_to_json(data_select))
     FROM (
