@@ -22,6 +22,17 @@ def get(project_id: str, source_id: str) -> InformationSource:
     )
 
 
+def get_by_name(project_id: str, name: str) -> InformationSource:
+    return (
+        session.query(InformationSource)
+        .filter(
+            InformationSource.project_id == project_id,
+            InformationSource.name == name,
+        )
+        .first()
+    )
+
+
 def get_all(project_id: str) -> List[InformationSource]:
     return (
         session.query(InformationSource)
@@ -168,7 +179,13 @@ def get_exclusion_record_ids_for_task(task_id: str) -> List[str]:
     return exclusion_ids
 
 
-def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
+def get_overview_data(
+    project_id: str, is_model_callback: bool = False
+) -> List[Dict[str, Any]]:
+    if is_model_callback:
+        type_selection = " = 'MODEL_CALLBACK'"
+    else:
+        type_selection = " != 'MODEL_CALLBACK'"
     query = f"""
     SELECT array_agg(row_to_json(data_select))
     FROM (
@@ -205,6 +222,7 @@ def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
             GROUP BY source_id) stats
             ON _is.id = stats.source_id
         WHERE _is.project_id = '{project_id}'
+        AND _is.type {type_selection}
         ORDER BY "createdAt" DESC,name
         )data_select """
     values = general.execute_first(query)
@@ -212,7 +230,8 @@ def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
     if values:
         return values[0]
 
-def continue_payload(project_id:str,source_id:str,payload_id:str)->bool:
+
+def continue_payload(project_id: str, source_id: str, payload_id: str) -> bool:
     query = f"""
     SELECT isp.state
     FROM information_source_payload isp
@@ -223,7 +242,7 @@ def continue_payload(project_id:str,source_id:str,payload_id:str)->bool:
     AND isp.project_id = '{project_id}' """
 
     value = general.execute_first(query)
-    if not value or value[0]!= "CREATED":
+    if not value or value[0] != "CREATED":
         return False
     return True
 
@@ -444,8 +463,16 @@ def update_quantity_stats(
 
 
 def update_is_selected_for_project(
-    project_id: str, update_value: bool, with_commit: bool = False
+    project_id: str,
+    update_value: bool,
+    with_commit: bool = False,
+    is_model_callback: bool = False,
 ) -> None:
+
+    if is_model_callback:
+        type_selection = " = 'MODEL_CALLBACK'"
+    else:
+        type_selection = " != 'MODEL_CALLBACK'"
     if update_value:
         str_value = "TRUE"
     else:
@@ -454,7 +481,9 @@ def update_is_selected_for_project(
     query = f"""
     UPDATE information_source
     SET is_selected = {str_value}
-    WHERE project_id = '{project_id}' """
+    WHERE project_id = '{project_id}'
+    AND type {type_selection}
+    """
     general.execute(query)
     general.flush_or_commit(with_commit)
 

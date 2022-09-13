@@ -39,6 +39,17 @@ def get_by_name(project_id: str, name: str) -> Attribute:
     )
 
 
+def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attribute]:
+    return (
+        session.query(Attribute)
+        .filter(
+            Attribute.project_id == project_id,
+            Attribute.name.in_(attribute_names),
+        )
+        .all()
+    )
+
+
 def get_all(project_id: str) -> List[Attribute]:
     return session.query(Attribute).filter(Attribute.project_id == project_id).all()
 

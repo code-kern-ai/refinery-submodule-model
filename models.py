@@ -555,7 +555,6 @@ class RecordAttributeTokenStatistics(Base):
     num_token = Column(Integer)
 
 
-# -------------------- EMBEDDING_ --------------------
 class Embedding(Base):
     __tablename__ = Tablenames.EMBEDDING.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

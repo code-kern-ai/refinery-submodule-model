@@ -474,6 +474,20 @@ def delete_by_source_id(
     general.flush_or_commit(with_commit)
 
 
+def delete_by_source_id_and_record_ids(
+    project_id: str,
+    information_source_id: str,
+    record_ids: List[str],
+    with_commit: bool = False,
+) -> None:
+    session.query(RecordLabelAssociation).filter(
+        RecordLabelAssociation.project_id == project_id,
+        RecordLabelAssociation.source_id == information_source_id,
+        RecordLabelAssociation.record_id.in_(record_ids),
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+
 def delete_record_label_associations(
     project_id: str, record_task_concatenation: str, with_commit: bool = False
 ) -> None:
