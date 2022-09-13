@@ -261,11 +261,6 @@ class Project(Base):
         Tablenames.INFORMATION_SOURCE,
         order_by=["created_at.desc()", "name.asc()", "id.desc()"],
     )
-    embedders = parent_to_child_relationship(
-        Tablenames.PROJECT,
-        Tablenames.EMBEDDER,
-        order_by=["created_at.desc()", "name.asc()", "id.desc()"],
-    )
     knowledge_bases = parent_to_child_relationship(
         Tablenames.PROJECT,
         Tablenames.KNOWLEDGE_BASE,
@@ -558,67 +553,6 @@ class RecordAttributeTokenStatistics(Base):
         index=True,
     )
     num_token = Column(Integer)
-
-
-# -------------------- EMBEDDING_ --------------------
-class Embedder(Base):
-    __tablename__ = Tablenames.EMBEDDER.value
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    # e.g. ATTRIBUTE-LEVEL, TOKEN-LEVEL
-    type = Column(String)
-    name = Column(String)
-    description = Column(String)
-    source_code = Column(String)
-    version = Column(Integer, default=1)
-
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-
-    payloads = parent_to_child_relationship(
-        Tablenames.EMBEDDER,
-        Tablenames.EMBEDDER_PAYLOAD,
-        order_by="iteration.desc()",
-    )
-
-
-class EmbedderPayload(Base):
-    __tablename__ = Tablenames.EMBEDDER_PAYLOAD.value
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    embedder_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.EMBEDDER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    state = Column(
-        String, default=PayloadState.CREATED.value
-    )  # e.g. CREATED, FINISHED, FAILED
-    progress = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    finished_at = Column(DateTime)
-    iteration = Column(Integer)
-    source_code = Column(String)
-    input_data = Column(JSON)
-    output_data = Column(JSON)
-    logs = Column(ARRAY(String))
 
 
 class Embedding(Base):

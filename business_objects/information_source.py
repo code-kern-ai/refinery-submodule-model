@@ -179,7 +179,7 @@ def get_exclusion_record_ids_for_task(task_id: str) -> List[str]:
     return exclusion_ids
 
 
-def get_overview_data(project_id: str, operator: str) -> List[Dict[str, Any]]:
+def get_overview_data(project_id: str, type_selection: str) -> List[Dict[str, Any]]:
     query = f"""
     SELECT array_agg(row_to_json(data_select))
     FROM (
@@ -216,7 +216,7 @@ def get_overview_data(project_id: str, operator: str) -> List[Dict[str, Any]]:
             GROUP BY source_id) stats
             ON _is.id = stats.source_id
         WHERE _is.project_id = '{project_id}'
-        AND _is.type {operator} 'MODEL_CALLBACK'
+        AND _is.type {type_selection}
         ORDER BY "createdAt" DESC,name
         )data_select """
     values = general.execute_first(query)
@@ -460,8 +460,13 @@ def update_is_selected_for_project(
     project_id: str,
     update_value: bool,
     with_commit: bool = False,
-    operator: Optional[str] = "!=",
+    is_model_callback: bool = False,
 ) -> None:
+
+    if is_model_callback:
+        type_selection = " = 'MODEL_CALLBACK'"
+    else:
+        type_selection = " != 'MODEL_CALLBACK'"
     if update_value:
         str_value = "TRUE"
     else:
@@ -471,7 +476,7 @@ def update_is_selected_for_project(
     UPDATE information_source
     SET is_selected = {str_value}
     WHERE project_id = '{project_id}'
-    AND type {operator} 'MODEL_CALLBACK'
+    AND type {type_selection}
     """
     general.execute(query)
     general.flush_or_commit(with_commit)
