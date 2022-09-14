@@ -15,12 +15,31 @@ def get_by_all_by_project_id(project_id: str) -> List[Comment]:
 
 
 def get_by_all_by_category(
-    category: enums.CommentCategory, project_id: Optional[str] = None
-) -> List[Comment]:
-    query = session.query(Comment).filter(Comment.xftype == category.value)
+    category: enums.CommentCategory,
+    xfkey: Optional[str] = None,
+    project_id: Optional[str] = None,
+    as_json: bool = False,
+) -> Union[List[Comment], str]:
+
+    query = f"""
+SELECT *
+FROM public.comment
+WHERE xftype = '{category.value}' """
+
+    if xfkey:
+        query += f"\n   AND xfkey = '{xfkey}'"
     if project_id:
-        query = query.filter(Comment.project_id == project_id)
-    return query.all()
+        query += f"\n   AND project_id = '{project_id}'"
+
+    if as_json:
+        query = f"""
+SELECT array_agg(row_to_json(x))
+FROM (
+    {query}
+) x """
+        return general.execute_first(query)[0]
+
+    return general.execute_all(query)
 
 
 def get_by_all_by_xfkey(

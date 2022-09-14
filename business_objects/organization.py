@@ -9,6 +9,10 @@ from ..models import Organization, Project
 from ..business_objects import project, user, general
 
 
+def get(id: str) -> Organization:
+    return session.query(Organization).get(id)
+
+
 def get_by_name(name: str) -> Organization:
     return session.query(Organization).filter(Organization.name == name).first()
 
