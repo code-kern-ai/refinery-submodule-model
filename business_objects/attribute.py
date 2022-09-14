@@ -3,7 +3,7 @@ from typing import Dict, Any, List, Optional
 from sqlalchemy import func
 
 from . import general
-from ..enums import DataTypes, RecordCategory
+from ..enums import AttributeState, DataTypes, RecordCategory
 from ..models import Attribute
 from ..session import session
 
@@ -112,6 +112,8 @@ def create(
     is_primary_key: Optional[bool] = False,
     with_commit: bool = False,
     is_created: bool = False,
+    code_column: str = "",
+    state: AttributeState = AttributeState.BASE_COLUMN.value,
 ) -> Attribute:
     attribute: Attribute = Attribute(
         project_id=project_id,
@@ -120,6 +122,8 @@ def create(
         is_primary_key=is_primary_key,
         relative_position=relative_position,
         is_created=is_created,
+        code_column = code_column,
+        state = state
     )
     general.add(attribute, with_commit)
     return attribute
@@ -131,10 +135,12 @@ def update(
     data_type: str,
     is_primary_key: bool,
     with_commit: bool = False,
+    name: str = None,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
     attribute.data_type = data_type
     attribute.is_primary_key = is_primary_key
+    attribute.name = name
     general.flush_or_commit(with_commit)
     return attribute
 
