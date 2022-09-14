@@ -111,6 +111,7 @@ def create(
     data_type: str = DataTypes.CATEGORY.value,
     is_primary_key: Optional[bool] = False,
     with_commit: bool = False,
+    is_created: bool = False,
 ) -> Attribute:
     attribute: Attribute = Attribute(
         project_id=project_id,
@@ -118,6 +119,7 @@ def create(
         data_type=data_type,
         is_primary_key=is_primary_key,
         relative_position=relative_position,
+        is_created=is_created,
     )
     general.add(attribute, with_commit)
     return attribute
@@ -240,4 +242,11 @@ def __build_add_query(
     ) helper
     WHERE attribute.project_id = '{project_id}' AND attribute.id = helper.id;"""
         + remove_query
+    )
+
+def count(project_id: str) -> int:
+    return (
+        session.query(Attribute)
+        .filter(Attribute.project_id == project_id)
+        .count()
     )
