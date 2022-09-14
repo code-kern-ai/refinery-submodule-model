@@ -41,7 +41,7 @@ def has_comments(
     group_by_xfkey: bool = False,
 ) -> Union[bool, Dict[str, bool]]:
     if group_by_xfkey:
-        select = "xfkey, COUNT(*)"
+        select = "xfkey::TEXT, COUNT(*)"
     else:
         select = "COUNT(*)"
     query = f"""
@@ -55,7 +55,6 @@ WHERE xftype = '{xftype.value}' """
     if group_by_xfkey:
         query += "\nGROUP BY xfkey"
 
-    print(query, flush=True)
     if not group_by_xfkey:
         return general.execute_first(query)[0] > 0
 
