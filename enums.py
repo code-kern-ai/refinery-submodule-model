@@ -62,7 +62,7 @@ class CommentCategory(Enum):
 
 
 class UserRoles(Enum):
-    ENGENEER = "ENGENEER"
+    ENGINEER = "ENGINEER"
     EXPERT = "EXPERT"
     ANNOTATOR = "ANNOTATOR"
 

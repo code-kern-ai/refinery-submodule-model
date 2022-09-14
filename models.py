@@ -134,7 +134,7 @@ class User(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    role = Column(String, default=UserRoles.ENGENEER.value)  # enum UserRoles
+    role = Column(String, default=UserRoles.ENGINEER.value)  # enum UserRoles
     notifications = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.NOTIFICATION,

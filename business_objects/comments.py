@@ -3,7 +3,7 @@ from submodules.model.models import Comment
 from . import general, organization
 from .. import User, enums
 from ..session import session
-from typing import List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 
 
 def get(comment_id: str) -> Comment:
@@ -32,6 +32,34 @@ def get_by_all_by_xfkey(
     if project_id:
         query = query.filter(Comment.project_id == project_id)
     return query.all()
+
+
+def has_comments(
+    xftype: enums.CommentCategory,
+    xfkey: Optional[str] = None,
+    project_id: Optional[str] = None,
+    group_by_xfkey: bool = False,
+) -> Union[bool, Dict[str, bool]]:
+    if group_by_xfkey:
+        select = "xfkey, COUNT(*)"
+    else:
+        select = "COUNT(*)"
+    query = f"""
+SELECT {select}
+FROM public.comment
+WHERE xftype = '{xftype.value}' """
+    if xfkey:
+        query += f"\n   AND xfkey = '{xfkey}'"
+    if project_id:
+        query += f"\n   AND project_id = '{project_id}'"
+    if group_by_xfkey:
+        query += "\nGROUP BY xfkey"
+
+    print(query, flush=True)
+    if not group_by_xfkey:
+        return general.execute_first(query)[0] > 0
+
+    return {r[0]: r[1] > 0 for r in general.execute_all(query)}
 
 
 # should only be used for import export reasons, otherwiese th shorthand version are preferred (e.g. create_for_user)
