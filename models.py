@@ -8,6 +8,7 @@ from .enums import (
     UploadStates,
     PayloadState,
     SliceTypes,
+    UserRoles,
 )
 from sqlalchemy import (
     JSON,
@@ -81,10 +82,39 @@ class AppVersion(Base):
     last_checked = Column(DateTime)
 
 
+class Comment(Base):
+    __tablename__ = Tablenames.COMMENT.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    # no foreign key since its a multi field
+    xfkey = Column(UUID(as_uuid=True), index=True)
+    # of type CommentCategory e.g. USER
+    xftype = Column(String, index=True)
+    # key for e.g. multiple comments on a single user
+    add_key = Column(UUID(as_uuid=True), default=uuid.uuid4)
+    comment = Column(String)
+    is_markdown = Column(Boolean, default=False)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+
+
 class Organization(Base):
     __tablename__ = Tablenames.ORGANIZATION.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, unique=True)
+    # when did the company start using the app (trail time start)
+    started_at = Column(DateTime)
+    # database entry
+    is_paying = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
 
     projects = parent_to_child_relationship(
         Tablenames.ORGANIZATION,
@@ -104,6 +134,7 @@ class User(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    role = Column(String, default=UserRoles.ENGENEER.value)  # enum UserRoles
     notifications = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.NOTIFICATION,
@@ -133,6 +164,11 @@ class User(Base):
     projects = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.PROJECT,
+        order_by="created_at.desc()",
+    )
+    comments = parent_to_child_relationship(
+        Tablenames.USER,
+        Tablenames.COMMENT,
         order_by="created_at.desc()",
     )
 

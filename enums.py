@@ -55,6 +55,18 @@ class PayloadState(Enum):
     FAILED = "FAILED"
 
 
+class CommentCategory(Enum):
+    ORG = "ORG"
+    USER = "USER"
+    LABELING_TASK = "LABELING_TASK"
+
+
+class UserRoles(Enum):
+    ENGENEER = "ENGENEER"
+    EXPERT = "EXPERT"
+    ANNOTATOR = "ANNOTATOR"
+
+
 class Tablenames(Enum):
     APP_VERSION = "app_version"
     USER = "user"
@@ -85,6 +97,7 @@ class Tablenames(Enum):
     DATA_SLICE = "data_slice"
     DATA_SLICE_RECORD_ASSOCIATION = "data_slice_record_association"
     INFORMATION_SOURCE_STATISTICS_EXCLUSION = "information_source_statistics_exclusion"
+    COMMENT = "comment"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs

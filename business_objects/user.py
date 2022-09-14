@@ -1,7 +1,7 @@
 from . import general, organization
 from .. import User, enums
 from ..session import session
-from typing import List, Any
+from typing import List, Any, Optional
 
 
 def get(user_id: str) -> User:
@@ -66,7 +66,9 @@ def get_migration_user() -> str:
     return u_id.id
 
 
-def create(user_id: str, with_commit: bool = False) -> User:
+def create(
+    user_id: str, role: Optional[enums.UserRoles] = None, with_commit: bool = False
+) -> User:
     """
     This only creates an user in the database but not in the authentication service which is currently kratos.
     The function is e.g. used for project import to be able
@@ -74,6 +76,8 @@ def create(user_id: str, with_commit: bool = False) -> User:
     These created users can't be resolved the usual way (or at all)
     """
     user = User(id=user_id)
+    if role:
+        user.role = role.value
     general.add(user, with_commit)
     return user
 
