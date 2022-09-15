@@ -256,3 +256,13 @@ def count(project_id: str) -> int:
         .filter(Attribute.project_id == project_id)
         .count()
     )
+
+def update_state_to_usable(
+    project_id: str,
+    attribute_id: str,
+    with_commit: bool = False,
+) -> Attribute:
+    attribute: Attribute = get(project_id, attribute_id)
+    attribute.state = AttributeState.USABLE.value
+    general.flush_or_commit(with_commit)
+    return attribute
