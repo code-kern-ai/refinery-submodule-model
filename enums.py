@@ -277,6 +277,7 @@ class EmbeddingState(Enum):
     FINISHED = "FINISHED"
     FAILED = "FAILED"
 
+
 class AttributeState(Enum):
     BASE_COLUMN = "BASE_COLUMN"
     WORK_IN_PROGRESS = "WORK_IN_PROGRESS"

@@ -109,11 +109,12 @@ def create(
     name: str,
     relative_position: int,
     data_type: str = DataTypes.CATEGORY.value,
-    is_primary_key: Optional[bool] = False,
+    is_primary_key: bool = False,
+    user_created: bool = False,
+    source_code: Optional[str] = None,
+    state: Optional[str] = None,
+    logs: Optional[List[str]] = None,
     with_commit: bool = False,
-    is_created: bool = False,
-    code_column: str = "",
-    state: AttributeState = AttributeState.BASE_COLUMN.value,
 ) -> Attribute:
     attribute: Attribute = Attribute(
         project_id=project_id,
@@ -121,10 +122,18 @@ def create(
         data_type=data_type,
         is_primary_key=is_primary_key,
         relative_position=relative_position,
-        is_created=is_created,
-        code_column = code_column,
-        state = state
+        user_created=user_created,
     )
+
+    if source_code:
+        attribute.source_code = source_code
+
+    if state:
+        attribute.state = state
+
+    if logs:
+        attribute.logs = logs
+
     general.add(attribute, with_commit)
     return attribute
 
@@ -134,13 +143,17 @@ def update(
     attribute_id: str,
     data_type: str,
     is_primary_key: bool,
+    name: Optional[str] = None,
+    source_code: Optional[str] = None,
     with_commit: bool = False,
-    name: str = None,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
     attribute.data_type = data_type
     attribute.is_primary_key = is_primary_key
-    attribute.name = name
+    if name:
+        attribute.name = name
+    if source_code:
+        attribute.source_code = source_code
     general.flush_or_commit(with_commit)
     return attribute
 
@@ -250,12 +263,10 @@ def __build_add_query(
         + remove_query
     )
 
+
 def count(project_id: str) -> int:
-    return (
-        session.query(Attribute)
-        .filter(Attribute.project_id == project_id)
-        .count()
-    )
+    return session.query(Attribute).filter(Attribute.project_id == project_id).count()
+
 
 def update_state_to_usable(
     project_id: str,

@@ -287,9 +287,10 @@ class Attribute(Base):
     data_type = Column(String)
     is_primary_key = Column(Boolean, default=False)
     relative_position = Column(Integer)
-    is_created = Column(Boolean, default=False)
-    code_column = Column(String)
+    user_created = Column(Boolean, default=False)
+    source_code = Column(String)
     state = Column(String)
+    logs = Column(ARRAY(String))
 
     labeling_tasks = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
