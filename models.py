@@ -95,9 +95,10 @@ class Comment(Base):
     # of type CommentCategory e.g. USER
     xftype = Column(String, index=True)
     # key for e.g. multiple comments on a single user
-    add_key = Column(UUID(as_uuid=True), default=uuid.uuid4)
+    order_key = Column(Integer, autoincrement=True)
     comment = Column(String)
     is_markdown = Column(Boolean, default=False)
+    is_private = Column(Boolean, default=False)
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id"),
@@ -170,6 +171,46 @@ class User(Base):
         Tablenames.USER,
         Tablenames.COMMENT,
         order_by="created_at.desc()",
+    )
+
+
+class UserLinkConnection(Base):
+    # n:m table to access every option for a user
+    __tablename__ = Tablenames.USER_LINK_CONNECTION.value
+    user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    link_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # engineers can lock a link to prevent access after the task is done for a user, the link itself can also be deleted
+    is_locked = Column(Boolean, default=False)
+
+
+class LabelingAccessLink(Base):
+    __tablename__ = Tablenames.LABELING_ACCESS_LINK.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    # router link without domain e.g. /app/projects/399d9a46-1f7f-4781-aafb-2af0f4a017e5/labeling/81c74109-0f6d-491d-ac33-6e83f6c011e5?pos=1&type=SESSION
+    link = Column(String)
+
+    # as own ids not a combined one to leverage cascade behaviour
+    data_slice_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.DATA_SLICE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    heuristic_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.INFORMATION_SOURCE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    link_type = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
     )
 
 

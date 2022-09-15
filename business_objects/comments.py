@@ -87,8 +87,9 @@ def create(
     comment: str,
     created_by: str,
     project_id: Optional[str] = None,
-    add_key: Optional[str] = None,
+    order_key: Optional[int] = None,
     is_markdown: Optional[bool] = None,
+    is_private: Optional[bool] = None,
     created_at: Optional[datetime] = None,
     with_commit: bool = False,
 ) -> Comment:
@@ -97,10 +98,12 @@ def create(
     )
     if project_id:
         comment.project_id = project_id
-    if add_key:
-        comment.add_key = add_key
+    if order_key:
+        comment.order_key = order_key
     if is_markdown:
         comment.is_markdown = is_markdown
+    if is_private:
+        comment.is_private = is_private
     if created_at:
         comment.created_at = created_at
 
@@ -167,45 +170,3 @@ def create_for_labeling_task(
 def remove(comment_id: str, with_commit: bool = False) -> None:
     session.delete(session.query(Comment).get(comment_id))
     general.flush_or_commit(with_commit)
-
-
-def remove_organization(user_id: str, with_commit: bool = False) -> None:
-    user = get(user_id)
-    user.organization_id = None
-    general.flush_or_commit(with_commit)
-
-
-def update_organization(
-    user_id: str, organization_id: str, with_commit: bool = False
-) -> None:
-    user = get(user_id)
-    user.organization_id = organization_id
-    general.flush_or_commit(with_commit)
-
-
-def __create_migration_user() -> str:
-    organization_item = organization.get_by_name("migration")
-    if not organization_item:
-        organization.create("migration")
-        return __create_migration_user()
-    orga_id = str(organization_item.id)
-    query = f"""
-    INSERT INTO public.user 
-    VALUES ({general.generate_UUID_sql_string()},'{orga_id}');        
-    """
-    general.execute(query)
-    query = f"""
-    SELECT id
-    FROM public.user
-    WHERE organization_id = '{orga_id}'
-    """
-    user = general.execute_first(query)
-    return user.id
-
-
-def __create_migration_organization():
-    query = f"""    
-    INSERT INTO organization 
-    VALUES ({general.generate_UUID_sql_string()},'migration');
-    """
-    general.execute(query)

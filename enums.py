@@ -35,6 +35,7 @@ class InformationSourceType(Enum):
     ACTIVE_LEARNING = "ACTIVE_LEARNING"
     PRE_COMPUTED = "PRE_COMPUTED"
     ZERO_SHOT = "ZERO_SHOT"
+    CROWD_LABELER = "CROWD_LABELER"
 
 
 class InformationSourceReturnType(Enum):
@@ -65,6 +66,11 @@ class UserRoles(Enum):
     ENGINEER = "ENGINEER"
     EXPERT = "EXPERT"
     ANNOTATOR = "ANNOTATOR"
+
+
+class LinkTypes(Enum):
+    DATA_SLICE = "DATA_SLICE"
+    HEURISTIC = "HEURISTIC"
 
 
 class Tablenames(Enum):
@@ -98,6 +104,8 @@ class Tablenames(Enum):
     DATA_SLICE_RECORD_ASSOCIATION = "data_slice_record_association"
     INFORMATION_SOURCE_STATISTICS_EXCLUSION = "information_source_statistics_exclusion"
     COMMENT = "comment"
+    LABELING_ACCESS_LINK = "labeling_access_link"
+    USER_LINK_CONNECTION = "user_link_connection"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs

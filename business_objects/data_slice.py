@@ -15,19 +15,18 @@ def get(
         DataSlice.id == data_slice_id,
     )
     if only_static:
-        query.filter(DataSlice.static == True)
+        query = query.filter(DataSlice.static == True)
     return query.first()
 
 
-def get_all(project_id: str) -> List[DataSlice]:
-    return (
-        session.query(DataSlice)
-        .filter(
-            DataSlice.project_id == project_id,
-        )
-        .order_by(DataSlice.name)
-        .all()
+def get_all(project_id: str, slice_type: Optional[enums.SliceTypes]) -> List[DataSlice]:
+    query = session.query(DataSlice).filter(
+        DataSlice.project_id == project_id,
     )
+    if slice_type:
+        query = query.filter(DataSlice.slice_type == slice_type.value)
+    query = query.order_by(DataSlice.name)
+    return query.all()
 
 
 def get_all_associations(project_id: str) -> List[DataSliceRecordAssociation]:
