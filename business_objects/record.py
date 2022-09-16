@@ -164,6 +164,18 @@ def get_token_statistics_by_project_id(project_id: str) -> List[Any]:
     return general.execute_all(query)
 
 
+def get_attribute_calculation_sample_records(project_id: str, n: int = 10) -> List[Any]:
+    query = f"""
+        SELECT record.id::TEXT
+        FROM record
+        WHERE record.project_id='{project_id}'
+        ORDER BY RANDOM()
+        LIMIT {n}
+        ;
+        """
+    return general.execute_all(query)
+
+
 def get_zero_shot_n_random_records(
     project_id: str, attribute_name: str, n: int = 10
 ) -> List[Any]:

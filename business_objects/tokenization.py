@@ -78,9 +78,19 @@ def get_doc_bin_progress(project_id: str) -> str:
     return ""
 
 
-def get_doc_bin_table_to_json(project_id: str, missing_columns: str) -> Any:
+def get_doc_bin_table_to_json(
+    project_id: str, missing_columns: str, record_ids: List[str] = None
+) -> Any:
     if missing_columns != "":
         missing_columns += ","
+    if record_ids:
+        record_ids = (
+            "AND rt.record_id IN ("
+            + ",".join([f"'{record_id}'" for record_id in record_ids])
+            + ")"
+        )
+    else:
+        record_ids = ""
     query = f"""
         SELECT      
             json_agg(
@@ -95,6 +105,7 @@ def get_doc_bin_table_to_json(project_id: str, missing_columns: str) -> Any:
             ON rt.record_id = r.id AND rt.project_id = rt.project_id
         WHERE rt.project_id = '{project_id}'
             AND r.project_id = '{project_id}'
+            {record_ids}
     """
     return general.execute_first(query).data
 
