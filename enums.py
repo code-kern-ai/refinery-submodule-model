@@ -71,6 +71,7 @@ class UserRoles(Enum):
 class LinkTypes(Enum):
     DATA_SLICE = "DATA_SLICE"
     HEURISTIC = "HEURISTIC"
+    SESSION = "SESSION"
 
 
 class Tablenames(Enum):

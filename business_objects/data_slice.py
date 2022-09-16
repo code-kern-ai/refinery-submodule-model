@@ -1,10 +1,12 @@
 from datetime import datetime
-from typing import Any, List, Dict, Optional
+import json
+from typing import Any, List, Dict, Optional, Tuple
 
 from ..business_objects import general
 from ..models import DataSlice, DataSliceRecordAssociation
 from ..session import session
 from .. import enums
+from ..business_objects import information_source
 
 
 def get(
@@ -207,3 +209,56 @@ def __get_updata_slice_type_manual_query() -> None:
         )
         WHERE slice_type IS NULL
         """
+
+
+def get_record_ids_and_first_unlabeled_pos(
+    project_id: str, user_id: str, data_slice_id: str
+) -> Tuple[List[str], int]:
+    query = __get_record_ids_and_first_unlabeled_pos_query(
+        project_id, user_id, data_slice_id
+    )
+    values = general.execute_first(query)
+    if not values:
+        return None
+    return values[0], values[1]
+
+
+def __get_record_ids_and_first_unlabeled_pos_query(
+    project_id: str, user_id: str, data_slice_id: str
+):
+    return f"""
+    WITH record_select AS (
+    SELECT r.id::TEXT record_id, label_check.has_labels,ROW_NUMBER () OVER(ORDER BY has_labels desc,r.id)-1 rn
+    FROM record r
+    INNER JOIN data_slice_record_association dsra
+        ON r.id = dsra.record_id AND r.project_id = dsra.project_id AND dsra.data_slice_id = '{data_slice_id}'
+    INNER JOIN ( 
+        SELECT r.id record_id, CASE WHEN x.id IS NULL THEN 0 ELSE 1 END has_labels
+        FROM record r
+        LEFT JOIN LATERAL(
+            SELECT id 
+            FROM record_label_association rla
+            WHERE r.id = rla.record_id
+            AND r.project_id = rla.project_id
+            AND rla.source_type = '{enums.LabelSource.MANUAL.value}'
+            AND rla.created_by = '{user_id}' 
+            LIMIT 1
+        )x ON TRUE
+        WHERE r.project_id = '{project_id}'
+    ) label_check
+        ON r.id = label_check.record_id
+    WHERE r.project_id = '{project_id}')
+
+    SELECT record_ids, rn first_post
+    FROM (
+        SELECT array_agg(record_id) record_ids
+        FROM record_select
+    ) x,
+    (
+        SELECT rn
+        FROM record_select
+        WHERE has_labels =0
+        ORDER BY rn
+        LIMIT 1 
+    )y    
+    """
