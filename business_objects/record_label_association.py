@@ -516,6 +516,7 @@ def delete(
     user_id: str,
     label_ids: List[str],
     as_gold_star: Optional[bool] = None,
+    source_id: str = None,
     with_commit: bool = False,
 ) -> None:
     delete_query = session.query(RecordLabelAssociation).filter(
@@ -533,6 +534,10 @@ def delete(
                 RecordLabelAssociation.is_gold_star == False,
                 RecordLabelAssociation.is_gold_star == None,
             ),
+        )
+    if source_id:
+        delete_query = delete_query.filter(
+            RecordLabelAssociation.source_id == source_id
         )
     delete_query.delete(synchronize_session="fetch")
     general.flush_or_commit(with_commit)
