@@ -212,20 +212,31 @@ def __get_updata_slice_type_manual_query() -> None:
 
 
 def get_record_ids_and_first_unlabeled_pos(
-    project_id: str, user_id: str, data_slice_id: str
+    project_id: str,
+    user_id: str,
+    data_slice_id: str,
+    source_type: enums.LabelSource = enums.LabelSource.MANUAL,
+    source_id: Optional[str] = None,
 ) -> Tuple[List[str], int]:
     query = __get_record_ids_and_first_unlabeled_pos_query(
-        project_id, user_id, data_slice_id
+        project_id, user_id, data_slice_id, source_type, source_id
     )
     values = general.execute_first(query)
     if not values:
-        return None
+        return None, None
     return values[0], values[1]
 
 
 def __get_record_ids_and_first_unlabeled_pos_query(
-    project_id: str, user_id: str, data_slice_id: str
+    project_id: str,
+    user_id: str,
+    data_slice_id: str,
+    source_type: enums.LabelSource,
+    source_id: str,
 ):
+    source_id_add = ""
+    if source_id:
+        source_id_add = f"AND rla.source_id = '{source_id}'"
     return f"""
     WITH record_select AS (
     SELECT r.id::TEXT record_id, label_check.has_labels,ROW_NUMBER () OVER(ORDER BY has_labels desc,r.id)-1 rn
@@ -240,7 +251,8 @@ def __get_record_ids_and_first_unlabeled_pos_query(
             FROM record_label_association rla
             WHERE r.id = rla.record_id
             AND r.project_id = rla.project_id
-            AND rla.source_type = '{enums.LabelSource.MANUAL.value}'
+            AND rla.source_type = '{source_type.value}'
+            {source_id_add}
             AND rla.created_by = '{user_id}' 
             LIMIT 1
         )x ON TRUE

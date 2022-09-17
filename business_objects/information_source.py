@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
+from submodules.model import enums
+
 from . import general
 from .. import InformationSourceStatisticsExclusion
 from ..models import (
@@ -157,6 +159,18 @@ def get_zero_shot_is_data(project_id: str, information_source_id: str) -> Any:
         ON a.id = base.attribute_id AND a.project_id = '{project_id}'
     """
     return general.execute_first(sql)
+
+
+def get_first_crowd_is_for_annotator(project_id: str, annotator_id: str) -> str:
+    query = f"""
+    SELECT _is.id::TEXT
+    FROM information_source _is
+    WHERE _is.project_id = '{project_id}' AND _is."type" = '{enums.InformationSourceType.CROWD_LABELER.value}'
+    AND _is.source_code::JSON ->>'annotator_id' = '{annotator_id}'
+    """
+    v = general.execute_first(query)
+    if v:
+        return v[0]
 
 
 def get_exclusion_record_ids(source_id: str) -> List[str]:
