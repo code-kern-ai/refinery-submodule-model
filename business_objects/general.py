@@ -30,7 +30,6 @@ def commit() -> None:
     session.commit()
 
 
-
 def remove_and_refresh_session(
     session_token: Any, request_new: bool = False
 ) -> Union[Any, None]:

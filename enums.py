@@ -55,6 +55,9 @@ class PayloadState(Enum):
     FINISHED = "FINISHED"
     FAILED = "FAILED"
 
+    # for crowd labelers, there is a slightly different state flow
+    STARTED = "STARTED"
+
 
 class CommentCategory(Enum):
     ORG = "ORG"
