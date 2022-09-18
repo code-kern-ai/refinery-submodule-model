@@ -130,7 +130,7 @@ def create(
     created_by: str,
     created_at: Optional[str] = None,
     with_commit: bool = False,
-    status: enums.ProjectStatus = enums.ProjectStatus.INIT_UPLOAD
+    status: enums.ProjectStatus = enums.ProjectStatus.INIT_UPLOAD,
 ) -> Project:
     project: Project = Project(
         name=name,
