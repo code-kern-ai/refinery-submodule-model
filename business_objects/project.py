@@ -3,7 +3,13 @@ from typing import List, Optional, Any, Dict, Union
 from . import general
 from .. import enums
 from ..session import session
-from ..models import Project
+from ..models import (
+    DataSliceRecordAssociation,
+    LabelingTask,
+    LabelingTaskLabel,
+    Project,
+    RecordLabelAssociation,
+)
 
 
 def get(project_id: str) -> Project:
@@ -58,6 +64,38 @@ def get_label_distribution(
     )
     if values:
         return values[0]
+
+
+def get_confidence_distribution(
+    project_id: str,
+    labeling_task_id: str,
+    data_slice_id: str = None,
+    num_samples: int = None,
+) -> List[float]:
+    query_filter = session.query(RecordLabelAssociation.confidence).filter(
+        RecordLabelAssociation.project_id == project_id,
+        LabelingTask.id == labeling_task_id,
+        LabelingTask.id == LabelingTaskLabel.labeling_task_id,
+        RecordLabelAssociation.labeling_task_label_id == LabelingTaskLabel.id,
+        RecordLabelAssociation.source_type == enums.LabelSource.WEAK_SUPERVISION.value,
+    )
+
+    if data_slice_id is not None:
+        query_filter = query_filter.filter(
+            DataSliceRecordAssociation.data_slice_id == data_slice_id,
+            DataSliceRecordAssociation.record_id == RecordLabelAssociation.record_id,
+            DataSliceRecordAssociation.project_id == project_id,
+        )
+
+    if num_samples is not None:
+        query_filter = query_filter.limit(num_samples)
+        confidence_scores = [confidence for confidence, in (query_filter.all())]
+        confidence_scores = sorted(confidence_scores)
+    else:
+        query_filter = query_filter.order_by(RecordLabelAssociation.confidence.asc())
+        confidence_scores = [confidence for confidence, in (query_filter.all())]
+
+    return confidence_scores
 
 
 def get_confusion_matrix(
@@ -130,7 +168,7 @@ def create(
     created_by: str,
     created_at: Optional[str] = None,
     with_commit: bool = False,
-    status: enums.ProjectStatus = enums.ProjectStatus.INIT_UPLOAD
+    status: enums.ProjectStatus = enums.ProjectStatus.INIT_UPLOAD,
 ) -> Project:
     project: Project = Project(
         name=name,
