@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Optional
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from . import general
 from ..enums import AttributeState, DataTypes, RecordCategory
@@ -62,12 +62,19 @@ def get_attribute_ids(project_id: str, only_usable: bool = True) -> Dict[str, st
     return {attribute.name: attribute.id for attribute in attributes}
 
 
-def get_text_attributes(project_id: str, only_usable: bool = True) -> Dict[str, str]:
+def get_text_attributes(
+    project_id: str, state_usable: bool = True, state_execution: bool = False
+) -> Dict[str, str]:
     query = session.query(Attribute).filter(
         Attribute.project_id == project_id, Attribute.data_type == "TEXT"
     )
-    if only_usable:
-        query = query.filter(Attribute.state == AttributeState.USABLE.value)
+    states = []
+    if state_usable:
+        states.append(AttributeState.USABLE.value)
+    if state_execution:
+        states.append(AttributeState.EXECUTION.value)
+    if states:
+        query = query.filter(or_(Attribute.state == state for state in states))
     text_attributes = query.all()
     return {att.name: str(att.id) for att in text_attributes}
 
