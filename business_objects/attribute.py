@@ -50,27 +50,34 @@ def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attrib
     )
 
 
-def get_all(project_id: str) -> List[Attribute]:
-    return session.query(Attribute).filter(Attribute.project_id == project_id).all()
+def get_all(project_id: str, only_usable: bool = True) -> List[Attribute]:
+    query = session.query(Attribute).filter(Attribute.project_id == project_id)
+    if only_usable:
+        query.filter(Attribute.state == AttributeState.USABLE.value)
+    return query.all()
 
 
-def get_attribute_ids(project_id: str) -> Dict[str, str]:
-    attributes: List[Attribute] = get_all(project_id)
+def get_attribute_ids(project_id: str, only_usable: bool = True) -> Dict[str, str]:
+    attributes: List[Attribute] = get_all(project_id, only_usable)
     return {attribute.name: attribute.id for attribute in attributes}
 
 
-def get_text_attributes(project_id: str) -> Dict[str, str]:
-    text_attributes = (
-        session.query(Attribute)
-        .filter(Attribute.project_id == project_id, Attribute.data_type == "TEXT")
-        .all()
+def get_text_attributes(project_id: str, only_usable: bool = True) -> Dict[str, str]:
+    query = session.query(Attribute).filter(
+        Attribute.project_id == project_id, Attribute.data_type == "TEXT"
     )
-
+    if only_usable:
+        query.filter(Attribute.state == AttributeState.USABLE.value)
+    text_attributes = query.all()
     return {att.name: str(att.id) for att in text_attributes}
 
 
-def get_all_ordered(project_id: str, order_asc: bool) -> List[Attribute]:
+def get_all_ordered(
+    project_id: str, order_asc: bool, only_usable: bool
+) -> List[Attribute]:
     query = session.query(Attribute).filter(Attribute.project_id == project_id)
+    if only_usable:
+        query = query.filter(Attribute.state == AttributeState.USABLE.value)
     if order_asc:
         query = query.order_by(Attribute.relative_position.asc())
     else:
@@ -141,19 +148,27 @@ def create(
 def update(
     project_id: str,
     attribute_id: str,
-    data_type: str,
-    is_primary_key: bool,
+    data_type: Optional[str] = None,
+    is_primary_key: Optional[bool] = None,
     name: Optional[str] = None,
     source_code: Optional[str] = None,
+    state: Optional[str] = None,
+    logs: Optional[List[str]] = None,
     with_commit: bool = False,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
-    attribute.data_type = data_type
-    attribute.is_primary_key = is_primary_key
+    if data_type:
+        attribute.data_type = data_type
+    if is_primary_key:
+        attribute.is_primary_key = is_primary_key
     if name:
         attribute.name = name
     if source_code:
         attribute.source_code = source_code
+    if state:
+        attribute.state = state
+    if logs:
+        attribute.logs = logs
     general.flush_or_commit(with_commit)
     return attribute
 

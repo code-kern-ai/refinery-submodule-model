@@ -1,8 +1,9 @@
 from __future__ import with_statement
 from typing import List, Dict, Any, Tuple
 from sqlalchemy import cast, Text
+from sqlalchemy.orm.attributes import flag_modified
 
-from . import general
+from . import attribute, general
 from .. import models, enums
 from ..models import (
     Record,
@@ -409,6 +410,20 @@ def update_records(
     )
 
 
+def update_add_user_created_attribute(
+    project_id: str,
+    attribute_id: str,
+    calculated_attributes: Dict[str, str],
+    with_commit: bool = False,
+) -> None:
+    attribute_item = attribute.get(project_id, attribute_id)
+    for record_id, attribute_value in calculated_attributes.items():
+        record_item = get(project_id=project_id, record_id=record_id)
+        record_item.data[attribute_item.name] = attribute_value
+        flag_modified(record_item, "data")
+    general.flush_or_commit(with_commit)
+
+
 def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
     session.delete(
         session.query(Record)
@@ -420,6 +435,21 @@ def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
 
 def delete_all(project_id: str, with_commit: bool = False) -> None:
     session.query(Record).filter(Record.project_id == project_id).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_user_created_attribute(
+    project_id: str, attribute_id: str, with_commit: bool = False
+) -> None:
+    attribute_item = attribute.get(project_id, attribute_id)
+
+    if not attribute_item.user_created:
+        return
+
+    record_items = get_all(project_id=project_id)
+    for record_item in record_items:
+        del record_item.data[attribute_item.name]
+        flag_modified(record_item, "data")
     general.flush_or_commit(with_commit)
 
 

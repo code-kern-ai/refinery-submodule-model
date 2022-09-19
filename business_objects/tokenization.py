@@ -127,6 +127,13 @@ def create_tokenization_task(
     return tbl_entry
 
 
+def delete_docbins(project_id: str, with_commit: bool = False) -> None:
+    session.query(RecordTokenized).filter(
+        RecordTokenized.project_id == project_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+
 def delete_record_docbins(
     project_id: str, records: List[Record], with_commit: bool = False
 ) -> None:
@@ -140,6 +147,15 @@ def delete_record_docbins(
 def delete_token_statistics(records: List[Record], with_commit: bool = False) -> None:
     session.query(RecordAttributeTokenStatistics).filter(
         RecordAttributeTokenStatistics.record_id.in_([record.id for record in records]),
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_token_statistics_for_project(
+    project_id: str, with_commit: bool = False
+) -> None:
+    session.query(RecordAttributeTokenStatistics).filter(
+        RecordAttributeTokenStatistics.project_id == project_id,
     ).delete()
     general.flush_or_commit(with_commit)
 
