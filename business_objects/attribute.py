@@ -53,7 +53,7 @@ def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attrib
 def get_all(project_id: str, only_usable: bool = True) -> List[Attribute]:
     query = session.query(Attribute).filter(Attribute.project_id == project_id)
     if only_usable:
-        query.filter(Attribute.state == AttributeState.USABLE.value)
+        query = query.filter(Attribute.state == AttributeState.USABLE.value)
     return query.all()
 
 
@@ -67,7 +67,7 @@ def get_text_attributes(project_id: str, only_usable: bool = True) -> Dict[str, 
         Attribute.project_id == project_id, Attribute.data_type == "TEXT"
     )
     if only_usable:
-        query.filter(Attribute.state == AttributeState.USABLE.value)
+        query = query.filter(Attribute.state == AttributeState.USABLE.value)
     text_attributes = query.all()
     return {att.name: str(att.id) for att in text_attributes}
 
