@@ -8,6 +8,7 @@ from .enums import (
     UploadStates,
     PayloadState,
     SliceTypes,
+    AttributeState,
 )
 from sqlalchemy import (
     JSON,
@@ -289,7 +290,7 @@ class Attribute(Base):
     relative_position = Column(Integer)
     user_created = Column(Boolean, default=False)
     source_code = Column(String)
-    state = Column(String)
+    state = Column(String, default=AttributeState.USABLE.value)
     logs = Column(ARRAY(String))
 
     labeling_tasks = parent_to_child_relationship(
