@@ -1,5 +1,5 @@
 from datetime import datetime
-from submodules.model.models import LabelingAccessLink, UserLinkConnection
+from submodules.model.models import LabelingAccessLink
 from . import general
 from .. import enums
 from ..session import session
@@ -10,16 +10,20 @@ def get(link_id: str) -> LabelingAccessLink:
     return session.query(LabelingAccessLink).get(link_id)
 
 
-def get_ensure_access(user_id: str, link_id: str) -> LabelingAccessLink:
+def get_by_link(project_id: str, link: str) -> LabelingAccessLink:
+    return (
+        session.query(LabelingAccessLink)
+        .filter(
+            LabelingAccessLink.project_id == project_id, LabelingAccessLink.link == link
+        )
+        .first()
+    )
+
+
+def get_ensure_access(link_id: str) -> LabelingAccessLink:
     link = (
         session.query(LabelingAccessLink)
-        .join(
-            UserLinkConnection,
-            (UserLinkConnection.user_id == user_id)
-            & (UserLinkConnection.link_id == LabelingAccessLink.id)
-            & (UserLinkConnection.is_locked == False),
-        )
-        .filter(LabelingAccessLink.id == link_id)
+        .filter(LabelingAccessLink.id == link_id, LabelingAccessLink.is_locked == False)
         .first()
     )
     if not link:
@@ -35,33 +39,38 @@ def get_by_all_by_project_id(project_id: str) -> List[LabelingAccessLink]:
     )
 
 
-def get_by_all_by_user_id(user_id: str) -> List[LabelingAccessLink]:
-    return (
-        session.query(LabelingAccessLink)
-        .join(
-            UserLinkConnection,
-            (UserLinkConnection.user_id == user_id)
-            & (UserLinkConnection.link_id == LabelingAccessLink.id)
-            & (UserLinkConnection.is_locked == False),
-        )
-        .all()
-    )
-
-
-def get_by_all_by_project_user(
-    project_id: str, user_id: str
+def get_by_all_by_user_id(
+    user_id: str, user_role: enums.UserRoles
 ) -> List[LabelingAccessLink]:
-    return (
-        session.query(LabelingAccessLink)
-        .join(
-            UserLinkConnection,
-            (UserLinkConnection.user_id == user_id)
-            & (UserLinkConnection.link_id == LabelingAccessLink.id)
-            & (UserLinkConnection.is_locked == False),
+    if user_role == enums.UserRoles.ANNOTATOR:
+        query = f"""
+        SELECT _is.id::TEXT
+        FROM labeling_access_link lal
+        INNER JOIN information_source _is
+            ON lal.project_id = _is.project_id AND lal.heuristic_id = _is.id
+        WHERE _is.source_code::JSON->>'annotator_id' = '{user_id}'
+            AND _is.type = '{enums.InformationSourceType.CROWD_LABELER.value}'
+            AND NOT lal.is_locked
+        """
+        ids = [r[id] for r in general.execute_all(query)]
+
+        return (
+            session.query(LabelingAccessLink)
+            .filter(
+                LabelingAccessLink.is_locked == False,
+                LabelingAccessLink.heuristic_id.in_(ids),
+            )
+            .all()
         )
-        .filter(LabelingAccessLink.project_id == project_id)
-        .all()
-    )
+    else:
+        (
+            session.query(LabelingAccessLink)
+            .filter(
+                LabelingAccessLink.is_locked == False,
+                LabelingAccessLink.data_slice_id != None,
+            )
+            .all()
+        )
 
 
 def create(
@@ -92,23 +101,5 @@ def create(
 
 
 def remove(link_id: str, with_commit: bool = False) -> None:
-    session.delete(session.query(LabelingAccessLink).get(link_id))
+    session.delete(get(link_id))
     general.flush_or_commit(with_commit)
-
-
-def change_user_access_to_link_lock(
-    user_id: str, link_id: str, lock_state: bool, with_commit: bool = False
-) -> bool:
-    user_link_connection = (
-        session.query(UserLinkConnection)
-        .filter(
-            UserLinkConnection.user_id == user_id, UserLinkConnection.link_id == link_id
-        )
-        .first()
-    )
-    if user_link_connection:
-        user_link_connection.is_locked = lock_state
-        if with_commit:
-            general.commit()
-        return True
-    return False

@@ -174,15 +174,6 @@ class User(Base):
     )
 
 
-class UserLinkConnection(Base):
-    # n:m table to access every option for a user
-    __tablename__ = Tablenames.USER_LINK_CONNECTION.value
-    user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    link_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    # engineers can lock a link to prevent access after the task is done for a user, the link itself can also be deleted
-    is_locked = Column(Boolean, default=False)
-
-
 class LabelingAccessLink(Base):
     __tablename__ = Tablenames.LABELING_ACCESS_LINK.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -212,6 +203,7 @@ class LabelingAccessLink(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    is_locked = Column(Boolean, default=False)
 
 
 class UserActivity(Base):
