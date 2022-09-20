@@ -254,3 +254,13 @@ def delete(project_id: str, task_id: str, with_commit: bool = False) -> None:
         LabelingTask.id == task_id,
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def delete_by_attribute_id(
+    project_id: str, attribute_id: str, with_commit: bool = False
+) -> None:
+    session.query(LabelingTask).filter(
+        LabelingTask.project_id == project_id,
+        LabelingTask.attribute_id == attribute_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
