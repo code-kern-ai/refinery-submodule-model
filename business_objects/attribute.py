@@ -50,41 +50,51 @@ def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attrib
     )
 
 
-def get_all(project_id: str, only_usable: bool = True) -> List[Attribute]:
+def get_all(
+    project_id: str, state_filter: Optional[List[str]] = None
+) -> List[Attribute]:
+    if state_filter is None:
+        state_filter = [AttributeState.UPLOADED.value, AttributeState.USABLE.value]
+
     query = session.query(Attribute).filter(Attribute.project_id == project_id)
-    if only_usable:
-        query = query.filter(Attribute.state == AttributeState.USABLE.value)
+    if state_filter:
+        query = query.filter(Attribute.state.in_(state_filter))
     return query.all()
 
 
-def get_attribute_ids(project_id: str, only_usable: bool = True) -> Dict[str, str]:
-    attributes: List[Attribute] = get_all(project_id, only_usable)
+def get_attribute_ids(
+    project_id: str, state_filter: Optional[List[str]] = None
+) -> Dict[str, str]:
+    if state_filter is None:
+        state_filter = [AttributeState.UPLOADED.value, AttributeState.USABLE.value]
+    attributes: List[Attribute] = get_all(project_id, state_filter)
     return {attribute.name: attribute.id for attribute in attributes}
 
 
 def get_text_attributes(
-    project_id: str, state_usable: bool = True, state_running: bool = False
+    project_id: str, state_filter: Optional[List[str]] = None
 ) -> Dict[str, str]:
+    if state_filter is None:
+        state_filter = [AttributeState.UPLOADED.value, AttributeState.USABLE.value]
+
     query = session.query(Attribute).filter(
         Attribute.project_id == project_id, Attribute.data_type == "TEXT"
     )
-    states = []
-    if state_usable:
-        states.append(AttributeState.USABLE.value)
-    if state_running:
-        states.append(AttributeState.RUNNING.value)
-    if states:
-        query = query.filter(or_(Attribute.state == state for state in states))
+    if state_filter:
+        query = query.filter(Attribute.state.in_(state_filter))
     text_attributes = query.all()
     return {att.name: str(att.id) for att in text_attributes}
 
 
 def get_all_ordered(
-    project_id: str, order_asc: bool, only_usable: bool
+    project_id: str, order_asc: bool, state_filter: Optional[List[str]] = None
 ) -> List[Attribute]:
+    if state_filter is None:
+        state_filter = [AttributeState.UPLOADED.value, AttributeState.USABLE.value]
+
     query = session.query(Attribute).filter(Attribute.project_id == project_id)
-    if only_usable:
-        query = query.filter(Attribute.state == AttributeState.USABLE.value)
+    if state_filter:
+        query = query.filter(Attribute.state.in_(state_filter))
     if order_asc:
         query = query.order_by(Attribute.relative_position.asc())
     else:
