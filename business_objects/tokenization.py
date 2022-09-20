@@ -175,6 +175,13 @@ def delete_dublicated_tokenization(project_id: str, with_commit: bool = False) -
     general.flush_or_commit(with_commit)
 
 
+def delete_tokenization_tasks(project_id: str, with_commit: bool = False) -> None:
+    session.query(RecordTokenizationTask).filter(
+        RecordTokenizationTask.project_id == project_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+
 def is_doc_bin_creation_running(project_id: str) -> bool:
     query = f"""
         SELECT id
