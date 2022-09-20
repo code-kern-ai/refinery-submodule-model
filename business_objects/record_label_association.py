@@ -92,6 +92,24 @@ def get_tokens(project_id: str) -> List[Any]:
     return general.execute_all(query)
 
 
+def get_manual_tokens_by_record_id(
+    record_id: str,
+) -> List[RecordLabelAssociationToken]:
+    return (
+        session.query(RecordLabelAssociationToken)
+        .join(
+            RecordLabelAssociation,
+            RecordLabelAssociation.id
+            == RecordLabelAssociationToken.record_label_association_id,
+        )
+        .filter(
+            RecordLabelAssociation.record_id == record_id,
+            RecordLabelAssociation.source_type == enums.LabelSource.MANUAL.value,
+        )
+        .all()
+    )
+
+
 def get_all(project_id: str) -> List[RecordLabelAssociation]:
     return (
         session.query(RecordLabelAssociation)
