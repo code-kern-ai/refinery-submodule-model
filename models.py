@@ -204,6 +204,8 @@ class LabelingAccessLink(Base):
         index=True,
     )
     is_locked = Column(Boolean, default=False)
+    #corresponding data last changed at (e.g. if a data slice was updated or the heuristic was updated)
+    changed_at = Column(DateTime, default=sql.func.now())
 
 
 class UserActivity(Base):

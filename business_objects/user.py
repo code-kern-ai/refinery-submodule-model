@@ -35,20 +35,21 @@ def get_user_count(organization_id: str, project_id: str) -> List[Any]:
             )])
     FROM PUBLIC.user u
     LEFT JOIN (
-    SELECT created_by, array_agg(count_json) counts
-    FROM (
-        SELECT rla.created_by, json_build_object(
-                'source_type', source_type,
-                'count', COUNT(*)
-            ) count_json
-        FROM project p
-        INNER JOIN record_label_association rla
-            ON p.id = rla.project_id
-        WHERE p.organization_id = '{organization_id}'
-            AND p.id = '{project_id}'
-        GROUP BY rla.created_by, rla.source_type ) x
-    GROUP BY created_by ) count_data
+        SELECT created_by, array_agg(count_json) counts
+        FROM (
+            SELECT rla.created_by, json_build_object(
+                    'source_type', source_type,
+                    'count', COUNT(*)
+                ) count_json
+            FROM project p
+            INNER JOIN record_label_association rla
+                ON p.id = rla.project_id
+            WHERE p.organization_id = '{organization_id}'
+                AND p.id = '{project_id}'
+            GROUP BY rla.created_by, rla.source_type ) x
+        GROUP BY created_by ) count_data
     ON u.id = count_data.created_by
+    WHERE u.role != '{enums.UserRoles.ANNOTATOR.value}'
     """
     return general.execute_all(sql)
 

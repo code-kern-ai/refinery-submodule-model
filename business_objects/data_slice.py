@@ -21,7 +21,9 @@ def get(
     return query.first()
 
 
-def get_all(project_id: str, slice_type: Optional[enums.SliceTypes]) -> List[DataSlice]:
+def get_all(
+    project_id: str, slice_type: Optional[enums.SliceTypes] = None
+) -> List[DataSlice]:
     query = session.query(DataSlice).filter(
         DataSlice.project_id == project_id,
     )
