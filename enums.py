@@ -279,7 +279,8 @@ class EmbeddingState(Enum):
 
 
 class AttributeState(Enum):
-    EXECUTION = "EXECUTION"
-    EXECUTION_ERROR = "EXECUTION_ERROR"
+    UPLOADED = "UPLOADED"
+    INITIAL = "INITIAL"
+    RUNNING = "RUNNING"
     USABLE = "USABLE"
-    WORK_IN_PROGRESS = "WORK_IN_PROGRESS"
+    FAILED = "FAILED"

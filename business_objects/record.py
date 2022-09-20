@@ -417,10 +417,12 @@ def update_add_user_created_attribute(
     with_commit: bool = False,
 ) -> None:
     attribute_item = attribute.get(project_id, attribute_id)
-    for record_id, attribute_value in calculated_attributes.items():
+    for i, (record_id, attribute_value) in enumerate(calculated_attributes.items()):
         record_item = get(project_id=project_id, record_id=record_id)
         record_item.data[attribute_item.name] = attribute_value
         flag_modified(record_item, "data")
+        if (i + 1) % 1000 == 0:
+            general.flush_or_commit(with_commit)
     general.flush_or_commit(with_commit)
 
 
@@ -447,9 +449,11 @@ def delete_user_created_attribute(
         return
 
     record_items = get_all(project_id=project_id)
-    for record_item in record_items:
+    for i, record_item in enumerate(record_items):
         del record_item.data[attribute_item.name]
         flag_modified(record_item, "data")
+        if (i + 1) % 1000 == 0:
+            general.flush_or_commit(with_commit)
     general.flush_or_commit(with_commit)
 
 
