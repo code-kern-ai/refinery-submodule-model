@@ -76,15 +76,13 @@ def get_confidence_distribution(
         session.query(RecordLabelAssociation.confidence)
         .join(
             LabelingTaskLabel,
-            RecordLabelAssociation.labeling_task_label_id == LabelingTaskLabel.id,
-            LabelingTaskLabel.project_id == project_id,
-            RecordLabelAssociation.project_id == project_id,
+            (RecordLabelAssociation.labeling_task_label_id == LabelingTaskLabel.id)
+            & (LabelingTaskLabel.project_id == RecordLabelAssociation.project_id),
         )
         .join(
             LabelingTask,
-            LabelingTask.id == LabelingTaskLabel.labeling_task_id,
-            LabelingTask.project_id == project_id,
-            LabelingTaskLabel.project_id == project_id,
+            (LabelingTask.id == LabelingTaskLabel.labeling_task_id)
+            & (LabelingTask.project_id == LabelingTaskLabel.project_id),
         )
         .filter(
             LabelingTask.id == labeling_task_id,
@@ -96,9 +94,11 @@ def get_confidence_distribution(
     if data_slice_id is not None:
         query_filter = query_filter.join(
             DataSliceRecordAssociation,
-            DataSliceRecordAssociation.record_id == RecordLabelAssociation.record_id,
-            DataSliceRecordAssociation.project_id == project_id,
-            RecordLabelAssociation.project_id == project_id,
+            (DataSliceRecordAssociation.record_id == RecordLabelAssociation.record_id)
+            & (
+                DataSliceRecordAssociation.project_id
+                == RecordLabelAssociation.project_id
+            ),
         ).filter(
             DataSliceRecordAssociation.data_slice_id == data_slice_id,
         )
