@@ -69,15 +69,25 @@ def get_label_distribution(
 def get_confidence_distribution(
     project_id: str,
     labeling_task_id: str,
-    data_slice_id: str = None,
-    num_samples: int = None,
+    data_slice_id: Optional[str] = None,
+    num_samples: Optional[int] = None,
 ) -> List[float]:
-    query_filter = session.query(RecordLabelAssociation.confidence).filter(
-        RecordLabelAssociation.project_id == project_id,
-        LabelingTask.id == labeling_task_id,
-        LabelingTask.id == LabelingTaskLabel.labeling_task_id,
-        RecordLabelAssociation.labeling_task_label_id == LabelingTaskLabel.id,
-        RecordLabelAssociation.source_type == enums.LabelSource.WEAK_SUPERVISION.value,
+    query_filter = (
+        session.query(RecordLabelAssociation.confidence)
+        .join(
+            LabelingTaskLabel,
+            RecordLabelAssociation.labeling_task_label_id == LabelingTaskLabel.id,
+        )
+        .join(
+            LabelingTask,
+            LabelingTask.id == LabelingTaskLabel.labeling_task_id,
+        )
+        .filter(
+            RecordLabelAssociation.project_id == project_id,
+            LabelingTask.id == labeling_task_id,
+            RecordLabelAssociation.source_type
+            == enums.LabelSource.WEAK_SUPERVISION.value,
+        )
     )
 
     if data_slice_id is not None:
