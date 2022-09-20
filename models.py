@@ -1,3 +1,4 @@
+from re import T
 import uuid
 
 from .enums import (
@@ -293,6 +294,11 @@ class Attribute(Base):
     state = Column(String, default=AttributeState.UPLOADED.value)
     logs = Column(ARRAY(String))
 
+    embeddings = parent_to_child_relationship(
+        Tablenames.ATTRIBUTE,
+        Tablenames.EMBEDDING,
+    )
+
     labeling_tasks = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
         Tablenames.LABELING_TASK,
@@ -567,6 +573,10 @@ class Embedding(Base):
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
+    )
+    attribute_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ATTRIBUTE.value}.id", ondelete="CASCADE"),
     )
     name = Column(String)
     custom = Column(

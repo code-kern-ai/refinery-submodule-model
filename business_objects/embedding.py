@@ -1,8 +1,7 @@
-import re
 from typing import List, Any, Optional
 from sqlalchemy import cast, TEXT
 
-from . import attribute, general
+from . import general
 from .. import models, EmbeddingTensor, Embedding
 from ..session import session
 from .. import enums
@@ -14,10 +13,6 @@ def get(project_id: str, embedding_id: str) -> Embedding:
         .filter(Embedding.project_id == project_id, Embedding.id == embedding_id)
         .first()
     )
-
-
-def get_all_project_embeddings(project_id: str) -> List[Embedding]:
-    return session.query(Embedding).filter(Embedding.project_id == project_id).all()
 
 
 def get_first_running_encoder(project_id: str) -> Embedding:
@@ -188,6 +183,7 @@ def get_tensor(embedding_id: str, record_id: Optional[str] = None) -> EmbeddingT
 
 def create(
     project_id: str,
+    attribute_id: str,
     name: str,
     state: str = None,
     custom: bool = None,
@@ -196,6 +192,7 @@ def create(
 ) -> Embedding:
     embedding: Embedding = Embedding(
         project_id=project_id,
+        attribute_id=attribute_id,
         name=name,
         custom=False,
         type=type,
@@ -308,15 +305,3 @@ def delete(project_id: str, embedding_id: str, with_commit: bool = False) -> Non
 def delete_tensors(embedding_id: str, with_commit: bool = False) -> None:
     session.query(EmbeddingTensor).filter(EmbeddingTensor.id == embedding_id).delete()
     general.flush_or_commit(with_commit)
-
-
-def delete_embeddings_on_attribute(
-    project_id: str, attribute_id: str, with_commit: bool = False
-) -> None:
-    attribute_item = attribute.get(project_id, attribute_id)
-    embedding_items = get_all_project_embeddings(project_id)
-
-    regex = f"^{attribute_item.name}-(?:classification|extraction).*"
-    for embedding_item in embedding_items:
-        if re.match(regex, embedding_item.name):
-            delete(project_id, embedding_item.id, with_commit)
