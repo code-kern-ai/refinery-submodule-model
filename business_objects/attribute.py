@@ -148,13 +148,13 @@ def create(
         user_created=user_created,
     )
 
-    if source_code:
+    if source_code is not None:
         attribute.source_code = source_code
 
-    if state:
+    if state is not None:
         attribute.state = state
 
-    if logs:
+    if logs is not None:
         attribute.logs = logs
 
     general.add(attribute, with_commit)
@@ -173,17 +173,17 @@ def update(
     with_commit: bool = False,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
-    if data_type:
+    if data_type is not None:
         attribute.data_type = data_type
-    if is_primary_key:
+    if is_primary_key is not None:
         attribute.is_primary_key = is_primary_key
-    if name:
+    if name is not None:
         attribute.name = name
-    if source_code:
+    if source_code is not None:
         attribute.source_code = source_code
-    if state:
+    if state is not None:
         attribute.state = state
-    if logs:
+    if logs is not None:
         attribute.logs = logs
     general.flush_or_commit(with_commit)
     return attribute
