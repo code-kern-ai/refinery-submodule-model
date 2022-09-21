@@ -1,5 +1,6 @@
 from typing import Dict, Any, List, Optional
 from sqlalchemy import func
+from sqlalchemy.orm.attributes import flag_modified
 
 from . import general
 from ..enums import AttributeState, DataTypes, RecordCategory
@@ -185,6 +186,7 @@ def update(
         attribute.state = state
     if logs is not None:
         attribute.logs = logs
+        flag_modified(attribute, "logs")
     general.flush_or_commit(with_commit)
     return attribute
 
