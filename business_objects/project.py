@@ -85,6 +85,7 @@ def get_confidence_distribution(
             & (LabelingTask.project_id == LabelingTaskLabel.project_id),
         )
         .filter(
+            RecordLabelAssociation.project_id == project_id,
             LabelingTask.id == labeling_task_id,
             RecordLabelAssociation.source_type
             == enums.LabelSource.WEAK_SUPERVISION.value,
