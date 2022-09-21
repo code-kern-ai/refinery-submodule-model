@@ -30,7 +30,6 @@ def commit() -> None:
     session.commit()
 
 
-
 def remove_and_refresh_session(
     session_token: Any, request_new: bool = False
 ) -> Union[Any, None]:
@@ -68,6 +67,10 @@ def execute_first(sql: str) -> Any:
 
 def execute_distinct_count(count_sql: str) -> int:
     return session.execute(count_sql).first().distinct_count
+
+
+def set_seed(seed: float = 0) -> None:
+    execute(f"SELECT setseed({seed});")
 
 
 def get_bind() -> Any:
