@@ -225,7 +225,7 @@ def get_record_ids_and_first_unlabeled_pos(
     )
     values = general.execute_first(query)
     if not values:
-        return None, None
+        return [], 0
     return values[0], values[1]
 
 
@@ -270,9 +270,14 @@ def __get_record_ids_and_first_unlabeled_pos_query(
     ) x,
     (
         SELECT rn
-        FROM record_select
-        WHERE has_labels =0
-        ORDER BY rn
-        LIMIT 1 
+        FROM (
+            SELECT rn
+            FROM record_select
+            WHERE has_labels =0
+            ORDER BY rn
+            LIMIT 1) x
+        UNION ALL
+        SELECT 0 --fallback value if all are labeled
+        LIMIT 1
     )y    
     """

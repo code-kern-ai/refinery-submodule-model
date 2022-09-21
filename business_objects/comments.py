@@ -16,6 +16,7 @@ def get_by_all_by_project_id(project_id: str) -> List[Comment]:
 
 def get_by_all_by_category(
     category: enums.CommentCategory,
+    user_id: str,
     xfkey: Optional[str] = None,
     project_id: Optional[str] = None,
     as_json: bool = False,
@@ -30,6 +31,8 @@ WHERE xftype = '{category.value}' """
         query += f"\n   AND xfkey = '{xfkey}'"
     if project_id:
         query += f"\n   AND project_id = '{project_id}'"
+
+    query += f"\n   AND (is_private = false OR created_by = '{user_id}')"
 
     if as_json:
         query = f"""
@@ -111,60 +114,84 @@ def create(
     return comment
 
 
-def create_for_user(
-    target_user_id: str,
-    creation_user_id: str,
-    comment: str,
-    is_markdown: Optional[bool] = None,
+# def create_for_user(
+#     target_user_id: str,
+#     creation_user_id: str,
+#     comment: str,
+#     is_markdown: Optional[bool] = None,
+#     with_commit: bool = False,
+# ) -> Comment:
+#     return create(
+#         xfkey=target_user_id,
+#         xftype=enums.CommentCategory.USER.value,
+#         comment=comment,
+#         created_by=creation_user_id,
+#         is_markdown=is_markdown,
+#         with_commit=with_commit,
+#     )
+
+
+# def create_for_org(
+#     target_org_id: str,
+#     creation_user_id: str,
+#     comment: str,
+#     is_markdown: Optional[bool] = None,
+#     with_commit: bool = False,
+# ) -> Comment:
+#     return create(
+#         xfkey=target_org_id,
+#         xftype=enums.CommentCategory.ORG.value,
+#         comment=comment,
+#         created_by=creation_user_id,
+#         project_id=None,
+#         add_key=None,
+#         is_markdown=is_markdown,
+#         created_at=None,
+#         with_commit=with_commit,
+#     )
+
+
+# def create_for_labeling_task(
+#     project_id: str,
+#     target_labeling_task_id: str,
+#     creation_user_id: str,
+#     comment: str,
+#     is_markdown: Optional[bool] = None,
+#     with_commit: bool = False,
+# ) -> Comment:
+#     return create(
+#         xfkey=target_labeling_task_id,
+#         xftype=enums.CommentCategory.LABELING_TASK.value,
+#         comment=comment,
+#         created_by=creation_user_id,
+#         project_id=project_id,
+#         is_markdown=is_markdown,
+#         with_commit=with_commit,
+#     )
+
+
+def change(
+    comment: Comment,
+    changes: Dict[str, Any],
     with_commit: bool = False,
 ) -> Comment:
-    return create(
-        xfkey=target_user_id,
-        xftype=enums.CommentCategory.USER.value,
-        comment=comment,
-        created_by=creation_user_id,
-        is_markdown=is_markdown,
-        with_commit=with_commit,
-    )
+    for k in changes:
+        if hasattr(comment, k):
+            setattr(comment, k, changes[k])
+        else:
+            raise ValueError(f"Link has no attribute {k}")
+    if with_commit:
+        general.commit()
 
 
-def create_for_org(
-    target_org_id: str,
-    creation_user_id: str,
-    comment: str,
-    is_markdown: Optional[bool] = None,
-    with_commit: bool = False,
+def change_by_id(
+    comment_id: str, changes: Dict[str, Any], with_commit: bool = False
 ) -> Comment:
-    return create(
-        xfkey=target_org_id,
-        xftype=enums.CommentCategory.ORG.value,
-        comment=comment,
-        created_by=creation_user_id,
-        project_id=None,
-        add_key=None,
-        is_markdown=is_markdown,
-        created_at=None,
-        with_commit=with_commit,
-    )
-
-
-def create_for_labeling_task(
-    project_id: str,
-    target_labeling_task_id: str,
-    creation_user_id: str,
-    comment: str,
-    is_markdown: Optional[bool] = None,
-    with_commit: bool = False,
-) -> Comment:
-    return create(
-        xfkey=target_labeling_task_id,
-        xftype=enums.CommentCategory.LABELING_TASK.value,
-        comment=comment,
-        created_by=creation_user_id,
-        project_id=project_id,
-        is_markdown=is_markdown,
-        with_commit=with_commit,
-    )
+    comment = get(comment_id)
+    if not comment:
+        raise ValueError("comment does not exist")
+    change(comment, changes, with_commit)
+    return comment
 
 
 def remove(comment_id: str, with_commit: bool = False) -> None:

@@ -63,6 +63,8 @@ class CommentCategory(Enum):
     ORG = "ORG"
     USER = "USER"
     LABELING_TASK = "LABELING_TASK"
+    RECORD = "RECORD"
+    ATTRIBUTE = "ATTRIBUTE"
 
 
 class UserRoles(Enum):

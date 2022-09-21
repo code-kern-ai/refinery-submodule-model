@@ -94,7 +94,7 @@ def get_by_all_by_project_id(project_id: str) -> List[LabelingAccessLink]:
 
 
 def get_by_all_by_user_id(
-    user_id: str, user_role: enums.UserRoles
+    project_id: str, user_id: str, user_role: enums.UserRoles
 ) -> List[LabelingAccessLink]:
     if user_role == enums.UserRoles.ANNOTATOR:
         query = f"""
@@ -106,21 +106,23 @@ def get_by_all_by_user_id(
             AND _is.type = '{enums.InformationSourceType.CROWD_LABELER.value}'
             AND NOT lal.is_locked
         """
-        ids = [r[id] for r in general.execute_all(query)]
+        ids = [r[0] for r in general.execute_all(query)]
 
         return (
             session.query(LabelingAccessLink)
             .filter(
                 LabelingAccessLink.is_locked == False,
+                LabelingAccessLink.project_id == project_id,
                 LabelingAccessLink.heuristic_id.in_(ids),
             )
             .all()
         )
     else:
-        (
+        return (
             session.query(LabelingAccessLink)
             .filter(
                 LabelingAccessLink.is_locked == False,
+                LabelingAccessLink.project_id == project_id,
                 LabelingAccessLink.data_slice_id != None,
             )
             .all()
