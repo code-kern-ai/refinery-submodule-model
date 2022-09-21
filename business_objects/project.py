@@ -1,6 +1,8 @@
 from typing import List, Optional, Any, Dict, Union
+from sqlalchemy.sql import func
 
 from . import general
+
 from .. import enums
 from ..session import session
 from ..models import (
@@ -88,6 +90,7 @@ def get_confidence_distribution(
             LabelingTask.id == labeling_task_id,
             RecordLabelAssociation.source_type
             == enums.LabelSource.WEAK_SUPERVISION.value,
+            RecordLabelAssociation.project_id == project_id,
         )
     )
 
@@ -104,7 +107,8 @@ def get_confidence_distribution(
         )
 
     if num_samples is not None:
-        query_filter = query_filter.limit(num_samples)
+        query_filter = query_filter.order_by(func.random()).limit(num_samples)
+        general.set_seed(0)
         confidence_scores = [confidence for confidence, in (query_filter.all())]
         confidence_scores = sorted(confidence_scores)
     else:
