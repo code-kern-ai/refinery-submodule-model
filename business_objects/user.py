@@ -13,9 +13,11 @@ def get_by_id_list(user_ids: List[str]) -> List[User]:
 
 
 def get_all(
-    organization_id: str, user_role: Optional[enums.UserRoles] = None
+    organization_id: Optional[str] = None, user_role: Optional[enums.UserRoles] = None
 ) -> List[User]:
-    query = session.query(User).filter(User.organization_id == organization_id)
+    query = session.query(User)
+    if organization_id:
+        query = query.filter(User.organization_id == organization_id)
     if user_role:
         query = query.filter(User.role == user_role.value)
     return query.all()
