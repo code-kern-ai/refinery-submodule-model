@@ -198,6 +198,40 @@ def get_query_max_token(
     return query
 
 
+def update_progress(
+    project_id: str, payload_id: str, progress: float, with_commit: bool = True
+):
+    payload = (
+        session.query(InformationSourcePayload)
+        .filter(
+            InformationSourcePayload.project_id == project_id,
+            InformationSourcePayload.id == payload_id,
+        )
+        .first()
+    )
+
+    if payload is not None:
+        payload.progress = progress
+        general.flush_or_commit(with_commit)
+
+
+def update_status(
+    project_id: str, payload_id: str, status: str, with_commit: bool = True
+):
+    payload = (
+        session.query(InformationSourcePayload)
+        .filter(
+            InformationSourcePayload.project_id == project_id,
+            InformationSourcePayload.id == payload_id,
+        )
+        .first()
+    )
+
+    if payload is not None:
+        payload.state = status
+        general.flush_or_commit(with_commit)
+
+
 def create(
     project_id: str,
     source_code: str,
@@ -219,3 +253,16 @@ def create(
     )
     general.add(payload, with_commit)
     return payload
+
+
+def create_empty_crowd_payload(
+    project_id: str, information_source_id: str, user_id: str
+) -> InformationSourcePayload:
+    return create(
+        project_id=project_id,
+        source_code="",  # empty payload
+        state=enums.PayloadState.STARTED,
+        iteration=0,
+        source_id=information_source_id,
+        created_by=user_id,
+    )

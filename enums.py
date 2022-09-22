@@ -35,6 +35,7 @@ class InformationSourceType(Enum):
     ACTIVE_LEARNING = "ACTIVE_LEARNING"
     PRE_COMPUTED = "PRE_COMPUTED"
     ZERO_SHOT = "ZERO_SHOT"
+    CROWD_LABELER = "CROWD_LABELER"
 
 
 class InformationSourceReturnType(Enum):
@@ -53,6 +54,29 @@ class PayloadState(Enum):
     CREATED = "CREATED"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+
+    # for crowd labelers, there is a slightly different state flow
+    STARTED = "STARTED"
+
+
+class CommentCategory(Enum):
+    ORG = "ORG"
+    USER = "USER"
+    LABELING_TASK = "LABELING_TASK"
+    RECORD = "RECORD"
+    ATTRIBUTE = "ATTRIBUTE"
+
+
+class UserRoles(Enum):
+    ENGINEER = "ENGINEER"
+    EXPERT = "EXPERT"
+    ANNOTATOR = "ANNOTATOR"
+
+
+class LinkTypes(Enum):
+    DATA_SLICE = "DATA_SLICE"
+    HEURISTIC = "HEURISTIC"
+    SESSION = "SESSION"
 
 
 class Tablenames(Enum):
@@ -85,6 +109,8 @@ class Tablenames(Enum):
     DATA_SLICE = "data_slice"
     DATA_SLICE_RECORD_ASSOCIATION = "data_slice_record_association"
     INFORMATION_SOURCE_STATISTICS_EXCLUSION = "information_source_statistics_exclusion"
+    COMMENT_DATA = "comment_data"
+    LABELING_ACCESS_LINK = "labeling_access_link"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs

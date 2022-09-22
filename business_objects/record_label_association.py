@@ -92,6 +92,32 @@ def get_tokens(project_id: str) -> List[Any]:
     return general.execute_all(query)
 
 
+def get_manual_tokens_by_record_id(
+    project_id: str,
+    record_id: str,
+) -> List[RecordLabelAssociationToken]:
+    return (
+        session.query(RecordLabelAssociationToken)
+        .join(
+            RecordLabelAssociation,
+            (
+                RecordLabelAssociation.id
+                == RecordLabelAssociationToken.record_label_association_id
+            )
+            & (
+                RecordLabelAssociationToken.project_id
+                == RecordLabelAssociation.project_id
+            ),
+        )
+        .filter(
+            RecordLabelAssociation.record_id == record_id,
+            RecordLabelAssociation.source_type == enums.LabelSource.MANUAL.value,
+            RecordLabelAssociation.project_id == project_id,
+        )
+        .all()
+    )
+
+
 def get_all(project_id: str) -> List[RecordLabelAssociation]:
     return (
         session.query(RecordLabelAssociation)
@@ -516,13 +542,15 @@ def delete(
     user_id: str,
     label_ids: List[str],
     as_gold_star: Optional[bool] = None,
+    source_id: str = None,
+    source_type: str = enums.LabelSource.MANUAL.value,
     with_commit: bool = False,
 ) -> None:
     delete_query = session.query(RecordLabelAssociation).filter(
         RecordLabelAssociation.project_id == project_id,
         RecordLabelAssociation.record_id == record_id,
         RecordLabelAssociation.labeling_task_label_id.in_(label_ids),
-        RecordLabelAssociation.source_type == enums.LabelSource.MANUAL.value,
+        RecordLabelAssociation.source_type == source_type,
     )
     if as_gold_star:
         delete_query = delete_query.filter(RecordLabelAssociation.is_gold_star == True)
@@ -533,6 +561,10 @@ def delete(
                 RecordLabelAssociation.is_gold_star == False,
                 RecordLabelAssociation.is_gold_star == None,
             ),
+        )
+    if source_id:
+        delete_query = delete_query.filter(
+            RecordLabelAssociation.source_id == source_id
         )
     delete_query.delete(synchronize_session="fetch")
     general.flush_or_commit(with_commit)
