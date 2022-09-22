@@ -114,62 +114,6 @@ def create(
     return comment
 
 
-# def create_for_user(
-#     target_user_id: str,
-#     creation_user_id: str,
-#     comment: str,
-#     is_markdown: Optional[bool] = None,
-#     with_commit: bool = False,
-# ) -> Comment:
-#     return create(
-#         xfkey=target_user_id,
-#         xftype=enums.CommentCategory.USER.value,
-#         comment=comment,
-#         created_by=creation_user_id,
-#         is_markdown=is_markdown,
-#         with_commit=with_commit,
-#     )
-
-
-# def create_for_org(
-#     target_org_id: str,
-#     creation_user_id: str,
-#     comment: str,
-#     is_markdown: Optional[bool] = None,
-#     with_commit: bool = False,
-# ) -> Comment:
-#     return create(
-#         xfkey=target_org_id,
-#         xftype=enums.CommentCategory.ORG.value,
-#         comment=comment,
-#         created_by=creation_user_id,
-#         project_id=None,
-#         add_key=None,
-#         is_markdown=is_markdown,
-#         created_at=None,
-#         with_commit=with_commit,
-#     )
-
-
-# def create_for_labeling_task(
-#     project_id: str,
-#     target_labeling_task_id: str,
-#     creation_user_id: str,
-#     comment: str,
-#     is_markdown: Optional[bool] = None,
-#     with_commit: bool = False,
-# ) -> Comment:
-#     return create(
-#         xfkey=target_labeling_task_id,
-#         xftype=enums.CommentCategory.LABELING_TASK.value,
-#         comment=comment,
-#         created_by=creation_user_id,
-#         project_id=project_id,
-#         is_markdown=is_markdown,
-#         with_commit=with_commit,
-#     )
-
-
 def change(
     comment: Comment,
     changes: Dict[str, Any],
