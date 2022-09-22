@@ -51,11 +51,12 @@ def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attrib
 
 
 def get_all(
-    project_id: str, state_filter: Optional[List[str]] = None
+    project_id: str,
+    state_filter: List[str] = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+    ],
 ) -> List[Attribute]:
-    if state_filter is None:
-        state_filter = [AttributeState.UPLOADED.value, AttributeState.USABLE.value]
-
     query = session.query(Attribute).filter(Attribute.project_id == project_id)
     if state_filter:
         query = query.filter(Attribute.state.in_(state_filter))
@@ -63,20 +64,23 @@ def get_all(
 
 
 def get_attribute_ids(
-    project_id: str, state_filter: Optional[List[str]] = None
+    project_id: str,
+    state_filter: List[str] = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+    ],
 ) -> Dict[str, str]:
-    if state_filter is None:
-        state_filter = [AttributeState.UPLOADED.value, AttributeState.USABLE.value]
     attributes: List[Attribute] = get_all(project_id, state_filter)
     return {attribute.name: attribute.id for attribute in attributes}
 
 
 def get_text_attributes(
-    project_id: str, state_filter: Optional[List[str]] = None
+    project_id: str,
+    state_filter: List[str] = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+    ],
 ) -> Dict[str, str]:
-    if state_filter is None:
-        state_filter = [AttributeState.UPLOADED.value, AttributeState.USABLE.value]
-
     query = session.query(Attribute).filter(
         Attribute.project_id == project_id, Attribute.data_type == "TEXT"
     )
@@ -87,11 +91,13 @@ def get_text_attributes(
 
 
 def get_all_ordered(
-    project_id: str, order_asc: bool, state_filter: Optional[List[str]] = None
+    project_id: str,
+    order_asc: bool,
+    state_filter: List[str] = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+    ],
 ) -> List[Attribute]:
-    if state_filter is None:
-        state_filter = [AttributeState.UPLOADED.value, AttributeState.USABLE.value]
-
     query = session.query(Attribute).filter(Attribute.project_id == project_id)
     if state_filter:
         query = query.filter(Attribute.state.in_(state_filter))
