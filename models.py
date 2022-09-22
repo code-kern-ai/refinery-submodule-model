@@ -82,7 +82,7 @@ class AppVersion(Base):
     last_checked = Column(DateTime)
 
 
-class Comment(Base):
+class CommentData(Base):
     __tablename__ = Tablenames.COMMENT_DATA.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(
