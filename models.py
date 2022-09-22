@@ -1,3 +1,4 @@
+from re import T
 import uuid
 
 from .enums import (
@@ -9,6 +10,7 @@ from .enums import (
     PayloadState,
     SliceTypes,
     UserRoles,
+    AttributeState,
 )
 from sqlalchemy import (
     JSON,
@@ -358,6 +360,15 @@ class Attribute(Base):
     data_type = Column(String)
     is_primary_key = Column(Boolean, default=False)
     relative_position = Column(Integer)
+    user_created = Column(Boolean, default=False)
+    source_code = Column(String)
+    state = Column(String, default=AttributeState.UPLOADED.value)
+    logs = Column(ARRAY(String))
+
+    embeddings = parent_to_child_relationship(
+        Tablenames.ATTRIBUTE,
+        Tablenames.EMBEDDING,
+    )
 
     labeling_tasks = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
@@ -633,6 +644,10 @@ class Embedding(Base):
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
+    )
+    attribute_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ATTRIBUTE.value}.id", ondelete="CASCADE"),
     )
     name = Column(String)
     custom = Column(

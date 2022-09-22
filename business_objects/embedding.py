@@ -48,6 +48,10 @@ def get_embedding_id_and_type(project_id: str, embedding_name: str) -> Any:
     )
 
 
+def get_all_embeddings() -> List[Embedding]:
+    return session.query(Embedding).all()
+
+
 def get_finished_embeddings(project_id: str) -> List[Embedding]:
     return (
         session.query(Embedding)
@@ -183,6 +187,7 @@ def get_tensor(embedding_id: str, record_id: Optional[str] = None) -> EmbeddingT
 
 def create(
     project_id: str,
+    attribute_id: str,
     name: str,
     state: str = None,
     custom: bool = None,
@@ -191,6 +196,7 @@ def create(
 ) -> Embedding:
     embedding: Embedding = Embedding(
         project_id=project_id,
+        attribute_id=attribute_id,
         name=name,
         custom=False,
         type=type,

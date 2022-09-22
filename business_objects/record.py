@@ -1,8 +1,9 @@
 from __future__ import with_statement
 from typing import List, Dict, Any, Tuple
 from sqlalchemy import cast, Text
+from sqlalchemy.orm.attributes import flag_modified
 
-from . import general
+from . import attribute, general
 from .. import models, enums
 from ..models import (
     Record,
@@ -159,6 +160,18 @@ def get_token_statistics_by_project_id(project_id: str) -> List[Any]:
             statistics.attribute_id=attribute.id
         WHERE
             attribute.project_id='{project_id}'
+        ;
+        """
+    return general.execute_all(query)
+
+
+def get_attribute_calculation_sample_records(project_id: str, n: int = 10) -> List[Any]:
+    query = f"""
+        SELECT record.id::TEXT
+        FROM record
+        WHERE record.project_id='{project_id}'
+        ORDER BY RANDOM()
+        LIMIT {n}
         ;
         """
     return general.execute_all(query)
@@ -397,6 +410,22 @@ def update_records(
     )
 
 
+def update_add_user_created_attribute(
+    project_id: str,
+    attribute_id: str,
+    calculated_attributes: Dict[str, str],
+    with_commit: bool = False,
+) -> None:
+    attribute_item = attribute.get(project_id, attribute_id)
+    for i, (record_id, attribute_value) in enumerate(calculated_attributes.items()):
+        record_item = get(project_id=project_id, record_id=record_id)
+        record_item.data[attribute_item.name] = attribute_value
+        flag_modified(record_item, "data")
+        if (i + 1) % 1000 == 0:
+            general.flush_or_commit(with_commit)
+    general.flush_or_commit(with_commit)
+
+
 def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
     session.delete(
         session.query(Record)
@@ -408,6 +437,23 @@ def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
 
 def delete_all(project_id: str, with_commit: bool = False) -> None:
     session.query(Record).filter(Record.project_id == project_id).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_user_created_attribute(
+    project_id: str, attribute_id: str, with_commit: bool = False
+) -> None:
+    attribute_item = attribute.get(project_id, attribute_id)
+
+    if not attribute_item.user_created:
+        return
+
+    record_items = get_all(project_id=project_id)
+    for i, record_item in enumerate(record_items):
+        del record_item.data[attribute_item.name]
+        flag_modified(record_item, "data")
+        if (i + 1) % 1000 == 0:
+            general.flush_or_commit(with_commit)
     general.flush_or_commit(with_commit)
 
 

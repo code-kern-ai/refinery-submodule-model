@@ -288,28 +288,6 @@ def update(
     return project
 
 
-def get_confusion_matrix(
-    project_id: str,
-    labeling_task_id: str,
-    for_classification: bool,
-    slice_id: Optional[str] = None,
-) -> List[Dict[str, Union[str, float]]]:
-    if for_classification:
-        values = general.execute_first(
-            __build_sql_confusion_matrix_classification(
-                project_id, labeling_task_id, slice_id
-            )
-        )
-    else:
-        values = general.execute_first(
-            __build_sql_confusion_matrix_extraction(
-                project_id, labeling_task_id, slice_id
-            )
-        )
-    if values:
-        return values[0]
-
-
 def __build_sql_confusion_matrix_extraction(
     project_id: str,
     labeling_task_id: str,

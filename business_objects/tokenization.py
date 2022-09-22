@@ -78,9 +78,19 @@ def get_doc_bin_progress(project_id: str) -> str:
     return ""
 
 
-def get_doc_bin_table_to_json(project_id: str, missing_columns: str) -> Any:
+def get_doc_bin_table_to_json(
+    project_id: str, missing_columns: str, record_ids: List[str] = None
+) -> Any:
     if missing_columns != "":
         missing_columns += ","
+    if record_ids:
+        record_ids = (
+            "AND rt.record_id IN ("
+            + ",".join([f"'{record_id}'" for record_id in record_ids])
+            + ")"
+        )
+    else:
+        record_ids = ""
     query = f"""
         SELECT      
             json_agg(
@@ -95,6 +105,7 @@ def get_doc_bin_table_to_json(project_id: str, missing_columns: str) -> Any:
             ON rt.record_id = r.id AND rt.project_id = rt.project_id
         WHERE rt.project_id = '{project_id}'
             AND r.project_id = '{project_id}'
+            {record_ids}
     """
     return general.execute_first(query).data
 
@@ -116,6 +127,13 @@ def create_tokenization_task(
     return tbl_entry
 
 
+def delete_docbins(project_id: str, with_commit: bool = False) -> None:
+    session.query(RecordTokenized).filter(
+        RecordTokenized.project_id == project_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+
 def delete_record_docbins(
     project_id: str, records: List[Record], with_commit: bool = False
 ) -> None:
@@ -133,6 +151,15 @@ def delete_token_statistics(records: List[Record], with_commit: bool = False) ->
     general.flush_or_commit(with_commit)
 
 
+def delete_token_statistics_for_project(
+    project_id: str, with_commit: bool = False
+) -> None:
+    session.query(RecordAttributeTokenStatistics).filter(
+        RecordAttributeTokenStatistics.project_id == project_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+
 def delete_dublicated_tokenization(project_id: str, with_commit: bool = False) -> None:
     query = f"""    
     DELETE FROM record_tokenized rt
@@ -145,6 +172,13 @@ def delete_dublicated_tokenization(project_id: str, with_commit: bool = False) -
     WHERE rt.id = del_helper.id_to_del       
     """
     general.execute(query)
+    general.flush_or_commit(with_commit)
+
+
+def delete_tokenization_tasks(project_id: str, with_commit: bool = False) -> None:
+    session.query(RecordTokenizationTask).filter(
+        RecordTokenizationTask.project_id == project_id,
+    ).delete()
     general.flush_or_commit(with_commit)
 
 

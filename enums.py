@@ -302,3 +302,11 @@ class EmbeddingState(Enum):
     ENCODING = "ENCODING"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+
+
+class AttributeState(Enum):
+    UPLOADED = "UPLOADED"
+    INITIAL = "INITIAL"
+    RUNNING = "RUNNING"
+    USABLE = "USABLE"
+    FAILED = "FAILED"
