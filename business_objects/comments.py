@@ -1,17 +1,17 @@
 from datetime import datetime
-from submodules.model.models import Comment
+from submodules.model.models import CommentData
 from . import general, organization
 from .. import User, enums
 from ..session import session
 from typing import Dict, List, Any, Optional, Union
 
 
-def get(comment_id: str) -> Comment:
-    return session.query(Comment).get(comment_id)
+def get(comment_id: str) -> CommentData:
+    return session.query(CommentData).get(comment_id)
 
 
-def get_by_all_by_project_id(project_id: str) -> List[Comment]:
-    return session.query(Comment).filter(Comment.project_id == project_id).all()
+def get_by_all_by_project_id(project_id: str) -> List[CommentData]:
+    return session.query(CommentData).filter(CommentData.project_id == project_id).all()
 
 
 def get_by_all_by_category(
@@ -20,7 +20,7 @@ def get_by_all_by_category(
     xfkey: Optional[str] = None,
     project_id: Optional[str] = None,
     as_json: bool = False,
-) -> Union[List[Comment], str]:
+) -> Union[List[CommentData], str]:
 
     query = f"""
 SELECT *
@@ -47,12 +47,12 @@ FROM (
 
 def get_by_all_by_xfkey(
     xfkey: str, category: enums.CommentCategory, project_id: Optional[str] = None
-) -> List[Comment]:
-    query = session.query(Comment).filter(
-        Comment.xfkey == xfkey, Comment.xftype == category.value
+) -> List[CommentData]:
+    query = session.query(CommentData).filter(
+        CommentData.xfkey == xfkey, CommentData.xftype == category.value
     )
     if project_id:
-        query = query.filter(Comment.project_id == project_id)
+        query = query.filter(CommentData.project_id == project_id)
     return query.all()
 
 
@@ -95,8 +95,8 @@ def create(
     is_private: Optional[bool] = None,
     created_at: Optional[datetime] = None,
     with_commit: bool = False,
-) -> Comment:
-    comment = Comment(
+) -> CommentData:
+    comment = CommentData(
         xfkey=xfkey, xftype=xftype, comment=comment, created_by=created_by
     )
     if project_id:
@@ -115,10 +115,10 @@ def create(
 
 
 def change(
-    comment: Comment,
+    comment: CommentData,
     changes: Dict[str, Any],
     with_commit: bool = False,
-) -> Comment:
+) -> CommentData:
     for k in changes:
         if hasattr(comment, k):
             setattr(comment, k, changes[k])
@@ -130,7 +130,7 @@ def change(
 
 def change_by_id(
     comment_id: str, changes: Dict[str, Any], with_commit: bool = False
-) -> Comment:
+) -> CommentData:
     comment = get(comment_id)
     if not comment:
         raise ValueError("comment does not exist")
@@ -139,5 +139,5 @@ def change_by_id(
 
 
 def remove(comment_id: str, with_commit: bool = False) -> None:
-    session.delete(session.query(Comment).get(comment_id))
+    session.delete(session.query(CommentData).get(comment_id))
     general.flush_or_commit(with_commit)
