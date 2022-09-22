@@ -109,7 +109,7 @@ class Tablenames(Enum):
     DATA_SLICE = "data_slice"
     DATA_SLICE_RECORD_ASSOCIATION = "data_slice_record_association"
     INFORMATION_SOURCE_STATISTICS_EXCLUSION = "information_source_statistics_exclusion"
-    COMMENT = "comment"
+    COMMENT_DATA = "comment_data"
     LABELING_ACCESS_LINK = "labeling_access_link"
 
     def snake_case_to_pascal_case(self):

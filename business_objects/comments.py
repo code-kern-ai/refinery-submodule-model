@@ -24,7 +24,7 @@ def get_by_all_by_category(
 
     query = f"""
 SELECT *
-FROM public.comment
+FROM public.comment_data
 WHERE xftype = '{category.value}' """
 
     if xfkey:
@@ -68,7 +68,7 @@ def has_comments(
         select = "COUNT(*)"
     query = f"""
 SELECT {select}
-FROM public.comment
+FROM public.comment_data
 WHERE xftype = '{xftype.value}' """
     if xfkey:
         query += f"\n   AND xfkey = '{xfkey}'"

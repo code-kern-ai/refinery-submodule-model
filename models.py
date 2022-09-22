@@ -83,7 +83,7 @@ class AppVersion(Base):
 
 
 class Comment(Base):
-    __tablename__ = Tablenames.COMMENT.value
+    __tablename__ = Tablenames.COMMENT_DATA.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(
         UUID(as_uuid=True),
@@ -169,7 +169,7 @@ class User(Base):
     )
     comments = parent_to_child_relationship(
         Tablenames.USER,
-        Tablenames.COMMENT,
+        Tablenames.COMMENT_DATA,
         order_by="created_at.desc()",
     )
 
@@ -204,7 +204,7 @@ class LabelingAccessLink(Base):
         index=True,
     )
     is_locked = Column(Boolean, default=False)
-    #corresponding data last changed at (e.g. if a data slice was updated or the heuristic was updated)
+    # corresponding data last changed at (e.g. if a data slice was updated or the heuristic was updated)
     changed_at = Column(DateTime, default=sql.func.now())
 
 
