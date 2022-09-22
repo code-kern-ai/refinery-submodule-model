@@ -1,4 +1,5 @@
-from typing import List, Dict, Union
+from datetime import datetime
+from typing import List, Dict, Optional, Union
 
 from submodules.model import enums
 
@@ -6,6 +7,10 @@ from submodules.model import enums
 from ..session import session
 from ..models import Organization, Project
 from ..business_objects import project, user, general
+
+
+def get(id: str) -> Organization:
+    return session.query(Organization).get(id)
 
 
 def get_by_name(name: str) -> Organization:
@@ -84,8 +89,17 @@ def __get_organization_overview_stats_query(organization_id: str):
     """
 
 
-def create(name: str, with_commit: bool = False) -> Organization:
+def create(
+    name: str,
+    started_at: Optional[datetime] = None,
+    is_paying: Optional[bool] = None,
+    with_commit: bool = False,
+) -> Organization:
     organization = Organization(name=name)
+    if started_at:
+        organization.started_at = started_at
+    if is_paying:
+        organization.is_paying = is_paying
     general.add(organization, with_commit)
     return organization
 

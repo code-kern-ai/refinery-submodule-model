@@ -1,10 +1,12 @@
 from datetime import datetime
-from typing import Any, List, Dict, Optional
+import json
+from typing import Any, List, Dict, Optional, Tuple
 
 from ..business_objects import general
 from ..models import DataSlice, DataSliceRecordAssociation
 from ..session import session
 from .. import enums
+from ..business_objects import information_source
 
 
 def get(
@@ -15,19 +17,20 @@ def get(
         DataSlice.id == data_slice_id,
     )
     if only_static:
-        query.filter(DataSlice.static == True)
+        query = query.filter(DataSlice.static == True)
     return query.first()
 
 
-def get_all(project_id: str) -> List[DataSlice]:
-    return (
-        session.query(DataSlice)
-        .filter(
-            DataSlice.project_id == project_id,
-        )
-        .order_by(DataSlice.name)
-        .all()
+def get_all(
+    project_id: str, slice_type: Optional[enums.SliceTypes] = None
+) -> List[DataSlice]:
+    query = session.query(DataSlice).filter(
+        DataSlice.project_id == project_id,
     )
+    if slice_type:
+        query = query.filter(DataSlice.slice_type == slice_type.value)
+    query = query.order_by(DataSlice.name)
+    return query.all()
 
 
 def get_all_associations(project_id: str) -> List[DataSliceRecordAssociation]:
@@ -208,3 +211,73 @@ def __get_updata_slice_type_manual_query() -> None:
         )
         WHERE slice_type IS NULL
         """
+
+
+def get_record_ids_and_first_unlabeled_pos(
+    project_id: str,
+    user_id: str,
+    data_slice_id: str,
+    source_type: enums.LabelSource = enums.LabelSource.MANUAL,
+    source_id: Optional[str] = None,
+) -> Tuple[List[str], int]:
+    query = __get_record_ids_and_first_unlabeled_pos_query(
+        project_id, user_id, data_slice_id, source_type, source_id
+    )
+    values = general.execute_first(query)
+    if not values:
+        return [], 0
+    return values[0], values[1]
+
+
+def __get_record_ids_and_first_unlabeled_pos_query(
+    project_id: str,
+    user_id: str,
+    data_slice_id: str,
+    source_type: enums.LabelSource,
+    source_id: str,
+):
+    source_id_add = ""
+    if source_id:
+        source_id_add = f"AND rla.source_id = '{source_id}'"
+    return f"""
+    WITH record_select AS (
+    SELECT r.id::TEXT record_id, label_check.has_labels,ROW_NUMBER () OVER(ORDER BY has_labels desc,r.id)-1 rn
+    FROM record r
+    INNER JOIN data_slice_record_association dsra
+        ON r.id = dsra.record_id AND r.project_id = dsra.project_id AND dsra.data_slice_id = '{data_slice_id}'
+    INNER JOIN ( 
+        SELECT r.id record_id, CASE WHEN x.id IS NULL THEN 0 ELSE 1 END has_labels
+        FROM record r
+        LEFT JOIN LATERAL(
+            SELECT id 
+            FROM record_label_association rla
+            WHERE r.id = rla.record_id
+            AND r.project_id = rla.project_id
+            AND rla.source_type = '{source_type.value}'
+            {source_id_add}
+            AND rla.created_by = '{user_id}' 
+            LIMIT 1
+        )x ON TRUE
+        WHERE r.project_id = '{project_id}'
+    ) label_check
+        ON r.id = label_check.record_id
+    WHERE r.project_id = '{project_id}')
+
+    SELECT record_ids, rn first_post
+    FROM (
+        SELECT array_agg(record_id) record_ids
+        FROM record_select
+    ) x,
+    (
+        SELECT rn
+        FROM (
+            SELECT rn
+            FROM record_select
+            WHERE has_labels =0
+            ORDER BY rn
+            LIMIT 1) x
+        UNION ALL
+        SELECT 0 --fallback value if all are labeled
+        LIMIT 1
+    )y    
+    """

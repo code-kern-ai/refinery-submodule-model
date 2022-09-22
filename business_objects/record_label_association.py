@@ -542,13 +542,15 @@ def delete(
     user_id: str,
     label_ids: List[str],
     as_gold_star: Optional[bool] = None,
+    source_id: str = None,
+    source_type: str = enums.LabelSource.MANUAL.value,
     with_commit: bool = False,
 ) -> None:
     delete_query = session.query(RecordLabelAssociation).filter(
         RecordLabelAssociation.project_id == project_id,
         RecordLabelAssociation.record_id == record_id,
         RecordLabelAssociation.labeling_task_label_id.in_(label_ids),
-        RecordLabelAssociation.source_type == enums.LabelSource.MANUAL.value,
+        RecordLabelAssociation.source_type == source_type,
     )
     if as_gold_star:
         delete_query = delete_query.filter(RecordLabelAssociation.is_gold_star == True)
@@ -559,6 +561,10 @@ def delete(
                 RecordLabelAssociation.is_gold_star == False,
                 RecordLabelAssociation.is_gold_star == None,
             ),
+        )
+    if source_id:
+        delete_query = delete_query.filter(
+            RecordLabelAssociation.source_id == source_id
         )
     delete_query.delete(synchronize_session="fetch")
     general.flush_or_commit(with_commit)
