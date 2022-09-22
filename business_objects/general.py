@@ -69,6 +69,10 @@ def execute_distinct_count(count_sql: str) -> int:
     return session.execute(count_sql).first().distinct_count
 
 
+def set_seed(seed: float = 0) -> None:
+    execute(f"SELECT setseed({seed});")
+
+
 def get_bind() -> Any:
     return session.get_bind()
 
