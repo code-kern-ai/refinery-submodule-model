@@ -294,6 +294,16 @@ def count_missing_tokenized_records(project_id: str) -> int:
     return result.c
 
 
+def count_tokenized_records(project_id: str) -> int:
+    query = f"""
+    SELECT COUNT(*) c
+    FROM record_tokenized rt
+    WHERE rt.project_id = '{project_id}'
+    """
+    result = general.execute_first(query)
+    return result.c
+
+
 def create_or_update_token_statistic(
     project_id: str,
     record_id: str,
