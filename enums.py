@@ -306,6 +306,7 @@ class EmbeddingState(Enum):
 
 class AttributeState(Enum):
     UPLOADED = "UPLOADED"
+    AUTOMATICALLY_CREATED = "AUTOMATICALLY_CREATED"
     INITIAL = "INITIAL"
     RUNNING = "RUNNING"
     USABLE = "USABLE"
