@@ -7,13 +7,11 @@ from ..models import InformationSource, InformationSourcePayload
 from ..session import session
 
 
-# TODO: unnessecary Information source join since project_id is now part of payload (also filter is not the "good" way to join)
 def get(project_id: str, payload_id: str) -> InformationSourcePayload:
     return (
         session.query(InformationSourcePayload)
         .filter(
-            InformationSource.project_id == project_id,
-            InformationSource.id == InformationSourcePayload.source_id,
+            InformationSourcePayload.project_id == project_id,
             InformationSourcePayload.id == payload_id,
         )
         .first()
@@ -266,3 +264,16 @@ def create_empty_crowd_payload(
         source_id=information_source_id,
         created_by=user_id,
     )
+
+
+def remove(
+    project_id: str, source_id: str, payload_id: str, with_commit: bool = False
+) -> None:
+    item = get(project_id, payload_id)
+    if not item:
+        raise ValueError(f"Payload {payload_id} not found")
+    if str(item.source_id) == source_id:
+        session.delete(item)
+        general.flush_or_commit(with_commit)
+    else:
+        raise ValueError("Payload does not belong to source")

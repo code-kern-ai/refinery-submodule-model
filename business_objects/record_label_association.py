@@ -41,6 +41,23 @@ def get_all_with_filter(
     )
 
 
+def check_any_id_is_source_related(
+    project_id: str, record_id: str, association_ids: List[str]
+) -> List[str]:
+    query = f"""
+    SELECT array_agg(source_id::TEXT)
+    FROM record_label_association
+    WHERE project_id = '{project_id}'
+    AND record_id = '{record_id}'
+    AND id IN ({", ".join(association_ids)})
+    AND source_type = '{enums.LabelSource.INFORMATION_SOURCE.value}'
+    """
+    values = general.execute_first(query)
+    if values:
+        return values[0]
+    return []
+
+
 def get_project_ids_with_rlas() -> List[Any]:
     query = f"""
     SELECT project_id::TEXT
@@ -898,3 +915,62 @@ def update_user_id_for_sample_project(
     """
     general.execute(query)
     general.flush_or_commit(with_commit)
+
+
+def get_percentage_of_labeled_records_for_slice(
+    project_id: str, annotator_id: str, slice_id: str
+) -> float:
+    query = get_percentage_of_labeled_records_for_slice_query(
+        project_id, annotator_id, slice_id
+    )
+    value = general.execute_first(query)
+    if not value:
+        return -1
+    return value[0]
+
+
+def get_percentage_of_labeled_records_for_slice_query(
+    project_id: str, annotator_id: str, slice_id: str
+) -> str:
+    return f"""
+    WITH label_data AS (
+        SELECT label_check.has_labels,COUNT(*) c
+        FROM record r
+        INNER JOIN data_slice_record_association dsra
+            ON r.id = dsra.record_id AND r.project_id = dsra.project_id AND dsra.data_slice_id = '{slice_id}'
+        INNER JOIN ( 
+            SELECT r.id record_id, CASE WHEN x.id IS NULL THEN 0 ELSE 1 END has_labels
+            FROM record r
+            LEFT JOIN LATERAL(
+                SELECT id 
+                FROM record_label_association rla
+                WHERE r.id = rla.record_id
+                AND r.project_id = rla.project_id
+                AND rla.source_type = 'INFORMATION_SOURCE'
+                AND rla.created_by = '{annotator_id}' 
+                LIMIT 1
+            )x ON TRUE
+            WHERE r.project_id = '{project_id}'
+        ) label_check
+            ON r.id = label_check.record_id
+        WHERE r.project_id = '{project_id}'
+        GROUP BY label_check.has_labels )
+
+    SELECT has_labels.c / (has_labels.c + has_no_labels.c) percentage
+    FROM (
+        SELECT C::FLOAT
+        FROM label_data
+        WHERE has_labels = 1
+        UNION ALL
+        SELECT 0
+        LIMIT 1
+    ) has_labels,
+    (   SELECT c::FLOAT
+        FROM label_data
+        WHERE has_labels = 0			
+        UNION ALL
+        SELECT 0
+        LIMIT 1
+    )has_no_labels
+   
+    """
