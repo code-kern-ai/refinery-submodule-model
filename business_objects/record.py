@@ -88,6 +88,7 @@ def get_missing_rats_records(
     project_id: str, limit: int, attribute_id: str
 ) -> List[Any]:
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
+    attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
     if attribute_id:
         attribute_add += f" AND att.id = '{attribute_id}'"
     query = f"""
@@ -259,6 +260,7 @@ def count_by_project_and_source(
 # rats = record_attribute_token_statistics
 def count_missing_rats_records(project_id: str, attribute_id: str) -> int:
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
+    attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
     if attribute_id:
         attribute_add += f" AND att.id = '{attribute_id}'"
     query = f"""
@@ -289,6 +291,16 @@ def count_missing_tokenized_records(project_id: str) -> int:
         AND rt.project_id = '{project_id}'
     WHERE r.project_id = '{project_id}' 
     AND rt.id IS NULL    
+    """
+    result = general.execute_first(query)
+    return result.c
+
+
+def count_tokenized_records(project_id: str) -> int:
+    query = f"""
+    SELECT COUNT(*) c
+    FROM record_tokenized rt
+    WHERE rt.project_id = '{project_id}'
     """
     result = general.execute_first(query)
     return result.c

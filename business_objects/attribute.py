@@ -51,13 +51,16 @@ def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attrib
 
 
 def get_all(
-    project_id: str,
+    project_id: Optional[str] = None,
     state_filter: List[str] = [
         AttributeState.UPLOADED.value,
         AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
     ],
 ) -> List[Attribute]:
-    query = session.query(Attribute).filter(Attribute.project_id == project_id)
+    query = session.query(Attribute)
+    if project_id:
+        query = query.filter(Attribute.project_id == project_id)
     if state_filter:
         query = query.filter(Attribute.state.in_(state_filter))
     return query.all()
@@ -68,6 +71,7 @@ def get_attribute_ids(
     state_filter: List[str] = [
         AttributeState.UPLOADED.value,
         AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
     ],
 ) -> Dict[str, str]:
     attributes: List[Attribute] = get_all(project_id, state_filter)
@@ -79,6 +83,7 @@ def get_text_attributes(
     state_filter: List[str] = [
         AttributeState.UPLOADED.value,
         AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
     ],
 ) -> Dict[str, str]:
     query = session.query(Attribute).filter(
@@ -96,6 +101,7 @@ def get_all_ordered(
     state_filter: List[str] = [
         AttributeState.UPLOADED.value,
         AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
     ],
 ) -> List[Attribute]:
     query = session.query(Attribute).filter(Attribute.project_id == project_id)
@@ -289,7 +295,7 @@ def __build_add_query(
     WHERE record.project_id = '{project_id}' AND record.id = helper.id;
 
     INSERT INTO attribute
-    VALUES (uuid_in(md5(random()::TEXT || clock_timestamp()::TEXT)::CSTRING),'{project_id}','{attribute_name}','INTEGER',TRUE,0);
+    VALUES (uuid_in(md5(random()::TEXT || clock_timestamp()::TEXT)::CSTRING),'{project_id}','{attribute_name}','INTEGER',TRUE,0,FALSE,NULL,'{AttributeState.AUTOMATICALLY_CREATED.value}',NULL);
 
     UPDATE attribute
     SET relative_position = rPos

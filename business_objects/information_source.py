@@ -374,7 +374,7 @@ def update(
     created_at: Optional[datetime] = None,
     created_by: Optional[str] = None,
     with_commit: bool = False,
-) -> None:
+) -> InformationSource:
     information_source = get(project_id, source_id)
 
     if labeling_task_id is not None:
@@ -398,6 +398,7 @@ def update(
     if created_by is not None:
         information_source.created_at = created_by
     general.flush_or_commit(with_commit)
+    return information_source
 
 
 def update_payload(

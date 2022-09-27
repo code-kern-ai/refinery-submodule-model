@@ -219,9 +219,10 @@ def get_record_ids_and_first_unlabeled_pos(
     data_slice_id: str,
     source_type: enums.LabelSource = enums.LabelSource.MANUAL,
     source_id: Optional[str] = None,
+    labeling_task_id: Optional[str] = None,
 ) -> Tuple[List[str], int]:
     query = __get_record_ids_and_first_unlabeled_pos_query(
-        project_id, user_id, data_slice_id, source_type, source_id
+        project_id, user_id, data_slice_id, source_type, source_id, labeling_task_id
     )
     values = general.execute_first(query)
     if not values:
@@ -235,10 +236,15 @@ def __get_record_ids_and_first_unlabeled_pos_query(
     data_slice_id: str,
     source_type: enums.LabelSource,
     source_id: str,
+    labeling_task_id: str,
 ):
     source_id_add = ""
     if source_id:
         source_id_add = f"AND rla.source_id = '{source_id}'"
+    labeling_task_id_add = ""
+    if labeling_task_id:
+        labeling_task_id_add = f"""INNER JOIN labeling_task_label ltl
+            	ON rla.project_id = ltl.project_id AND rla.labeling_task_label_id = ltl.id AND ltl.labeling_task_id = '{labeling_task_id}'"""
     return f"""
     WITH record_select AS (
     SELECT r.id::TEXT record_id, label_check.has_labels,ROW_NUMBER () OVER(ORDER BY has_labels desc,r.id)-1 rn
@@ -249,8 +255,9 @@ def __get_record_ids_and_first_unlabeled_pos_query(
         SELECT r.id record_id, CASE WHEN x.id IS NULL THEN 0 ELSE 1 END has_labels
         FROM record r
         LEFT JOIN LATERAL(
-            SELECT id 
+            SELECT rla.id 
             FROM record_label_association rla
+            {labeling_task_id_add}
             WHERE r.id = rla.record_id
             AND r.project_id = rla.project_id
             AND rla.source_type = '{source_type.value}'
