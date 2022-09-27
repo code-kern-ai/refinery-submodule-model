@@ -918,10 +918,10 @@ def update_user_id_for_sample_project(
 
 
 def get_percentage_of_labeled_records_for_slice(
-    project_id: str, annotator_id: str, slice_id: str
+    project_id: str, annotator_id: str, slice_id: str, labeling_task_id: str
 ) -> float:
     query = get_percentage_of_labeled_records_for_slice_query(
-        project_id, annotator_id, slice_id
+        project_id, annotator_id, slice_id, labeling_task_id
     )
     value = general.execute_first(query)
     if not value:
@@ -930,7 +930,7 @@ def get_percentage_of_labeled_records_for_slice(
 
 
 def get_percentage_of_labeled_records_for_slice_query(
-    project_id: str, annotator_id: str, slice_id: str
+    project_id: str, annotator_id: str, slice_id: str, labeling_task_id: str
 ) -> str:
     return f"""
     WITH label_data AS (
@@ -942,8 +942,10 @@ def get_percentage_of_labeled_records_for_slice_query(
             SELECT r.id record_id, CASE WHEN x.id IS NULL THEN 0 ELSE 1 END has_labels
             FROM record r
             LEFT JOIN LATERAL(
-                SELECT id 
+                SELECT rla.id 
                 FROM record_label_association rla
+                INNER JOIN labeling_task_label ltl
+            	    ON rla.project_id = ltl.project_id AND rla.labeling_task_label_id = ltl.id AND ltl.labeling_task_id = '{labeling_task_id}'
                 WHERE r.id = rla.record_id
                 AND r.project_id = rla.project_id
                 AND rla.source_type = 'INFORMATION_SOURCE'
