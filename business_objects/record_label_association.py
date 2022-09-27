@@ -49,7 +49,7 @@ def check_any_id_is_source_related(
     FROM record_label_association
     WHERE project_id = '{project_id}'
     AND record_id = '{record_id}'
-    AND id IN ({", ".join(association_ids)})
+    AND id IN ('{"', '".join(association_ids)}')
     AND source_type = '{enums.LabelSource.INFORMATION_SOURCE.value}'
     """
     values = general.execute_first(query)
