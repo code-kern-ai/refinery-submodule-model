@@ -45,6 +45,37 @@ FROM (
     return general.execute_all(query)
 
 
+def get_add_info_category(
+    category: enums.CommentCategory,
+    project_id: Optional[str] = None,
+) -> List[Dict[str, str]]:
+    table_name = category.get_table_name()
+    name_col = category.get_name_col()
+    if name_col:
+        name_col = f", {name_col} AS name"
+    if category == enums.CommentCategory.USER:
+        table_name = "public.user"
+    limit_add = ""
+    if category == enums.CommentCategory.RECORD:
+        limit_add = "LIMIT 1"
+    where_add = ""
+    if project_id:
+        if category == enums.CommentCategory.USER:
+            org_id = organization.get_id_by_project_id(project_id)
+            where_add = f"WHERE organization_id = '{org_id}'"
+        else:
+            where_add = f"WHERE project_id = '{project_id}'"
+
+    query = f"""
+    SELECT row_to_json(x)
+    FROM (
+        SELECT id::TEXT{name_col}
+        FROM {table_name}
+        {where_add}
+        {limit_add} )x """
+    return [r[0] for r in general.execute_all(query)]
+
+
 def get_by_all_by_xfkey(
     xfkey: str, category: enums.CommentCategory, project_id: Optional[str] = None
 ) -> List[CommentData]:
@@ -103,6 +134,8 @@ def create(
         comment.project_id = project_id
     if order_key:
         comment.order_key = order_key
+    else:
+        comment.order_key = next_order_key(xfkey, xftype, project_id)
     if is_markdown:
         comment.is_markdown = is_markdown
     if is_private:
@@ -112,6 +145,25 @@ def create(
 
     general.add(comment, with_commit)
     return comment
+
+
+def next_order_key(
+    xfkey: str,
+    xftype: str,
+    project_id: Optional[str] = None,
+) -> int:
+    project_add = ""
+    if project_id:
+        project_add = f"AND project_id = '{project_id}'"
+
+    query = f"""
+    SELECT COALESCE(MAX(order_key),0)
+    FROM comment_data
+    WHERE xfkey = '{xfkey}'
+    AND xftype = '{xftype}'
+    {project_add} """
+
+    return general.execute_first(query)[0] + 1
 
 
 def change(
