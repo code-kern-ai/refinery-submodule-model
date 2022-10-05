@@ -126,15 +126,26 @@ class CommentCategory(Enum):
     ORGANIZATION = "ORGANIZATION"
     ATTRIBUTE = "ATTRIBUTE"
     USER = "USER"
+    EMBEDDING = "EMBEDDING"
+    HEURISTIC = "HEURISTIC"
+    DATA_SLICE = "DATA_SLICE"
+    KNOWLEDGE_BASE = "KNOWLEDGE_BASE"
+    LABEL = "LABEL"
 
     def get_name_col(self):
-        if self in [CommentCategory.USER, CommentCategory.RECORD]:
+        if self == CommentCategory.USER:
             return ""
+        if self == CommentCategory.RECORD:
+            return "'current'"
         return "name"
 
     def get_table_name(self):
         if self == CommentCategory.USER:
             return "public.user"
+        if self == CommentCategory.HEURISTIC:
+            return "information_source"
+        if self == CommentCategory.LABEL:
+            return "labeling_task_label"
         return self.value.lower()
 
 

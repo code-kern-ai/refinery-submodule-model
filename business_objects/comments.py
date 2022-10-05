@@ -10,6 +10,19 @@ def get(comment_id: str) -> CommentData:
     return session.query(CommentData).get(comment_id)
 
 
+def get_as_json(comment_id: str, user_id: str) -> CommentData:
+    query = f"""
+    SELECT array_agg(row_to_json(x))
+    FROM (
+        SELECT *
+        FROM public.comment_data
+        WHERE id = '{comment_id}'
+        AND (is_private = false OR created_by = '{user_id}')
+    ) x 
+    """
+    return general.execute_first(query)[0]
+
+
 def get_by_all_by_project_id(project_id: str) -> List[CommentData]:
     return session.query(CommentData).filter(CommentData.project_id == project_id).all()
 
@@ -48,32 +61,67 @@ FROM (
 def get_add_info_category(
     category: enums.CommentCategory,
     project_id: Optional[str] = None,
+    xfkey: Optional[str] = None,
 ) -> List[Dict[str, str]]:
-    table_name = category.get_table_name()
-    name_col = category.get_name_col()
-    if name_col:
-        name_col = f", {name_col} AS name"
-    if category == enums.CommentCategory.USER:
-        table_name = "public.user"
-    limit_add = ""
-    if category == enums.CommentCategory.RECORD:
-        limit_add = "LIMIT 1"
-    where_add = ""
+    if category == enums.CommentCategory.LABEL:
+        where_add = __build_add_info_where(category, project_id, xfkey, "t")
+        query = f"""
+        SELECT row_to_json(x)
+        FROM (
+            SELECT t.id,lt.name || ': ' || t.name AS name
+            FROM labeling_task_label t
+            INNER JOIN labeling_task lt
+                ON t.project_id = lt.project_id AND t.labeling_task_id = lt.id
+            {where_add}
+            ORDER BY lt.id, t.name )x        
+        """
+    else:
+        table_name = category.get_table_name()
+        name_col = category.get_name_col()
+        if name_col:
+            name_col = f", {name_col} AS name"
+        if category == enums.CommentCategory.USER:
+            table_name = "public.user"
+        limit_add = ""
+        if category == enums.CommentCategory.RECORD:
+            limit_add = "LIMIT 1"
+        where_add = __build_add_info_where(category, project_id, xfkey)
+
+        query = f"""
+        SELECT row_to_json(x)
+        FROM (
+            SELECT id::TEXT{name_col}
+            FROM {table_name}
+            {where_add}
+            {limit_add} )x """
+    return [r[0] for r in general.execute_all(query)]
+
+
+def __build_add_info_where(
+    category: enums.CommentCategory,
+    project_id: Optional[str] = None,
+    xfkey: Optional[str] = None,
+    table_indicator: Optional[str] = None,
+) -> str:
+    where = ""
+    if not table_indicator:
+        table_indicator = ""
+    elif table_indicator[-1] != ".":
+        table_indicator += "."
+
     if project_id:
         if category == enums.CommentCategory.USER:
             org_id = organization.get_id_by_project_id(project_id)
-            where_add = f"WHERE organization_id = '{org_id}'"
+            where = f"WHERE {table_indicator}organization_id = '{org_id}'"
         else:
-            where_add = f"WHERE project_id = '{project_id}'"
-
-    query = f"""
-    SELECT row_to_json(x)
-    FROM (
-        SELECT id::TEXT{name_col}
-        FROM {table_name}
-        {where_add}
-        {limit_add} )x """
-    return [r[0] for r in general.execute_all(query)]
+            where = f"WHERE {table_indicator}project_id = '{project_id}'"
+    if xfkey:
+        if not where:
+            where += "WHERE "
+        else:
+            where += " AND "
+        where += f"{table_indicator}id = '{xfkey}'"
+    return where
 
 
 def get_by_all_by_xfkey(
