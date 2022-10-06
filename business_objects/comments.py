@@ -53,7 +53,10 @@ SELECT array_agg(row_to_json(x))
 FROM (
     {query}
 ) x """
-        return general.execute_first(query)[0]
+        values = general.execute_first(query)[0]
+        if not values:
+            return []
+        return values
 
     return general.execute_all(query)
 
