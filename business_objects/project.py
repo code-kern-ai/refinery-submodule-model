@@ -638,6 +638,10 @@ def __get_project_size_sql(project_id: str) -> str:
                 LEFT JOIN record_label_association_token rlat
                     ON rla.id = rlat.record_label_association_id AND rla.project_id = rlat.project_id
                 WHERE rla.project_id = '{project_id}'
+                UNION ALL
+                SELECT 10 order_, 'comment data' table_, NULL description, sum(pg_column_size(cd.*)) prj_size_bytes
+                FROM comment_data cd
+                WHERE cd.project_id = '{project_id}'
             )i
         ) x
         ORDER BY order_
