@@ -59,14 +59,6 @@ class PayloadState(Enum):
     STARTED = "STARTED"
 
 
-class CommentCategory(Enum):
-    ORG = "ORG"
-    USER = "USER"
-    LABELING_TASK = "LABELING_TASK"
-    RECORD = "RECORD"
-    ATTRIBUTE = "ATTRIBUTE"
-
-
 class UserRoles(Enum):
     ENGINEER = "ENGINEER"
     EXPERT = "EXPERT"
@@ -125,6 +117,36 @@ class Tablenames(Enum):
                 for idx, word in enumerate(self.value.split("_"))
             ]
         )
+
+
+class CommentCategory(Enum):
+    UNKNOWN = "unknown"
+    LABELING_TASK = "LABELING_TASK"
+    RECORD = "RECORD"
+    ORGANIZATION = "ORGANIZATION"
+    ATTRIBUTE = "ATTRIBUTE"
+    USER = "USER"
+    EMBEDDING = "EMBEDDING"
+    HEURISTIC = "HEURISTIC"
+    DATA_SLICE = "DATA_SLICE"
+    KNOWLEDGE_BASE = "KNOWLEDGE_BASE"
+    LABEL = "LABEL"
+
+    def get_name_col(self):
+        if self == CommentCategory.USER:
+            return ""
+        if self == CommentCategory.RECORD:
+            return "'current'"
+        return "name"
+
+    def get_table_name(self):
+        if self == CommentCategory.USER:
+            return "public.user"
+        if self == CommentCategory.HEURISTIC:
+            return "information_source"
+        if self == CommentCategory.LABEL:
+            return "labeling_task_label"
+        return self.value.lower()
 
 
 class CascadeBehaviour(Enum):
