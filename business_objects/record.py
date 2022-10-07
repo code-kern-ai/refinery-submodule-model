@@ -168,9 +168,9 @@ def get_token_statistics_by_project_id(project_id: str) -> List[Any]:
 
 def get_attribute_calculation_sample_records(project_id: str, n: int = 10) -> List[Any]:
     query = f"""
-        SELECT record.id::TEXT
+        SELECT record.id::TEXT, record."data"
         FROM record
-        WHERE record.project_id='{project_id}'
+        WHERE record.project_id='{project_id}' AND record.category = '{enums.RecordCategory.SCALE.value}'
         ORDER BY RANDOM()
         LIMIT {n}
         ;
