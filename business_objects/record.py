@@ -173,9 +173,33 @@ def get_attribute_calculation_sample_records(project_id: str, n: int = 10) -> Li
         WHERE record.project_id='{project_id}' AND record.category = '{enums.RecordCategory.SCALE.value}'
         ORDER BY RANDOM()
         LIMIT {n}
-        ;
         """
     return general.execute_all(query)
+
+
+def get_missing_columns_str(project_id: str) -> str:
+    query = f"""
+    SELECT att.name
+    FROM attribute att
+    LEFT JOIN (
+        SELECT unnest(columns) col, project_id
+        FROM (
+            SELECT columns, project_id
+            FROM record_tokenized rt
+            WHERE rt.project_id = '{project_id}'
+            LIMIT 1 
+        ) i
+    ) x
+        ON att.project_id = x.project_id	AND att.name = x.col
+    WHERE att.project_id = '{project_id}' AND x.project_id IS NULL
+    AND att.state IN ('{enums.AttributeState.UPLOADED.value}','{enums.AttributeState.USABLE.value}','{enums.AttributeState.AUTOMATICALLY_CREATED.value}')
+    """
+    missing_columns = general.execute_all(query)
+    if not missing_columns:
+        return ""
+    return ",\n".join(
+        ["'" + k[0] + "',r.data->'" + k[0] + "'" for k in missing_columns]
+    )
 
 
 def get_zero_shot_n_random_records(
