@@ -189,17 +189,15 @@ def get_missing_columns_str(project_id: str) -> str:
             WHERE rt.project_id = '{project_id}'
             LIMIT 1 
         ) i
-    ) x
-        ON att.project_id = x.project_id	AND att.name = x.col
-    WHERE att.project_id = '{project_id}' AND x.project_id IS NULL
+    ) used_attributes
+        ON att.project_id = used_attributes.project_id AND att.name = used_attributes.col
+    WHERE att.project_id = '{project_id}' AND used_attributes.project_id IS NULL
     AND att.state IN ('{enums.AttributeState.UPLOADED.value}','{enums.AttributeState.USABLE.value}','{enums.AttributeState.AUTOMATICALLY_CREATED.value}')
     """
     missing_columns = general.execute_all(query)
     if not missing_columns:
         return ""
-    return ",\n".join(
-        ["'" + k[0] + "',r.data->'" + k[0] + "'" for k in missing_columns]
-    )
+    return ",\n".join([f"'{k[0]}',r.data->'{k[0]}'" for k in missing_columns])
 
 
 def get_zero_shot_n_random_records(
