@@ -170,6 +170,8 @@ def get_attribute_calculation_sample_records(project_id: str, n: int = 10) -> Li
     query = f"""
         SELECT record.id::TEXT, record."data"
         FROM record
+        INNER JOIN record_tokenized rt
+            ON record.id = rt.record_id AND record.project_id = rt.project_id
         WHERE record.project_id='{project_id}' AND record.category = '{enums.RecordCategory.SCALE.value}'
         ORDER BY RANDOM()
         LIMIT {n}
