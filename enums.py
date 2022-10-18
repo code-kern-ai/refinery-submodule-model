@@ -135,8 +135,6 @@ class CommentCategory(Enum):
     def get_name_col(self):
         if self == CommentCategory.USER:
             return ""
-        if self == CommentCategory.RECORD:
-            return "'current'"
         return "name"
 
     def get_table_name(self):

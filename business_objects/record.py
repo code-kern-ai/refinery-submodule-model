@@ -571,3 +571,14 @@ def __get_order_by(project_id: str, first_x: int = 3) -> str:
     if order != "":
         order = "ORDER BY " + order
     return order
+
+
+def get_first_no_text_column(project_id: str, xfkey: str) -> str:
+    query = f"""
+    SELECT data, a.name
+    FROM attribute a
+    	join record r on r.project_id = a.project_id
+    WHERE a.project_id = '{project_id}' AND a.data_type != 'TEXT' AND r.id = '{xfkey}'
+    limit 1
+    """
+    return general.execute_first(query)
