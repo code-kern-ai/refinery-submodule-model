@@ -23,6 +23,10 @@ def get(project_id: str, record_id: str) -> Record:
     )
 
 
+def get_one(project_id: str) -> Record:
+    return session.query(Record).filter(Record.project_id == project_id).first()
+
+
 def get_without_project_id(record_id: str) -> Record:
     """
     Attention: instead of this method use get(project_id, record_id),

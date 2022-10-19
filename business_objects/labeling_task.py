@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Any, Optional
+from typing import Dict, List, Set, Any, Union, Optional
 
 from . import general
 from .payload import get_base_query_valid_labels_manual
@@ -25,6 +25,41 @@ def get_all(project_id: str) -> List[LabelingTask]:
         )
         .all()
     )
+
+
+def get_task_and_label_by_ids_and_type(
+    project_id: str, task_ids: List[str], task_type: enums.LabelingTaskType
+) -> List[Dict[str, Union[str, List[Dict[str, str]]]]]:
+    if len(task_ids) == 0:
+        return []
+    id_filter = "'" + "','".join(task_ids) + "'"
+    query = f"""
+    SELECT array_agg(row_to_json(all_rows))
+    FROM(
+        SELECT 
+            lt.id, 
+            lt.name,
+            att.name as attribute_name,
+            array_agg(
+		  	    json_build_object(
+                    'id', ltl.id,
+                    'name', ltl.name,
+                    'color', ltl.color)) labels
+        FROM labeling_task lt
+        LEFT JOIN attribute att
+            ON lt.project_id = att.project_id AND lt.attribute_id = att.id
+        LEFT JOIN labeling_task_label ltl
+            ON lt.project_id = ltl.project_id AND lt.id = ltl.labeling_task_id
+        WHERE lt.project_id = '{project_id}'
+            AND lt.id IN ({id_filter})
+            AND lt.task_type = '{task_type.value}'
+        GROUP BY lt.id, lt.name
+    ) all_rows
+    """
+    value = general.execute_first(query)
+    if value:
+        return value[0]
+    return []
 
 
 def get_task_name_id_dict(project_id: str) -> Dict[str, str]:
