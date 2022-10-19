@@ -53,7 +53,7 @@ def get_task_and_label_by_ids_and_type(
         WHERE lt.project_id = '{project_id}'
             AND lt.id IN ({id_filter})
             AND lt.task_type = '{task_type.value}'
-        GROUP BY lt.id, lt.name
+        GROUP BY lt.id, lt.name, att.name
     ) all_rows
     """
     value = general.execute_first(query)
