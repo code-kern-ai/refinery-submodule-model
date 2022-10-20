@@ -1,6 +1,6 @@
 from datetime import datetime
-from submodules.model.business_objects import record
-from submodules.model.models import CommentData
+from . import record
+from .. import CommentData
 from . import general, organization
 from .. import User, enums
 from ..session import session
@@ -83,12 +83,7 @@ def get_add_info_category(
         table_name = category.get_table_name()
 
         if category == enums.CommentCategory.RECORD:
-            columns = record.get_first_no_text_column(project_id, xfkey)
-            data = columns[0]
-            no_text_column = columns[1]
-            name_col = (
-                "'" + str(no_text_column) + ": " + str(data[no_text_column]) + "'"
-            )
+            name_col = record.get_first_no_text_column(project_id, xfkey)
         else:
             name_col = category.get_name_col()
 
