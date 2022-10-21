@@ -571,3 +571,19 @@ def __get_order_by(project_id: str, first_x: int = 3) -> str:
     if order != "":
         order = "ORDER BY " + order
     return order
+
+
+def get_first_no_text_column(project_id: str, record_id: str) -> str:
+    query = f"""
+    SELECT '''' || x.name || ': ' || (r.data ->>x.name) || '''' AS name_col
+    FROM record r,
+    (
+        SELECT a.name
+        FROM attribute a 
+        WHERE data_type NOT IN('{enums.DataTypes.TEXT.value}' , '{enums.DataTypes.CATEGORY.value}')
+            AND a.project_id = '{project_id}'
+        LIMIT 1 
+    )x
+    WHERE r.project_id = '{project_id}' AND r.id = '{record_id}'
+    """
+    return general.execute_first(query)[0]
