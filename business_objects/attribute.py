@@ -87,7 +87,7 @@ def get_text_attributes(
     ],
 ) -> Dict[str, str]:
     query = session.query(Attribute).filter(
-        Attribute.project_id == project_id, Attribute.data_type == "TEXT"
+        Attribute.project_id == project_id, Attribute.data_type == DataTypes.TEXT.value
     )
     if state_filter:
         query = query.filter(Attribute.state.in_(state_filter))
@@ -104,7 +104,7 @@ def get_non_text_attributes(
     ],
 ) -> Dict[str, str]:
     query = session.query(Attribute).filter(
-        Attribute.project_id == project_id, Attribute.data_type != "TEXT"
+        Attribute.project_id == project_id, Attribute.data_type != DataTypes.TEXT.value
     )
     if state_filter:
         query = query.filter(Attribute.state.in_(state_filter))
