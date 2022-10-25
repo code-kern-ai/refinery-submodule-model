@@ -542,7 +542,9 @@ def __infer_concatenated_primary_key_of_record(
     return concatenated_key
 
 
-def __get_tokenized_record(project_id: str, record_id: str) -> models.RecordTokenized:
+def get_tokenized_record_from_db(
+    project_id: str, record_id: str
+) -> models.RecordTokenized:
     return (
         session.query(models.RecordTokenized)
         .filter(
@@ -550,6 +552,19 @@ def __get_tokenized_record(project_id: str, record_id: str) -> models.RecordToke
             models.RecordTokenized.record_id == record_id,
         )
         .first()
+    )
+
+
+def get_tokenized_records_from_db(
+    project_id: str, record_ids: List[str]
+) -> List[models.RecordTokenized]:
+    return (
+        session.query(models.RecordTokenized)
+        .filter(
+            models.RecordTokenized.project_id == project_id,
+            models.RecordTokenized.record_id.in_(record_ids),
+        )
+        .all()
     )
 
 
