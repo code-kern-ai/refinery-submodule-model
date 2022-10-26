@@ -341,7 +341,7 @@ class RecordExportFormats(Enum):
 class RecordExportFileTypes(Enum):
     JSON = "JSON"
     CSV = "CSV"
-    XSLX = "XSLX"
+    XLSX = "XLSX"
 
 
 class RecordExportAmountTypes(Enum):
