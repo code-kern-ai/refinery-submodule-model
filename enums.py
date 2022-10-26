@@ -334,13 +334,14 @@ class AttributeState(Enum):
 
 
 class RecordExportFormats(Enum):
-    CURRENT = "CURRENT"
+    DEFAULT = "DEFAULT"
     LABEL_STUDIO = "LABEL_STUDIO"
 
 
 class RecordExportFileTypes(Enum):
     JSON = "JSON"
     CSV = "CSV"
+    XSLX = "XSLX"
 
 
 class RecordExportAmountTypes(Enum):
