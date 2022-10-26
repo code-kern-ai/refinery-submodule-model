@@ -6,6 +6,7 @@ from . import general
 from ..enums import AttributeState, DataTypes, RecordCategory
 from ..models import Attribute
 from ..session import session
+from submodules.model import enums
 
 
 def get(project_id: str, attribute_id: str) -> Attribute:
@@ -129,6 +130,23 @@ def get_all_ordered(
     else:
         query = query.order_by(Attribute.relative_position)
     return query.all()
+
+
+def get_first_useable(
+    project_id: str, data_type: Optional[enums.DataTypes] = None
+) -> Attribute:
+    state_filter = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
+    ]
+    query = session.query(Attribute).filter(
+        Attribute.project_id == project_id,
+        Attribute.state.in_(state_filter),
+    )
+    if data_type:
+        query = query.filter(Attribute.data_type == data_type.value)
+    return query.first()
 
 
 def get_relative_position(project_id: str) -> int:

@@ -331,3 +331,20 @@ class AttributeState(Enum):
     RUNNING = "RUNNING"
     USABLE = "USABLE"
     FAILED = "FAILED"
+
+
+class RecordExportFormats(Enum):
+    DEFAULT = "DEFAULT"
+    LABEL_STUDIO = "LABEL_STUDIO"
+
+
+class RecordExportFileTypes(Enum):
+    JSON = "JSON"
+    CSV = "CSV"
+    XLSX = "XLSX"
+
+
+class RecordExportAmountTypes(Enum):
+    ALL = "ALL"
+    SESSION = "SESSION"
+    SLICE = "SLICE"
