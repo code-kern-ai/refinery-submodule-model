@@ -40,6 +40,7 @@ def create(
     file_name: str,
     file_type: str,
     file_import_options: str,
+    upload_type: str,
     with_commit: bool = False,
 ) -> UploadTask:
     task = UploadTask(
@@ -48,6 +49,7 @@ def create(
         file_name=file_name,
         file_type=file_type,
         file_import_options=file_import_options,
+        upload_type=upload_type,
     )
     general.add(task, with_commit)
     return task
@@ -58,6 +60,7 @@ def update(
     task_id: str,
     state: Optional[str] = None,
     progress: Optional[float] = None,
+    file_additional_info: str = None,
     with_commit: bool = False,
 ) -> None:
     task: UploadTask = get(project_id, task_id)
@@ -65,6 +68,8 @@ def update(
         task.state = state
     if progress is not None:
         task.progress = progress
+    if file_additional_info is not None:
+        task.file_additional_info = file_additional_info
     general.flush_or_commit(with_commit)
 
 

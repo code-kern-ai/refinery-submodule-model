@@ -450,7 +450,7 @@ def update_used_information_sources(
         RecordLabelAssociation.project_id == project_id,
         RecordLabelAssociation.source_type
         == enums.LabelSource.INFORMATION_SOURCE.value,
-    ).update({"weak_supervision_id": None})
+    ).update({"weak_supervision_id": None}, )
 
     # set current to new id -- unfortunatly is orm not able to do that with a join
     general.execute(

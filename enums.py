@@ -204,9 +204,15 @@ class UploadStates(Enum):
     CREATED = "CREATED"
     WAITING = "WAITING"
     PENDING = "PENDING"
+    PREPARED = "PREPARED"
     IN_PROGRESS = "IN_PROGRESS"
     DONE = "DONE"
     ERROR = "ERROR"
+
+
+class UploadTypes(Enum):
+    LABEL_STUDIO = "LABEL_STUDIO"
+    DEFAULT = "DEFAULT"
 
 
 class TokenizerTask(Enum):
