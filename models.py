@@ -290,7 +290,7 @@ class UploadTask(Base):
     file_import_options = Column(String)
     upload_type = Column(String)
     file_additional_info = Column(String)
-    user_mapping = Column(String)
+    mappings = Column(String)
 
 
 # -------------------- PROJECT_ --------------------
