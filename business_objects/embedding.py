@@ -15,6 +15,10 @@ def get(project_id: str, embedding_id: str) -> Embedding:
     )
 
 
+def get_all_by_project_id(project_id: str) -> Embedding:
+    return session.query(Embedding).filter(Embedding.project_id == project_id).all()
+
+
 def get_first_running_encoder(project_id: str) -> Embedding:
     return (
         session.query(models.Embedding)
@@ -194,6 +198,9 @@ def create(
     type: str = None,
     with_commit: bool = False,
 ) -> Embedding:
+
+    existing_embeddings_in_project = get_all_by_project_id(project_id)
+
     embedding: Embedding = Embedding(
         project_id=project_id,
         attribute_id=attribute_id,
@@ -201,6 +208,7 @@ def create(
         custom=False,
         type=type,
         state=enums.EmbeddingState.INITIALIZING.value,
+        is_selected_for_inference=len(existing_embeddings_in_project) == 0,
     )
     if custom:
         embedding.custom = custom

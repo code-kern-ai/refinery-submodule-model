@@ -364,6 +364,7 @@ class Attribute(Base):
     source_code = Column(String)
     state = Column(String, default=AttributeState.UPLOADED.value)
     logs = Column(ARRAY(String))
+    is_selected_for_inference = Column(Boolean, default=False)
 
     embeddings = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
@@ -396,6 +397,7 @@ class LabelingTask(Base):
     )
     task_target = Column(String)  # ON_ATTRIBUTE, ON_WHOLE_RECORD
     task_type = Column(String)  # CLASSIFICATION, EXTRACTION
+    is_selected_for_inference = Column(Boolean, default=False)
 
     information_sources = parent_to_child_relationship(
         Tablenames.LABELING_TASK,
@@ -656,6 +658,7 @@ class Embedding(Base):
     type = Column(String)  # find allowed expressions in enums.EmbeddingType
     state = Column(String)  # set by embedding service
     similarity_threshold = Column(Float)  # set by neural search
+    is_selected_for_inference = Column(Boolean, default=False)
 
     tensors = parent_to_child_relationship(
         Tablenames.EMBEDDING,
@@ -706,6 +709,7 @@ class InformationSource(Base):  # renamed from LabelFunction
     source_code = Column(String)
     is_selected = Column(Boolean, default=False)
     version = Column(Integer, default=1)
+    is_selected_for_inference = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
