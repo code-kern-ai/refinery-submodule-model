@@ -1,6 +1,5 @@
 import datetime
-from typing import Optional
-
+from typing import Optional, Dict, Any
 
 from ..exceptions import EntityNotFoundException
 from ..session import session
@@ -61,7 +60,7 @@ def update(
     state: Optional[str] = None,
     progress: Optional[float] = None,
     file_additional_info: str = None,
-    mappings: str = None,
+    mappings: Optional[Dict[str, Any]] = None,
     with_commit: bool = False,
 ) -> None:
     task: UploadTask = get(project_id, task_id)
