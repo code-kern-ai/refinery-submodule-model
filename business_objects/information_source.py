@@ -45,6 +45,17 @@ def get_all(project_id: str) -> List[InformationSource]:
     )
 
 
+def get_all_with_type(project_id: str, type: str) -> List[InformationSource]:
+    return (
+        session.query(InformationSource)
+        .filter(
+            InformationSource.project_id == project_id,
+            InformationSource.type == type,
+        )
+        .all()
+    )
+
+
 def get_all_statistics(project_id: str) -> List[InformationSourceStatistics]:
     return (
         session.query(InformationSourceStatistics)
@@ -275,6 +286,14 @@ def create(
     created_by: Optional[str] = None,
     with_commit: bool = False,
 ) -> InformationSource:
+
+    is_selected_for_inference = False
+    if type == enums.InformationSourceType.ACTIVE_LEARNING.value:
+        active_learners = get_all_with_type(
+            project_id, enums.InformationSourceType.ACTIVE_LEARNING.value
+        )
+        is_selected_for_inference = len(active_learners) == 0
+
     information_source: InformationSource = InformationSource(
         project_id=project_id,
         labeling_task_id=labeling_task_id,
@@ -287,6 +306,7 @@ def create(
         version=version,
         created_at=created_at,
         created_by=created_by,
+        is_selected_for_inference=is_selected_for_inference,
     )
     general.add(information_source, with_commit)
     return information_source

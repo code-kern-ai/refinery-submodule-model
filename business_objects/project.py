@@ -11,6 +11,8 @@ from ..models import (
     LabelingTaskLabel,
     Project,
     RecordLabelAssociation,
+    Embedding,
+    InformationSource,
 )
 
 
@@ -286,6 +288,20 @@ def update(
         project.tokenizer_blank = spacy_language
     general.flush_or_commit(with_commit)
     return project
+
+
+def update_is_selected_for_inference(
+    project_id: str, attribute_ids, embedding_ids, heuristic_ids
+):
+    project: Project = session.query(Project).get(project_id)
+
+    for attribute in project.attributes:
+        attribute.is_selected_for_inference = attribute.id in attribute_ids
+    for embedding in project.embeddings:
+        embedding.is_selected_for_inference = embedding.id in embedding_ids
+    for heuristic in project.information_sources:
+        heuristic.is_selected_for_inference = heuristic.id in heuristic_ids
+    general.commit()
 
 
 def __build_sql_confusion_matrix_extraction(

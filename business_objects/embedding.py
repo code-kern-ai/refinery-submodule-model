@@ -15,6 +15,14 @@ def get(project_id: str, embedding_id: str) -> Embedding:
     )
 
 
+def get_by_name(project_id: str, name: str) -> Embedding:
+    return (
+        session.query(Embedding)
+        .filter(Embedding.project_id == project_id, Embedding.name == name)
+        .first()
+    )
+
+
 def get_all_by_project_id(project_id: str) -> Embedding:
     return session.query(Embedding).filter(Embedding.project_id == project_id).all()
 
