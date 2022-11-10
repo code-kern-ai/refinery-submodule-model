@@ -354,3 +354,8 @@ class RecordExportAmountTypes(Enum):
     ALL = "ALL"
     SESSION = "SESSION"
     SLICE = "SLICE"
+
+
+class RecordImportMappingValues(Enum):
+    ATTRIBUTE_SPECIFIC = "ATTRIBUTE_SPECIFIC"
+    IGNORE = "IGNORE"
