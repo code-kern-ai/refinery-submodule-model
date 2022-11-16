@@ -223,14 +223,14 @@ def get_labeling_task_by_source_id(source_id: str) -> LabelingTask:
 
 def get_labeling_task_name_by_label_id(project_id: str) -> Dict:
     results: List = general.execute_all(
-        f"""SELECT ltl.id, lt.name
+        f"""SELECT ltl.id::TEXT, lt.name
         FROM labeling_task_label ltl 
-        JOIN labeling_task lt 
-        ON ltl.labeling_task_id = lt.id
+        INNER JOIN labeling_task lt 
+            ON ltl.project_id = lt.project_id AND ltl.labeling_task_id = lt.id
         WHERE lt.project_id = '{project_id}'
         """
     )
-    return {str(result[0]): result[1] for result in results}
+    return {result[0]: result[1] for result in results}
 
 
 def create(

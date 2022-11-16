@@ -199,24 +199,16 @@ def get_all_classifications_for_information_source(
     )
 
 
-def get_existing_record_label_associations(
+def get_existing_manual_record_label_associations(
     project_id: str, record_ids: List[str], user_ids: List[str], label_ids: List[str]
 ) -> List[RecordLabelAssociation]:
     return (
         session.query(RecordLabelAssociation)
         .filter(RecordLabelAssociation.project_id == project_id)
-        .filter(RecordLabelAssociation.record_id.in_(record_ids))
-        .filter(
-            RecordLabelAssociation.created_by.in_(
-                [
-                    user_id
-                    for user_id in user_ids
-                    if user_id != enums.RecordImportMappingValues.IGNORE.value
-                ]
-            )
-        )
-        .filter(RecordLabelAssociation.labeling_task_label_id.in_(label_ids))
         .filter(RecordLabelAssociation.source_type == enums.LabelSource.MANUAL.value)
+        .filter(RecordLabelAssociation.record_id.in_(record_ids))
+        .filter(RecordLabelAssociation.created_by.in_(user_ids))
+        .filter(RecordLabelAssociation.labeling_task_label_id.in_(label_ids))
         .all()
     )
 
