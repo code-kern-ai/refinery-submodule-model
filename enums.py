@@ -359,3 +359,4 @@ class RecordExportAmountTypes(Enum):
 class RecordImportMappingValues(Enum):
     ATTRIBUTE_SPECIFIC = "ATTRIBUTE_SPECIFIC"
     IGNORE = "IGNORE"
+    UNKNOWN = "UNKNOWN"
