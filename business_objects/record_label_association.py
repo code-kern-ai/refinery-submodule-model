@@ -206,7 +206,15 @@ def get_existing_record_label_associations(
         session.query(RecordLabelAssociation)
         .filter(RecordLabelAssociation.project_id == project_id)
         .filter(RecordLabelAssociation.record_id.in_(record_ids))
-        .filter(RecordLabelAssociation.created_by.in_(user_ids))
+        .filter(
+            RecordLabelAssociation.created_by.in_(
+                [
+                    user_id
+                    for user_id in user_ids
+                    if user_id != enums.RecordImportMappingValues.IGNORE.value
+                ]
+            )
+        )
         .filter(RecordLabelAssociation.labeling_task_label_id.in_(label_ids))
         .filter(RecordLabelAssociation.source_type == enums.LabelSource.MANUAL.value)
         .all()
@@ -634,7 +642,9 @@ def delete_by_ids(
     delete_query = session.query(RecordLabelAssociation)
     delete_query = delete_query.filter(RecordLabelAssociation.project_id == project_id)
     if record_id:
-        delete_query = delete_query.filter(RecordLabelAssociation.record_id == record_id)
+        delete_query = delete_query.filter(
+            RecordLabelAssociation.record_id == record_id
+        )
     delete_query = delete_query.filter(RecordLabelAssociation.id.in_(association_ids))
     delete_query.delete()
     general.flush_or_commit(with_commit)
