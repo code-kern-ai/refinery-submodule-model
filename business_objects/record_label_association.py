@@ -199,6 +199,20 @@ def get_all_classifications_for_information_source(
     )
 
 
+def get_existing_manual_record_label_associations(
+    project_id: str, record_ids: List[str], user_ids: List[str], label_ids: List[str]
+) -> List[RecordLabelAssociation]:
+    return (
+        session.query(RecordLabelAssociation)
+        .filter(RecordLabelAssociation.project_id == project_id)
+        .filter(RecordLabelAssociation.source_type == enums.LabelSource.MANUAL.value)
+        .filter(RecordLabelAssociation.record_id.in_(record_ids))
+        .filter(RecordLabelAssociation.created_by.in_(user_ids))
+        .filter(RecordLabelAssociation.labeling_task_label_id.in_(label_ids))
+        .all()
+    )
+
+
 def get_all_extraction_tokens_for_information_source(
     project_id: str,
     source_id: str,
@@ -342,6 +356,28 @@ def create_token_objects(
     ]
 
 
+def create_by_record_user_label_dict(
+    project_id: str, record_user_label_dict: Dict[str, Any], with_commit: bool = False
+):
+    create_list = []
+    for record_id, user_dict in record_user_label_dict.items():
+        for user_id, tasks_dict in user_dict.items():
+
+            rlas = [
+                RecordLabelAssociation(
+                    project_id=project_id,
+                    record_id=record_id,
+                    labeling_task_label_id=label_id,
+                    source_type=enums.LabelSource.MANUAL.value,
+                    return_type=enums.InformationSourceReturnType.RETURN.value,
+                    created_by=user_id,
+                )
+                for label_id in tasks_dict.values()
+            ]
+            create_list.extend(rlas)
+    general.add_all(create_list, with_commit=with_commit)
+
+
 def create_gold_classification_association(
     rlas: List[Any], current_user_id: str, with_commit: bool = False
 ) -> None:
@@ -450,7 +486,9 @@ def update_used_information_sources(
         RecordLabelAssociation.project_id == project_id,
         RecordLabelAssociation.source_type
         == enums.LabelSource.INFORMATION_SOURCE.value,
-    ).update({"weak_supervision_id": None})
+    ).update(
+        {"weak_supervision_id": None},
+    )
 
     # set current to new id -- unfortunatly is orm not able to do that with a join
     general.execute(
@@ -589,15 +627,18 @@ def delete(
 
 def delete_by_ids(
     project_id: str,
-    record_id: str,
     association_ids: List[str],
+    record_id: str = None,
     with_commit: bool = False,
 ) -> None:
-    session.query(RecordLabelAssociation).filter(
-        RecordLabelAssociation.project_id == project_id,
-        RecordLabelAssociation.record_id == record_id,
-        RecordLabelAssociation.id.in_(association_ids),
-    ).delete()
+    delete_query = session.query(RecordLabelAssociation)
+    delete_query = delete_query.filter(RecordLabelAssociation.project_id == project_id)
+    if record_id:
+        delete_query = delete_query.filter(
+            RecordLabelAssociation.record_id == record_id
+        )
+    delete_query = delete_query.filter(RecordLabelAssociation.id.in_(association_ids))
+    delete_query.delete()
     general.flush_or_commit(with_commit)
 
 
@@ -730,7 +771,7 @@ def __get_gold_records_classification_query(
         /*Gold Record (only one opinion) - classification*/
         SELECT rla_id
         FROM (
-            SELECT DISTINCT ON (rla.record_id, rla.created_by) rla.id rla_id
+            SELECT DISTINCT ON (rla.record_id, rla.created_by, ltl.labeling_task_id) rla.id rla_id
             FROM record_label_association rla
             INNER JOIN labeling_task_label ltl
                 ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id 

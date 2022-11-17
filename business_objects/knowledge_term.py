@@ -39,15 +39,16 @@ def get_by_knowledge_base(knowledge_base_id: str) -> List[KnowledgeTerm]:
     )
 
 
-def get_terms_with_base_names(project_id: str) -> List[Any]:
-    return (
-        session.query(KnowledgeTerm.value, KnowledgeBase.name)
-        .filter(
-            KnowledgeTerm.knowledge_base_id == KnowledgeBase.id,
-            KnowledgeBase.project_id == project_id,
-        )
-        .all()
+def get_terms_with_base_names(
+    project_id: str, only_whitelisted: bool = True
+) -> List[Any]:
+    query = session.query(KnowledgeTerm.value, KnowledgeBase.name).filter(
+        KnowledgeTerm.knowledge_base_id == KnowledgeBase.id,
+        KnowledgeBase.project_id == project_id,
     )
+    if only_whitelisted:
+        query = query.filter(KnowledgeTerm.blacklisted == False)
+    return query.all()
 
 
 def get_terms_by_project_id(project_id: str) -> List[Any]:
