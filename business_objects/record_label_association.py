@@ -771,7 +771,7 @@ def __get_gold_records_classification_query(
         /*Gold Record (only one opinion) - classification*/
         SELECT rla_id
         FROM (
-            SELECT DISTINCT ON (rla.record_id, rla.created_by) rla.id rla_id
+            SELECT DISTINCT ON (rla.record_id, rla.created_by, ltl.labeling_task_id) rla.id rla_id
             FROM record_label_association rla
             INNER JOIN labeling_task_label ltl
                 ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id 
