@@ -144,6 +144,30 @@ def get_by_all_by_xfkey(
     return query.all()
 
 
+def get_record_comments(
+    project_id: str, user_id: str, record_ids: List[str]
+) -> List[Dict[str, Any]]:
+    if not record_ids:
+        return []
+    record_in_filter = "'" + "', '".join(record_ids) + "'"
+
+    query = f"""
+    SELECT array_agg(row_to_json(x))
+    FROM (
+        SELECT r.id::TEXT record_id, cd.order_key, cd.comment, cd.is_private
+        FROM record r
+        INNER JOIN comment_data cd
+            ON r.project_id = cd.project_id AND r.id = cd.xfkey 
+            AND cd.xftype = '{enums.CommentCategory.RECORD.value}' 
+            AND (cd.is_private = false OR cd.created_by = '{user_id}')
+        WHERE r.project_id = '{project_id}' AND r.id IN ({record_in_filter})
+    ) x"""
+    values = general.execute_first(query)
+    if values:
+        return values[0]
+    return []
+
+
 def has_comments(
     xftype: enums.CommentCategory,
     xfkey: Optional[str] = None,
@@ -171,7 +195,7 @@ WHERE xftype = '{xftype.value}' """
     return {r[0]: r[1] > 0 for r in general.execute_all(query)}
 
 
-# should only be used for import export reasons, otherwiese th shorthand version are preferred (e.g. create_for_user)
+# should only be used for import export reasons, otherwise th shorthand version are preferred (e.g. create_for_user)
 def create(
     xfkey: str,
     xftype: str,
