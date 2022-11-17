@@ -105,3 +105,19 @@ def create(
     )
     general.add(notification, with_commit)
     return notification
+
+
+def remove_project_connection_for_last_x(project_id: str, last_x: int = 5) -> None:
+    if last_x <= 0:
+        return
+    notifications: List[Notification] = (
+        session.query(Notification)
+        .filter(Notification.project_id == project_id)
+        .order_by(Notification.created_at.desc())
+        .limit(last_x)
+        .all()
+    )
+
+    for notification in notifications:
+        notification.project_id = None
+    general.commit()
