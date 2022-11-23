@@ -27,6 +27,17 @@ def get_all(project_id: str, user_id: str):
     )
 
 
+def get_by_token(project_id: str, token: str):
+    return (
+        session.query(PersonalAccessToken)
+        .filter(
+            PersonalAccessToken.project_id == project_id,
+            PersonalAccessToken.token == token,
+        )
+        .first()
+    )
+
+
 def create(
     project_id: str,
     user_id: str,
