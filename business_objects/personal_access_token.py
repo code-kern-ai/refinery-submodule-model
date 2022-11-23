@@ -1,16 +1,16 @@
 from ..session import session
 from submodules.model.business_objects import general
-from submodules.model.models import PersonalAcessToken
+from submodules.model.models import PersonalAccessToken
 from datetime import date
 
 
 def get(project_id: str, user_id: str, name: str):
     return (
-        session.query(PersonalAcessToken)
+        session.query(PersonalAccessToken)
         .filter(
-            PersonalAcessToken.project_id == project_id,
-            PersonalAcessToken.user_id == user_id,
-            PersonalAcessToken.name == name,
+            PersonalAccessToken.project_id == project_id,
+            PersonalAccessToken.user_id == user_id,
+            PersonalAccessToken.name == name,
         )
         .first()
     )
@@ -18,12 +18,12 @@ def get(project_id: str, user_id: str, name: str):
 
 def get_all(project_id: str, user_id: str):
     return (
-        session.query(PersonalAcessToken)
+        session.query(PersonalAccessToken)
         .filter(
-            PersonalAcessToken.project_id == project_id,
-            PersonalAcessToken.user_id == user_id,
+            PersonalAccessToken.project_id == project_id,
+            PersonalAccessToken.user_id == user_id,
         )
-        .first()
+        .all()
     )
 
 
@@ -36,7 +36,7 @@ def create(
     token: str,
     with_commit: bool = False,
 ):
-    personal_access_token = PersonalAcessToken(
+    personal_access_token = PersonalAccessToken(
         project_id=project_id,
         user_id=user_id,
         name=name,
@@ -45,3 +45,17 @@ def create(
         expires_at=expires_at,
     )
     general.add(personal_access_token, with_commit)
+
+
+def delete(
+    project_id: str,
+    user_id: str,
+    name: str,
+    with_commit: bool = False,
+):
+    session.query(PersonalAccessToken).filter(
+        PersonalAccessToken.project_id == project_id,
+        PersonalAccessToken.user_id == user_id,
+        PersonalAccessToken.name == name,
+    ).delete()
+    general.flush_or_commit(with_commit)
