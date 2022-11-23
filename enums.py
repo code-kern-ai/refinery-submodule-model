@@ -361,3 +361,14 @@ class RecordImportMappingValues(Enum):
     ATTRIBUTE_SPECIFIC = "ATTRIBUTE_SPECIFIC"
     IGNORE = "IGNORE"
     UNKNOWN = "UNKNOWN"
+
+
+class TokenExpireAtValues(Enum):
+    ONE_MONTH = "ONE_MONTH"
+    THREE_MONTHS = "THREE_MONTHS"
+    NEVER = "NEVER"
+
+
+class TokenScope(Enum):
+    READ = "READ"
+    READ_WRITE = "READ_WRITE"
