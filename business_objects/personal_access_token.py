@@ -1,3 +1,4 @@
+import datetime
 from ..session import session
 from submodules.model.business_objects import general
 from submodules.model.models import PersonalAccessToken
@@ -69,4 +70,18 @@ def delete(
         PersonalAccessToken.user_id == user_id,
         PersonalAccessToken.id == token_id,
     ).delete()
+    general.flush_or_commit(with_commit)
+
+
+def update_last_used(project_id: str, token_id: str, with_commit: bool = False):
+    token_item = (
+        session.query(PersonalAccessToken)
+        .filter(
+            PersonalAccessToken.project_id == project_id,
+            PersonalAccessToken.id == token_id,
+        )
+        .first()
+    )
+
+    token_item.last_used = datetime.datetime.now()
     general.flush_or_commit(with_commit)
