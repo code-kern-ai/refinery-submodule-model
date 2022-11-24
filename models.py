@@ -262,6 +262,7 @@ class PersonalAccessToken(Base):
     name = Column(String)
     scope = Column(String)
     expires_at = Column(DateTime, nullable=True)
+    last_used = Column(DateTime, nullable=True)
     token = Column(String)
 
 

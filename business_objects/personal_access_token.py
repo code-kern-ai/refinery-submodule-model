@@ -61,12 +61,12 @@ def create(
 def delete(
     project_id: str,
     user_id: str,
-    name: str,
+    token_id: str,
     with_commit: bool = False,
 ):
     session.query(PersonalAccessToken).filter(
         PersonalAccessToken.project_id == project_id,
         PersonalAccessToken.user_id == user_id,
-        PersonalAccessToken.name == name,
+        PersonalAccessToken.id == token_id,
     ).delete()
     general.flush_or_commit(with_commit)
