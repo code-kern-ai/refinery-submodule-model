@@ -1,11 +1,12 @@
 import datetime
+from typing import List
 from ..session import session
 from submodules.model.business_objects import general
 from submodules.model.models import PersonalAccessToken
 from datetime import date
 
 
-def get(project_id: str, user_id: str, name: str):
+def get(project_id: str, user_id: str, name: str) -> PersonalAccessToken:
     return (
         session.query(PersonalAccessToken)
         .filter(
@@ -17,7 +18,7 @@ def get(project_id: str, user_id: str, name: str):
     )
 
 
-def get_all(project_id: str, user_id: str):
+def get_all(project_id: str, user_id: str) -> List[PersonalAccessToken]:
     return (
         session.query(PersonalAccessToken)
         .filter(
@@ -28,7 +29,7 @@ def get_all(project_id: str, user_id: str):
     )
 
 
-def get_by_token(project_id: str, token: str):
+def get_by_token(project_id: str, token: str) -> PersonalAccessToken:
     return (
         session.query(PersonalAccessToken)
         .filter(
@@ -47,7 +48,7 @@ def create(
     expires_at: date,
     token: str,
     with_commit: bool = False,
-):
+) -> None:
     personal_access_token = PersonalAccessToken(
         project_id=project_id,
         user_id=user_id,
@@ -64,7 +65,7 @@ def delete(
     user_id: str,
     token_id: str,
     with_commit: bool = False,
-):
+) -> None:
     session.query(PersonalAccessToken).filter(
         PersonalAccessToken.project_id == project_id,
         PersonalAccessToken.user_id == user_id,
@@ -73,7 +74,7 @@ def delete(
     general.flush_or_commit(with_commit)
 
 
-def update_last_used(project_id: str, token_id: str, with_commit: bool = False):
+def update_last_used(project_id: str, token_id: str, with_commit: bool = False) -> None:
     token_item = (
         session.query(PersonalAccessToken)
         .filter(
