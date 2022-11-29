@@ -18,13 +18,10 @@ def get(project_id: str, user_id: str, name: str) -> PersonalAccessToken:
     )
 
 
-def get_all(project_id: str, user_id: str) -> List[PersonalAccessToken]:
+def get_all(project_id: str) -> List[PersonalAccessToken]:
     return (
         session.query(PersonalAccessToken)
-        .filter(
-            PersonalAccessToken.project_id == project_id,
-            PersonalAccessToken.user_id == user_id,
-        )
+        .filter(PersonalAccessToken.project_id == project_id)
         .all()
     )
 
