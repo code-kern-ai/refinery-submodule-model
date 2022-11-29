@@ -42,7 +42,7 @@ def create(
     user_id: str,
     name: str,
     scope: str,
-    expires_at: date,
+    expires_at: datetime,
     token: str,
     with_commit: bool = False,
 ) -> None:
