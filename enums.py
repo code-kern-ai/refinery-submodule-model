@@ -103,6 +103,7 @@ class Tablenames(Enum):
     INFORMATION_SOURCE_STATISTICS_EXCLUSION = "information_source_statistics_exclusion"
     COMMENT_DATA = "comment_data"
     LABELING_ACCESS_LINK = "labeling_access_link"
+    PERSONAL_ACCESS_TOKEN = "personal_access_token"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -360,3 +361,14 @@ class RecordImportMappingValues(Enum):
     ATTRIBUTE_SPECIFIC = "ATTRIBUTE_SPECIFIC"
     IGNORE = "IGNORE"
     UNKNOWN = "UNKNOWN"
+
+
+class TokenExpireAtValues(Enum):
+    ONE_MONTH = "ONE_MONTH"
+    THREE_MONTHS = "THREE_MONTHS"
+    NEVER = "NEVER"
+
+
+class TokenScope(Enum):
+    READ = "READ"
+    READ_WRITE = "READ_WRITE"
