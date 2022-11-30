@@ -6,7 +6,9 @@ from submodules.model.models import PersonalAccessToken
 from datetime import date
 
 
-def get(project_id: str, user_id: str, name: str) -> PersonalAccessToken:
+def get_by_user_and_name(
+    project_id: str, user_id: str, name: str
+) -> PersonalAccessToken:
     return (
         session.query(PersonalAccessToken)
         .filter(
