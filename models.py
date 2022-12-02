@@ -2,6 +2,7 @@ from re import T
 import uuid
 
 from .enums import (
+    AttributeVisibility,
     CascadeBehaviour,
     NotificationState,
     Tablenames,
@@ -388,6 +389,7 @@ class Attribute(Base):
     source_code = Column(String)
     state = Column(String, default=AttributeState.UPLOADED.value)
     logs = Column(ARRAY(String))
+    visibility = Column(String, default=AttributeVisibility.VISIBLE.value)
 
     embeddings = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,

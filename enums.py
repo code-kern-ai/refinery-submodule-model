@@ -339,6 +339,10 @@ class AttributeState(Enum):
     USABLE = "USABLE"
     FAILED = "FAILED"
 
+class AttributeVisibility(Enum):
+    VISIBLE = "VISIBLE"
+    HIDDEN = "HIDDEN"
+
 
 class RecordExportFormats(Enum):
     DEFAULT = "DEFAULT"
