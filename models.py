@@ -389,7 +389,7 @@ class Attribute(Base):
     source_code = Column(String)
     state = Column(String, default=AttributeState.UPLOADED.value)
     logs = Column(ARRAY(String))
-    visibility = Column(String, default=AttributeVisibility.VISIBLE.value)
+    visibility = Column(String, default=AttributeVisibility.DO_NOT_HIDE.value)
 
     embeddings = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,

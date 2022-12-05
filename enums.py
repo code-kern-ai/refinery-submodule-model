@@ -339,9 +339,12 @@ class AttributeState(Enum):
     USABLE = "USABLE"
     FAILED = "FAILED"
 
+
 class AttributeVisibility(Enum):
-    VISIBLE = "VISIBLE"
-    HIDDEN = "HIDDEN"
+    HIDE = "HIDE"
+    HIDE_ON_LABELING_PAGE = "HIDE_ON_LABELING_PAGE"
+    HIDE_ON_DATA_BROWSER = "HIDE_ON_DATA_BROWSER"
+    DO_NOT_HIDE = "DO_NOT_HIDE"
 
 
 class RecordExportFormats(Enum):
