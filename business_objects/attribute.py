@@ -185,7 +185,7 @@ def create(
     source_code: Optional[str] = None,
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
-    visibilty: Optional[str] = None,
+    visibility: Optional[str] = None,
     with_commit: bool = False,
 ) -> Attribute:
     attribute: Attribute = Attribute(
@@ -206,8 +206,8 @@ def create(
     if logs is not None:
         attribute.logs = logs
 
-    if visibilty is not None:
-        attribute.visibility = visibilty
+    if visibility is not None:
+        attribute.visibility = visibility
 
     general.add(attribute, with_commit)
     return attribute
