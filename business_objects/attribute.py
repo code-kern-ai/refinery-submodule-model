@@ -185,6 +185,7 @@ def create(
     source_code: Optional[str] = None,
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
+    visibility: Optional[str] = None,
     with_commit: bool = False,
 ) -> Attribute:
     attribute: Attribute = Attribute(
@@ -205,6 +206,9 @@ def create(
     if logs is not None:
         attribute.logs = logs
 
+    if visibility is not None:
+        attribute.visibility = visibility
+
     general.add(attribute, with_commit)
     return attribute
 
@@ -219,6 +223,7 @@ def update(
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
     with_commit: bool = False,
+    visibility: Optional[str] = None,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
     if data_type is not None:
@@ -234,6 +239,10 @@ def update(
     if logs is not None:
         attribute.logs = logs
         flag_modified(attribute, "logs")
+
+    if visibility is not None:
+        attribute.visibility = visibility
+
     general.flush_or_commit(with_commit)
     return attribute
 

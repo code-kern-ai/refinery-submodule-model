@@ -340,6 +340,13 @@ class AttributeState(Enum):
     FAILED = "FAILED"
 
 
+class AttributeVisibility(Enum):
+    HIDE = "HIDE"  # hide attributes on all pages
+    HIDE_ON_LABELING_PAGE = "HIDE_ON_LABELING_PAGE"  # hide attributes on labeling page and data browser page
+    HIDE_ON_DATA_BROWSER = "HIDE_ON_DATA_BROWSER"  # hide attributes on data browser page but not on labeling page
+    DO_NOT_HIDE = "DO_NOT_HIDE"  # do not hide attributes on any page
+
+
 class RecordExportFormats(Enum):
     DEFAULT = "DEFAULT"
     LABEL_STUDIO = "LABEL_STUDIO"
