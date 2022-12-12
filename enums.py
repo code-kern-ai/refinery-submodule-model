@@ -296,8 +296,8 @@ class Pages(Enum):
     OVERVIEW = "overview"
     DATA = "data"
     LABELING = "labeling"
-    INFORMATION_SOURCES = "information-sources"
-    KNOWLEDGE_BASE = "knowledge-base"
+    INFORMATION_SOURCES = "heuristics"
+    KNOWLEDGE_BASE = "lookup-lists"
     SETTINGS = "settings"
 
 
