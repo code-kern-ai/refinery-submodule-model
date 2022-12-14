@@ -112,17 +112,24 @@ def get_missing_rats_records(
     return general.execute_all(query)
 
 
-def get_missing_tokenized_records(project_id: str, limit: int) -> List[Any]:
+def get_missing_tokenized_records(
+    project_id: str, limit: int, attribute_names_string: str, query_only: bool = False
+) -> List[Any]:
     query = f"""
-    SELECT r.id, r.data
+    SELECT r.id, r.data, rt."columns"
     FROM record r
     LEFT JOIN record_tokenized rt
-        ON r.id = rt.record_id 
-        AND r.project_id = rt.project_id 
+        ON r.id = rt.record_id
+        AND r.project_id = rt.project_id
         AND rt.project_id = '{project_id}'
-    WHERE r.project_id = '{project_id}' 
-    AND rt.id IS NULL    
+    WHERE r.project_id = '{project_id}'
+    AND (
+        NOT rt."columns" @> '{attribute_names_string}'
+        OR rt."columns" IS NULL
+    )
     """
+    if query_only:
+        return query
     if limit > 0:
         query += f"LIMIT {limit} "
     return general.execute_all(query)
@@ -309,19 +316,16 @@ def count_missing_rats_records(project_id: str, attribute_id: str) -> int:
     return result.c
 
 
-def count_missing_tokenized_records(project_id: str) -> int:
+def count_missing_tokenized_records(
+    project_id: str, attribute_names_string: str
+) -> List[Any]:
     query = f"""
-    SELECT COUNT(*) c
-    FROM record r
-    LEFT JOIN record_tokenized rt
-        ON r.id = rt.record_id 
-        AND r.project_id = rt.project_id 
-        AND rt.project_id = '{project_id}'
-    WHERE r.project_id = '{project_id}' 
-    AND rt.id IS NULL    
+    SELECT COUNT(record_query.id)
+    FROM (
+        {get_missing_tokenized_records(project_id, None, attribute_names_string, query_only = True)}
+    ) record_query
     """
-    result = general.execute_first(query)
-    return result.c
+    return general.execute_first(query)[0]
 
 
 def count_tokenized_records(project_id: str) -> int:
