@@ -3,7 +3,7 @@ from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
 from . import general
-from ..enums import AttributeState, DataTypes, RecordCategory
+from ..enums import AttributeState, AttributeVisibility, DataTypes, RecordCategory
 from ..models import Attribute
 from ..session import session
 from submodules.model import enums
@@ -339,7 +339,7 @@ def __build_add_query(
     WHERE record.project_id = '{project_id}' AND record.id = helper.id;
 
     INSERT INTO attribute
-    VALUES (uuid_in(md5(random()::TEXT || clock_timestamp()::TEXT)::CSTRING),'{project_id}','{attribute_name}','INTEGER',TRUE,0,FALSE,NULL,'{AttributeState.AUTOMATICALLY_CREATED.value}',NULL);
+    VALUES (uuid_in(md5(random()::TEXT || clock_timestamp()::TEXT)::CSTRING),'{project_id}','{attribute_name}','INTEGER',TRUE,0,FALSE,NULL,'{AttributeState.AUTOMATICALLY_CREATED.value}',NULL ,'{AttributeVisibility.DO_NOT_HIDE.value}');
 
     UPDATE attribute
     SET relative_position = rPos
