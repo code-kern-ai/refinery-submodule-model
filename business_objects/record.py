@@ -2,6 +2,8 @@ from __future__ import with_statement
 from typing import List, Dict, Any, Tuple
 from sqlalchemy import cast, Text
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.sql.expression import bindparam
+from sqlalchemy import update
 
 from . import attribute, general
 from .. import models, enums
@@ -11,6 +13,7 @@ from ..models import (
     LabelingTaskLabel,
     RecordAttributeTokenStatistics,
     Attribute,
+    RecordTokenized,
 )
 from ..session import session
 
@@ -88,6 +91,38 @@ def get_ids_of_manual_records_by_labeling_task(
     )
 
 
+def get_attribute_data_with_doc_bins_of_records(project_id, attribute_name):
+    query = f"""
+    SELECT rt.id, r."data" ->> '{attribute_name}' "attribute_data", rt.bytes
+    from record r
+    JOIN record_tokenized rt
+    ON  r.id = rt.record_id
+    WHERE r.project_id = '{project_id}'
+    AND rt.project_id = '{project_id}'
+    """
+    return general.execute_all(query)
+
+
+def update_bytes_of_record_tokenized(values: List[Dict[str, Any]]) -> None:
+    query = (
+        update(RecordTokenized)
+        .where(RecordTokenized.id == bindparam("_id"))
+        .values({"bytes": bindparam("bytes")})
+    )
+    general.execute(query, values)
+    general.flush()
+
+
+def update_columns_of_tokenized_records(rt_ids: List[str], attribute_name: str):
+    query = f"""
+    UPDATE record_tokenized 
+    SET columns = array_append(columns, '{attribute_name}')
+    WHERE id IN {rt_ids}
+    """
+    general.execute(query)
+    general.flush()
+
+
 def get_missing_rats_records(
     project_id: str, limit: int, attribute_id: str
 ) -> List[Any]:
@@ -161,6 +196,16 @@ def get_count_scale_uploaded(project_id: str) -> int:
         session.query(models.Record)
         .filter(
             models.Record.category == enums.RecordCategory.SCALE.value,
+            models.Record.project_id == project_id,
+        )
+        .count()
+    )
+
+
+def get_count_all_records(project_id: str) -> int:
+    return (
+        session.query(models.Record)
+        .filter(
             models.Record.project_id == project_id,
         )
         .count()
@@ -520,7 +565,7 @@ def delete_user_created_attribute(
     general.flush_or_commit(with_commit)
 
 
-def delete_dublicated_rats(with_commit: bool = False) -> None:
+def delete_duplicated_rats(with_commit: bool = False) -> None:
     # no project so run for all to prevent expensive join with record table
     query = f"""    
     DELETE FROM record_tokenized rt

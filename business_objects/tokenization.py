@@ -10,16 +10,14 @@ from ..session import session
 
 
 def get_records_tokenized(
-    project_id: str, record_ids: List[str]
+    project_id: str, record_ids: List[str] = None
 ) -> List[RecordTokenized]:
-    return (
-        session.query(RecordTokenized)
-        .filter(
-            RecordTokenized.project_id == project_id,
-            RecordTokenized.record_id.in_(record_ids),
-        )
-        .all()
+    query = session.query(RecordTokenized).filter(
+        RecordTokenized.project_id == project_id,
     )
+    if record_ids:
+        query = query.filter(RecordTokenized.record_id.in_(record_ids))
+    return query.all()
 
 
 def get_record_tokenization_task(project_id: str) -> RecordTokenizationTask:
