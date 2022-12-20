@@ -123,7 +123,7 @@ def update_bytes_of_record_tokenized(values: List[Dict[str, Any]]) -> None:
     general.flush()
 
 
-def update_columns_of_tokenized_records(rt_ids: List[str], attribute_name: str):
+def update_columns_of_tokenized_records(rt_ids: List[str], attribute_name: str) -> None:
     query = f"""
     UPDATE record_tokenized 
     SET columns = array_append(columns, '{attribute_name}')
