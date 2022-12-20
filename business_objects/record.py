@@ -91,7 +91,17 @@ def get_ids_of_manual_records_by_labeling_task(
     )
 
 
-def get_attribute_data_with_doc_bins_of_records(project_id, attribute_name):
+def count_records_without_tokenization(project_id: str) -> int:
+    query = f"""
+    SELECT count(r.id) c
+    FROM ({get_records_without_tokenization(project_id, 0, True)}) r
+    """
+    return general.execute(query).first().c
+
+
+def get_attribute_data_with_doc_bins_of_records(
+    project_id: str, attribute_name: str
+) -> List[Any]:
     query = f"""
     SELECT rt.id, r."data" ->> '{attribute_name}' "attribute_data", rt.bytes
     from record r
@@ -148,7 +158,7 @@ def get_missing_rats_records(
 
 
 def get_records_without_tokenization(
-    project_id: str, limit: int, query_only: bool = False
+    project_id: str, limit: int = 0, query_only: bool = False
 ) -> List[Any]:
     query = f"""
     SELECT r.id, r.data, rt."columns"
