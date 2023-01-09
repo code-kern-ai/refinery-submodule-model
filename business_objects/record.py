@@ -1,5 +1,5 @@
 from __future__ import with_statement
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy import cast, Text
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -369,7 +369,9 @@ def count_by_project_and_source(
 
 
 # rats = record_attribute_token_statistics
-def count_missing_rats_records(project_id: str, attribute_id: str) -> int:
+def count_missing_rats_records(
+    project_id: str, attribute_id: Optional[str] = None
+) -> int:
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
     attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
     if attribute_id:
