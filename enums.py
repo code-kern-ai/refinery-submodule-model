@@ -379,3 +379,7 @@ class TokenExpireAtValues(Enum):
 class TokenScope(Enum):
     READ = "READ"
     READ_WRITE = "READ_WRITE"
+
+class TokenizationTaskTypes(Enums):
+    ATTRIBUTE = "ATTRIBUTE"
+    PROJECT = "PROJECT"
