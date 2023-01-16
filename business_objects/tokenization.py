@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Optional
 
 
 from sqlalchemy import or_
@@ -111,8 +111,10 @@ def get_doc_bin_table_to_json(
 def create_tokenization_task(
     project_id: str,
     user_id: str,
+    scope: str,
     type: str = enums.TokenizerTask.TYPE_DOC_BIN.value,
     with_commit: bool = False,
+    attribute_name: Optional[str] = None,
 ) -> RecordTokenizationTask:
     tbl_entry = RecordTokenizationTask(
         project_id=project_id,
