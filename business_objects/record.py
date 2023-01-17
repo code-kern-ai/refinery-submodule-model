@@ -103,12 +103,14 @@ def get_attribute_data_with_doc_bins_of_records(
     project_id: str, attribute_name: str
 ) -> List[Any]:
     query = f"""
-    SELECT rt.id, r."data" ->> '{attribute_name}' "attribute_data", rt.bytes
-    from record r
-    JOIN record_tokenized rt
-    ON  r.id = rt.record_id
+    SELECT 
+        rt.id, 
+        r."data" ->> '{attribute_name}' attribute_data, 
+        rt.bytes
+    FROM record r
+    INNER JOIN record_tokenized rt
+        ON  r.project_id = rt.project_id AND r.id = rt.record_id
     WHERE r.project_id = '{project_id}'
-    AND rt.project_id = '{project_id}'
     """
     return general.execute_all(query)
 
