@@ -96,7 +96,7 @@ def count_records_without_tokenization(project_id: str) -> int:
     SELECT count(r.id) c
     FROM ({get_records_without_tokenization(project_id, 0, True)}) r
     """
-    return general.execute(query).first().c
+    return general.execute_first(query)
 
 
 def get_attribute_data_with_doc_bins_of_records(
@@ -134,7 +134,7 @@ def update_columns_of_tokenized_records(rt_ids: List[str], attribute_name: str) 
 
 
 def get_missing_rats_records(
-    project_id: str, limit: int, attribute_id: str
+    project_id: str, attribute_id: str, limit: int = 0
 ) -> List[Any]:
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
     attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
@@ -182,7 +182,10 @@ def get_records_without_tokenization(
 
 
 def get_missing_tokenized_records(
-    project_id: str, limit: int, attribute_names_string: str, query_only: bool = False
+    project_id: str,
+    attribute_names_string: str,
+    limit: int = 0,
+    query_only: bool = False,
 ) -> List[Any]:
     query = f"""
     SELECT r.id, r.data, rt."columns"
@@ -397,9 +400,9 @@ def count_missing_rats_records(
     return result.c
 
 
-def count_missing_tokenized_records(project_id: str) -> List[Any]:
+def count_missing_tokenized_records(project_id: str) -> int:
     query = f"""
-    SELECT COUNT(record_query.id)
+    SELECT COUNT(*)
     FROM (
         {get_records_without_tokenization(project_id, None, query_only = True)}
     ) record_query
