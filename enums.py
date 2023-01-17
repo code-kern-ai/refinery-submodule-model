@@ -381,7 +381,7 @@ class TokenScope(Enum):
     READ_WRITE = "READ_WRITE"
 
 
-class TokenizationTaskTypes(Enums):
+class TokenizationTaskTypes(Enum):
     ATTRIBUTE = "ATTRIBUTE"
     PROJECT = "PROJECT"
 

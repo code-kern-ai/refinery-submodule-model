@@ -141,16 +141,19 @@ def get_missing_rats_records(
     if attribute_id:
         attribute_add += f" AND att.id = '{attribute_id}'"
     query = f"""
-    SELECT r.id record_id, array_agg(att.id) attribute_ids
+    SELECT r.id record_id, array_agg(att.id) attribute_ids, rt.bytes bytes, rt.columns "columns"
     FROM record r
     INNER JOIN attribute att
         ON r.project_id = att.project_id {attribute_add}
     LEFT JOIN record_attribute_token_statistics rats
         ON r.id = rats.record_id 
         AND att.id = rats.attribute_id
+    LEFT JOIN record_tokenized rt
+        ON rt.record_id = r.id
+        AND rt.project_id = r.project_id
     WHERE r.project_id = '{project_id}' 
     AND rats.id IS NULL
-    GROUP BY r.id
+    GROUP BY r.id, rt.bytes, rt.columns
     """
     if limit > 0:
         query += f"LIMIT {limit} "
