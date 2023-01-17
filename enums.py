@@ -214,6 +214,7 @@ class UploadStates(Enum):
 class UploadTypes(Enum):
     LABEL_STUDIO = "LABEL_STUDIO"
     DEFAULT = "DEFAULT"
+    WORKFLOW_STORE = "WORKFLOW_STORE"
 
 
 class TokenizerTask(Enum):
