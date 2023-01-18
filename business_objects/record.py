@@ -96,7 +96,7 @@ def count_records_without_tokenization(project_id: str) -> int:
     SELECT count(r.id) c
     FROM ({get_records_without_tokenization(project_id, 0, True)}) r
     """
-    return general.execute_first(query)
+    return general.execute_first(query).c
 
 
 def get_attribute_data_with_doc_bins_of_records(
