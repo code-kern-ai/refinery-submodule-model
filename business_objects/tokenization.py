@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Optional
 
 
 from sqlalchemy import or_
@@ -10,16 +10,14 @@ from ..session import session
 
 
 def get_records_tokenized(
-    project_id: str, record_ids: List[str]
+    project_id: str, record_ids: List[str] = None
 ) -> List[RecordTokenized]:
-    return (
-        session.query(RecordTokenized)
-        .filter(
-            RecordTokenized.project_id == project_id,
-            RecordTokenized.record_id.in_(record_ids),
-        )
-        .all()
+    query = session.query(RecordTokenized).filter(
+        RecordTokenized.project_id == project_id,
     )
+    if record_ids:
+        query = query.filter(RecordTokenized.record_id.in_(record_ids))
+    return query.all()
 
 
 def get_record_tokenization_task(project_id: str) -> RecordTokenizationTask:
@@ -115,6 +113,8 @@ def create_tokenization_task(
     user_id: str,
     type: str = enums.TokenizerTask.TYPE_DOC_BIN.value,
     with_commit: bool = False,
+    scope: str = enums.RecordTokenizationScope.PROJECT.value,
+    attribute_name: Optional[str] = None,
 ) -> RecordTokenizationTask:
     tbl_entry = RecordTokenizationTask(
         project_id=project_id,
@@ -122,6 +122,8 @@ def create_tokenization_task(
         state=enums.TokenizerTask.STATE_CREATED.value,
         progress=0,
         type=type,
+        scope=scope,
+        attribute_name=attribute_name,
     )
     general.add(tbl_entry, with_commit)
     return tbl_entry
