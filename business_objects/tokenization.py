@@ -122,6 +122,8 @@ def create_tokenization_task(
         state=enums.TokenizerTask.STATE_CREATED.value,
         progress=0,
         type=type,
+        scope=scope,
+        attribute_name=attribute_name,
     )
     general.add(tbl_entry, with_commit)
     return tbl_entry

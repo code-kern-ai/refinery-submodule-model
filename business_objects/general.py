@@ -53,7 +53,7 @@ def flush_or_commit(commit: bool = False) -> None:
         session.flush()
 
 
-def execute(sql: str, *args) -> Any:
+def execute(sql: Any, *args) -> Any:
     return session.execute(sql, *args)
 
 

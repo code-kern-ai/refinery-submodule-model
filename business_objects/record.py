@@ -115,17 +115,22 @@ def get_attribute_data_with_doc_bins_of_records(
     return general.execute_all(query)
 
 
-def update_bytes_of_record_tokenized(values: List[Dict[str, Any]]) -> None:
+def update_bytes_of_record_tokenized(
+    values: List[Dict[str, Any]], project_id: str
+) -> None:
     query = (
         update(RecordTokenized)
-        .where(RecordTokenized.id == bindparam("_id"))
+        .where(
+            RecordTokenized.id == bindparam("_id"),
+            RecordTokenized.project_id == project_id,
+        )
         .values({"bytes": bindparam("bytes")})
     )
     general.execute(query, values)
     general.flush()
 
 
-def update_columns_of_tokenized_records(rt_ids: List[str], attribute_name: str) -> None:
+def update_columns_of_tokenized_records(rt_ids: str, attribute_name: str) -> None:
     query = f"""
     UPDATE record_tokenized 
     SET columns = array_append(columns, '{attribute_name}')
