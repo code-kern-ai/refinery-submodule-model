@@ -99,7 +99,7 @@ def get_add_info_category(
         query = f"""
         SELECT row_to_json(x)
         FROM (
-            SELECT id::TEXT{name_col}
+            SELECT id::TEXT {name_col}
             FROM {table_name}
             {where_add}
             {limit_add} )x """
