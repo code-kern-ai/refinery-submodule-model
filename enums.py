@@ -390,3 +390,9 @@ class TokenizationTaskTypes(Enum):
 class RecordTokenizationScope(Enum):
     PROJECT = "PROJECT"
     ATTRIBUTE = "ATTRIBUTE"
+
+
+class GatesIntegrationStatus(Enum):
+    READY = "READY"
+    NOT_READY = "NOT_READY"
+    UPDATING = "UPDATING"
