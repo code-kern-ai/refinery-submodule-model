@@ -693,7 +693,9 @@ def get_first_no_text_column(project_id: str, record_id: str) -> str:
         SELECT a.name
         FROM attribute a 
         WHERE data_type NOT IN('{enums.DataTypes.TEXT.value}' , '{enums.DataTypes.CATEGORY.value}')
+            AND a.state IN ('{enums.AttributeState.AUTOMATICALLY_CREATED.value}','{enums.AttributeState.UPLOADED.value}','{enums.AttributeState.USABLE.value}')
             AND a.project_id = '{project_id}'
+        ORDER BY a.relative_position
         LIMIT 1 
     )x
     WHERE r.project_id = '{project_id}' AND r.id = '{record_id}'
