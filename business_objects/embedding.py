@@ -48,10 +48,6 @@ def get_embedding_id_and_type(project_id: str, embedding_name: str) -> Any:
     )
 
 
-def get_project_embeddings(project_id: str) -> List[Embedding]:
-    return session.query(Embedding).filter(Embedding.project_id == project_id).all()
-
-
 def get_all_embeddings() -> List[Embedding]:
     return session.query(Embedding).all()
 
