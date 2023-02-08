@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from . import general
 from .. import enums
-from ..models import InformationSource, InformationSourcePayload
+from ..models import InformationSourcePayload, InformationSource
 from ..session import session
 
 
@@ -13,6 +13,21 @@ def get(project_id: str, payload_id: str) -> InformationSourcePayload:
         .filter(
             InformationSourcePayload.project_id == project_id,
             InformationSourcePayload.id == payload_id,
+        )
+        .first()
+    )
+
+
+def get_first_running_active_learner(project_id: str) -> InformationSourcePayload:
+    return (
+        session.query(InformationSourcePayload, InformationSource)
+        .filter(
+            InformationSource.project_id == project_id,
+            InformationSource.type == enums.InformationSourceType.ACTIVE_LEARNING.value,
+            InformationSource.id == InformationSourcePayload.source_id,
+            InformationSourcePayload.project_id == project_id,
+            InformationSourcePayload.state != enums.PayloadState.FINISHED.value,
+            InformationSourcePayload.state != enums.PayloadState.FAILED.value,
         )
         .first()
     )
