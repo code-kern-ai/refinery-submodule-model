@@ -94,21 +94,22 @@ def get_label_ids_by_task_and_label_name(project_id: str) -> Dict[str, Dict[str,
 
 def get_labels_by_tasks(project_id: str) -> Dict[str, List[str]]:
     results: List = general.execute_all(
-        f"""SELECT ltl.name, lt.name
+        f"""
+        SELECT ltl.name, lt.name
         FROM labeling_task_label ltl 
-        JOIN labeling_task lt 
-        ON ltl.labeling_task_id = lt.id
+        INNER JOIN labeling_task lt 
+            ON lt.project_id = ltl.project_id AND ltl.labeling_task_id = lt.id 
         WHERE lt.project_id = '{project_id}'
         """
     )
 
     labels_by_tasks: Dict = {}
     for result in results:
-        labels_by_tasks[result[1]] = (
+        if result[1] not in labels_by_tasks:
+            labels_by_tasks[result[1]] = [result[0]]
+        else:
             labels_by_tasks[result[1]].append(result[0])
-            if labels_by_tasks.get(result[1])
-            else [result[0]]
-        )
+
     return labels_by_tasks
 
 
