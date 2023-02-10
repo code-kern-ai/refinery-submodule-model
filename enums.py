@@ -353,6 +353,12 @@ class RecordExportFormats(Enum):
     LABEL_STUDIO = "LABEL_STUDIO"
 
 
+class RecordImportFileTypes(Enum):
+    JSON = "JSON"
+    CSV = "CSV"
+    XLSX = "XLSX"
+
+
 class RecordExportFileTypes(Enum):
     JSON = "JSON"
     CSV = "CSV"
