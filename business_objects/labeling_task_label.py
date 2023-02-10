@@ -81,7 +81,13 @@ def get_label_ids_by_task_and_label_name(project_id: str) -> Dict[str, Dict[str,
         ...
     }
     """
-    sql: str = f"SELECT lt.name, ltl.name, ltl.id FROM labeling_task lt JOIN labeling_task_label ltl ON lt.id = ltl.labeling_task_id WHERE lt.project_id = '{project_id}'"
+    sql: str = f"""
+    SELECT lt.name, ltl.name, ltl.id 
+    FROM labeling_task lt 
+    INNER JOIN labeling_task_label ltl 
+        ON lt.project_id = ltl.project_id AND lt.id = ltl.labeling_task_id 
+    WHERE lt.project_id = '{project_id}'    
+    """
     results: List = general.execute_all(sql)
     return_dict: Dict = {}
     for result in results:
