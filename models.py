@@ -564,6 +564,8 @@ class RecordTokenizationTask(Base):
         index=True,
     )
     type = Column(String, default="DOC_BINS")
+    scope = Column(String, default="PROJECT")  # e.g. PROJECT, ATTRIBUTE
+    attribute_name = Column(String)
     state = Column(String, default=UploadStates.CREATED.value)
     progress = Column(Float, default=0.0)
     workload = Column(Integer)

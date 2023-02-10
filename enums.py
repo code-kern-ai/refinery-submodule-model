@@ -380,3 +380,19 @@ class TokenExpireAtValues(Enum):
 class TokenScope(Enum):
     READ = "READ"
     READ_WRITE = "READ_WRITE"
+
+
+class TokenizationTaskTypes(Enum):
+    ATTRIBUTE = "ATTRIBUTE"
+    PROJECT = "PROJECT"
+
+
+class RecordTokenizationScope(Enum):
+    PROJECT = "PROJECT"
+    ATTRIBUTE = "ATTRIBUTE"
+
+
+class GatesIntegrationStatus(Enum):
+    READY = "READY"
+    NOT_READY = "NOT_READY"
+    UPDATING = "UPDATING"

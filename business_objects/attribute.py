@@ -92,7 +92,7 @@ def get_text_attributes(
     )
     if state_filter:
         query = query.filter(Attribute.state.in_(state_filter))
-    text_attributes = query.all()
+    text_attributes = query.order_by(Attribute.relative_position.asc()).all()
     return {att.name: str(att.id) for att in text_attributes}
 
 

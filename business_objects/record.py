@@ -1,7 +1,9 @@
 from __future__ import with_statement
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy import cast, Text
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.sql.expression import bindparam
+from sqlalchemy import update
 
 from . import attribute, general
 from .. import models, enums
@@ -11,6 +13,7 @@ from ..models import (
     LabelingTaskLabel,
     RecordAttributeTokenStatistics,
     Attribute,
+    RecordTokenized,
 )
 from ..session import session
 
@@ -88,41 +91,124 @@ def get_ids_of_manual_records_by_labeling_task(
     )
 
 
+def count_records_without_tokenization(project_id: str) -> int:
+    query = f"""
+    SELECT count(r.id) c
+    FROM ({get_records_without_tokenization(project_id, 0, True)}) r
+    """
+    return general.execute_first(query).c
+
+
+def get_attribute_data_with_doc_bins_of_records(
+    project_id: str, attribute_name: str
+) -> List[Any]:
+    query = f"""
+    SELECT 
+        rt.id, 
+        r."data" ->> '{attribute_name}' attribute_data, 
+        rt.bytes
+    FROM record r
+    INNER JOIN record_tokenized rt
+        ON  r.project_id = rt.project_id AND r.id = rt.record_id
+    WHERE r.project_id = '{project_id}'
+    """
+    return general.execute_all(query)
+
+
+def update_bytes_of_record_tokenized(
+    values: List[Dict[str, Any]], project_id: str
+) -> None:
+    query = (
+        update(RecordTokenized)
+        .where(
+            RecordTokenized.id == bindparam("_id"),
+            RecordTokenized.project_id == project_id,
+        )
+        .values({"bytes": bindparam("bytes")})
+    )
+    general.execute(query, values)
+    general.flush()
+
+
+def update_columns_of_tokenized_records(rt_ids: str, attribute_name: str) -> None:
+    query = f"""
+    UPDATE record_tokenized 
+    SET columns = array_append(columns, '{attribute_name}')
+    WHERE id IN {rt_ids}
+    """
+    general.execute(query)
+    general.flush()
+
+
 def get_missing_rats_records(
-    project_id: str, limit: int, attribute_id: str
+    project_id: str, attribute_id: str, limit: int = 0
 ) -> List[Any]:
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
     attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
     if attribute_id:
         attribute_add += f" AND att.id = '{attribute_id}'"
     query = f"""
-    SELECT r.id record_id, array_agg(att.id) attribute_ids
+    SELECT r.id record_id, array_agg(att.id) attribute_ids, rt.bytes bytes, rt.columns "columns"
     FROM record r
     INNER JOIN attribute att
         ON r.project_id = att.project_id {attribute_add}
     LEFT JOIN record_attribute_token_statistics rats
         ON r.id = rats.record_id 
         AND att.id = rats.attribute_id
+    LEFT JOIN record_tokenized rt
+        ON rt.record_id = r.id
+        AND rt.project_id = r.project_id
     WHERE r.project_id = '{project_id}' 
     AND rats.id IS NULL
-    GROUP BY r.id
+    GROUP BY r.id, rt.bytes, rt.columns
     """
     if limit > 0:
         query += f"LIMIT {limit} "
     return general.execute_all(query)
 
 
-def get_missing_tokenized_records(project_id: str, limit: int) -> List[Any]:
+def get_records_without_tokenization(
+    project_id: str, limit: int = 0, query_only: bool = False
+) -> List[Any]:
     query = f"""
-    SELECT r.id, r.data
+    SELECT r.id, r.data, rt."columns"
     FROM record r
     LEFT JOIN record_tokenized rt
-        ON r.id = rt.record_id 
-        AND r.project_id = rt.project_id 
+        ON r.id = rt.record_id
+        AND r.project_id = rt.project_id
         AND rt.project_id = '{project_id}'
-    WHERE r.project_id = '{project_id}' 
-    AND rt.id IS NULL    
+    WHERE r.project_id = '{project_id}'
+    AND rt.id IS NULL
+
     """
+    if query_only:
+        return query
+    if limit > 0:
+        query += f"LIMIT {limit} "
+    return general.execute_all(query)
+
+
+def get_missing_tokenized_records(
+    project_id: str,
+    attribute_names_string: str,
+    limit: int = 0,
+    query_only: bool = False,
+) -> List[Any]:
+    query = f"""
+    SELECT r.id, r.data, rt."columns"
+    FROM record r
+    LEFT JOIN record_tokenized rt
+        ON r.id = rt.record_id
+        AND r.project_id = rt.project_id
+        AND rt.project_id = '{project_id}'
+    WHERE r.project_id = '{project_id}'
+    AND (
+        NOT rt."columns" @> '{attribute_names_string}'
+        OR rt."columns" IS NULL
+    )
+    """
+    if query_only:
+        return query
     if limit > 0:
         query += f"LIMIT {limit} "
     return general.execute_all(query)
@@ -133,6 +219,16 @@ def get_count_scale_uploaded(project_id: str) -> int:
         session.query(models.Record)
         .filter(
             models.Record.category == enums.RecordCategory.SCALE.value,
+            models.Record.project_id == project_id,
+        )
+        .count()
+    )
+
+
+def get_count_all_records(project_id: str) -> int:
+    return (
+        session.query(models.Record)
+        .filter(
             models.Record.project_id == project_id,
         )
         .count()
@@ -286,7 +382,9 @@ def count_by_project_and_source(
 
 
 # rats = record_attribute_token_statistics
-def count_missing_rats_records(project_id: str, attribute_id: str) -> int:
+def count_missing_rats_records(
+    project_id: str, attribute_id: Optional[str] = None
+) -> int:
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
     attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
     if attribute_id:
@@ -311,17 +409,12 @@ def count_missing_rats_records(project_id: str, attribute_id: str) -> int:
 
 def count_missing_tokenized_records(project_id: str) -> int:
     query = f"""
-    SELECT COUNT(*) c
-    FROM record r
-    LEFT JOIN record_tokenized rt
-        ON r.id = rt.record_id 
-        AND r.project_id = rt.project_id 
-        AND rt.project_id = '{project_id}'
-    WHERE r.project_id = '{project_id}' 
-    AND rt.id IS NULL    
+    SELECT COUNT(*)
+    FROM (
+        {get_records_without_tokenization(project_id, None, query_only = True)}
+    ) record_query
     """
-    result = general.execute_first(query)
-    return result.c
+    return general.execute_first(query)[0]
 
 
 def count_tokenized_records(project_id: str) -> int:
@@ -497,7 +590,7 @@ def delete_user_created_attribute(
     general.flush_or_commit(with_commit)
 
 
-def delete_dublicated_rats(with_commit: bool = False) -> None:
+def delete_duplicated_rats(with_commit: bool = False) -> None:
     # no project so run for all to prevent expensive join with record table
     query = f"""    
     DELETE FROM record_tokenized rt
@@ -600,7 +693,9 @@ def get_first_no_text_column(project_id: str, record_id: str) -> str:
         SELECT a.name
         FROM attribute a 
         WHERE data_type NOT IN('{enums.DataTypes.TEXT.value}' , '{enums.DataTypes.CATEGORY.value}')
+            AND a.state IN ('{enums.AttributeState.AUTOMATICALLY_CREATED.value}','{enums.AttributeState.UPLOADED.value}','{enums.AttributeState.USABLE.value}')
             AND a.project_id = '{project_id}'
+        ORDER BY a.relative_position
         LIMIT 1 
     )x
     WHERE r.project_id = '{project_id}' AND r.id = '{record_id}'
