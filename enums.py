@@ -304,14 +304,14 @@ class Pages(Enum):
 
 
 class DOCS(Enum):
-    UPLOADING_DATA = "https://docs.kern.ai/docs/project-creation-and-data-upload"
-    KNOWLEDGE_BASE = "https://docs.kern.ai/docs/building-labeling-functions#lookup-lists-for-distant-supervision"
-    WORKFLOW = "https://docs.kern.ai/docs/manual-labeling-workflow"
-    CREATING_PROJECTS = "https://docs.kern.ai/docs/project-creation-and-data-upload"
-    WEAK_SUPERVISION = "https://docs.kern.ai/docs/weak-supervision"
-    CREATE_EMBEDDINGS = "https://docs.kern.ai/docs/embedding-integration"
-    INFORMATION_SOURCES = "https://docs.kern.ai/docs/building-labeling-functions"
-    DATA_BROWSER = "https://docs.kern.ai/docs/data-management"
+    UPLOADING_DATA = "https://docs.kern.ai/refinery/project-creation-and-data-upload"
+    KNOWLEDGE_BASE = "https://docs.kern.ai/refinery/heuristics#labeling-functions"
+    WORKFLOW = "https://docs.kern.ai/refinery/manual-labeling#labeling-workflow"
+    CREATING_PROJECTS = "https://docs.kern.ai/refinery/project-creation-and-data-upload#project-creation-workflow"
+    WEAK_SUPERVISION = "https://docs.kern.ai/refinery/weak-supervision"
+    CREATE_EMBEDDINGS = "https://docs.kern.ai/refinery/embedding-integration"
+    INFORMATION_SOURCES = "https://docs.kern.ai/refinery/heuristics#labeling-functions"
+    DATA_BROWSER = "https://docs.kern.ai/refinery/data-management"
 
 
 class SliceTypes(Enum):
