@@ -95,6 +95,7 @@ def get_label_ids_by_task_and_label_name(project_id: str) -> Dict[str, Dict[str,
             return_dict[result[0]] = {result[1]: result[2]}
         else:
             return_dict[result[0]][result[1]] = result[2]
+
     return return_dict
 
 
