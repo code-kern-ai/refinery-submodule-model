@@ -252,8 +252,9 @@ def get_all_extraction_tokens_for_information_source(
 
 def count_null_labels(project_id: str) -> int:
     query = f"""
-     SELECT COUNT(*) FROM record_label_association rla
-        WHERE rla.project_id = '{project_id}'
+    SELECT COUNT(*) 
+    FROM record_label_association rla
+    WHERE rla.project_id = '{project_id}'
         AND rla.labeling_task_label_id IS NULL
     """
     value = general.execute_first(query)
