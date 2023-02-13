@@ -558,14 +558,12 @@ def update_is_valid_manual_label_for_project(
     general.flush_or_commit(with_commit)
 
 
-def update_null_labels(
-    project_id: str, label_reference_error_id: LabelingTaskLabel
-) -> None:
+def update_null_labels(project_id: str, label_reference_error_id: str) -> None:
     update_query = f"""
-        UPDATE record_label_association
-        SET labeling_task_label_id = '{str(label_reference_error_id)}'
-        WHERE project_id = '{project_id}'
-        AND labeling_task_label_id IS NULL
+    UPDATE record_label_association
+    SET labeling_task_label_id = '{label_reference_error_id}'
+    WHERE project_id = '{project_id}'
+    AND labeling_task_label_id IS NULL
     """
     general.execute(update_query)
     general.commit()
