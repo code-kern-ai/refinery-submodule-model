@@ -250,6 +250,19 @@ def get_all_extraction_tokens_for_information_source(
     )
 
 
+def count_null_labels(project_id: str) -> int:
+    query = f"""
+    SELECT COUNT(*) 
+    FROM record_label_association rla
+    WHERE rla.project_id = '{project_id}'
+        AND rla.labeling_task_label_id IS NULL
+    """
+    value = general.execute_first(query)
+    if not value:
+        return 0
+    return value[0]
+
+
 def count_absolute(task_id: str, record_category: str, label_source: str) -> int:
     return (
         session.query(RecordLabelAssociation)
@@ -543,6 +556,17 @@ def update_is_valid_manual_label_for_project(
     """
     general.execute(query)
     general.flush_or_commit(with_commit)
+
+
+def update_null_labels(project_id: str, label_reference_error_id: str) -> None:
+    update_query = f"""
+    UPDATE record_label_association
+    SET labeling_task_label_id = '{label_reference_error_id}'
+    WHERE project_id = '{project_id}'
+    AND labeling_task_label_id IS NULL
+    """
+    general.execute(update_query)
+    general.commit()
 
 
 def delete_by_source_id(

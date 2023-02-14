@@ -8,3 +8,7 @@ class EntityNotFoundException(Exception):
 
 class AccessDeniedException(Exception):
     pass
+
+
+class InvalidInputException(Exception):
+    pass
