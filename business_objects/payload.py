@@ -20,14 +20,16 @@ def get(project_id: str, payload_id: str) -> InformationSourcePayload:
 
 def get_first_running_active_learner(project_id: str) -> InformationSourcePayload:
     return (
-        session.query(InformationSourcePayload, InformationSource)
+        session.query(InformationSourcePayload)
+        .join(
+            InformationSource,
+            (InformationSourcePayload.source_id== InformationSource.id)
+            & (InformationSourcePayload.project_id == InformationSource.project_id),
+        )
         .filter(
-            InformationSource.project_id == project_id,
-            InformationSource.type == enums.InformationSourceType.ACTIVE_LEARNING.value,
-            InformationSource.id == InformationSourcePayload.source_id,
             InformationSourcePayload.project_id == project_id,
-            InformationSourcePayload.state != enums.PayloadState.FINISHED.value,
-            InformationSourcePayload.state != enums.PayloadState.FAILED.value,
+            InformationSource.type == enums.InformationSourceType.ACTIVE_LEARNING.value,
+            InformationSourcePayload.state == enums.PayloadState.CREATED.value,
         )
         .first()
     )
