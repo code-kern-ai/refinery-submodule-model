@@ -6,12 +6,13 @@ from .enums import (
     CascadeBehaviour,
     NotificationState,
     Tablenames,
-    Notification,
+    Notification as NotificationEnums,
     UploadStates,
     PayloadState,
     SliceTypes,
     UserRoles,
     AttributeState,
+    AdminMessageLevel,
 )
 from sqlalchemy import (
     JSON,
@@ -283,7 +284,7 @@ class Notification(Base):
         index=True,
     )
     type = Column(String)  # of type enums.NotificationType.*.value
-    level = Column(String, default=Notification.INFO.value)
+    level = Column(String, default=NotificationEnums.INFO.value)
     message = Column(String)
     important = Column(Boolean)
     state = Column(String, default=NotificationState.INITIAL.value)
@@ -900,3 +901,24 @@ class KnowledgeTerm(Base):
     value = Column(String)
     comment = Column(String)
     blacklisted = Column(Boolean, default=False)
+
+
+class AdminMessage(Base):
+    __tablename__ = Tablenames.ADMIN_MESSAGE.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    text = Column(String)
+    level = Column(String, default=AdminMessageLevel.INFO.value)
+    archived = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id"),
+        index=True,
+    )
+    archive_date = Column(DateTime)
+    archived_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id"),
+        index=True,
+    )
+    archived_reason = Column(String)
