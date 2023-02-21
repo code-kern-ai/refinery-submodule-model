@@ -25,9 +25,10 @@ def create(text: str, level: str, archive_date: int, created_by: str):
     general.add(message, True)
 
 
-def archive(message_id: str, archived_by: str, archive_date):
+def archive(message_id: str, archived_by: str, archive_date, archived_reason):
     message = get(message_id)
     message.archived = True
     message.archived_by = archived_by
     message.archive_date = archive_date
+    message.archived_reason = archived_reason
     general.commit()
