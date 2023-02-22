@@ -23,6 +23,7 @@ def create(text: str, level: str, archive_date: int, created_by: str):
         created_by=created_by,
     )
     general.add(message, True)
+    return message
 
 
 def archive(message_id: str, archived_by: str, archive_date, archived_reason):
