@@ -46,14 +46,18 @@ def update_last_interaction(user_id):
     general.commit()
 
 
-def get_active_users_in_range(last_interaction_range: Any):
-    return (
-        session.query(models.User)
-        .filter(
+def get_active_users_in_range(last_interaction_range: Any, order_by_interaction: bool):
+    query = session.query(models.User)
+
+    if last_interaction_range:
+        query = session.query(models.User).filter(
             models.User.last_interaction >= (last_interaction_range),
         )
-        .all()
-    )
+
+    if order_by_interaction:
+        query = query.order_by(models.User.last_interaction.asc())
+
+    return query.all()
 
 def write_user_activity_safe(
     entries_to_add: List[List[Any]], with_commit: bool = False
