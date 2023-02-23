@@ -1,5 +1,6 @@
 import traceback
 from typing import List, Any
+from submodules.model import models
 
 from submodules.model.business_objects import user
 
@@ -45,14 +46,14 @@ def update_last_interaction(user_id):
     general.commit()
 
 
-def get_user_activity_in_range(last_interaction_range: str):
-    query = f"""
-        SELECT *  
-        FROM user
-        WHERE user.last_interaction >= Convert(datetime, '{last_interaction_range}' )
-    """
-    return general.execute_all(query)
-
+def get_active_users_in_range(last_interaction_range: Any):
+    return (
+        session.query(models.User)
+        .filter(
+            models.User.last_interaction >= (last_interaction_range),
+        )
+        .all()
+    )
 
 def write_user_activity_safe(
     entries_to_add: List[List[Any]], with_commit: bool = False
