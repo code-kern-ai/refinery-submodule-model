@@ -12,6 +12,8 @@ def get_all_tasks(project_id: None, only_running: False):
     {get_running_embedding_tasks(project_id, only_running)}
     UNION
     {get_running_weak_supervision_tasks(project_id, only_running)}
+    UNION
+    {get_running_upload_tasks(project_id, only_running)}
     """
     return general.execute_all(query)
 
@@ -107,5 +109,24 @@ def get_running_weak_supervision_tasks(project_id: None, only_running: False):
     if only_running:
         query = query + f"""
         WHERE state = '{enums.PayloadState.CREATED.value}'
+        """
+    return query
+
+def get_running_upload_tasks(project_id: None, only_running: False):
+    query = f"""
+    SELECT id, 'upload' as task_type
+    FROM upload_task
+    """
+    if project_id and only_running: # TODO LOOKUP Weak Supervision States
+        query = query + f"""
+        WHERE project_id = '{project_id}' AND state = '{enums.UploadStates.IN_PROGRESS.value}'
+        """
+    if project_id:
+        query = query + f"""
+        WHERE project_id = '{project_id}'
+        """
+    if only_running:
+        query = query + f"""
+        WHERE state = '{enums.UploadStates.IN_PROGRESS.value}'
         """
     return query
