@@ -1,8 +1,9 @@
+from typing import Any, List
 from . import general
 from .. import enums
 
 
-def get_all_tasks(project_id: str = None, only_running: bool = False):
+def get_all_tasks(project_id: str = None, only_running: bool = False) -> List[Any]:
     query = f"""
     {__select_running_information_source_payloads(project_id, only_running)}
     UNION
@@ -31,7 +32,7 @@ def cancel_all_running_tasks(project_id: str = None):
 
 def set_information_source_payloads_to_failed(
     project_id: str = None, payload_id: str = None, with_commit: bool = False
-):
+) -> None:
     query = f"""
     UPDATE information_source_payload
     SET state = '{enums.PayloadState.FAILED.value}'
@@ -59,7 +60,7 @@ def set_information_source_payloads_to_failed(
 
 def set_attribute_calculation_to_failed(
     project_id: str = None, attribute_id: str = None, with_commit: bool = False
-):
+) -> None:
     query = f"""
     UPDATE attribute
     SET state = '{enums.AttributeState.FAILED.value}'
@@ -86,7 +87,7 @@ def set_attribute_calculation_to_failed(
 
 def set_record_tokenization_task_to_failed(
     project_id: str = None, task_id: str = None, with_commit: bool = False
-):
+) -> None:
     query = f"""
     UPDATE record_tokenization_task
     SET state = '{enums.TokenizerTask.STATE_FAILED.value}'
@@ -114,7 +115,7 @@ def set_record_tokenization_task_to_failed(
 
 def set_embedding_to_failed(
     project_id: str = None, embedding_id: str = None, with_commit: bool = False
-):
+) -> None:
     query = f"""
     UPDATE embedding
     SET state = '{enums.EmbeddingState.FAILED.value}'
@@ -141,7 +142,7 @@ def set_embedding_to_failed(
 
 def set_weak_supervision_to_failed(
     project_id: str = None, task_id: str = None, with_commit: bool = False
-):
+) -> None:
     query = f"""
     UPDATE weak_supervision_task
     SET state = '{enums.PayloadState.FAILED.value}'
@@ -168,7 +169,7 @@ def set_weak_supervision_to_failed(
 
 def set_upload_task_to_failed(
     project_id: str = None, task_id: str = None, with_commit: bool = False
-):
+) -> None:
     query = f"""
     UPDATE upload_task
     SET state = '{enums.UploadStates.ERROR.value}'
@@ -193,7 +194,9 @@ def set_upload_task_to_failed(
     general.flush_or_commit(with_commit)
 
 
-def __select_running_information_source_payloads(project_id: None, only_running: False):
+def __select_running_information_source_payloads(
+    project_id: str = None, only_running: bool = False
+) -> str:
     query = f"""
     SELECT id, 'information_source' as task_type
     FROM information_source_payload
@@ -222,7 +225,9 @@ def __select_running_information_source_payloads(project_id: None, only_running:
     return query
 
 
-def __select_running_attribute_calculation_tasks(project_id: None, only_running: False):
+def __select_running_attribute_calculation_tasks(
+    project_id: str = None, only_running: bool = False
+) -> str:
     query = f"""
     SELECT id, 'attribute_calculation' as task_type
     FROM attribute
@@ -251,7 +256,9 @@ def __select_running_attribute_calculation_tasks(project_id: None, only_running:
     return query
 
 
-def __select_running_tokenization_tasks(project_id: None, only_running: False):
+def __select_running_tokenization_tasks(
+    project_id: str = None, only_running: bool = False
+) -> str:
     query = f"""
     SELECT id, 'tokenization' as task_type
     FROM record_tokenization_task
@@ -280,7 +287,9 @@ def __select_running_tokenization_tasks(project_id: None, only_running: False):
     return query
 
 
-def __select_running_embedding_tasks(project_id: None, only_running: False):
+def __select_running_embedding_tasks(
+    project_id: str = None, only_running: bool = False
+) -> str:
     query = f"""
     SELECT id, 'embedding' as task_type
     FROM embedding
@@ -309,7 +318,9 @@ def __select_running_embedding_tasks(project_id: None, only_running: False):
     return query
 
 
-def __select_running_weak_supervision_tasks(project_id: None, only_running: False):
+def __select_running_weak_supervision_tasks(
+    project_id: str = None, only_running: bool = False
+) -> str:
     query = f"""
     SELECT id, 'weak_supervision' as task_type
     FROM weak_supervision_task
@@ -338,7 +349,9 @@ def __select_running_weak_supervision_tasks(project_id: None, only_running: Fals
     return query
 
 
-def __select_running_upload_tasks(project_id: None, only_running: False):
+def __select_running_upload_tasks(
+    project_id: str = None, only_running: bool = False
+) -> str:
     query = f"""
     SELECT id, 'upload' as task_type
     FROM upload_task
