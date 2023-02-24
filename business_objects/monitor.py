@@ -60,7 +60,7 @@ def set_attribute_calculation_to_failed(
     project_id: str = None, attribute_id: str = None, with_commit: bool = False
 ):
     query = f"""
-    UPDATE information_source_payload
+    UPDATE attribute
     SET state = '{enums.AttributeState.FAILED.value}'
     WHERE state = '{enums.AttributeState.RUNNING.value}'
     """
