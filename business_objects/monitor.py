@@ -2,7 +2,7 @@ from . import general
 from .. import enums
 
 
-def get_all_tasks(project_id: None, only_running: False):
+def get_all_tasks(project_id: str = None, only_running: bool = False):
     query = f"""
     {__select_running_information_source_payloads(project_id, only_running)}
     UNION
@@ -19,7 +19,7 @@ def get_all_tasks(project_id: None, only_running: False):
     return general.execute_all(query)
 
 
-def cancel_all_running_tasks(project_id: None):
+def cancel_all_running_tasks(project_id: str = None):
     set_information_source_payloads_to_failed(project_id)
     set_attribute_calculation_to_failed(project_id)
     set_embedding_to_failed(project_id)
