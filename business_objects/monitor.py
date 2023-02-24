@@ -53,7 +53,8 @@ def set_information_source_payloads_to_failed(
         AND id = '{payload_id}'
         """
         )
-    general.execute(query, with_commit)
+    general.execute(query)
+    general.flush_or_commit(with_commit)
 
 
 def set_attribute_calculation_to_failed(
@@ -79,7 +80,8 @@ def set_attribute_calculation_to_failed(
         AND id = '{attribute_id}'
         """
         )
-    general.execute(query, with_commit)
+    general.execute(query)
+    general.flush_or_commit(with_commit)
 
 
 def set_record_tokenization_task_to_failed(
@@ -105,7 +107,9 @@ def set_record_tokenization_task_to_failed(
         AND id = '{task_id}'
         """
         )
-    general.execute(query, with_commit)
+    print(query)
+    general.execute(query)
+    general.flush_or_commit(with_commit)
 
 
 def set_embedding_to_failed(
@@ -131,7 +135,8 @@ def set_embedding_to_failed(
         AND id = '{embedding_id}'
         """
         )
-    general.execute(query, with_commit)
+    general.execute(query)
+    general.flush_or_commit(with_commit)
 
 
 def set_weak_supervision_to_failed(
@@ -157,7 +162,8 @@ def set_weak_supervision_to_failed(
         AND id = '{task_id}'
         """
         )
-    general.execute(query, with_commit)
+    general.execute(query)
+    general.flush_or_commit(with_commit)
 
 
 def set_upload_task_to_failed(
@@ -183,7 +189,8 @@ def set_upload_task_to_failed(
         AND id = '{task_id}'
         """
         )
-    general.execute(query, with_commit)
+    general.execute(query)
+    general.flush_or_commit(with_commit)
 
 
 def __select_running_information_source_payloads(project_id: None, only_running: False):
