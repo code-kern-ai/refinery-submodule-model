@@ -198,7 +198,7 @@ def __select_running_information_source_payloads(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT id, 'information_source' as task_type
+    SELECT 'information_source' task_type, state, project_id
     FROM information_source_payload
     """
     if project_id and only_running:
@@ -229,7 +229,7 @@ def __select_running_attribute_calculation_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT id, 'attribute_calculation' as task_type
+    SELECT 'attribute_calculation' task_type, state, project_id
     FROM attribute
     """
     if project_id and only_running:
@@ -260,7 +260,7 @@ def __select_running_tokenization_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT id, 'tokenization' as task_type
+    SELECT 'tokenization' task_type, state, project_id
     FROM record_tokenization_task
     """
     if project_id and only_running:
@@ -291,7 +291,7 @@ def __select_running_embedding_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT id, 'embedding' as task_type
+    SELECT 'embedding' task_type, state, project_id
     FROM embedding
     """
     if project_id and only_running:
@@ -322,7 +322,7 @@ def __select_running_weak_supervision_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT id, 'weak_supervision' as task_type
+    SELECT 'weak_supervision' task_type, state, project_id
     FROM weak_supervision_task
     """
     if project_id and only_running:
@@ -353,7 +353,7 @@ def __select_running_upload_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT id, 'upload' as task_type
+    SELECT 'upload' task_type, state, project_id
     FROM upload_task
     """
     if project_id and only_running:
