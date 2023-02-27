@@ -198,7 +198,7 @@ def __select_running_information_source_payloads(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT 'information_source' task_type, state, project_id
+    SELECT id, 'information_source' task_type, state, project_id, created_by
     FROM information_source_payload
     """
     if project_id and only_running:
@@ -235,7 +235,7 @@ def __select_running_attribute_calculation_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT 'attribute_calculation' task_type, state, project_id
+    SELECT id, 'attribute_calculation' task_type, state, project_id, NULL created_by
     FROM attribute
     """
     if project_id and only_running:
@@ -272,7 +272,7 @@ def __select_running_tokenization_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT 'tokenization' task_type, state, project_id
+    SELECT id, 'tokenization' task_type, state, project_id, user_id created_by
     FROM record_tokenization_task
     """
     if project_id and only_running:
@@ -309,7 +309,7 @@ def __select_running_embedding_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT 'embedding' task_type, state, project_id
+    SELECT id, 'embedding' task_type, state, project_id, NULL created_by
     FROM embedding
     """
     if project_id and only_running:
@@ -346,7 +346,7 @@ def __select_running_weak_supervision_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT 'weak_supervision' task_type, state, project_id
+    SELECT id, 'weak_supervision' task_type, state, project_id, created_by
     FROM weak_supervision_task
     """
     if project_id and only_running:
@@ -383,7 +383,7 @@ def __select_running_upload_tasks(
     project_id: str = None, only_running: bool = False
 ) -> str:
     query = f"""
-    SELECT 'upload' task_type, state, project_id
+    SELECT id, 'upload' task_type, state, project_id, user_id created_by
     FROM upload_task
     """
     if project_id and only_running:
