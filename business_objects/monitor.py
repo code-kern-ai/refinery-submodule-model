@@ -5,17 +5,17 @@ from .. import enums
 
 def get_all_tasks(project_id: str = None, only_running: bool = False) -> List[Any]:
     query = f"""
-    {__select_running_information_source_payloads(project_id, only_running)}
+    ({__select_running_information_source_payloads(project_id, only_running)})
     UNION
-    {__select_running_attribute_calculation_tasks(project_id, only_running)}
+    ({__select_running_attribute_calculation_tasks(project_id, only_running)})
     UNION
-    {__select_running_tokenization_tasks(project_id, only_running)}
+    ({__select_running_tokenization_tasks(project_id, only_running)})
     UNION
-    {__select_running_embedding_tasks(project_id, only_running)}
+    ({__select_running_embedding_tasks(project_id, only_running)})
     UNION
-    {__select_running_weak_supervision_tasks(project_id, only_running)}
+    ({__select_running_weak_supervision_tasks(project_id, only_running)})
     UNION
-    {__select_running_upload_tasks(project_id, only_running)}
+    ({__select_running_upload_tasks(project_id, only_running)})
     """
     return general.execute_all(query)
 
