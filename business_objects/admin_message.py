@@ -10,11 +10,16 @@ def get(message_id: str) -> AdminMessage:
 
 
 def get_all() -> List[AdminMessage]:
-    return session.query(AdminMessage).filter().all()
+    return session.query(AdminMessage).filter().limit(100).all()
 
 
 def get_all_active() -> List[AdminMessage]:
-    return session.query(AdminMessage).filter(AdminMessage.archived == False).all()
+    return (
+        session.query(AdminMessage)
+        .filter(AdminMessage.archived == False)
+        .limit(100)
+        .all()
+    )
 
 
 def create(

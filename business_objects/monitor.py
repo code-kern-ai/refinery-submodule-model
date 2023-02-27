@@ -222,6 +222,12 @@ def __select_running_information_source_payloads(
         WHERE state = '{enums.PayloadState.CREATED.value}'
         """
         )
+    query = (
+        query
+        + f"""
+    LIMIT 100
+    """
+    )
     return query
 
 
@@ -253,6 +259,12 @@ def __select_running_attribute_calculation_tasks(
         WHERE state = '{enums.AttributeState.RUNNING.value}'
         """
         )
+    query = (
+        query
+        + f"""
+    LIMIT 100
+    """
+    )
     return query
 
 
@@ -284,6 +296,12 @@ def __select_running_tokenization_tasks(
         WHERE state = '{enums.TokenizerTask.STATE_IN_PROGRESS.value}'
         """
         )
+    query = (
+        query
+        + f"""
+    LIMIT 100
+    """
+    )
     return query
 
 
@@ -315,6 +333,12 @@ def __select_running_embedding_tasks(
         WHERE state = '{enums.EmbeddingState.ENCODING.value}' OR state = '{enums.EmbeddingState.WAITING.value}' OR state = '{enums.EmbeddingState.INITIALIZING.value}'
         """
         )
+    query = (
+        query
+        + f"""
+    LIMIT 100
+    """
+    )
     return query
 
 
@@ -346,6 +370,12 @@ def __select_running_weak_supervision_tasks(
         WHERE state = '{enums.PayloadState.CREATED.value}'
         """
         )
+    query = (
+        query
+        + f"""
+    LIMIT 100
+    """
+    )
     return query
 
 
@@ -377,4 +407,10 @@ def __select_running_upload_tasks(
         WHERE state = '{enums.UploadStates.IN_PROGRESS.value}' OR state = '{enums.UploadStates.PENDING.value}' OR state = '{enums.UploadStates.PREPARED.value}' OR state = '{enums.UploadStates.WAITING.value}'
         """
         )
+    query = (
+        query
+        + f"""
+    LIMIT 100
+    """
+    )
     return query
