@@ -5,7 +5,7 @@ from .. import enums
 
 def get_all_tasks(project_id: str = None, only_running: bool = False) -> List[Any]:
     query = f""" 
-    SELECT tasks.*, orga.name
+    SELECT tasks.*, orga.name organization_name
     FROM (
         ({__select_running_information_source_payloads(project_id, only_running)})
         UNION
