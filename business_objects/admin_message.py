@@ -13,11 +13,11 @@ def get_all() -> List[AdminMessage]:
     return session.query(AdminMessage).filter().limit(100).all()
 
 
-def get_all_active() -> List[AdminMessage]:
+def get_all_active(limit: int = 100) -> List[AdminMessage]:
     return (
         session.query(AdminMessage)
         .filter(AdminMessage.archived == False)
-        .limit(100)
+        .limit(limit)
         .all()
     )
 
@@ -47,6 +47,8 @@ def archive(
     with_commit: bool = False,
 ) -> None:
     message = get(message_id)
+    if not message:
+        return
     message.archived = True
     message.archived_by = archived_by
     message.archive_date = archive_date
