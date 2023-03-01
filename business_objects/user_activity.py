@@ -58,7 +58,7 @@ def get_active_users_in_range(
         )
 
     if order_by_interaction:
-        query = query.order_by(models.User.last_interaction.asc())
+        query = query.order_by(models.User.last_interaction.desc())
 
     return query.all()
 

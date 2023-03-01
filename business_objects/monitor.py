@@ -151,38 +151,24 @@ def __select_running_information_source_payloads(
     SELECT id, 'information_source' task_type, state, project_id, created_by
     FROM {enums.Tablenames.INFORMATION_SOURCE_PAYLOAD.value}
     """
-    if project_id and only_running:
-        query = (
-            query
-            + f"""WHERE project_id = '{project_id}' AND state = '{enums.PayloadState.CREATED.value}'"""
-        )
-    if project_id:
-        query = query + f"""WHERE project_id = '{project_id}'"""
-    if only_running:
-        query = query + f"""WHERE state = '{enums.PayloadState.CREATED.value}'"""
-    query = query + f"LIMIT {limit_per_task}"
+    only_running_where = (
+        f"state = '{enums.PayloadState.CREATED.value}'" if only_running else False
+    )
+    query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
 def __select_running_attribute_calculation_tasks(
-    project_id: str = None, only_running: bool = False, limit: int = 100
+    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
     SELECT id, '{enums.TaskType.ATTRIBUTE_CALCULATION.value}' task_type, state, project_id, NULL created_by
     FROM {enums.Tablenames.ATTRIBUTE.value}
     """
-    if project_id and only_running:
-        query = (
-            query
-            + f"""
-        WHERE project_id = '{project_id}' AND state = '{enums.AttributeState.RUNNING.value}'
-        """
-        )
-    if project_id:
-        query = query + f"AND project_id = '{project_id}'"
-    if only_running:
-        query = query + f"WHERE state = '{enums.AttributeState.RUNNING.value}'"
-    query = query + f"LIMIT {limit}"
+    only_running_where = (
+        f"state = '{enums.AttributeState.RUNNING.value}'" if only_running else False
+    )
+    query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
@@ -193,16 +179,12 @@ def __select_running_tokenization_tasks(
     SELECT id, '{enums.TaskType.TOKENIZATION.value}' task_type, state, project_id, user_id created_by
     FROM {enums.Tablenames.RECORD_TOKENIZATION_TASK.value}
     """
-    if project_id and only_running:
-        query = (
-            query
-            + f"WHERE project_id = '{project_id}' AND state = '{enums.TokenizerTask.STATE_IN_PROGRESS.value}'"
-        )
-    if project_id:
-        query = query + f"AND project_id = '{project_id}'"
-    if only_running:
-        query = query + f"WHERE state = '{enums.TokenizerTask.STATE_IN_PROGRESS.value}'"
-    query = query + f"LIMIT {limit_per_task}"
+    only_running_where = (
+        f"state = '{enums.TokenizerTask.STATE_IN_PROGRESS.value}'"
+        if only_running
+        else None
+    )
+    query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
@@ -213,23 +195,12 @@ def __select_running_embedding_tasks(
     SELECT id, '{enums.TaskType.EMBEDDING.value}' task_type, state, project_id, NULL created_by
     FROM {enums.Tablenames.EMBEDDING.value}
     """
-    if project_id and only_running:
-        query = (
-            query
-            + f"""
-        WHERE project_id = '{project_id}' AND state IN ('{enums.EmbeddingState.ENCODING.value}','{enums.EmbeddingState.WAITING.value}','{enums.EmbeddingState.INITIALIZING.value}')
-        """
-        )
-    if project_id:
-        query = query + f"AND project_id = '{project_id}'"
-    if only_running:
-        query = (
-            query
-            + f"""
-        WHERE state IN ('{enums.EmbeddingState.ENCODING.value}','{enums.EmbeddingState.WAITING.value}','{enums.EmbeddingState.INITIALIZING.value}')
-        """
-        )
-    query = query + f"LIMIT {limit_per_task}"
+    only_running_where = (
+        f"state IN ('{enums.EmbeddingState.ENCODING.value}','{enums.EmbeddingState.WAITING.value}','{enums.EmbeddingState.INITIALIZING.value}')"
+        if only_running
+        else False
+    )
+    query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
@@ -240,18 +211,10 @@ def __select_running_weak_supervision_tasks(
     SELECT id, '{enums.TaskType.WEAK_SUPERVISION.value}' task_type, state, project_id, created_by
     FROM {enums.Tablenames.WEAK_SUPERVISION_TASK.value}
     """
-    if project_id and only_running:
-        query = (
-            query
-            + f"""
-        WHERE project_id = '{project_id}' AND state = '{enums.PayloadState.CREATED.value}'
-        """
-        )
-    if project_id:
-        query = query + f"AND project_id = '{project_id}'"
-    if only_running:
-        query = query + f"WHERE state = '{enums.PayloadState.CREATED.value}'"
-    query = query + f"LIMIT {limit_per_task}"
+    only_running_where = (
+        f"state = '{enums.PayloadState.CREATED.value}'" if only_running else False
+    )
+    query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
@@ -262,19 +225,35 @@ def __select_running_upload_tasks(
     SELECT id, '{enums.TaskType.UPLOAD_TASK.value}' task_type, state, project_id, user_id created_by
     FROM {enums.Tablenames.UPLOAD_TASK.value}
     """
-    if project_id and only_running:
-        query = (
-            query
-            + f"""
-        WHERE project_id = '{project_id}' AND state IN ('{enums.UploadStates.IN_PROGRESS.value}','{enums.UploadStates.PENDING.value}','{enums.UploadStates.PREPARED.value}','{enums.UploadStates.WAITING.value}')
-        """
-        )
-    if project_id:
-        query = query + f"AND project_id = '{project_id}'"
-    if only_running:
-        query = (
-            query
-            + f"WHERE state IN ('{enums.UploadStates.IN_PROGRESS.value}','{enums.UploadStates.PENDING.value}','{enums.UploadStates.PREPARED.value}','{enums.UploadStates.WAITING.value}')"
-        )
-    query = query + f"LIMIT {limit_per_task}"
+
+    only_running_where = (
+        f"state IN ('{enums.UploadStates.IN_PROGRESS.value}','{enums.UploadStates.PENDING.value}','{enums.UploadStates.PREPARED.value}','{enums.UploadStates.WAITING.value}')"
+        if only_running
+        else False
+    )
+    query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
+
+
+def __extend_where(
+    project_id: str = None,
+    only_running_statement: str = None,
+    limit_per_task: int = 100,
+):
+    query = ""
+    if project_id:
+        query = __extend_where_helper(query, f"project_id = '{project_id}'")
+    if only_running_statement:
+        query = __extend_where_helper(
+            query,
+            only_running_statement,
+        )
+    query += f"\nLIMIT {limit_per_task}"
+    return query
+
+
+def __extend_where_helper(current: str, condition: str) -> str:
+    if current:
+        return f"{current} AND {condition}"
+    else:
+        return f" WHERE {condition}"
