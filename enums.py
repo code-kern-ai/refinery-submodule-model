@@ -411,3 +411,12 @@ class GatesIntegrationStatus(Enum):
 class AdminMessageLevel(Enum):
     WARNING = "WARNING"
     INFO = "INFO"
+
+
+class TaskType(Enum):
+    TOKENIZATION = "tokenization"
+    ATTRIBUTE_CALCULATION = "attribute_calculation"
+    EMBEDDING = "embedding"
+    INFORMATION_SOURCE = "information_source"
+    UPLOAD_TASK = "upload"
+    WEAK_SUPERVISION = "weak_supervision"

@@ -168,7 +168,7 @@ def __select_running_attribute_calculation_tasks(
     project_id: str = None, only_running: bool = False, limit: int = 100
 ) -> str:
     query = f"""
-    SELECT id, 'attribute_calculation' task_type, state, project_id, NULL created_by
+    SELECT id, '{enums.TaskType.ATTRIBUTE_CALCULATION.value}' task_type, state, project_id, NULL created_by
     FROM {enums.Tablenames.ATTRIBUTE.value}
     """
     if project_id and only_running:
@@ -190,7 +190,7 @@ def __select_running_tokenization_tasks(
     project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
-    SELECT id, 'tokenization' task_type, state, project_id, user_id created_by
+    SELECT id, '{enums.TaskType.TOKENIZATION.value}' task_type, state, project_id, user_id created_by
     FROM {enums.Tablenames.RECORD_TOKENIZATION_TASK.value}
     """
     if project_id and only_running:
@@ -210,7 +210,7 @@ def __select_running_embedding_tasks(
     project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
-    SELECT id, 'embedding' task_type, state, project_id, NULL created_by
+    SELECT id, '{enums.TaskType.EMBEDDING.value}' task_type, state, project_id, NULL created_by
     FROM {enums.Tablenames.EMBEDDING.value}
     """
     if project_id and only_running:
@@ -237,7 +237,7 @@ def __select_running_weak_supervision_tasks(
     project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
-    SELECT id, 'weak_supervision' task_type, state, project_id, created_by
+    SELECT id, '{enums.TaskType.WEAK_SUPERVISION.value}' task_type, state, project_id, created_by
     FROM {enums.Tablenames.WEAK_SUPERVISION_TASK.value}
     """
     if project_id and only_running:
@@ -259,7 +259,7 @@ def __select_running_upload_tasks(
     project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
-    SELECT id, 'upload' task_type, state, project_id, user_id created_by
+    SELECT id, '{enums.TaskType.UPLOAD_TASK.value}' task_type, state, project_id, user_id created_by
     FROM {enums.Tablenames.UPLOAD_TASK.value}
     """
     if project_id and only_running:
