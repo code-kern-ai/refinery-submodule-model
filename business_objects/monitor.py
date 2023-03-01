@@ -3,21 +3,23 @@ from . import general
 from .. import enums
 
 
-def get_all_tasks(project_id: str = None, only_running: bool = False) -> List[Any]:
+def get_all_tasks(
+    project_id: str = None, only_running: bool = True, limit_per_task: int = 100
+) -> List[Any]:
     query = f""" 
-    SELECT tasks.*, orga.name organization_name
+    SELECT tasks.*, p.name project_name, orga.name organization_name
     FROM (
-        ({__select_running_information_source_payloads(project_id, only_running)})
+        ({__select_running_information_source_payloads(project_id, only_running, limit_per_task)})
         UNION ALL
-        ({__select_running_attribute_calculation_tasks(project_id, only_running)})
+        ({__select_running_attribute_calculation_tasks(project_id, only_running, limit_per_task)})
         UNION ALL
-        ({__select_running_tokenization_tasks(project_id, only_running)})
+        ({__select_running_tokenization_tasks(project_id, only_running, limit_per_task)})
         UNION ALL
-        ({__select_running_embedding_tasks(project_id, only_running)})
+        ({__select_running_embedding_tasks(project_id, only_running, limit_per_task)})
         UNION ALL
-        ({__select_running_weak_supervision_tasks(project_id, only_running)})
+        ({__select_running_weak_supervision_tasks(project_id, only_running, limit_per_task)})
         UNION ALL
-        ({__select_running_upload_tasks(project_id, only_running)})
+        ({__select_running_upload_tasks(project_id, only_running, limit_per_task)})
     ) tasks
     INNER JOIN project p
         ON p.id = tasks.project_id
@@ -143,7 +145,7 @@ def set_upload_task_to_failed(
 
 
 def __select_running_information_source_payloads(
-    project_id: str = None, only_running: bool = False, limit: int = 100
+    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
     SELECT id, 'information_source' task_type, state, project_id, created_by
@@ -158,7 +160,7 @@ def __select_running_information_source_payloads(
         query = query + f"""WHERE project_id = '{project_id}'"""
     if only_running:
         query = query + f"""WHERE state = '{enums.PayloadState.CREATED.value}'"""
-    query = query + f"LIMIT {limit}"
+    query = query + f"LIMIT {limit_per_task}"
     return query
 
 
@@ -185,7 +187,7 @@ def __select_running_attribute_calculation_tasks(
 
 
 def __select_running_tokenization_tasks(
-    project_id: str = None, only_running: bool = False, limit: int = 100
+    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
     SELECT id, 'tokenization' task_type, state, project_id, user_id created_by
@@ -200,12 +202,12 @@ def __select_running_tokenization_tasks(
         query = query + f"AND project_id = '{project_id}'"
     if only_running:
         query = query + f"WHERE state = '{enums.TokenizerTask.STATE_IN_PROGRESS.value}'"
-    query = query + f"LIMIT {limit}"
+    query = query + f"LIMIT {limit_per_task}"
     return query
 
 
 def __select_running_embedding_tasks(
-    project_id: str = None, only_running: bool = False, limit: int = 100
+    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
     SELECT id, 'embedding' task_type, state, project_id, NULL created_by
@@ -227,12 +229,12 @@ def __select_running_embedding_tasks(
         WHERE state IN ('{enums.EmbeddingState.ENCODING.value}','{enums.EmbeddingState.WAITING.value}','{enums.EmbeddingState.INITIALIZING.value}')
         """
         )
-    query = query + f"LIMIT {limit}"
+    query = query + f"LIMIT {limit_per_task}"
     return query
 
 
 def __select_running_weak_supervision_tasks(
-    project_id: str = None, only_running: bool = False, limit: int = 100
+    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
     SELECT id, 'weak_supervision' task_type, state, project_id, created_by
@@ -249,12 +251,12 @@ def __select_running_weak_supervision_tasks(
         query = query + f"AND project_id = '{project_id}'"
     if only_running:
         query = query + f"WHERE state = '{enums.PayloadState.CREATED.value}'"
-    query = query + f"LIMIT {limit}"
+    query = query + f"LIMIT {limit_per_task}"
     return query
 
 
 def __select_running_upload_tasks(
-    project_id: str = None, only_running: bool = False, limit: int = 100
+    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
 ) -> str:
     query = f"""
     SELECT id, 'upload' task_type, state, project_id, user_id created_by
@@ -272,7 +274,7 @@ def __select_running_upload_tasks(
     if only_running:
         query = (
             query
-            + f"WHERE IN ('{enums.UploadStates.IN_PROGRESS.value}','{enums.UploadStates.PENDING.value}','{enums.UploadStates.PREPARED.value}','{enums.UploadStates.WAITING.value}')"
+            + f"WHERE state IN ('{enums.UploadStates.IN_PROGRESS.value}','{enums.UploadStates.PENDING.value}','{enums.UploadStates.PREPARED.value}','{enums.UploadStates.WAITING.value}')"
         )
-    query = query + f"LIMIT {limit}"
+    query = query + f"LIMIT {limit_per_task}"
     return query
