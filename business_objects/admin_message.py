@@ -9,8 +9,8 @@ def get(message_id: str) -> AdminMessage:
     return session.query(AdminMessage).filter(AdminMessage.id == message_id).first()
 
 
-def get_all() -> List[AdminMessage]:
-    return session.query(AdminMessage).filter().limit(100).all()
+def get_all(limit: int = 100) -> List[AdminMessage]:
+    return session.query(AdminMessage).filter().limit(limit).all()
 
 
 def get_all_active(limit: int = 100) -> List[AdminMessage]:
