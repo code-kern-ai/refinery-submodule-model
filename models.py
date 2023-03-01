@@ -129,6 +129,9 @@ class Organization(Base):
         Tablenames.ORGANIZATION,
         Tablenames.USER,
     )
+    max_rows = Column(Integer, default=50000)
+    max_cols = Column(Integer, default=25)
+    max_char_count = Column(Integer, default=100000)
 
 
 class User(Base):
