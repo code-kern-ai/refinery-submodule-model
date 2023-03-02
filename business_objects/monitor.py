@@ -1,10 +1,12 @@
-from typing import Any, List
+from typing import Any, List, Optional
 from . import general
 from .. import enums
 
 
 def get_all_tasks(
-    project_id: str = None, only_running: bool = True, limit_per_task: int = 100
+    project_id: Optional[str] = None,
+    only_running: bool = True,
+    limit_per_task: int = 100,
 ) -> List[Any]:
     query = f""" 
     SELECT tasks.*, p.name project_name, orga.name organization_name
@@ -41,7 +43,9 @@ def cancel_all_running_tasks(project_id: str = None):
 
 
 def set_information_source_payloads_to_failed(
-    project_id: str = None, payload_id: str = None, with_commit: bool = False
+    project_id: Optional[str] = None,
+    payload_id: Optional[str] = None,
+    with_commit: bool = False,
 ) -> None:
     query = f"""
     UPDATE {enums.Tablenames.INFORMATION_SOURCE_PAYLOAD.value}
@@ -59,7 +63,9 @@ def set_information_source_payloads_to_failed(
 
 
 def set_attribute_calculation_to_failed(
-    project_id: str = None, attribute_id: str = None, with_commit: bool = False
+    project_id: Optional[str] = None,
+    attribute_id: Optional[str] = None,
+    with_commit: bool = False,
 ) -> None:
     query = f"""
     UPDATE {enums.Tablenames.ATTRIBUTE.value}
@@ -77,7 +83,9 @@ def set_attribute_calculation_to_failed(
 
 
 def set_record_tokenization_task_to_failed(
-    project_id: str = None, task_id: str = None, with_commit: bool = False
+    project_id: Optional[str] = None,
+    task_id: Optional[str] = None,
+    with_commit: bool = False,
 ) -> None:
     query = f"""
     UPDATE {enums.Tablenames.RECORD_TOKENIZATION_TASK.value}
@@ -94,7 +102,9 @@ def set_record_tokenization_task_to_failed(
 
 
 def set_embedding_to_failed(
-    project_id: str = None, embedding_id: str = None, with_commit: bool = False
+    project_id: Optional[str] = None,
+    embedding_id: Optional[str] = None,
+    with_commit: bool = False,
 ) -> None:
     query = f"""
     UPDATE {enums.Tablenames.EMBEDDING.value}
@@ -111,7 +121,9 @@ def set_embedding_to_failed(
 
 
 def set_weak_supervision_to_failed(
-    project_id: str = None, task_id: str = None, with_commit: bool = False
+    project_id: Optional[str] = None,
+    task_id: Optional[str] = None,
+    with_commit: bool = False,
 ) -> None:
     query = f"""
     UPDATE {enums.Tablenames.WEAK_SUPERVISION_TASK.value}
@@ -128,7 +140,9 @@ def set_weak_supervision_to_failed(
 
 
 def set_upload_task_to_failed(
-    project_id: str = None, task_id: str = None, with_commit: bool = False
+    project_id: Optional[str] = None,
+    task_id: Optional[str] = None,
+    with_commit: bool = False,
 ) -> None:
     query = f"""
     UPDATE {enums.Tablenames.UPLOAD_TASK.value}
@@ -145,35 +159,41 @@ def set_upload_task_to_failed(
 
 
 def __select_running_information_source_payloads(
-    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
+    project_id: Optional[str] = None,
+    only_running: bool = False,
+    limit_per_task: int = 100,
 ) -> str:
     query = f"""
     SELECT id, 'information_source' task_type, state, project_id, created_by
     FROM {enums.Tablenames.INFORMATION_SOURCE_PAYLOAD.value}
     """
     only_running_where = (
-        f"state = '{enums.PayloadState.CREATED.value}'" if only_running else False
+        f"state = '{enums.PayloadState.CREATED.value}'" if only_running else None
     )
     query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
 def __select_running_attribute_calculation_tasks(
-    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
+    project_id: Optional[str] = None,
+    only_running: bool = False,
+    limit_per_task: int = 100,
 ) -> str:
     query = f"""
     SELECT id, '{enums.TaskType.ATTRIBUTE_CALCULATION.value}' task_type, state, project_id, NULL created_by
     FROM {enums.Tablenames.ATTRIBUTE.value}
     """
     only_running_where = (
-        f"state = '{enums.AttributeState.RUNNING.value}'" if only_running else False
+        f"state = '{enums.AttributeState.RUNNING.value}'" if only_running else None
     )
     query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
 def __select_running_tokenization_tasks(
-    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
+    project_id: Optional[str] = None,
+    only_running: bool = False,
+    limit_per_task: int = 100,
 ) -> str:
     query = f"""
     SELECT id, '{enums.TaskType.TOKENIZATION.value}' task_type, state, project_id, user_id created_by
@@ -189,7 +209,9 @@ def __select_running_tokenization_tasks(
 
 
 def __select_running_embedding_tasks(
-    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
+    project_id: Optional[str] = None,
+    only_running: bool = False,
+    limit_per_task: int = 100,
 ) -> str:
     query = f"""
     SELECT id, '{enums.TaskType.EMBEDDING.value}' task_type, state, project_id, NULL created_by
@@ -198,28 +220,32 @@ def __select_running_embedding_tasks(
     only_running_where = (
         f"state IN ('{enums.EmbeddingState.ENCODING.value}','{enums.EmbeddingState.WAITING.value}','{enums.EmbeddingState.INITIALIZING.value}')"
         if only_running
-        else False
+        else None
     )
     query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
 def __select_running_weak_supervision_tasks(
-    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
+    project_id: Optional[str] = None,
+    only_running: bool = False,
+    limit_per_task: int = 100,
 ) -> str:
     query = f"""
     SELECT id, '{enums.TaskType.WEAK_SUPERVISION.value}' task_type, state, project_id, created_by
     FROM {enums.Tablenames.WEAK_SUPERVISION_TASK.value}
     """
     only_running_where = (
-        f"state = '{enums.PayloadState.CREATED.value}'" if only_running else False
+        f"state = '{enums.PayloadState.CREATED.value}'" if only_running else None
     )
     query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
 def __select_running_upload_tasks(
-    project_id: str = None, only_running: bool = False, limit_per_task: int = 100
+    project_id: Optional[str] = None,
+    only_running: bool = False,
+    limit_per_task: int = 100,
 ) -> str:
     query = f"""
     SELECT id, '{enums.TaskType.UPLOAD_TASK.value}' task_type, state, project_id, user_id created_by
@@ -229,15 +255,15 @@ def __select_running_upload_tasks(
     only_running_where = (
         f"state IN ('{enums.UploadStates.IN_PROGRESS.value}','{enums.UploadStates.PENDING.value}','{enums.UploadStates.PREPARED.value}','{enums.UploadStates.WAITING.value}')"
         if only_running
-        else False
+        else None
     )
     query += __extend_where(project_id, only_running_where, limit_per_task)
     return query
 
 
 def __extend_where(
-    project_id: str = None,
-    only_running_statement: str = None,
+    project_id: Optional[str] = None,
+    only_running_statement: Optional[str] = None,
     limit_per_task: int = 100,
 ):
     query = ""
