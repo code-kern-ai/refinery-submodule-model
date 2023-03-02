@@ -144,7 +144,9 @@ def __select_running_information_source_payloads(
     only_running_where = (
         f"state = '{enums.PayloadState.CREATED.value}'" if only_running else None
     )
-    query += __extend_where_for_select(project_id, only_running_where, limit_per_task)
+    query += __extend_where_for_select(
+        project_id, only_running_where, limit_per_task, "created_at"
+    )
     return query
 
 
@@ -178,7 +180,9 @@ def __select_running_tokenization_tasks(
         if only_running
         else None
     )
-    query += __extend_where_for_select(project_id, only_running_where, limit_per_task)
+    query += __extend_where_for_select(
+        project_id, only_running_where, limit_per_task, "started_at"
+    )
     return query
 
 
@@ -212,7 +216,9 @@ def __select_running_weak_supervision_tasks(
     only_running_where = (
         f"state = '{enums.PayloadState.CREATED.value}'" if only_running else None
     )
-    query += __extend_where_for_select(project_id, only_running_where, limit_per_task)
+    query += __extend_where_for_select(
+        project_id, only_running_where, limit_per_task, "created_at"
+    )
     return query
 
 
@@ -231,7 +237,9 @@ def __select_running_upload_tasks(
         if only_running
         else None
     )
-    query += __extend_where_for_select(project_id, only_running_where, limit_per_task)
+    query += __extend_where_for_select(
+        project_id, only_running_where, limit_per_task, "started_at"
+    )
     return query
 
 
@@ -249,6 +257,7 @@ def __extend_where_for_select(
     project_id: Optional[str] = None,
     only_running_statement: Optional[str] = None,
     limit_per_task: int = 100,
+    started_column: Optional[str] = None,
 ):
     query = ""
     if project_id:
@@ -258,6 +267,7 @@ def __extend_where_for_select(
             query,
             only_running_statement,
         )
+    query = query + f"\nORDER BY {started_column} DESC" if started_column else query
     query += f"\nLIMIT {limit_per_task}"
     return query
 
