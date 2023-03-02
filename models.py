@@ -179,7 +179,7 @@ class User(Base):
         Tablenames.COMMENT_DATA,
         order_by="created_at.desc()",
     )
-    last_interaction = Column(DateTime, default=sql.func.now())
+    last_interaction = Column(DateTime)
 
 
 class LabelingAccessLink(Base):
