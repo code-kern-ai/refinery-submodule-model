@@ -1,9 +1,15 @@
+from datetime import datetime
 import traceback
 from typing import List, Any
+from submodules.model import models
+
+from submodules.model.business_objects import user
 
 from .. import UserActivity
 from ..business_objects import general
 from ..session import session
+
+from sqlalchemy import sql
 
 
 def get_all_user_activity() -> List[Any]:
@@ -33,6 +39,28 @@ def get_all_user_activity() -> List[Any]:
     )a
     """
     return general.execute_all(query)
+
+
+def update_last_interaction(user_id: str) -> None:
+    user_item = user.get(user_id)
+    user_item.last_interaction = sql.func.now()
+    general.commit()
+
+
+def get_active_users_in_range(
+    last_interaction_range: datetime, order_by_interaction: bool
+) -> models.User:
+    query = session.query(models.User)
+
+    if last_interaction_range:
+        query = session.query(models.User).filter(
+            models.User.last_interaction >= (last_interaction_range),
+        )
+
+    if order_by_interaction:
+        query = query.order_by(models.User.last_interaction.desc())
+
+    return query.all()
 
 
 def write_user_activity_safe(

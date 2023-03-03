@@ -104,6 +104,7 @@ class Tablenames(Enum):
     COMMENT_DATA = "comment_data"
     LABELING_ACCESS_LINK = "labeling_access_link"
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
+    ADMIN_MESSAGE = "admin_message"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -405,3 +406,17 @@ class GatesIntegrationStatus(Enum):
     READY = "READY"
     NOT_READY = "NOT_READY"
     UPDATING = "UPDATING"
+
+
+class AdminMessageLevel(Enum):
+    WARNING = "WARNING"
+    INFO = "INFO"
+
+
+class TaskType(Enum):
+    TOKENIZATION = "tokenization"
+    ATTRIBUTE_CALCULATION = "attribute_calculation"
+    EMBEDDING = "embedding"
+    INFORMATION_SOURCE = "information_source"
+    UPLOAD_TASK = "upload"
+    WEAK_SUPERVISION = "weak_supervision"
