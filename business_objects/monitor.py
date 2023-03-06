@@ -211,14 +211,14 @@ def __select_running_weak_supervision_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.WEAK_SUPERVISION.value}' task_type, state, project_id, created_by, created_at, finished_at
+    SELECT id, '{enums.TaskType.WEAK_SUPERVISION.value}' task_type, state, project_id, created_by, created_at as "started_at", finished_at
     FROM {enums.Tablenames.WEAK_SUPERVISION_TASK.value}
     """
     only_running_where = (
         f"state = '{enums.PayloadState.CREATED.value}'" if only_running else None
     )
     query += __extend_where_for_select(
-        project_id, only_running_where, limit_per_task, "created_at"
+        project_id, only_running_where, limit_per_task, "started_at"
     )
     return query
 
