@@ -27,8 +27,9 @@ def get_all_tasks(
         ON p.id = tasks.project_id
     INNER JOIN organization orga
         ON orga.id = p.organization_id
+    ORDER BY tasks.started_at DESC
+    LIMIT 100
     """
-
     return general.execute_all(query)
 
 
@@ -138,14 +139,14 @@ def __select_running_information_source_payloads(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, 'information_source' task_type, state, project_id, created_by
+    SELECT id, 'information_source' task_type, state, project_id, created_by, created_at AS "started_at", finished_at
     FROM {enums.Tablenames.INFORMATION_SOURCE_PAYLOAD.value}
     """
     only_running_where = (
         f"state = '{enums.PayloadState.CREATED.value}'" if only_running else None
     )
     query += __extend_where_for_select(
-        project_id, only_running_where, limit_per_task, "created_at"
+        project_id, only_running_where, limit_per_task, "started_at"
     )
     return query
 
@@ -156,7 +157,7 @@ def __select_running_attribute_calculation_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.ATTRIBUTE_CALCULATION.value}' task_type, state, project_id, NULL created_by
+    SELECT id, '{enums.TaskType.ATTRIBUTE_CALCULATION.value}' task_type, state, project_id, NULL created_by, started_at, finished_at
     FROM {enums.Tablenames.ATTRIBUTE.value}
     """
     only_running_where = (
@@ -172,7 +173,7 @@ def __select_running_tokenization_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.TOKENIZATION.value}' task_type, state, project_id, user_id created_by
+    SELECT id, '{enums.TaskType.TOKENIZATION.value}' task_type, state, project_id, user_id created_by, started_at, finished_at
     FROM {enums.Tablenames.RECORD_TOKENIZATION_TASK.value}
     """
     only_running_where = (
@@ -192,7 +193,7 @@ def __select_running_embedding_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.EMBEDDING.value}' task_type, state, project_id, NULL created_by
+    SELECT id, '{enums.TaskType.EMBEDDING.value}' task_type, state, project_id, NULL created_by, started_at, finished_at
     FROM {enums.Tablenames.EMBEDDING.value}
     """
     only_running_where = (
@@ -210,7 +211,7 @@ def __select_running_weak_supervision_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.WEAK_SUPERVISION.value}' task_type, state, project_id, created_by
+    SELECT id, '{enums.TaskType.WEAK_SUPERVISION.value}' task_type, state, project_id, created_by, created_at, finished_at
     FROM {enums.Tablenames.WEAK_SUPERVISION_TASK.value}
     """
     only_running_where = (
@@ -228,7 +229,7 @@ def __select_running_upload_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.UPLOAD_TASK.value}' task_type, state, project_id, user_id created_by
+    SELECT id, '{enums.TaskType.UPLOAD_TASK.value}' task_type, state, project_id, user_id created_by, started_at, finished_at
     FROM {enums.Tablenames.UPLOAD_TASK.value}
     """
 
