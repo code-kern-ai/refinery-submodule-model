@@ -128,7 +128,7 @@ def get_all_ordered(
     if order_asc:
         query = query.order_by(Attribute.relative_position.asc())
     else:
-        query = query.order_by(Attribute.relative_position)
+        query = query.order_by(Attribute.relative_position.desc())
     return query.all()
 
 
