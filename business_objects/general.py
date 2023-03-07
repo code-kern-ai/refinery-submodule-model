@@ -95,3 +95,11 @@ def make_transient(item: Any) -> None:
 
 def generate_UUID_sql_string() -> str:
     return "uuid_in(md5(random()::TEXT || clock_timestamp()::TEXT)::CSTRING)"
+
+
+def test_database_connection() -> bool:
+    try:
+        session.execute("SELECT 1")
+        return True
+    except Exception:
+        return False
