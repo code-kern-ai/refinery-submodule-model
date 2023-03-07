@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from typing import Dict, Any, List, Optional
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
@@ -187,6 +189,8 @@ def create(
     logs: Optional[List[str]] = None,
     visibility: Optional[str] = None,
     with_commit: bool = False,
+    started_at: Optional[datetime] = None,
+    finished_at: Optional[datetime] = None,
 ) -> Attribute:
     attribute: Attribute = Attribute(
         project_id=project_id,
@@ -208,6 +212,12 @@ def create(
 
     if visibility is not None:
         attribute.visibility = visibility
+
+    if started_at is not None:
+        attribute.started_at = started_at
+
+    if finished_at is not None:
+        attribute.finished_at = finished_at
 
     general.add(attribute, with_commit)
     return attribute

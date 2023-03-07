@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from typing import List, Any, Optional
 from sqlalchemy import cast, TEXT
 
@@ -175,7 +177,6 @@ def get_tensor_count(embedding_id: str) -> EmbeddingTensor:
 
 
 def get_tensor(embedding_id: str, record_id: Optional[str] = None) -> EmbeddingTensor:
-
     query = session.query(models.EmbeddingTensor).filter(
         models.EmbeddingTensor.embedding_id == embedding_id,
     )
@@ -193,6 +194,8 @@ def create(
     custom: bool = None,
     type: str = None,
     with_commit: bool = False,
+    started_at: datetime = None,
+    finished_at: datetime = None,
 ) -> Embedding:
     embedding: Embedding = Embedding(
         project_id=project_id,
@@ -207,6 +210,12 @@ def create(
 
     if state:
         embedding.state = state
+
+    if started_at:
+        embedding.started_at = started_at
+
+    if finished_at:
+        embedding.finished_at = finished_at
 
     general.add(embedding, with_commit)
     return embedding
