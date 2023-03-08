@@ -234,6 +234,8 @@ def update(
     logs: Optional[List[str]] = None,
     with_commit: bool = False,
     visibility: Optional[str] = None,
+    started_at: Optional[datetime] = None,
+    finished_at: Optional[datetime] = None,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
     if data_type is not None:
@@ -252,6 +254,12 @@ def update(
 
     if visibility is not None:
         attribute.visibility = visibility
+
+    if started_at is not None:
+        attribute.started_at = started_at
+
+    if finished_at is not None:
+        attribute.finished_at = finished_at
 
     general.flush_or_commit(with_commit)
     return attribute
