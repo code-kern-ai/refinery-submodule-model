@@ -188,9 +188,9 @@ def create(
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
     visibility: Optional[str] = None,
-    with_commit: bool = False,
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
+    with_commit: bool = False,
 ) -> Attribute:
     attribute: Attribute = Attribute(
         project_id=project_id,
@@ -233,9 +233,9 @@ def update(
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
     with_commit: bool = False,
-    visibility: Optional[str] = None,
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
+    visibility: Optional[str] = None,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
     if data_type is not None:
