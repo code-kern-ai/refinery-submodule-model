@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from sqlalchemy.orm.session import make_transient as make_transient_original
 from ..session import session
 from ..session import request_id_ctx_var
@@ -97,9 +97,13 @@ def generate_UUID_sql_string() -> str:
     return "uuid_in(md5(random()::TEXT || clock_timestamp()::TEXT)::CSTRING)"
 
 
-def test_database_connection() -> bool:
+def test_database_connection() -> Dict[str, Any]:
+    result = {}
     try:
         session.execute("SELECT 1")
-        return True
-    except Exception:
-        return False
+        result["success"] = True
+        result["error"] = None
+    except Exception as e:
+        result["success"] = False
+        result["error"] = str(e.__class__.__name__)
+    return result
