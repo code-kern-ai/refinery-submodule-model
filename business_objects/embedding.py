@@ -194,8 +194,8 @@ def create(
     custom: bool = None,
     type: str = None,
     with_commit: bool = False,
-    started_at: datetime = None,
-    finished_at: datetime = None,
+    started_at: Optional[datetime] = None,
+    finished_at: Optional[datetime] = None,
 ) -> Embedding:
     embedding: Embedding = Embedding(
         project_id=project_id,
@@ -216,6 +216,8 @@ def create(
 
     if finished_at:
         embedding.finished_at = finished_at
+    else:
+        embedding.finished_at = sql.func.now()
 
     general.add(embedding, with_commit)
     return embedding
