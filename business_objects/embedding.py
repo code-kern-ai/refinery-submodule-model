@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from typing import List, Any, Optional
-from sqlalchemy import cast, TEXT
+from sqlalchemy import cast, TEXT, sql
 
 from . import general
 from .. import models, EmbeddingTensor, Embedding
@@ -279,6 +279,8 @@ def update_embedding_state_encoding(
 def update_embedding_state_finished(
     project_id: str, embedding_id: str, with_commit: bool = False
 ) -> None:
+    embedding_item = get(project_id, embedding_id)
+    embedding_item.finished_at = sql.func.now()
     __update_embedding_state(
         project_id, embedding_id, enums.EmbeddingState.FINISHED.value, with_commit
     )
