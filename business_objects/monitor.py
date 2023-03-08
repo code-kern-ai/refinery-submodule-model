@@ -139,7 +139,7 @@ def __select_running_information_source_payloads(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, 'information_source' task_type, state, project_id, created_by, created_at AS "started_at", finished_at
+    SELECT id, 'information_source' task_type, state, project_id, created_by, created_at AS "started_at", finished_at, NULL as full_name
     FROM {enums.Tablenames.INFORMATION_SOURCE_PAYLOAD.value}
     """
     only_running_where = (
@@ -157,13 +157,20 @@ def __select_running_attribute_calculation_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.ATTRIBUTE_CALCULATION.value}' task_type, state, project_id, NULL created_by, started_at, finished_at
+    SELECT id, '{enums.TaskType.ATTRIBUTE_CALCULATION.value}' task_type, state, project_id, NULL created_by, started_at, finished_at, NULL as full_name
     FROM {enums.Tablenames.ATTRIBUTE.value}
     """
     only_running_where = (
         f"state = '{enums.AttributeState.RUNNING.value}'" if only_running else None
     )
-    query += __extend_where_for_select(project_id, only_running_where, limit_per_task)
+    exclude_uploaded_auto_created = f"state != '{enums.AttributeState.UPLOADED.value}' AND state != '{enums.AttributeState.UPLOADED.value}'"
+    query += __extend_where_for_select(
+        project_id,
+        only_running_where,
+        limit_per_task,
+        "started_at",
+        exclude_uploaded_auto_created,
+    )
     return query
 
 
@@ -173,7 +180,15 @@ def __select_running_tokenization_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.TOKENIZATION.value}' task_type, state, project_id, user_id created_by, started_at, finished_at
+    SELECT id, '{enums.TaskType.TOKENIZATION.value}' task_type, state, project_id, user_id created_by, started_at, finished_at,
+    CASE
+        WHEN type = '{enums.TokenizerTask.TYPE_DOC_BIN.value}' THEN 'Tokenization - docbins - '
+        ELSE 'Tokenization - rats - '
+    END ||
+    CASE
+        WHEN scope = '{enums.TokenizationTaskTypes.PROJECT.value}' THEN 'Project'
+        ELSE attribute_name
+    END AS full_name
     FROM {enums.Tablenames.RECORD_TOKENIZATION_TASK.value}
     """
     only_running_where = (
@@ -193,7 +208,7 @@ def __select_running_embedding_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.EMBEDDING.value}' task_type, state, project_id, NULL created_by, started_at, finished_at
+    SELECT id, '{enums.TaskType.EMBEDDING.value}' task_type, state, project_id, NULL created_by, started_at, finished_at, NULL as full_name
     FROM {enums.Tablenames.EMBEDDING.value}
     """
     only_running_where = (
@@ -211,7 +226,7 @@ def __select_running_weak_supervision_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.WEAK_SUPERVISION.value}' task_type, state, project_id, created_by, created_at as "started_at", finished_at
+    SELECT id, '{enums.TaskType.WEAK_SUPERVISION.value}' task_type, state, project_id, created_by, created_at as "started_at", finished_at, NULL as full_name
     FROM {enums.Tablenames.WEAK_SUPERVISION_TASK.value}
     """
     only_running_where = (
@@ -229,7 +244,7 @@ def __select_running_upload_tasks(
     limit_per_task: int = 100,
 ) -> str:
     query = f"""
-    SELECT id, '{enums.TaskType.UPLOAD_TASK.value}' task_type, state, project_id, user_id created_by, started_at, finished_at
+    SELECT id, '{enums.TaskType.UPLOAD_TASK.value}' task_type, state, project_id, user_id created_by, started_at, finished_at, NULL as full_name
     FROM {enums.Tablenames.UPLOAD_TASK.value}
     """
 
@@ -259,6 +274,7 @@ def __extend_where_for_select(
     only_running_statement: Optional[str] = None,
     limit_per_task: int = 100,
     started_column: Optional[str] = None,
+    exclude_uploaded_auto_created: Optional[str] = None,
 ):
     query = ""
     if project_id:
@@ -268,6 +284,13 @@ def __extend_where_for_select(
             query,
             only_running_statement,
         )
+
+    if exclude_uploaded_auto_created:
+        query = __extend_where_helper(
+            query,
+            exclude_uploaded_auto_created,
+        )
+
     query = query + f"\nORDER BY {started_column} DESC" if started_column else query
     query += f"\nLIMIT {limit_per_task}"
     return query
