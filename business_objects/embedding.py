@@ -1,5 +1,7 @@
+from datetime import datetime
+
 from typing import List, Any, Optional
-from sqlalchemy import cast, TEXT
+from sqlalchemy import cast, TEXT, sql
 
 from . import general
 from .. import models, EmbeddingTensor, Embedding
@@ -175,7 +177,6 @@ def get_tensor_count(embedding_id: str) -> EmbeddingTensor:
 
 
 def get_tensor(embedding_id: str, record_id: Optional[str] = None) -> EmbeddingTensor:
-
     query = session.query(models.EmbeddingTensor).filter(
         models.EmbeddingTensor.embedding_id == embedding_id,
     )
@@ -192,6 +193,8 @@ def create(
     state: str = None,
     custom: bool = None,
     type: str = None,
+    started_at: Optional[datetime] = None,
+    finished_at: Optional[datetime] = None,
     with_commit: bool = False,
 ) -> Embedding:
     embedding: Embedding = Embedding(
@@ -201,12 +204,20 @@ def create(
         custom=False,
         type=type,
         state=enums.EmbeddingState.INITIALIZING.value,
+        started_at=started_at,
+        finished_at=finished_at,
     )
     if custom:
         embedding.custom = custom
 
     if state:
         embedding.state = state
+
+    if started_at:
+        embedding.started_at = started_at
+
+    if finished_at is not None:
+        embedding.finished_at = finished_at
 
     general.add(embedding, with_commit)
     return embedding
@@ -270,6 +281,8 @@ def update_embedding_state_encoding(
 def update_embedding_state_finished(
     project_id: str, embedding_id: str, with_commit: bool = False
 ) -> None:
+    embedding_item = get(project_id, embedding_id)
+    embedding_item.finished_at = sql.func.now()
     __update_embedding_state(
         project_id, embedding_id, enums.EmbeddingState.FINISHED.value, with_commit
     )
