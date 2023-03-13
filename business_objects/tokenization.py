@@ -198,3 +198,19 @@ def is_doc_bin_creation_running(project_id: str) -> bool:
         LIMIT 1
     """
     return general.execute_first(query) is not None
+
+
+def is_doc_bin_creation_running_for_attribute(
+    project_id: str, attribute_name: str
+) -> bool:
+    query = f"""
+        SELECT id
+        FROM record_tokenization_task
+        WHERE project_id = '{project_id}'
+        AND type = '{enums.TokenizerTask.TYPE_DOC_BIN.value}'
+        AND state IN ('{enums.TokenizerTask.STATE_IN_PROGRESS.value}', '{enums.TokenizerTask.STATE_CREATED.value}')
+        AND scope = '{enums.RecordTokenizationScope.ATTRIBUTE.value}'
+        AND attribute_name = '{attribute_name}'
+        LIMIT 1
+    """
+    return general.execute_first(query) is not None
