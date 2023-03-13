@@ -395,6 +395,8 @@ class Attribute(Base):
     state = Column(String, default=AttributeState.UPLOADED.value)
     logs = Column(ARRAY(String))
     visibility = Column(String, default=AttributeVisibility.DO_NOT_HIDE.value)
+    started_at = Column(DateTime, default=sql.func.now())
+    finished_at = Column(DateTime)
 
     embeddings = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
@@ -689,6 +691,8 @@ class Embedding(Base):
     type = Column(String)  # find allowed expressions in enums.EmbeddingType
     state = Column(String)  # set by embedding service
     similarity_threshold = Column(Float)  # set by neural search
+    started_at = Column(DateTime, default=sql.func.now())
+    finished_at = Column(DateTime)
 
     tensors = parent_to_child_relationship(
         Tablenames.EMBEDDING,

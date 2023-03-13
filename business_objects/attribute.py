@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from typing import Dict, Any, List, Optional
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
@@ -128,7 +130,7 @@ def get_all_ordered(
     if order_asc:
         query = query.order_by(Attribute.relative_position.asc())
     else:
-        query = query.order_by(Attribute.relative_position)
+        query = query.order_by(Attribute.relative_position.desc())
     return query.all()
 
 
@@ -186,6 +188,8 @@ def create(
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
     visibility: Optional[str] = None,
+    started_at: Optional[datetime] = None,
+    finished_at: Optional[datetime] = None,
     with_commit: bool = False,
 ) -> Attribute:
     attribute: Attribute = Attribute(
@@ -209,6 +213,12 @@ def create(
     if visibility is not None:
         attribute.visibility = visibility
 
+    if started_at is not None:
+        attribute.started_at = started_at
+
+    if finished_at is not None:
+        attribute.finished_at = finished_at
+
     general.add(attribute, with_commit)
     return attribute
 
@@ -223,6 +233,8 @@ def update(
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
     with_commit: bool = False,
+    started_at: Optional[datetime] = None,
+    finished_at: Optional[datetime] = None,
     visibility: Optional[str] = None,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
@@ -242,6 +254,12 @@ def update(
 
     if visibility is not None:
         attribute.visibility = visibility
+
+    if started_at is not None:
+        attribute.started_at = started_at
+
+    if finished_at is not None:
+        attribute.finished_at = finished_at
 
     general.flush_or_commit(with_commit)
     return attribute
