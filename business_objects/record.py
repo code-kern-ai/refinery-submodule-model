@@ -551,18 +551,9 @@ def update_add_user_created_attribute(
 ) -> None:
     attribute_item = attribute.get(project_id, attribute_id)
 
-    print("inside", calculated_attributes)
-    print(
-        f"Updating {len(calculated_attributes)} records with attribute {attribute_item.name}"
-    )
-    print("itemsss", calculated_attributes.items())
-    print("enumertate", enumerate(calculated_attributes.items()))
-
     for i, (record_id, attribute_value) in enumerate(calculated_attributes.items()):
         record_item = get(project_id=project_id, record_id=record_id)
-        print(record_item.data)
         record_item.data[attribute_item.name] = attribute_value
-        print("after", record_item.data)
         flag_modified(record_item, "data")
         if (i + 1) % 1000 == 0:
             general.flush_or_commit(with_commit)
