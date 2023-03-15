@@ -88,6 +88,17 @@ def get_finished_attribute_embeddings() -> List[Any]:
     )
 
 
+def get_waiting_embeddings(project_id: str) -> List[Embedding]:
+    return (
+        session.query(Embedding)
+        .filter(
+            Embedding.project_id == project_id,
+            Embedding.state == enums.EmbeddingState.WAITING.value,
+        )
+        .all()
+    )
+
+
 def get_tensor_data_ordered_query(embedding_id: str) -> str:
     return f"""
     SELECT et.data
