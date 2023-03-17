@@ -65,12 +65,35 @@ def get_finished_embeddings(project_id: str) -> List[Embedding]:
     )
 
 
+def get_finished_embeddings_by_started_at(project_id: str) -> List[Embedding]:
+    return (
+        session.query(Embedding)
+        .filter(
+            Embedding.project_id == project_id,
+            Embedding.state == enums.EmbeddingState.FINISHED.value,
+        )
+        .order_by(Embedding.started_at.asc())
+        .all()
+    )
+
+
 def get_finished_attribute_embeddings() -> List[Any]:
     return (
         session.query(cast(Embedding.project_id, TEXT), cast(Embedding.id, TEXT))
         .filter(
             Embedding.state == enums.EmbeddingState.FINISHED.value,
             Embedding.type == enums.EmbeddingType.ON_ATTRIBUTE.value,
+        )
+        .all()
+    )
+
+
+def get_waiting_embeddings(project_id: str) -> List[Embedding]:
+    return (
+        session.query(Embedding)
+        .filter(
+            Embedding.project_id == project_id,
+            Embedding.state == enums.EmbeddingState.WAITING.value,
         )
         .all()
     )

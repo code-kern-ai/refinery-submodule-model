@@ -550,6 +550,7 @@ def update_add_user_created_attribute(
     with_commit: bool = False,
 ) -> None:
     attribute_item = attribute.get(project_id, attribute_id)
+
     for i, (record_id, attribute_value) in enumerate(calculated_attributes.items()):
         record_item = get(project_id=project_id, record_id=record_id)
         record_item.data[attribute_item.name] = attribute_value
