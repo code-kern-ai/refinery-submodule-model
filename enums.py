@@ -105,6 +105,7 @@ class Tablenames(Enum):
     LABELING_ACCESS_LINK = "labeling_access_link"
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
     ADMIN_MESSAGE = "admin_message"
+    TASK_QUEUE = "task_queue"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
