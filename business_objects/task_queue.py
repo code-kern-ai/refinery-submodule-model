@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict
-
+from sqlalchemy import text
 
 from . import general
 from .. import enums
@@ -25,6 +25,19 @@ def get_all_waiting_by_type(project_id: str, type: enums.TaskType) -> List[TaskQ
         )
         .order_by(TaskQueue.created_at.asc())
         .all()
+    )
+
+
+def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQueue:
+    return (
+        session.query(TaskQueue)
+        .filter(
+            TaskQueue.project_id == project_id,
+            TaskQueue.type == enums.TaskType.INFORMATION_SOURCE.value,
+            text(f"task_info->>'information_source_id' = '{source_id}'"),
+            TaskQueue.is_active == False,
+        )
+        .first()
     )
 
 
