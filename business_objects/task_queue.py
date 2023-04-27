@@ -41,7 +41,21 @@ def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQu
     )
 
 
-def add_task_to_queue(
+def get_waiting_by_tokenization(project_id: str) -> TaskQueue:
+    # could have multiple tokenization tasks in queue
+    # if active => something is running else it's queued
+    return (
+        session.query(TaskQueue)
+        .filter(
+            TaskQueue.project_id == project_id,
+            TaskQueue.type == enums.TaskType.TOKENIZATION.value,
+        )
+        .order_by(TaskQueue.created_at.asc())
+        .first()
+    )
+
+
+def add(
     project_id: str,
     type: enums.TaskType,
     created_by: str,
