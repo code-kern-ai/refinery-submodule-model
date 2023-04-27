@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Set
 from sqlalchemy import text
 
 from . import general
@@ -28,6 +28,19 @@ def get_all_waiting_by_type(project_id: str, type: enums.TaskType) -> List[TaskQ
     )
 
 
+def get_waiting_by_attribute_id(project_id: str, attribute_id: str) -> TaskQueue:
+    return (
+        session.query(TaskQueue)
+        .filter(
+            TaskQueue.project_id == project_id,
+            TaskQueue.type == enums.TaskType.ATTRIBUTE_CALCULATION.value,
+            text(f"task_info->>'attribute_id' = '{attribute_id}'"),
+            TaskQueue.is_active == False,
+        )
+        .first()
+    )
+
+
 def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQueue:
     return (
         session.query(TaskQueue)
@@ -41,7 +54,7 @@ def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQu
     )
 
 
-def get_waiting_by_tokenization(project_id: str) -> TaskQueue:
+def get_by_tokenization(project_id: str) -> TaskQueue:
     # could have multiple tokenization tasks in queue
     # if active => something is running else it's queued
     return (
