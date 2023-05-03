@@ -228,7 +228,7 @@ def get_overview_data(
         LEFT JOIN (
             SELECT project_id, task_info ->> 'information_source_id' is_id, 'QUEUED' state
             FROM task_queue tq
-            WHERE NOT tq.is_active AND tq.project_id = '{project_id}' AND tq.type = 'information_source'
+            WHERE NOT tq.is_active AND tq.project_id = '{project_id}' AND tq.task_type = '{enums.TaskType.INFORMATION_SOURCE.value}'
         ) queue
             ON queue.project_id = _is.project_id AND _is.id::TEXT = queue.is_id
         LEFT JOIN (

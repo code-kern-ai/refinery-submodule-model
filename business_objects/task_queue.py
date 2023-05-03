@@ -15,12 +15,14 @@ def get_all_tasks() -> List[TaskQueue]:
     return session.query(TaskQueue).order_by(TaskQueue.created_at.asc()).all()
 
 
-def get_all_waiting_by_type(project_id: str, type: enums.TaskType) -> List[TaskQueue]:
+def get_all_waiting_by_type(
+    project_id: str, task_type: enums.TaskType
+) -> List[TaskQueue]:
     return (
         session.query(TaskQueue)
         .filter(
             TaskQueue.project_id == project_id,
-            TaskQueue.type == type.value,
+            TaskQueue.task_type == task_type.value,
             TaskQueue.is_active == False,
         )
         .order_by(TaskQueue.created_at.asc())
@@ -33,7 +35,7 @@ def get_waiting_by_attribute_id(project_id: str, attribute_id: str) -> TaskQueue
         session.query(TaskQueue)
         .filter(
             TaskQueue.project_id == project_id,
-            TaskQueue.type == enums.TaskType.ATTRIBUTE_CALCULATION.value,
+            TaskQueue.task_type == enums.TaskType.ATTRIBUTE_CALCULATION.value,
             text(f"task_info->>'attribute_id' = '{attribute_id}'"),
             TaskQueue.is_active == False,
         )
@@ -46,7 +48,7 @@ def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQu
         session.query(TaskQueue)
         .filter(
             TaskQueue.project_id == project_id,
-            TaskQueue.type == enums.TaskType.INFORMATION_SOURCE.value,
+            TaskQueue.task_type == enums.TaskType.INFORMATION_SOURCE.value,
             text(f"task_info->>'information_source_id' = '{source_id}'"),
             TaskQueue.is_active == False,
         )
@@ -61,7 +63,7 @@ def get_by_tokenization(project_id: str) -> TaskQueue:
         session.query(TaskQueue)
         .filter(
             TaskQueue.project_id == project_id,
-            TaskQueue.type == enums.TaskType.TOKENIZATION.value,
+            TaskQueue.task_type == enums.TaskType.TOKENIZATION.value,
         )
         .order_by(TaskQueue.created_at.asc())
         .first()
@@ -70,7 +72,7 @@ def get_by_tokenization(project_id: str) -> TaskQueue:
 
 def add(
     project_id: str,
-    type: enums.TaskType,
+    task_type: enums.TaskType,
     created_by: str,
     task_info: Dict[str, str],
     priority: bool,
@@ -78,7 +80,7 @@ def add(
 ) -> TaskQueue:
     tbl_entry = TaskQueue(
         project_id=project_id,
-        type=type.value,
+        task_type=task_type.value,
         created_by=created_by,
         task_info=task_info,
         priority=priority,

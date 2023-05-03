@@ -941,7 +941,7 @@ class TaskQueue(Base):
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
     )
-    type = Column(String)  # enum.TaskType e.g. EMBEDDING
+    task_type = Column(String)  # enum.TaskType e.g. EMBEDDING
     task_info = Column(JSON)
     # priority queue is for probable fast execution tasks (e.g. lf calculation)
     priority = Column(Boolean, default=False)
