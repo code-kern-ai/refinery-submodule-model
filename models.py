@@ -930,3 +930,21 @@ class AdminMessage(Base):
         index=True,
     )
     archived_reason = Column(String)
+
+
+class TaskQueue(Base):
+    # start without indexing since the idea is to remove on calculation start
+    # only meant as persistent layer, queue itself accesses cache
+    __tablename__ = Tablenames.TASK_QUEUE.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+    )
+    task_type = Column(String)  # enum.TaskType e.g. EMBEDDING
+    task_info = Column(JSON)
+    # priority queue is for probable fast execution tasks (e.g. lf calculation)
+    priority = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(UUID(as_uuid=True), ForeignKey(f"{Tablenames.USER.value}.id"))

@@ -42,6 +42,14 @@ def get_embedding_record_ids(project_id: str) -> List[str]:
     return [str(val) for val, in ids]
 
 
+def get_embedding_by_name(project_id: str, embedding_name: str) -> Embedding:
+    return (
+        session.query(Embedding)
+        .filter(Embedding.project_id == project_id, Embedding.name == embedding_name)
+        .first()
+    )
+
+
 def get_embedding_id_and_type(project_id: str, embedding_name: str) -> Any:
     return (
         session.query(Embedding.id, Embedding.type)
