@@ -321,17 +321,56 @@ def add_running_id(
     for_retokenization: bool = True,
     with_commit: bool = False,
 ) -> None:
+    chunk_size = 250
+    query = __build_running_id_update_query(project_id, attribute_name, chunk_size)
+    offset = 0
+    while has_records_without_attribute(project_id, attribute_name):
+        general.execute(query.replace("@@OFFSET@@", str(offset)))
+        general.commit()
+        offset += chunk_size
     general.execute(__build_add_query(project_id, attribute_name, for_retokenization))
     general.flush_or_commit(with_commit)
+
+
+def has_records_without_attribute(project_id: str, attribute_name: str) -> bool:
+    return (
+        general.execute_first(
+            f"""
+        SELECT id FROM record
+        WHERE project_id = '{project_id}' AND data->>'{attribute_name}' IS NULL
+        LIMIT 1;
+        """
+        )
+        is not None
+    )
+
+
+def __build_running_id_update_query(
+    project_id: str, attribute_name: str, chunk_size: int = 500
+) -> str:
+    # caution @@OFFSET@@ needs to be replaced by the caller so the query doesn't need to be prepared multiple times
+
+    current_attributes = get_all_ordered(project_id, True)
+    json_cols = ",\n".join(
+        [f"'{att.name}', \"data\"->'{att.name}'" for att in current_attributes]
+    )
+    return f"""
+    UPDATE record
+    SET "data" = helper.dd
+    FROM (
+        SELECT  r.id,
+            json_build_object(
+            '{attribute_name}', ROW_NUMBER () OVER() + @@OFFSET@@,
+            {json_cols}) dd
+        FROM record r 
+        WHERE project_id = '{project_id}' AND data->>'{attribute_name}' IS NULL
+        LIMIT {chunk_size}) helper
+    WHERE record.project_id = '{project_id}' AND record.id = helper.id;"""
 
 
 def __build_add_query(
     project_id: str, attribute_name: str, for_retokenization: bool
 ) -> str:
-    current_attributes = get_all_ordered(project_id, True)
-    json_cols = ",\n".join(
-        [f"'{att.name}', \"data\"->'{att.name}'" for att in current_attributes]
-    )
     if for_retokenization:
         remove_query = f"""
         DELETE FROM record_tokenized
@@ -344,17 +383,7 @@ def __build_add_query(
     else:
         remove_query = ""
     return (
-        f"""
-    UPDATE record
-    SET "data" = helper.dd
-    FROM (
-        SELECT  r.id,
-            json_build_object(
-            '{attribute_name}', ROW_NUMBER () OVER(),
-            {json_cols}) dd
-        FROM record r 
-        WHERE project_id = '{project_id}') helper
-    WHERE record.project_id = '{project_id}' AND record.id = helper.id;
+        f"""   
 
     INSERT INTO attribute
     VALUES (uuid_in(md5(random()::TEXT || clock_timestamp()::TEXT)::CSTRING),'{project_id}','{attribute_name}','INTEGER',TRUE,0,FALSE,NULL,'{AttributeState.AUTOMATICALLY_CREATED.value}',NULL ,'{AttributeVisibility.DO_NOT_HIDE.value}');
