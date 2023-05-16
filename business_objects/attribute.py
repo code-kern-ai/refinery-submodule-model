@@ -236,6 +236,7 @@ def update(
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
     visibility: Optional[str] = None,
+    progress: Optional[float] = None,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
     if data_type is not None:
@@ -254,6 +255,9 @@ def update(
 
     if visibility is not None:
         attribute.visibility = visibility
+
+    if progress is not None:
+        attribute.progress = progress
 
     if started_at is not None:
         attribute.started_at = started_at
