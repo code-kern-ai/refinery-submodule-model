@@ -397,6 +397,7 @@ class Attribute(Base):
     visibility = Column(String, default=AttributeVisibility.DO_NOT_HIDE.value)
     started_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
+    progress = Column(Float)
 
     embeddings = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
