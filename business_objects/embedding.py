@@ -226,6 +226,9 @@ def create(
     type: str = None,
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
+    model: Optional[str] = None,
+    platform: Optional[str] = None,
+    api_token: Optional[str] = None,
     with_commit: bool = False,
 ) -> Embedding:
     embedding: Embedding = Embedding(
@@ -249,6 +252,15 @@ def create(
 
     if finished_at is not None:
         embedding.finished_at = finished_at
+
+    if api_token:
+        embedding.api_token = api_token
+
+    if model:
+        embedding.model = model
+
+    if platform:
+        embedding.platform = platform
 
     general.add(embedding, with_commit)
     return embedding

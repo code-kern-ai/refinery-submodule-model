@@ -73,6 +73,7 @@ class LinkTypes(Enum):
 
 class Tablenames(Enum):
     APP_VERSION = "app_version"
+    AGREEMENT = "agreement"
     USER = "user"
     ORGANIZATION = "organization"
     PROJECT = "project"
@@ -166,7 +167,6 @@ class LabelingTaskTarget(Enum):
 
 
 class EmbeddingType(Enum):
-    ON_RECORD = "ON_RECORD"
     ON_ATTRIBUTE = "ON_ATTRIBUTE"
     ON_TOKEN = "ON_TOKEN"
 
@@ -422,3 +422,6 @@ class TaskType(Enum):
     INFORMATION_SOURCE = "information_source"
     UPLOAD_TASK = "upload"
     WEAK_SUPERVISION = "weak_supervision"
+
+class AgreementType(Enum):
+    EMBEDDING = "emedding"
