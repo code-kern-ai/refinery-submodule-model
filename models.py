@@ -152,6 +152,10 @@ class User(Base):
         Tablenames.USER,
         Tablenames.INFORMATION_SOURCE,
     )
+    embeddings = parent_to_child_relationship(
+        Tablenames.USER,
+        Tablenames.EMBEDDING,
+    )
     user_queries = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.USER_SESSIONS,
@@ -708,6 +712,11 @@ class Embedding(Base):
     project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
     attribute_id = Column(
