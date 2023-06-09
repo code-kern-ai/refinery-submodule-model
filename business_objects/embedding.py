@@ -351,13 +351,7 @@ def update_embedding_state_waiting(
     __update_embedding_state(
         project_id, embedding_id, enums.EmbeddingState.WAITING.value, with_commit
     )
-
-def update_embedding_progress(
-    project_id: str, embedding_id: str, progress: float, with_commit: bool = False
-) -> None:
-    embedding_item = get(project_id, embedding_id)
-    embedding_item.progress = progress
-    general.flush_or_commit(with_commit)
+    
 
 def __update_embedding_state(
     project_id: str, embedding_id: str, state: str, with_commit=False
