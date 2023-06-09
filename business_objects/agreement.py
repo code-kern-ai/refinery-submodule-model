@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from submodules.model import session
+from submodules.model.session import session
 from submodules.model.business_objects import general
 from submodules.model.models import Agreement
 
@@ -9,6 +9,13 @@ def get(project_id: str, item_id: str) -> Agreement:
     return (
         session.query(Agreement)
         .filter(Agreement.project_id == project_id, Agreement.id == item_id)
+        .first()
+    )
+
+def get_by_xfkey(project_id: str, xfkey: str) -> Agreement:
+    return (
+        session.query(Agreement)
+        .filter(Agreement.project_id == project_id, Agreement.xfkey == xfkey)
         .first()
     )
 

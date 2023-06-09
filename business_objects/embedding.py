@@ -61,6 +61,12 @@ def get_embedding_id_and_type(project_id: str, embedding_name: str) -> Any:
 def get_all_embeddings() -> List[Embedding]:
     return session.query(Embedding).all()
 
+def get_all_embeddings_by_project_id(project_id: str) -> List[Embedding]:
+    return (
+        session.query(Embedding)
+        .filter(Embedding.project_id == project_id)
+        .all()
+    )
 
 def get_finished_embeddings(project_id: str) -> List[Embedding]:
     return (
@@ -346,6 +352,12 @@ def update_embedding_state_waiting(
         project_id, embedding_id, enums.EmbeddingState.WAITING.value, with_commit
     )
 
+def update_embedding_progress(
+    project_id: str, embedding_id: str, progress: float, with_commit: bool = False
+) -> None:
+    embedding_item = get(project_id, embedding_id)
+    embedding_item.progress = progress
+    general.flush_or_commit(with_commit)
 
 def __update_embedding_state(
     project_id: str, embedding_id: str, state: str, with_commit=False
