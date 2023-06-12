@@ -227,6 +227,7 @@ def create(
     project_id: str,
     attribute_id: str,
     name: str,
+    created_by: str,
     state: str = None,
     custom: bool = None,
     type: str = None,
@@ -238,6 +239,7 @@ def create(
     with_commit: bool = False,
 ) -> Embedding:
     embedding: Embedding = Embedding(
+        created_by=created_by,
         project_id=project_id,
         attribute_id=attribute_id,
         name=name,
