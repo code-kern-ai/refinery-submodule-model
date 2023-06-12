@@ -732,7 +732,8 @@ class Embedding(Base):
     similarity_threshold = Column(Float)  # set by neural search
     started_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
-    api_token = Column(String)
+    # due to security reasons will not be exported or imported
+    api_token = Column(String) 
     model = Column(String)
     platform= Column(String)
     tensors = parent_to_child_relationship(

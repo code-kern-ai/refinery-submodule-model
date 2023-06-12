@@ -425,3 +425,9 @@ class TaskType(Enum):
 
 class AgreementType(Enum):
     EMBEDDING = "emedding"
+
+class EmbeddingPlatform(Enum):
+    PYTHON = "python"
+    HUGGINGFACE = "huggingface"
+    COHERE = "cohere"
+    OPENAI = "openai"
