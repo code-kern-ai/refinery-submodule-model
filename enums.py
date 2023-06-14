@@ -424,7 +424,7 @@ class TaskType(Enum):
     WEAK_SUPERVISION = "weak_supervision"
 
 class AgreementType(Enum):
-    EMBEDDING = "emedding"
+    EMBEDDING = "EMBEDDING"
 
 class EmbeddingPlatform(Enum):
     PYTHON = "python"
