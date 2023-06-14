@@ -12,10 +12,10 @@ def get(project_id: str, item_id: str) -> Agreement:
         .first()
     )
 
-def get_by_xfkey(project_id: str, xfkey: str) -> Agreement:
+def get_by_xfkey(project_id: str, xfkey: str, xftype: str) -> Agreement:
     return (
         session.query(Agreement)
-        .filter(Agreement.project_id == project_id, Agreement.xfkey == xfkey)
+        .filter(Agreement.project_id == project_id, Agreement.xfkey == xfkey, Agreement.xftype == xftype)
         .first()
     )
 
@@ -24,8 +24,8 @@ def create(
     user_id: str,
     terms_text: str,
     terms_accepted: bool,
-    xfkey: Optional[str] = None,
-    xftype: Optional[str] = None,
+    xfkey: str,
+    xftype: str,
     with_commit: bool = True,
 ) -> Agreement:
     
