@@ -45,5 +45,5 @@ def update(
     if installed_version:
         app_version.installed_version = installed_version
 
-    general.add(app_version, with_commit)
+    general.flush_or_commit(with_commit)
     return app_version
