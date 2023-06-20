@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, Dict, Any
+from typing import ByteString, Optional, Dict, Any
 
 from ..exceptions import EntityNotFoundException
 from ..session import session
@@ -40,7 +40,7 @@ def create(
     file_type: str,
     file_import_options: str,
     upload_type: str,
-    key: str,
+    key: ByteString,
     with_commit: bool = False,
 ) -> UploadTask:
     task = UploadTask(
