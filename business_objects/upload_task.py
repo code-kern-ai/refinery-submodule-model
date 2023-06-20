@@ -40,7 +40,7 @@ def create(
     file_type: str,
     file_import_options: str,
     upload_type: str,
-    password: str,
+    key: str,
     with_commit: bool = False,
 ) -> UploadTask:
     task = UploadTask(
@@ -50,7 +50,7 @@ def create(
         file_type=file_type,
         file_import_options=file_import_options,
         upload_type=upload_type,
-        password=password,
+        key=key,
     )
     general.add(task, with_commit)
     return task

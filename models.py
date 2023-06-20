@@ -318,7 +318,7 @@ class UploadTask(Base):
     upload_type = Column(String)
     file_additional_info = Column(String)
     mappings = Column(String)
-    password = Column(String)
+    key = Column(String)
 
 
 # -------------------- PROJECT_ --------------------
