@@ -63,6 +63,7 @@ def update(
     progress: Optional[float] = None,
     file_additional_info: str = None,
     mappings: Optional[Dict[str, Any]] = None,
+    key: Optional[str] = None,
     with_commit: bool = False,
 ) -> None:
     task: UploadTask = get(project_id, task_id)
@@ -74,6 +75,8 @@ def update(
         task.file_additional_info = file_additional_info
     if mappings is not None:
         task.mappings = mappings
+    if key is not None:
+        task.key = key
     general.flush_or_commit(with_commit)
 
 
