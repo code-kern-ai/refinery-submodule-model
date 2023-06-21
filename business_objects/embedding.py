@@ -61,6 +61,12 @@ def get_embedding_id_and_type(project_id: str, embedding_name: str) -> Any:
 def get_all_embeddings() -> List[Embedding]:
     return session.query(Embedding).all()
 
+def get_all_embeddings_by_project_id(project_id: str) -> List[Embedding]:
+    return (
+        session.query(Embedding)
+        .filter(Embedding.project_id == project_id)
+        .all()
+    )
 
 def get_finished_embeddings(project_id: str) -> List[Embedding]:
     return (
@@ -221,14 +227,19 @@ def create(
     project_id: str,
     attribute_id: str,
     name: str,
+    created_by: str,
     state: str = None,
     custom: bool = None,
     type: str = None,
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
+    model: Optional[str] = None,
+    platform: Optional[str] = None,
+    api_token: Optional[str] = None,
     with_commit: bool = False,
 ) -> Embedding:
     embedding: Embedding = Embedding(
+        created_by=created_by,
         project_id=project_id,
         attribute_id=attribute_id,
         name=name,
@@ -249,6 +260,15 @@ def create(
 
     if finished_at is not None:
         embedding.finished_at = finished_at
+
+    if api_token:
+        embedding.api_token = api_token
+
+    if model:
+        embedding.model = model
+
+    if platform:
+        embedding.platform = platform
 
     general.add(embedding, with_commit)
     return embedding
@@ -333,7 +353,7 @@ def update_embedding_state_waiting(
     __update_embedding_state(
         project_id, embedding_id, enums.EmbeddingState.WAITING.value, with_commit
     )
-
+    
 
 def __update_embedding_state(
     project_id: str, embedding_id: str, state: str, with_commit=False
