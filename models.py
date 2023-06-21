@@ -354,6 +354,29 @@ class Agreement(Base):
 
 
 
+class Agreement(Base):
+    __tablename__ = Tablenames.AGREEMENT.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    # no foreign key since its a multi field
+    xfkey = Column(UUID(as_uuid=True), index=True, nullable=True)
+    # of type AgreementCategory e.g. EMBEDDING, INFORMATION_SOURCE
+    xftype = Column(String, index=True, nullable=True)
+    terms_text = Column(String)
+    terms_accepted = Column(Boolean)
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+
 # -------------------- PROJECT_ --------------------
 class Project(Base):
     __tablename__ = Tablenames.PROJECT.value
