@@ -56,6 +56,16 @@ def create(
     return task
 
 
+def remove_key(
+    project_id: str,
+    task_id: str,
+    with_commit: bool = False,
+) -> None:
+    task: UploadTask = get(project_id, task_id)
+    task.key = None
+    general.flush_or_commit(with_commit)
+
+
 def update(
     project_id: str,
     task_id: str,
