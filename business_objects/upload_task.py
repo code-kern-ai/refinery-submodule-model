@@ -17,6 +17,11 @@ def get(project_id: str, task_id: str) -> UploadTask:
         .first()
     )
 
+def get_all_global() -> UploadTask:
+    return (
+        session.query(UploadTask).all()
+    )
+
 
 def get_with_file_name(
     project_id: str, upload_task_id: str, file_name: str
@@ -63,6 +68,15 @@ def remove_key(
 ) -> None:
     task: UploadTask = get(project_id, task_id)
     task.key = None
+    general.flush_or_commit(with_commit)
+
+
+def remove_all_keys(
+    with_commit: bool = False,
+) -> None:
+    tasks = get_all_global()
+    for task in tasks:
+        task.key = None
     general.flush_or_commit(with_commit)
 
 
