@@ -120,6 +120,7 @@ class Organization(Base):
     # database entry
     is_paying = Column(Boolean, default=False)
     created_at = Column(DateTime, default=sql.func.now())
+    gdpr_compliant = Column(Boolean, default=False)
 
     projects = parent_to_child_relationship(
         Tablenames.ORGANIZATION,
@@ -151,6 +152,10 @@ class User(Base):
         Tablenames.USER,
         Tablenames.INFORMATION_SOURCE,
     )
+    embeddings = parent_to_child_relationship(
+        Tablenames.USER,
+        Tablenames.EMBEDDING,
+    )
     user_queries = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.USER_SESSIONS,
@@ -177,6 +182,11 @@ class User(Base):
     comments = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.COMMENT_DATA,
+        order_by="created_at.desc()",
+    )
+    agreements = parent_to_child_relationship(
+        Tablenames.USER,
+        Tablenames.AGREEMENT,
         order_by="created_at.desc()",
     )
     last_interaction = Column(DateTime)
@@ -320,6 +330,29 @@ class UploadTask(Base):
     mappings = Column(String)
 
 
+class Agreement(Base):
+    __tablename__ = Tablenames.AGREEMENT.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    # no foreign key since its a multi field
+    xfkey = Column(UUID(as_uuid=True), index=True, nullable=True)
+    # of type AgreementCategory e.g. EMBEDDING, INFORMATION_SOURCE
+    xftype = Column(String, index=True, nullable=True)
+    terms_text = Column(String)
+    terms_accepted = Column(Boolean)
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+
 # -------------------- PROJECT_ --------------------
 class Project(Base):
     __tablename__ = Tablenames.PROJECT.value
@@ -397,6 +430,7 @@ class Attribute(Base):
     visibility = Column(String, default=AttributeVisibility.DO_NOT_HIDE.value)
     started_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
+    progress = Column(Float)
 
     embeddings = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
@@ -680,6 +714,11 @@ class Embedding(Base):
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     attribute_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.ATTRIBUTE.value}.id", ondelete="CASCADE"),
@@ -693,7 +732,10 @@ class Embedding(Base):
     similarity_threshold = Column(Float)  # set by neural search
     started_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
-
+    # due to security reasons will not be exported or imported
+    api_token = Column(String) 
+    model = Column(String)
+    platform= Column(String)
     tensors = parent_to_child_relationship(
         Tablenames.EMBEDDING,
         Tablenames.EMBEDDING_TENSOR,
