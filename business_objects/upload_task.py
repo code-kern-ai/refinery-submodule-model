@@ -73,9 +73,12 @@ def remove_key(
 def remove_all_keys(
     with_commit: bool = False,
 ) -> None:
-    tasks = get_all_global()
-    for task in tasks:
-        task.key = None
+    sql = """
+        UPDATE upload_task
+        SET key = NULL
+        WHERE key != NULL
+        """
+    general.execute(sql)
     general.flush_or_commit(with_commit)
 
 
