@@ -42,7 +42,7 @@ def update(
 ) -> AppVersion:
     app_version = get_by_name(service)
 
-    if installed_version:
+    if installed_version is not None:
         app_version.installed_version = installed_version
 
     general.flush_or_commit(with_commit)
