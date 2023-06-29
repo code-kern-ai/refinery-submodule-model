@@ -44,7 +44,7 @@ def create(
     file_type: str,
     file_import_options: str,
     upload_type: str,
-    key: Optional[str] = None,
+    key: Optional[ByteString] = None,
     with_commit: bool = False,
 ) -> UploadTask:
     task = UploadTask(
