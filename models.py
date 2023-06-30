@@ -328,6 +328,7 @@ class UploadTask(Base):
     upload_type = Column(String)
     file_additional_info = Column(String)
     mappings = Column(String)
+    key = Column(LargeBinary)
 
 
 class Agreement(Base):
@@ -350,7 +351,6 @@ class Agreement(Base):
     terms_text = Column(String)
     terms_accepted = Column(Boolean)
     created_at = Column(DateTime, default=sql.func.now())
-
 
 
 # -------------------- PROJECT_ --------------------

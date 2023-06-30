@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, Dict, Any
+from typing import ByteString, Optional, Dict, Any
 
 from ..exceptions import EntityNotFoundException
 from ..session import session
@@ -16,6 +16,10 @@ def get(project_id: str, task_id: str) -> UploadTask:
         )
         .first()
     )
+
+
+def get_all_global() -> UploadTask:
+    return session.query(UploadTask).all()
 
 
 def get_with_file_name(
@@ -40,6 +44,7 @@ def create(
     file_type: str,
     file_import_options: str,
     upload_type: str,
+    key: Optional[ByteString] = None,
     with_commit: bool = False,
 ) -> UploadTask:
     task = UploadTask(
@@ -49,9 +54,32 @@ def create(
         file_type=file_type,
         file_import_options=file_import_options,
         upload_type=upload_type,
+        key=key,
     )
     general.add(task, with_commit)
     return task
+
+
+def remove_key(
+    project_id: str,
+    task_id: str,
+    with_commit: bool = False,
+) -> None:
+    task: UploadTask = get(project_id, task_id)
+    task.key = None
+    general.flush_or_commit(with_commit)
+
+
+def remove_all_keys(
+    with_commit: bool = False,
+) -> None:
+    sql = """
+        UPDATE upload_task
+        SET key = NULL
+        WHERE key != NULL
+        """
+    general.execute(sql)
+    general.flush_or_commit(with_commit)
 
 
 def update(
