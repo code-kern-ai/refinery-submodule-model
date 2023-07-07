@@ -33,17 +33,3 @@ def create(
 
     general.add(app_version, with_commit)
     return app_version
-
-
-def update(
-    service: str,
-    installed_version: Optional[str] = None,
-    with_commit: bool = False,
-) -> AppVersion:
-    app_version = get_by_name(service)
-
-    if installed_version is not None:
-        app_version.installed_version = installed_version
-
-    general.flush_or_commit(with_commit)
-    return app_version
