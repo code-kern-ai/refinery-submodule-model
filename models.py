@@ -732,10 +732,12 @@ class Embedding(Base):
     similarity_threshold = Column(Float)  # set by neural search
     started_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
+    # attributes that can be used to filter in qdrant
+    filter_attributes = Column(ARRAY(String))
     # due to security reasons will not be exported or imported
-    api_token = Column(String) 
+    api_token = Column(String)
     model = Column(String)
-    platform= Column(String)
+    platform = Column(String)
     tensors = parent_to_child_relationship(
         Tablenames.EMBEDDING,
         Tablenames.EMBEDDING_TENSOR,
