@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Dict
 from sqlalchemy import cast, TEXT, sql
 
 from . import general
@@ -56,6 +56,27 @@ def get_embedding_id_and_type(project_id: str, embedding_name: str) -> Any:
         .filter(Embedding.project_id == project_id, Embedding.name == embedding_name)
         .first()
     )
+
+
+def get_filter_attribute_type_dict(
+    project_id: str, embedding_id: str
+) -> Dict[str, str]:
+    query = f""" 
+    SELECT 
+        jsonb_object_agg(NAME,
+            CASE data_type
+                WHEN '{enums.DataTypes.CATEGORY.value}' THEN 'TEXT'
+                ELSE data_type
+            END )
+    FROM attribute a
+    WHERE a.name = ANY(
+        SELECT unnest(filter_attributes)
+        FROM embedding e
+        WHERE e.id = '{embedding_id}')
+    AND a.project_id = '{project_id}' """
+
+    result = general.execute_first(query)
+    return result[0]
 
 
 def get_all_embeddings() -> List[Embedding]:
@@ -168,14 +189,21 @@ def get_tensors_by_record_ids(embedding_id: str, record_ids: List[str]) -> List[
 
 
 def get_tensors_and_attributes_for_qdrant(
-    project_id: str, embedding_id: str, attributes_to_include: List[str]
+    project_id: str,
+    embedding_id: str,
+    attributes_to_include: Optional[Dict[str, str]] = None,
 ) -> List[Any]:
 
     payload_selector = "NULL"
-    if len(attributes_to_include) > 0:
-        payload_selector = ",".join(
-            [f"'{attr}', r.\"data\"->>'{attr}'" for attr in attributes_to_include]
-        )
+    if attributes_to_include and len(attributes_to_include) > 0:
+        payload_selector = ""
+        for attr, data_type in attributes_to_include.items():
+            if payload_selector != "":
+                payload_selector += ","
+            if data_type != enums.DataTypes.TEXT.value:
+                payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
+            else:
+                payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
         payload_selector = f"json_build_object({payload_selector}) payload"
     query = f"""
     SELECT et.record_id::TEXT, et."data", {payload_selector}
