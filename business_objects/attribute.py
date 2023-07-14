@@ -69,7 +69,12 @@ def get_all_possible_names_for_qdrant(project_id: str) -> List[str]:
                     ]
                 ),
                 Attribute.data_type.in_(
-                    [DataTypes.CATEGORY.value, DataTypes.INTEGER.value]
+                    [
+                        DataTypes.CATEGORY.value,
+                        DataTypes.INTEGER.value,
+                        DataTypes.FLOAT.value,
+                        DataTypes.BOOLEAN.value,
+                    ]
                 ),
             )
             .all()
