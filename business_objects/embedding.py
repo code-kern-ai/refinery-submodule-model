@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Dict
 from sqlalchemy import cast, TEXT, sql
 
 from . import general
@@ -58,15 +58,34 @@ def get_embedding_id_and_type(project_id: str, embedding_name: str) -> Any:
     )
 
 
+def get_filter_attribute_type_dict(
+    project_id: str, embedding_id: str
+) -> Dict[str, str]:
+    query = f""" 
+    SELECT 
+        jsonb_object_agg(NAME,
+            CASE data_type
+                WHEN '{enums.DataTypes.CATEGORY.value}' THEN 'TEXT'
+                ELSE data_type
+            END )
+    FROM attribute a
+    WHERE a.name = ANY(
+        SELECT unnest(filter_attributes)
+        FROM embedding e
+        WHERE e.id = '{embedding_id}')
+    AND a.project_id = '{project_id}' """
+
+    result = general.execute_first(query)
+    return result[0]
+
+
 def get_all_embeddings() -> List[Embedding]:
     return session.query(Embedding).all()
 
+
 def get_all_embeddings_by_project_id(project_id: str) -> List[Embedding]:
-    return (
-        session.query(Embedding)
-        .filter(Embedding.project_id == project_id)
-        .all()
-    )
+    return session.query(Embedding).filter(Embedding.project_id == project_id).all()
+
 
 def get_finished_embeddings(project_id: str) -> List[Embedding]:
     return (
@@ -169,6 +188,34 @@ def get_tensors_by_record_ids(embedding_id: str, record_ids: List[str]) -> List[
     )
 
 
+def get_tensors_and_attributes_for_qdrant(
+    project_id: str,
+    embedding_id: str,
+    attributes_to_include: Optional[Dict[str, str]] = None,
+) -> List[Any]:
+
+    payload_selector = "NULL"
+    if attributes_to_include and len(attributes_to_include) > 0:
+        payload_selector = ""
+        for attr, data_type in attributes_to_include.items():
+            if payload_selector != "":
+                payload_selector += ","
+            if data_type != enums.DataTypes.TEXT.value:
+                payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
+            else:
+                payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
+        payload_selector = f"json_build_object({payload_selector}) payload"
+    query = f"""
+    SELECT et.record_id::TEXT, et."data", {payload_selector}
+    FROM embedding_tensor et
+    INNER JOIN record r
+        ON et.project_id = r.project_id AND et.record_id = r.id
+    WHERE et.project_id = '{project_id}' AND et.embedding_id = '{embedding_id}'
+    """
+
+    return general.execute_all(query)
+
+
 def get_manually_labeled_tensors_by_embedding_id(
     project_id: str,
     embedding_id: str,
@@ -236,6 +283,7 @@ def create(
     model: Optional[str] = None,
     platform: Optional[str] = None,
     api_token: Optional[str] = None,
+    filter_attributes: Optional[List[str]] = None,
     with_commit: bool = False,
 ) -> Embedding:
     embedding: Embedding = Embedding(
@@ -269,6 +317,9 @@ def create(
 
     if platform:
         embedding.platform = platform
+
+    if filter_attributes:
+        embedding.filter_attributes = filter_attributes
 
     general.add(embedding, with_commit)
     return embedding
@@ -353,7 +404,7 @@ def update_embedding_state_waiting(
     __update_embedding_state(
         project_id, embedding_id, enums.EmbeddingState.WAITING.value, with_commit
     )
-    
+
 
 def __update_embedding_state(
     project_id: str, embedding_id: str, state: str, with_commit=False
