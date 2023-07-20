@@ -53,33 +53,33 @@ def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attrib
     )
 
 
-def get_all_possible_names_for_qdrant(project_id: str) -> List[str]:
+# def get_all_possible_names_for_qdrant(project_id: str) -> List[str]:
 
-    return [
-        r.name
-        for r in (
-            session.query(Attribute.name)
-            .filter(
-                Attribute.project_id == project_id,
-                Attribute.state.in_(
-                    [
-                        AttributeState.UPLOADED.value,
-                        AttributeState.USABLE.value,
-                        AttributeState.AUTOMATICALLY_CREATED.value,
-                    ]
-                ),
-                Attribute.data_type.in_(
-                    [
-                        DataTypes.CATEGORY.value,
-                        DataTypes.INTEGER.value,
-                        DataTypes.FLOAT.value,
-                        DataTypes.BOOLEAN.value,
-                    ]
-                ),
-            )
-            .all()
-        )
-    ]
+#     return [
+#         r.name
+#         for r in (
+#             session.query(Attribute.name)
+#             .filter(
+#                 Attribute.project_id == project_id,
+#                 Attribute.state.in_(
+#                     [
+#                         AttributeState.UPLOADED.value,
+#                         AttributeState.USABLE.value,
+#                         AttributeState.AUTOMATICALLY_CREATED.value,
+#                     ]
+#                 ),
+#                 Attribute.data_type.in_(
+#                     [
+#                         DataTypes.CATEGORY.value,
+#                         DataTypes.INTEGER.value,
+#                         DataTypes.FLOAT.value,
+#                         DataTypes.BOOLEAN.value,
+#                     ]
+#                 ),
+#             )
+#             .all()
+#         )
+#     ]
 
 
 def get_all(
