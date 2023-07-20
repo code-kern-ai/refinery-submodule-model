@@ -424,11 +424,22 @@ class TaskType(Enum):
     UPLOAD_TASK = "upload"
     WEAK_SUPERVISION = "weak_supervision"
 
+
 class AgreementType(Enum):
     EMBEDDING = "EMBEDDING"
+
 
 class EmbeddingPlatform(Enum):
     PYTHON = "python"
     HUGGINGFACE = "huggingface"
     COHERE = "cohere"
     OPENAI = "openai"
+
+
+class SampleProjectType(Enum):
+    CLICKBAIT_INITIAL = "Clickbait - initial"
+    CLICKBAIT = "Clickbait"
+    AG_NEWS_INITIAL = "AG News - initial"
+    AG_NEWS = "AG News"
+    CONVERSATIONAL_AI_INITIAL = "Conversational AI - initial"
+    CONVERSATIONAL_AI = "Conversational AI"
