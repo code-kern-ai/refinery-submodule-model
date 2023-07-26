@@ -431,3 +431,16 @@ def __build_add_query(
     WHERE attribute.project_id = '{project_id}' AND attribute.id = helper.id;"""
         + remove_query
     )
+
+
+def get_unique_values_by_attribute_id(project_id: str, attribute_id: str) -> List[str]:
+    attribute_name = get(project_id, attribute_id).name
+    query = f"""
+        SELECT "data"->>'{attribute_name}'
+        FROM record
+        WHERE project_id = '{project_id}' AND "data"->>'{attribute_name}' IS NOT NULL
+        GROUP BY "data"->>'{attribute_name}'
+        ORDER BY 1
+        LIMIT 21
+    """
+    return [r[0] for r in general.execute(query)]
