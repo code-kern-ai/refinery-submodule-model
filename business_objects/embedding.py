@@ -193,7 +193,6 @@ def get_tensors_and_attributes_for_qdrant(
     embedding_id: str,
     attributes_to_include: Optional[Dict[str, str]] = None,
 ) -> List[Any]:
-
     payload_selector = "NULL"
     if attributes_to_include and len(attributes_to_include) > 0:
         payload_selector = ""
@@ -423,4 +422,15 @@ def delete(project_id: str, embedding_id: str, with_commit: bool = False) -> Non
 
 def delete_tensors(embedding_id: str, with_commit: bool = False) -> None:
     session.query(EmbeddingTensor).filter(EmbeddingTensor.id == embedding_id).delete()
+    general.flush_or_commit(with_commit)
+
+
+def update_embedding_filter_attributes(
+    project_id: str,
+    embedding_id: str,
+    filter_attributes: List[str],
+    with_commit: bool = False,
+) -> None:
+    embedding_item = get(project_id, embedding_id)
+    embedding_item.filter_attributes = filter_attributes
     general.flush_or_commit(with_commit)
