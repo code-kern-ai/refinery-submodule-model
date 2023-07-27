@@ -35,7 +35,6 @@ def get_by_all_by_category(
     project_id: Optional[str] = None,
     as_json: bool = False,
 ) -> Union[List[CommentData], str]:
-
     query = f"""
 SELECT *
 FROM public.comment_data
@@ -274,3 +273,27 @@ def change_by_id(
 def remove(comment_id: str, with_commit: bool = False) -> None:
     session.delete(session.query(CommentData).get(comment_id))
     general.flush_or_commit(with_commit)
+
+
+def get_unique_comments_keys_for(
+    xftype: enums.CommentCategory, project_id: Optional[str] = None
+) -> List[str]:
+    check_project_id = "project_id"
+    if project_id:
+        check_project_id += f" = '{project_id}'"
+    else:
+        check_project_id += " IS NULL"
+
+    query = f"""
+    SELECT array_agg(xfkey)
+    FROM (
+        SELECT xfkey
+        FROM comment_data
+        WHERE xftype = '{xftype.value}' AND {check_project_id}
+        GROUP BY xfkey
+    ) x
+    """
+    result = general.execute_first(query)
+    if not result or not result[0]:
+        return []
+    return result[0]
