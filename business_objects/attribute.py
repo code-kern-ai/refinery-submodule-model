@@ -433,14 +433,28 @@ def __build_add_query(
     )
 
 
-def get_unique_values_by_attribute_id(project_id: str, attribute_id: str) -> List[str]:
-    attribute_name = get(project_id, attribute_id).name
+def get_unique_values_by_attributes(project_id: str) -> Dict[str, List[str]]:
+    attributes = get_all_ordered(project_id, True)
+    if not attributes:
+        return {}
+
+    values_dict = {}
+    for attribute in attributes:
+        values_dict[attribute.name] = (
+            get_unique_values(project_id, attribute.name)
+            if len(get_unique_values(project_id, attribute.name)) <= 20
+            else None
+        )
+
+    return values_dict
+
+
+def get_unique_values(project_id: str, attribute_name: str) -> List[str]:
     query = f"""
         SELECT "data"->>'{attribute_name}'
         FROM record
         WHERE project_id = '{project_id}' AND "data"->>'{attribute_name}' IS NOT NULL
         GROUP BY "data"->>'{attribute_name}'
         ORDER BY 1
-        LIMIT 21
     """
     return [r[0] for r in general.execute(query)]
