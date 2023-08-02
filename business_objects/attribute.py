@@ -409,15 +409,17 @@ def get_unique_values_by_attributes(project_id: str) -> Dict[str, List[str]]:
     if not attributes:
         return {}
 
-    values_dict = {}
-    for attribute in attributes:
-        values_dict[attribute.name] = (
-            get_unique_values(project_id, attribute.name)
-            if len(get_unique_values(project_id, attribute.name)) <= 20
-            else None
-        )
+    return {
+        attribute.name: checked_unique_values(project_id, attribute.name)
+        for attribute in attributes
+    }
 
-    return values_dict
+
+def checked_unique_values(project_id: str, attribute_name: str):
+    value = get_unique_values(project_id, attribute_name)
+    if len(value) > 20:
+        return None
+    return value
 
 
 def get_unique_values(project_id: str, attribute_name: str) -> List[str]:
