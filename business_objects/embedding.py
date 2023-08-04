@@ -324,6 +324,8 @@ def create(
 
     if additional_data:
         embedding.additional_data = additional_data
+    else:
+        embedding.additional_data = {}
 
     general.add(embedding, with_commit)
     return embedding
