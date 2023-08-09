@@ -283,6 +283,7 @@ def create(
     platform: Optional[str] = None,
     api_token: Optional[str] = None,
     filter_attributes: Optional[List[str]] = None,
+    additional_data: Optional[Any] = None,
     with_commit: bool = False,
 ) -> Embedding:
     embedding: Embedding = Embedding(
@@ -295,6 +296,7 @@ def create(
         state=enums.EmbeddingState.INITIALIZING.value,
         started_at=started_at,
         finished_at=finished_at,
+        additional_data=additional_data,
     )
     if custom:
         embedding.custom = custom
@@ -319,6 +321,11 @@ def create(
 
     if filter_attributes:
         embedding.filter_attributes = filter_attributes
+
+    if additional_data:
+        embedding.additional_data = additional_data
+    else:
+        embedding.additional_data = {}
 
     general.add(embedding, with_commit)
     return embedding

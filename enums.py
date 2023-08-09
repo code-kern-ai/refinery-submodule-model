@@ -434,6 +434,7 @@ class EmbeddingPlatform(Enum):
     HUGGINGFACE = "huggingface"
     COHERE = "cohere"
     OPENAI = "openai"
+    AZURE = "azure"
 
 
 class SampleProjectType(Enum):

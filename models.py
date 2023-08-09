@@ -742,6 +742,7 @@ class Embedding(Base):
         Tablenames.EMBEDDING,
         Tablenames.EMBEDDING_TENSOR,
     )
+    additional_data = Column(JSON)
 
 
 class EmbeddingTensor(Base):
