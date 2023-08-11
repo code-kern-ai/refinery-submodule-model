@@ -53,35 +53,6 @@ def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attrib
     )
 
 
-def get_all_possible_names_for_qdrant(project_id: str) -> List[str]:
-
-    return [
-        r.name
-        for r in (
-            session.query(Attribute.name)
-            .filter(
-                Attribute.project_id == project_id,
-                Attribute.state.in_(
-                    [
-                        AttributeState.UPLOADED.value,
-                        AttributeState.USABLE.value,
-                        AttributeState.AUTOMATICALLY_CREATED.value,
-                    ]
-                ),
-                Attribute.data_type.in_(
-                    [
-                        DataTypes.CATEGORY.value,
-                        DataTypes.INTEGER.value,
-                        DataTypes.FLOAT.value,
-                        DataTypes.BOOLEAN.value,
-                    ]
-                ),
-            )
-            .all()
-        )
-    ]
-
-
 def get_all(
     project_id: Optional[str] = None,
     state_filter: List[str] = [
@@ -431,3 +402,32 @@ def __build_add_query(
     WHERE attribute.project_id = '{project_id}' AND attribute.id = helper.id;"""
         + remove_query
     )
+
+
+def get_unique_values_by_attributes(project_id: str) -> Dict[str, List[str]]:
+    attributes = get_all_ordered(project_id, True)
+    if not attributes:
+        return {}
+
+    return {
+        attribute.name: checked_unique_values(project_id, attribute.name)
+        for attribute in attributes
+    }
+
+
+def checked_unique_values(project_id: str, attribute_name: str):
+    value = get_unique_values(project_id, attribute_name)
+    if len(value) > 20:
+        return None
+    return value
+
+
+def get_unique_values(project_id: str, attribute_name: str) -> List[str]:
+    query = f"""
+        SELECT "data"->>'{attribute_name}'
+        FROM record
+        WHERE project_id = '{project_id}' AND "data"->>'{attribute_name}' IS NOT NULL
+        GROUP BY "data"->>'{attribute_name}'
+        ORDER BY 1
+    """
+    return [r[0] for r in general.execute(query)]
