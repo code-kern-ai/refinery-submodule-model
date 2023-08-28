@@ -265,7 +265,7 @@ def has_sub_key(
     query = f"""
     SELECT sub_key
     FROM embedding_tensor et
-    WHERE et.project_id = '{project_id}' et.embedding_id = '{embedding_id}'
+    WHERE et.project_id = '{project_id}' AND et.embedding_id = '{embedding_id}'
     LIMIT 1
     """
     value = general.execute_first(query)

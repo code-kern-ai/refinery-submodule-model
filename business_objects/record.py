@@ -363,7 +363,7 @@ def get_attribute_data(
         )x """
     else:
         query = f"""
-        SELECT id, data::JSON->'{attribute_name}' AS "{attribute_name}"
+        SELECT id::TEXT, data::JSON->'{attribute_name}' AS "{attribute_name}"
         FROM record
         WHERE project_id = '{project_id}'
         {order}
