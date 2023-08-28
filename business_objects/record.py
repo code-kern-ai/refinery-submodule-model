@@ -353,11 +353,11 @@ def get_attribute_data(
     order = __get_order_by(project_id)
     if attribute.get_by_name(project_id, attribute_name).data_type == "EMBEDDING_LIST":
         query = f"""
-        SELECT id::TEXT || '@' || sub_key id, att AS "attribute_5"
+        SELECT id::TEXT || '@' || sub_key id, att AS "{attribute_name}"
         FROM (
             SELECT id, value as att, ordinality - 1 as sub_key
             FROM record
-            cross join json_array_elements_text((data::JSON->'attribute_5')) with ordinality
+            cross join json_array_elements_text((data::JSON->'{attribute_name}')) with ordinality
             WHERE project_id = '{project_id}'
             {order} 
         )x """
