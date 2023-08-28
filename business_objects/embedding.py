@@ -355,15 +355,29 @@ def create_tensors(
     tensors: List[List[float]],
     with_commit: bool = False,
 ) -> None:
-    tensors = [
-        EmbeddingTensor(
-            project_id=project_id,
-            record_id=record_id,
-            embedding_id=embedding_id,
-            data=tensor,
-        )
-        for record_id, tensor in zip(record_ids, tensors)
-    ]
+    tensors = None
+    if len(record_ids) > 0 and "@" in record_ids[0]:
+
+        tensors = [
+            EmbeddingTensor(
+                project_id=project_id,
+                record_id=record_id.split("@")[0],
+                embedding_id=embedding_id,
+                data=tensor,
+                sub_key=int(record_id.split("@")[1]),
+            )
+            for record_id, tensor in zip(record_ids, tensors)
+        ]
+    else:
+        tensors = [
+            EmbeddingTensor(
+                project_id=project_id,
+                record_id=record_id,
+                embedding_id=embedding_id,
+                data=tensor,
+            )
+            for record_id, tensor in zip(record_ids, tensors)
+        ]
     general.add_all(tensors, with_commit)
 
 
