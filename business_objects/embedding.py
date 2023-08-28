@@ -205,7 +205,10 @@ def get_tensors_and_attributes_for_qdrant(
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
         payload_selector = f"json_build_object({payload_selector}) payload"
     query = f"""
-    SELECT et.record_id::TEXT, et."data", {payload_selector}
+    SELECT 
+        id::TEXT || CASE WHEN sub_key IS NULL THEN '' ELSE '@' || sub_key::TEXT END id, 
+        et."data", 
+        {payload_selector}
     FROM embedding_tensor et
     INNER JOIN record r
         ON et.project_id = r.project_id AND et.record_id = r.id
