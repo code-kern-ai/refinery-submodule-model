@@ -236,6 +236,22 @@ def get_manually_labeled_tensors_by_embedding_id(
     return general.execute_all(query)
 
 
+def has_sub_key(
+    project_id: str,
+    embedding_id: str,
+) -> bool:
+    query = f"""
+    SELECT sub_key
+    FROM embedding_tensor et
+    WHERE et.project_id = '{project_id}' et.embedding_id = '{embedding_id}'
+    LIMIT 1
+    """
+    value = general.execute_first(query)
+    if value is None or value[0] is None:
+        return False
+    return True
+
+
 def get_not_manually_labeled_tensors_by_embedding_id(
     project_id: str,
     embedding_id: str,
