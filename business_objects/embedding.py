@@ -200,13 +200,18 @@ def get_tensors_and_attributes_for_qdrant(
             if payload_selector != "":
                 payload_selector += ","
             if data_type != enums.DataTypes.TEXT.value:
-                payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
+                payload_selector += f"'{attr}', (r.\"data\"->'{attr}')::{data_type}"
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
         payload_selector = f"json_build_object({payload_selector}) payload"
+    id_column = None
+    if has_sub_key(project_id, embedding_id):
+        id_column = "et.id"
+    else:
+        id_column = "r.id"
     query = f"""
     SELECT 
-        et.id::TEXT || CASE WHEN sub_key IS NULL THEN '' ELSE '@' || sub_key::TEXT END id, 
+        {id_column}::TEXT, 
         et."data", 
         {payload_selector}
     FROM embedding_tensor et
@@ -216,6 +221,23 @@ def get_tensors_and_attributes_for_qdrant(
     """
 
     return general.execute_all(query)
+
+
+def get_match_record_ids_to_qdrant_ids(
+    project_id: str, embedding_id: str, ids: List[str], limit: int
+) -> List[Any]:
+    # "normal" attributes are stored in qdrant with the record id, embedding lists with the tensor id
+    if not has_sub_key(project_id, embedding_id):
+        return ids
+    query = f"""
+    SELECT et.record_id::TEXT
+    FROM   embedding_tensor et
+    JOIN   UNNEST('{{{ids.join(",")}}}'::uuid[]) WITH ORDINALITY t(id, ord) USING (id)
+    GROUP BY et.record_id
+    ORDER BY MIN(ord)
+    LIMIT {limit}
+    """
+    return [r[0] for r in general.execute_all(query)]
 
 
 def get_manually_labeled_tensors_by_embedding_id(
