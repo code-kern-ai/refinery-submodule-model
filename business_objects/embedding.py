@@ -374,10 +374,10 @@ def create_tensors(
     tensors: List[List[float]],
     with_commit: bool = False,
 ) -> None:
-    tensors = None
+    to_add = None
     if len(record_ids) > 0 and "@" in record_ids[0]:
 
-        tensors = [
+        to_add = [
             EmbeddingTensor(
                 project_id=project_id,
                 record_id=record_id.split("@")[0],
@@ -388,7 +388,7 @@ def create_tensors(
             for record_id, tensor in zip(record_ids, tensors)
         ]
     else:
-        tensors = [
+        to_add = [
             EmbeddingTensor(
                 project_id=project_id,
                 record_id=record_id,
@@ -397,7 +397,7 @@ def create_tensors(
             )
             for record_id, tensor in zip(record_ids, tensors)
         ]
-    general.add_all(tensors, with_commit)
+    general.add_all(to_add, with_commit)
 
 
 def update_similarity_threshold(
