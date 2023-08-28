@@ -206,7 +206,7 @@ def get_tensors_and_attributes_for_qdrant(
         payload_selector = f"json_build_object({payload_selector}) payload"
     query = f"""
     SELECT 
-        id::TEXT || CASE WHEN sub_key IS NULL THEN '' ELSE '@' || sub_key::TEXT END id, 
+        et.id::TEXT || CASE WHEN sub_key IS NULL THEN '' ELSE '@' || sub_key::TEXT END id, 
         et."data", 
         {payload_selector}
     FROM embedding_tensor et
