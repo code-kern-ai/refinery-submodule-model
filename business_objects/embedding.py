@@ -232,7 +232,7 @@ def get_match_record_ids_to_qdrant_ids(
     query = f"""
     SELECT et.record_id::TEXT
     FROM   embedding_tensor et
-    JOIN   UNNEST('{{{ids.join(",")}}}'::uuid[]) WITH ORDINALITY t(id, ord) USING (id)
+    JOIN   UNNEST('{{{",".join(ids)}}}'::uuid[]) WITH ORDINALITY t(id, ord) USING (id)
     GROUP BY et.record_id
     ORDER BY MIN(ord)
     LIMIT {limit}
