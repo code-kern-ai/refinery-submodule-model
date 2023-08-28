@@ -349,13 +349,24 @@ def get_record_data_for_id_group(
 def get_attribute_data(
     project_id: str, attribute_name: str
 ) -> Tuple[List[str], List[str]]:
-    order = __get_order_by(project_id)
-    query = f"""
-    SELECT id, data::JSON->'{attribute_name}' AS "{attribute_name}"
-    FROM record
-    WHERE project_id = '{project_id}'
-    {order}
-    """
+    query = None
+    if attribute.get_by_name(project_id, attribute_name).data_type == "EMBEDDING_LIST":
+        # partition already orders by id
+        query = f"""
+        SELECT id::TEXT || '@' || TO_CHAR(ROW_NUMBER() OVER(PARTITION BY id::TEXT), 'fm000') id, att AS "{attribute_name}"
+        FROM (
+            SELECT id, json_array_elements((data::JSON->'{attribute_name}')) AS att
+            FROM record
+            WHERE project_id = '{project_id}' )x
+        """
+    else:
+        order = __get_order_by(project_id)
+        query = f"""
+        SELECT id, data::JSON->'{attribute_name}' AS "{attribute_name}"
+        FROM record
+        WHERE project_id = '{project_id}'
+        {order}
+        """
     result = general.execute_all(query)
     record_ids, attribute_values = list(zip(*result))
     return record_ids, attribute_values
