@@ -376,6 +376,17 @@ def get_attribute_data(
 def count(project_id: str) -> int:
     return session.query(Record).filter(Record.project_id == project_id).count()
 
+def count_attribute_list_entries(project_id: str,attribute_name:str) -> int:
+    query = f"""
+    SELECT sum(json_array_length(r.data->'{attribute_name}'))
+    FROM record  r
+    WHERE project_id = '{project_id}'
+    """
+    value = general.execute_first(query)
+    if not value or not value[0]:
+        return 0
+    return value[0] 
+
 
 def count_by_project_and_source(
     project_id: str, record_category: str, label_source: str

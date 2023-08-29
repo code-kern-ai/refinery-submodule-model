@@ -240,6 +240,22 @@ def get_match_record_ids_to_qdrant_ids(
     return [r[0] for r in general.execute_all(query)]
 
 
+def get_qdrant_limit_factor(
+    project_id: str, embedding_id: str, default: int = 1
+) -> int:
+    query = f"""
+    SELECT CEIL(AVG(max_key))::INTEGER
+    FROM (
+        SELECT record_id, MAX(sub_key + 1) max_key
+        FROM embedding_tensor et
+        WHERE project_id = '4eb4438f-e1ba-4a42-86d8-f8b7ec88fdb2' AND embedding_id = 'c0fe77af-87cd-435a-a1a2-34a5751358e5'
+        GROUP BY record_id )x """
+    value = general.execute_first(query)
+    if value is None or value[0] is None:
+        return default
+    return value[0]
+
+
 def get_manually_labeled_tensors_by_embedding_id(
     project_id: str,
     embedding_id: str,
