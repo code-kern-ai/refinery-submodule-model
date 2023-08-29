@@ -146,7 +146,8 @@ def get_tensors_by_project_id(project_id: str) -> List[Any]:
         SELECT
             et.embedding_id,
             et.record_id,
-            et.data
+            et.data,
+            et.sub_key
         FROM embedding_tensor et
         INNER JOIN embedding e
             ON et.embedding_id = e.id
@@ -316,12 +317,16 @@ def get_tensor_count(embedding_id: str) -> EmbeddingTensor:
     )
 
 
-def get_tensor(embedding_id: str, record_id: Optional[str] = None) -> EmbeddingTensor:
+def get_tensor(
+    embedding_id: str, record_id: Optional[str] = None, sub_key: Optional[int] = None
+) -> EmbeddingTensor:
     query = session.query(models.EmbeddingTensor).filter(
         models.EmbeddingTensor.embedding_id == embedding_id,
     )
     if record_id:
         query = query.filter(models.EmbeddingTensor.record_id == record_id)
+    if sub_key:
+        query = query.filter(models.EmbeddingTensor.sub_key == sub_key)
 
     return query.first()
 
@@ -393,6 +398,7 @@ def create_tensor(
     record_id: str,
     embedding_id: str,
     data: List[float],
+    sub_key: Optional[int] = None,
     with_commit: bool = False,
 ) -> EmbeddingTensor:
     embedding_tensor: EmbeddingTensor = EmbeddingTensor(
@@ -400,6 +406,7 @@ def create_tensor(
         record_id=record_id,
         embedding_id=embedding_id,
         data=data,
+        sub_key=sub_key,
     )
     general.add(embedding_tensor, with_commit)
     return embedding_tensor
