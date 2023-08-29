@@ -44,7 +44,7 @@ Submodules can be a bit irritating - key insights:
   commands:
     - git submodule init
     - 'git config --global url."https://github.com/".insteadOf git@github.com:'
-    - "git submodule update --recursive --remote"
+    - "git submodule update --recursive"
 ```
 
 **"remember" to pull / push for the submodules!!**
