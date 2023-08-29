@@ -248,7 +248,7 @@ def get_qdrant_limit_factor(
     FROM (
         SELECT record_id, MAX(sub_key + 1) max_key
         FROM embedding_tensor et
-        WHERE project_id = '4eb4438f-e1ba-4a42-86d8-f8b7ec88fdb2' AND embedding_id = 'c0fe77af-87cd-435a-a1a2-34a5751358e5'
+        WHERE project_id = '{project_id}' AND embedding_id = '{embedding_id}'
         GROUP BY record_id )x """
     value = general.execute_first(query)
     if value is None or value[0] is None:
