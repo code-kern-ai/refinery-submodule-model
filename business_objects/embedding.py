@@ -146,7 +146,8 @@ def get_tensors_by_project_id(project_id: str) -> List[Any]:
         SELECT
             et.embedding_id,
             et.record_id,
-            et.data
+            et.data,
+            et.sub_key
         FROM embedding_tensor et
         INNER JOIN embedding e
             ON et.embedding_id = e.id
@@ -200,12 +201,20 @@ def get_tensors_and_attributes_for_qdrant(
             if payload_selector != "":
                 payload_selector += ","
             if data_type != enums.DataTypes.TEXT.value:
-                payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
+                payload_selector += f"'{attr}', (r.\"data\"->'{attr}')::{data_type}"
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
         payload_selector = f"json_build_object({payload_selector}) payload"
+    id_column = None
+    if has_sub_key(project_id, embedding_id):
+        id_column = "et.id"
+    else:
+        id_column = "r.id"
     query = f"""
-    SELECT et.record_id::TEXT, et."data", {payload_selector}
+    SELECT 
+        {id_column}::TEXT, 
+        et."data", 
+        {payload_selector}
     FROM embedding_tensor et
     INNER JOIN record r
         ON et.project_id = r.project_id AND et.record_id = r.id
@@ -213,6 +222,39 @@ def get_tensors_and_attributes_for_qdrant(
     """
 
     return general.execute_all(query)
+
+
+def get_match_record_ids_to_qdrant_ids(
+    project_id: str, embedding_id: str, ids: List[str], limit: int
+) -> List[Any]:
+    # "normal" attributes are stored in qdrant with the record id, embedding lists with the tensor id
+    if not has_sub_key(project_id, embedding_id):
+        return ids
+    query = f"""
+    SELECT et.record_id::TEXT
+    FROM   embedding_tensor et
+    JOIN   UNNEST('{{{",".join(ids)}}}'::uuid[]) WITH ORDINALITY t(id, ord) USING (id)
+    GROUP BY et.record_id
+    ORDER BY MIN(ord)
+    LIMIT {limit}
+    """
+    return [r[0] for r in general.execute_all(query)]
+
+
+def get_qdrant_limit_factor(
+    project_id: str, embedding_id: str, default: int = 1
+) -> int:
+    query = f"""
+    SELECT CEIL(AVG(max_key))::INTEGER
+    FROM (
+        SELECT record_id, MAX(sub_key + 1) max_key
+        FROM embedding_tensor et
+        WHERE project_id = '{project_id}' AND embedding_id = '{embedding_id}'
+        GROUP BY record_id )x """
+    value = general.execute_first(query)
+    if value is None or value[0] is None:
+        return default
+    return value[0]
 
 
 def get_manually_labeled_tensors_by_embedding_id(
@@ -231,6 +273,22 @@ def get_manually_labeled_tensors_by_embedding_id(
     WHERE et.embedding_id = '{embedding_id}'
     """
     return general.execute_all(query)
+
+
+def has_sub_key(
+    project_id: str,
+    embedding_id: str,
+) -> bool:
+    query = f"""
+    SELECT sub_key
+    FROM embedding_tensor et
+    WHERE et.project_id = '{project_id}' AND et.embedding_id = '{embedding_id}'
+    LIMIT 1
+    """
+    value = general.execute_first(query)
+    if value is None or value[0] is None:
+        return False
+    return True
 
 
 def get_not_manually_labeled_tensors_by_embedding_id(
@@ -259,12 +317,16 @@ def get_tensor_count(embedding_id: str) -> EmbeddingTensor:
     )
 
 
-def get_tensor(embedding_id: str, record_id: Optional[str] = None) -> EmbeddingTensor:
+def get_tensor(
+    embedding_id: str, record_id: Optional[str] = None, sub_key: Optional[int] = None
+) -> EmbeddingTensor:
     query = session.query(models.EmbeddingTensor).filter(
         models.EmbeddingTensor.embedding_id == embedding_id,
     )
     if record_id:
         query = query.filter(models.EmbeddingTensor.record_id == record_id)
+    if sub_key:
+        query = query.filter(models.EmbeddingTensor.sub_key == sub_key)
 
     return query.first()
 
@@ -336,6 +398,7 @@ def create_tensor(
     record_id: str,
     embedding_id: str,
     data: List[float],
+    sub_key: Optional[int] = None,
     with_commit: bool = False,
 ) -> EmbeddingTensor:
     embedding_tensor: EmbeddingTensor = EmbeddingTensor(
@@ -343,6 +406,7 @@ def create_tensor(
         record_id=record_id,
         embedding_id=embedding_id,
         data=data,
+        sub_key=sub_key,
     )
     general.add(embedding_tensor, with_commit)
     return embedding_tensor
@@ -355,16 +419,30 @@ def create_tensors(
     tensors: List[List[float]],
     with_commit: bool = False,
 ) -> None:
-    tensors = [
-        EmbeddingTensor(
-            project_id=project_id,
-            record_id=record_id,
-            embedding_id=embedding_id,
-            data=tensor,
-        )
-        for record_id, tensor in zip(record_ids, tensors)
-    ]
-    general.add_all(tensors, with_commit)
+    to_add = None
+    if len(record_ids) > 0 and "@" in record_ids[0]:
+
+        to_add = [
+            EmbeddingTensor(
+                project_id=project_id,
+                record_id=record_id.split("@")[0],
+                embedding_id=embedding_id,
+                data=tensor,
+                sub_key=int(record_id.split("@")[1]),
+            )
+            for record_id, tensor in zip(record_ids, tensors)
+        ]
+    else:
+        to_add = [
+            EmbeddingTensor(
+                project_id=project_id,
+                record_id=record_id,
+                embedding_id=embedding_id,
+                data=tensor,
+            )
+            for record_id, tensor in zip(record_ids, tensors)
+        ]
+    general.add_all(to_add, with_commit)
 
 
 def update_similarity_threshold(

@@ -7,6 +7,7 @@ class DataTypes(Enum):
     BOOLEAN = "BOOLEAN"
     CATEGORY = "CATEGORY"
     TEXT = "TEXT"
+    EMBEDDING_LIST = "EMBEDDING_LIST"  # only for embeddings & default hidden
     UNKNOWN = "UNKNOWN"
 
 

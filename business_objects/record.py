@@ -349,13 +349,25 @@ def get_record_data_for_id_group(
 def get_attribute_data(
     project_id: str, attribute_name: str
 ) -> Tuple[List[str], List[str]]:
+    query = None
     order = __get_order_by(project_id)
-    query = f"""
-    SELECT id, data::JSON->'{attribute_name}' AS "{attribute_name}"
-    FROM record
-    WHERE project_id = '{project_id}'
-    {order}
-    """
+    if attribute.get_by_name(project_id, attribute_name).data_type == "EMBEDDING_LIST":
+        query = f"""
+        SELECT id::TEXT || '@' || sub_key id, att AS "{attribute_name}"
+        FROM (
+            SELECT id, value as att, ordinality - 1 as sub_key
+            FROM record
+            cross join json_array_elements_text((data::JSON->'{attribute_name}')) with ordinality
+            WHERE project_id = '{project_id}'
+            {order} 
+        )x """
+    else:
+        query = f"""
+        SELECT id::TEXT, data::JSON->'{attribute_name}' AS "{attribute_name}"
+        FROM record
+        WHERE project_id = '{project_id}'
+        {order}
+        """
     result = general.execute_all(query)
     record_ids, attribute_values = list(zip(*result))
     return record_ids, attribute_values
@@ -363,6 +375,17 @@ def get_attribute_data(
 
 def count(project_id: str) -> int:
     return session.query(Record).filter(Record.project_id == project_id).count()
+
+def count_attribute_list_entries(project_id: str,attribute_name:str) -> int:
+    query = f"""
+    SELECT sum(json_array_length(r.data->'{attribute_name}'))
+    FROM record  r
+    WHERE project_id = '{project_id}'
+    """
+    value = general.execute_first(query)
+    if not value or not value[0]:
+        return 0
+    return value[0] 
 
 
 def count_by_project_and_source(

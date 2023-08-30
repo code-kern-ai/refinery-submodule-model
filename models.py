@@ -763,6 +763,7 @@ class EmbeddingTensor(Base):
         ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    sub_key = Column(Integer)
     data = Column(JSON)
 
 
