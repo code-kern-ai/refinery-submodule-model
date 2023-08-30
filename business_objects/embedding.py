@@ -420,6 +420,8 @@ def create_tensors(
     with_commit: bool = False,
 ) -> None:
     to_add = None
+    # added @ as sub_key (list index) for embedding list attributes -> record_id@sub_key
+    # basically the reversal of record.get_attribute_data for embedding lists
     if len(record_ids) > 0 and "@" in record_ids[0]:
 
         to_add = [
