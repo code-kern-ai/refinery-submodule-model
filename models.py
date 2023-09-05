@@ -994,3 +994,38 @@ class TaskQueue(Base):
     is_active = Column(Boolean, default=False)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(UUID(as_uuid=True), ForeignKey(f"{Tablenames.USER.value}.id"))
+
+
+# --- COGNITION TABLES
+class CognitionProject(Base):
+    __tablename__ = Tablenames.PROJECT.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"public.{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"public.{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    refinery_references_project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"public.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    refinery_query_project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"public.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    refinery_relevance_project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"public.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
