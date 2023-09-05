@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from typing import List, Any, Optional, Dict, Iterable
+from typing import List, Any, Optional, Dict, Iterable, Tuple
 from sqlalchemy import cast, TEXT, sql
 
 from . import general
@@ -535,6 +535,37 @@ def delete_by_record_ids(
         EmbeddingTensor.embedding_id == embedding_id,
         EmbeddingTensor.record_id.in_(record_ids),
     ).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_by_record_ids_and_sub_keys(
+    project_id: str,
+    embedding_id: str,
+    to_del: Iterable[Tuple[str, str]],
+    with_commit: bool = False,
+) -> None:
+    # deletes entries based on record_id and sub_key tuples for record changes
+    if len(to_del) == 0:
+        return
+    if len(to_del) > 100:
+        # since chunk_list isn't available here, we raise an error
+        raise ValueError("Too many tuples to delete at once. Please chunk beforehand.")
+    query_adds = [
+        f"(et.record_id = '{record_id}' AND et.sub_key = {sub_key})"
+        for record_id, sub_key in to_del
+    ]
+
+    query_add = " OR ".join(query_adds)
+
+    query = f"""
+    DELETE FROM embedding_tensor
+    WHERE project_id = '{project_id}' AND id IN ( 
+    SELECT et.id
+    FROM embedding_tensor et
+    WHERE et.project_id = '{project_id}' AND et.embedding_id = '{embedding_id}'
+    AND ({query_add}) ) """
+
+    general.execute(query)
     general.flush_or_commit(with_commit)
 
 
