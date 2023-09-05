@@ -28,6 +28,7 @@ def get_all(org_id) -> List[CognitionProject]:
 def create(
     name: str,
     description: str,
+    color: str,
     org_id: str,
     user_id: str,
     refinery_references_project_id: str,
@@ -39,6 +40,7 @@ def create(
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
+        color=color,
         organization_id=org_id,
         created_by=user_id,
         created_at=created_at,

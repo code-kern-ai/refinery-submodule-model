@@ -1028,4 +1028,5 @@ class CognitionProject(Base):
     )
     name = Column(String)
     description = Column(String)
+    color = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
