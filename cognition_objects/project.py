@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
-from src.model.data_objects import general
-from src.model.session import session
-from submodules.model.models import CognitionProject
-from src.model import enums
+from ..business_objects import general
+from ..session import session
+from ..models import CognitionProject, Project
+from .. import enums
 from sqlalchemy import func, alias, Integer
 from sqlalchemy.orm import aliased
 
@@ -24,6 +24,7 @@ def create(
     with_commit: bool = True,
     timestamp: Optional[str] = None,
 ) -> CognitionProject:
+
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
