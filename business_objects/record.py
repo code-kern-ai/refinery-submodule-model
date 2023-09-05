@@ -1,5 +1,5 @@
 from __future__ import with_statement
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple,Iterable
 from sqlalchemy import cast, Text
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -29,6 +29,11 @@ def get(project_id: str, record_id: str) -> Record:
 def get_one(project_id: str) -> Record:
     return session.query(Record).filter(Record.project_id == project_id).first()
 
+def get_by_record_ids(project_id: str, record_ids: Iterable[str]) -> List[Record]:
+    return (
+        session.query(Record)
+        .filter(Record.project_id == project_id, Record.id.in_(record_ids))
+        .all())
 
 def get_without_project_id(record_id: str) -> Record:
     """

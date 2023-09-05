@@ -375,7 +375,6 @@ def create_by_record_user_label_dict(
     create_list = []
     for record_id, user_dict in record_user_label_dict.items():
         for user_id, tasks_dict in user_dict.items():
-
             rlas = [
                 RecordLabelAssociation(
                     project_id=project_id,
@@ -663,6 +662,40 @@ def delete_by_ids(
         )
     delete_query = delete_query.filter(RecordLabelAssociation.id.in_(association_ids))
     delete_query.delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_by_record_attribute_tuples(
+    project_id: str, to_del: List[Tuple[str, str]], with_commit: bool = False
+) -> None:
+    # deletes labels based on record_id and attribute tuples for record changes
+    # means only extraction labels on record x & attribute y are deleted
+
+    if len(to_del) == 0:
+        return
+    if len(to_del) > 100:
+        # since chunk_list isn't available here, we raise an error
+        raise ValueError("Too many tuples to delete at once. Please chunk beforehand.")
+    query_adds = [
+        f"(rla.record_id = '{record_id}' AND lt.attribute_id = '{attribute_id}')"
+        for record_id, attribute_id in to_del
+    ]
+
+    query_add = " OR ".join(query_adds)
+
+    query = f"""
+    DELETE FROM record_label_association
+    WHERE project_id = '{project_id}' AND id IN ( 
+    SELECT rla.id
+    FROM record_label_association rla
+    INNER JOIN labeling_task_label ltl
+        ON rla.project_id = ltl.project_id AND rla.labeling_task_label_id = ltl.id
+    INNER JOIN labeling_task lt
+        ON ltl.project_id = lt.project_id AND ltl.labeling_task_id = lt.id
+    WHERE lt.task_type = '{enums.LabelingTaskType.INFORMATION_EXTRACTION.value}' AND rla.project_id = '{project_id}'
+    AND ({query_add}) )"""
+
+    general.execute(query)
     general.flush_or_commit(with_commit)
 
 

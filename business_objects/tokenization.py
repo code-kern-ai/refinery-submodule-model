@@ -1,4 +1,4 @@
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Iterable
 
 
 from sqlalchemy import or_
@@ -141,16 +141,36 @@ def delete_docbins(project_id: str, with_commit: bool = False) -> None:
 def delete_record_docbins(
     project_id: str, records: List[Record], with_commit: bool = False
 ) -> None:
+    delete_record_docbins_by_id(
+        project_id, [record.id for record in records], with_commit
+    )
+
+
+def delete_record_docbins_by_id(
+    project_id: str, record_ids: Iterable[str], with_commit: bool = False
+) -> None:
     session.query(RecordTokenized).filter(
-        RecordTokenized.record_id.in_([record.id for record in records]),
+        RecordTokenized.record_id.in_(record_ids),
         RecordTokenized.project_id == project_id,
     ).delete()
     general.flush_or_commit(with_commit)
 
 
 def delete_token_statistics(records: List[Record], with_commit: bool = False) -> None:
+    if len(records) == 0:
+        return
+    project_id = records[0].project_id
+    delete_token_statistics_by_id(
+        project_id, [record.id for record in records], with_commit
+    )
+
+
+def delete_token_statistics_by_id(
+    project_id: str, record_ids: Iterable[str], with_commit: bool = False
+) -> None:
     session.query(RecordAttributeTokenStatistics).filter(
-        RecordAttributeTokenStatistics.record_id.in_([record.id for record in records]),
+        RecordAttributeTokenStatistics.record_id.in_(record_ids),
+        RecordAttributeTokenStatistics.project_id == project_id,
     ).delete()
     general.flush_or_commit(with_commit)
 

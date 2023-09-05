@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from typing import List, Any, Optional, Dict
+from typing import List, Any, Optional, Dict, Iterable
 from sqlalchemy import cast, TEXT, sql
 
 from . import general
@@ -14,6 +14,19 @@ def get(project_id: str, embedding_id: str) -> Embedding:
         session.query(Embedding)
         .filter(Embedding.project_id == project_id, Embedding.id == embedding_id)
         .first()
+    )
+
+
+def get_all_by_attribute_ids(
+    project_id: str, attribute_ids: Iterable[str]
+) -> List[Embedding]:
+    return (
+        session.query(Embedding)
+        .filter(
+            Embedding.project_id == project_id,
+            Embedding.attribute_id.in_(attribute_ids),
+        )
+        .all()
     )
 
 
@@ -423,7 +436,6 @@ def create_tensors(
     # added @ as sub_key (list index) for embedding list attributes -> record_id@sub_key
     # basically the reversal of record.get_attribute_data for embedding lists
     if len(record_ids) > 0 and "@" in record_ids[0]:
-
         to_add = [
             EmbeddingTensor(
                 project_id=project_id,
@@ -509,6 +521,20 @@ def delete(project_id: str, embedding_id: str, with_commit: bool = False) -> Non
 
 def delete_tensors(embedding_id: str, with_commit: bool = False) -> None:
     session.query(EmbeddingTensor).filter(EmbeddingTensor.id == embedding_id).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_by_record_ids(
+    project_id: str,
+    embedding_id: str,
+    record_ids: Iterable[str],
+    with_commit: bool = False,
+) -> None:
+    session.query(EmbeddingTensor).filter(
+        EmbeddingTensor.project_id == project_id,
+        EmbeddingTensor.embedding_id == embedding_id,
+        EmbeddingTensor.record_id.in_(record_ids),
+    ).delete()
     general.flush_or_commit(with_commit)
 
 
