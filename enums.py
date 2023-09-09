@@ -108,6 +108,8 @@ class Tablenames(Enum):
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
     ADMIN_MESSAGE = "admin_message"
     TASK_QUEUE = "task_queue"
+    CONVERSATION = "conversation"
+    MESSAGE = "message"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
