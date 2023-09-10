@@ -66,6 +66,12 @@ class UserRoles(Enum):
     ANNOTATOR = "ANNOTATOR"
 
 
+class MessageRoles(Enum):
+    SYSTEM = "SYSTEM"
+    USER = "USER"
+    ASSISTANT = "ASSISTANT"
+
+
 class LinkTypes(Enum):
     DATA_SLICE = "DATA_SLICE"
     HEURISTIC = "HEURISTIC"
