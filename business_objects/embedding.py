@@ -207,7 +207,9 @@ def get_tensors_and_attributes_for_qdrant(
     embedding_id: str,
     attributes_to_include: Optional[Dict[str, str]] = None,
 ) -> List[Any]:
-    payload_selector = "NULL"
+    # empty json object to extend by label data later
+    payload_selector = "jsonb_build_object()"
+
     if attributes_to_include and len(attributes_to_include) > 0:
         payload_selector = ""
         for attr, data_type in attributes_to_include.items():
