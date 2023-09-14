@@ -220,16 +220,12 @@ def get_tensors_and_attributes_for_qdrant(
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
         payload_selector = f"json_build_object({payload_selector}) payload"
-    id_column = None
-    if has_sub_key(project_id, embedding_id):
-        id_column = "et.id"
-    else:
-        id_column = "r.id"
     query = f"""
     SELECT 
-        {id_column}::TEXT, 
+        r.id::TEXT record_id, 
         et."data", 
-        {payload_selector}
+        {payload_selector},
+        et.id::TEXT tensor_id
     FROM embedding_tensor et
     INNER JOIN record r
         ON et.project_id = r.project_id AND et.record_id = r.id
