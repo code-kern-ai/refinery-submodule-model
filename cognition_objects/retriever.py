@@ -44,6 +44,7 @@ def create(
         name=name,
         description=description,
         source_code=source_code,
+        enabled=False,
     )
     general.add(retriever, with_commit)
 
