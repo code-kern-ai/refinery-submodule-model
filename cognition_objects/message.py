@@ -21,7 +21,8 @@ def create(
     conversation_id: str,
     project_id: str,
     user_id: str,
-    initial_message: str,
+    content: str,
+    role: str,
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> Message:
@@ -30,8 +31,8 @@ def create(
         conversation_id=conversation_id,
         created_by=user_id,
         created_at=created_at,
-        content=initial_message,
-        role=enums.MessageRoles.USER.value,
+        content=content,
+        role=role,
         facts=[],
     )
 

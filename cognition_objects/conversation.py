@@ -43,10 +43,30 @@ def create(
         conversation_id=conversation.id,
         project_id=project_id,
         user_id=user_id,
-        initial_message=initial_message,
+        content=initial_message,
+        role=enums.MessageRoles.USER.value,
         with_commit=with_commit,
     )
 
+    return conversation
+
+
+def add_message(
+    conversation_id: str,
+    content: str,
+    role: str,
+    with_commit: bool = True,
+) -> Conversation:
+    conversation: Conversation = get(conversation_id)
+
+    message.create(
+        conversation_id=conversation_id,
+        project_id=conversation.project_id,
+        user_id=conversation.created_by,
+        content=content,
+        role=role,
+        with_commit=with_commit,
+    )
     return conversation
 
 

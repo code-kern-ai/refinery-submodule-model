@@ -116,6 +116,8 @@ class Tablenames(Enum):
     TASK_QUEUE = "task_queue"
     CONVERSATION = "conversation"
     MESSAGE = "message"
+    STRATEGY = "strategy"
+    STRATEGY_STEP = "strategy_step"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -453,3 +455,10 @@ class SampleProjectType(Enum):
     AG_NEWS = "AG News"
     CONVERSATIONAL_AI_INITIAL = "Conversational AI - initial"
     CONVERSATIONAL_AI = "Conversational AI"
+
+
+class StrategyStepType(Enum):
+    RETRIEVAL = "RETRIEVAL"
+    RELEVANCE = "RELEVANCE"
+    NONE = "NONE"
+    PYTHON = "PYTHON"

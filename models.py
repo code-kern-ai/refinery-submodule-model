@@ -1031,6 +1031,52 @@ class CognitionProject(Base):
     color = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
 
+
+class Strategy(Base):
+    __tablename__ = Tablenames.STRATEGY.value
+    __table_args__ = {"schema": "cognition"}
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    description = Column(String)
+
+
+class StrategyStep(Base):
+    __tablename__ = Tablenames.STRATEGY_STEP.value
+    __table_args__ = {"schema": "cognition"}
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    strategy_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    description = Column(String)
+    strategy_step_type = Column(String)
+    strategy_step_position = Column(Integer)
+
+
 class Conversation(Base):
     __tablename__ = Tablenames.CONVERSATION.value
     __table_args__ = {"schema": "cognition"}
@@ -1046,6 +1092,7 @@ class Conversation(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+
 
 class Message(Base):
     __tablename__ = Tablenames.MESSAGE.value
