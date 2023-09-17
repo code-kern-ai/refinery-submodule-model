@@ -1117,3 +1117,31 @@ class Message(Base):
     role = Column(String)
     content = Column(String)
     facts = Column(ARRAY(JSON))
+
+
+class Retriever(Base):
+    __tablename__ = Tablenames.RETRIEVER.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    strategy_step_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    source_code = Column(String)
+    enabled = Column(Boolean, default=True)
