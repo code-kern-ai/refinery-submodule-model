@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
-
+from src.controller import pipeline
 from src.controller.business_objects.project.gates import call_gates_project
 
 from ..cognition_objects import message, project as cognition_project
@@ -64,6 +64,7 @@ def add_message(
     query_type_confidence = None
 
     # pipeline
+    enrichment_response_json = None
     if role == enums.MessageRoles.USER.value:
         enrichment_response = call_gates_project(
             project_id=project.refinery_query_project_id,
@@ -91,6 +92,10 @@ def add_message(
         query_type_confidence=query_type_confidence,
         with_commit=with_commit,
     )
+
+    if enrichment_response_json:
+        pipeline.route_message(project=project, record_dict=enrichment_response_json)
+
     return conversation
 
 
