@@ -23,6 +23,8 @@ def create(
     user_id: str,
     content: str,
     role: str,
+    query_type: str,
+    query_type_confidence: float,
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> Message:
@@ -33,6 +35,8 @@ def create(
         created_at=created_at,
         content=content,
         role=role,
+        query_type=query_type,
+        query_type_confidence=query_type_confidence,
         facts=[],
     )
 

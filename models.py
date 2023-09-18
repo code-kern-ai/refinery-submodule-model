@@ -1116,6 +1116,8 @@ class Message(Base):
     created_at = Column(DateTime, default=sql.func.now())
     role = Column(String)
     content = Column(String)
+    query_type = Column(String)
+    query_type_confidence = Column(Float)
     facts = Column(ARRAY(JSON))
 
 
