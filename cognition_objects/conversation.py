@@ -64,8 +64,6 @@ def add_message(
     query_type_confidence = None
 
     # pipeline
-    print("calling gates project", flush=True)
-
     if role == enums.MessageRoles.USER.value:
         enrichment_response = call_gates_project(
             project_id=project.refinery_query_project_id,
@@ -73,11 +71,9 @@ def add_message(
                 "query": content,
             },
         )
-        print("gates project called", flush=True)
         if enrichment_response.status_code == 200:
             # {'record': {'query': 'hi'}, 'results': {'Question Type': {'prediction': 'explorative', 'confidence': 0.9820137900379085, 'heuristics': [{'name': 'my_labeling_function', 'prediction': 'explorative', 'confidence': 1.0}]}}}
             enrichment_response_json = enrichment_response.json()
-            print(enrichment_response_json, flush=True)
             question_type = enrichment_response_json["results"].get("Question Type")
             if question_type:
                 query_type = question_type["prediction"]
