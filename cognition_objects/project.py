@@ -37,6 +37,9 @@ def create(
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> CognitionProject:
+    operator_routing_source_code = """
+"""
+
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
@@ -47,6 +50,7 @@ def create(
         refinery_references_project_id=refinery_references_project_id,
         refinery_query_project_id=refinery_queries_project_id,
         refinery_relevance_project_id=refinery_relevances_project_id,
+        operator_routing_source_code=operator_routing_source_code,
     )
     general.add(project, with_commit)
     return project
@@ -56,6 +60,7 @@ def update(
     project_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    operator_routing_source_code: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -63,6 +68,8 @@ def update(
         project.name = name
     if description is not None:
         project.description = description
+    if operator_routing_source_code is not None:
+        project.operator_routing_source_code = operator_routing_source_code
     general.flush_or_commit(with_commit)
     return project
 

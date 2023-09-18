@@ -1011,6 +1011,7 @@ class CognitionProject(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    created_at = Column(DateTime, default=sql.func.now())
     refinery_references_project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
@@ -1029,7 +1030,7 @@ class CognitionProject(Base):
     name = Column(String)
     description = Column(String)
     color = Column(String)
-    created_at = Column(DateTime, default=sql.func.now())
+    operator_routing_source_code = Column(String)
 
 
 class Strategy(Base):
