@@ -57,17 +57,24 @@ def add_message(
     role: str,
     with_commit: bool = True,
 ) -> Conversation:
-    conversation: Conversation = get(conversation_id)
-    project: CognitionProject = cognition_project.get(conversation.project_id)
+    conversation_entity: Conversation = get(conversation_id)
+    project_entity: CognitionProject = cognition_project.get(
+        conversation_entity.project_id
+    )
 
-    query_type = None
-    query_type_confidence = None
-
+    message_entity = message.create(
+        conversation_id=conversation_id,
+        project_id=conversation_entity.project_id,
+        user_id=conversation_entity.created_by,
+        content=content,
+        role=role,
+        with_commit=with_commit,
+    )
     # pipeline
     enrichment_response_json = None
     if role == enums.MessageRoles.USER.value:
         enrichment_response = call_gates_project(
-            project_id=project.refinery_query_project_id,
+            project_id=project_entity.refinery_query_project_id,
             record_dict={
                 "query": content,
             },
@@ -75,28 +82,29 @@ def add_message(
         if enrichment_response.status_code == 200:
             # {'record': {'query': 'hi'}, 'results': {'Question Type': {'prediction': 'explorative', 'confidence': 0.9820137900379085, 'heuristics': [{'name': 'my_labeling_function', 'prediction': 'explorative', 'confidence': 1.0}]}}}
             enrichment_response_json = enrichment_response.json()
-            question_type = enrichment_response_json["results"].get("Question Type")
-            if question_type:
-                query_type = question_type["prediction"]
-                query_type_confidence = question_type["confidence"]
+            pipeline.route_message(
+                project_entity=project_entity,
+                message_entity=message_entity,
+                record_dict=enrichment_response_json,
+            )
         else:
             print(enrichment_response.text, flush=True)
 
-    message.create(
-        conversation_id=conversation_id,
-        project_id=conversation.project_id,
-        user_id=conversation.created_by,
-        content=content,
-        role=role,
-        query_type=query_type,
-        query_type_confidence=query_type_confidence,
-        with_commit=with_commit,
-    )
+    return conversation_entity
 
-    if enrichment_response_json:
-        pipeline.route_message(project=project, record_dict=enrichment_response_json)
 
-    return conversation
+def update_message(
+    conversation_id: str,
+    message_id: str,
+    strategy_id: Optional[str] = None,
+    with_commit: bool = True,
+) -> Conversation:
+    message_entity = message.get(message_id)
+    if strategy_id is not None:
+        message_entity.strategy_id = strategy_id
+    general.flush_or_commit(with_commit)
+    conversation_entity = get(conversation_id)
+    return conversation_entity
 
 
 def delete(conversation_id: str, with_commit: bool = True) -> None:

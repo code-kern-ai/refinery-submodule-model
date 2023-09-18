@@ -17,14 +17,16 @@ def get_all_by_conversation_id(conversation_id: str) -> List[Message]:
     )
 
 
+def get(message_id: str) -> Message:
+    return session.query(Message).filter(Message.id == message_id).first()
+
+
 def create(
     conversation_id: str,
     project_id: str,
     user_id: str,
     content: str,
     role: str,
-    query_type: str,
-    query_type_confidence: float,
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> Message:
@@ -35,8 +37,6 @@ def create(
         created_at=created_at,
         content=content,
         role=role,
-        query_type=query_type,
-        query_type_confidence=query_type_confidence,
         facts=[],
     )
 

@@ -14,6 +14,14 @@ def get(strategy_id: str) -> Strategy:
     return session.query(Strategy).filter(Strategy.id == strategy_id).first()
 
 
+def get_by_name(project_id: str, name: str) -> Strategy:
+    return (
+        session.query(Strategy)
+        .filter(Strategy.project_id == project_id, Strategy.name == name)
+        .first()
+    )
+
+
 def get_all_by_project_id(project_id: str) -> List[Strategy]:
     return (
         session.query(Strategy)

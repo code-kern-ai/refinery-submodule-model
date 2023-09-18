@@ -1109,6 +1109,11 @@ class Message(Base):
         ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    strategy_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
@@ -1117,8 +1122,6 @@ class Message(Base):
     created_at = Column(DateTime, default=sql.func.now())
     role = Column(String)
     content = Column(String)
-    query_type = Column(String)
-    query_type_confidence = Column(Float)
     facts = Column(ARRAY(JSON))
 
 
