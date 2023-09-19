@@ -21,6 +21,10 @@ def get(message_id: str) -> Message:
     return session.query(Message).filter(Message.id == message_id).first()
 
 
+def get_by_strategy_id(strategy_id: str) -> Message:
+    return session.query(Message).filter(Message.strategy_id == strategy_id).first()
+
+
 def create(
     conversation_id: str,
     project_id: str,
