@@ -18,7 +18,7 @@ def get_all_by_strategy_id(strategy_id: str) -> List[StrategyStep]:
     return (
         session.query(StrategyStep)
         .filter(StrategyStep.strategy_id == strategy_id)
-        .order_by(StrategyStep.created_at.asc())
+        .order_by(StrategyStep.strategy_step_position.asc())
         .all()
     )
 
