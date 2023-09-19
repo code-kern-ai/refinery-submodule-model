@@ -214,7 +214,7 @@ def get_tensors_and_attributes_for_qdrant(
             if payload_selector != "":
                 payload_selector += ","
             if data_type != enums.DataTypes.TEXT.value:
-                payload_selector += f"'{attr}', (r.\"data\"->'{attr}')::{data_type}"
+                payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
         payload_selector = f"json_build_object({payload_selector}) payload"
