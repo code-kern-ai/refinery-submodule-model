@@ -51,6 +51,24 @@ def create(
     return retriever
 
 
+def update(
+    retriever_id: str,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    source_code: Optional[str] = None,
+    with_commit: bool = True,
+) -> Retriever:
+    retriever: Retriever = get(retriever_id)
+    if name:
+        retriever.name = name
+    if description:
+        retriever.description = description
+    if source_code:
+        retriever.source_code = source_code
+    general.flush_or_commit(with_commit)
+    return retriever
+
+
 def delete(retriever_id: str, with_commit: bool = True) -> None:
     session.query(Retriever).filter(
         Retriever.id == retriever_id,

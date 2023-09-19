@@ -17,6 +17,15 @@ def get_all_by_conversation_id(conversation_id: str) -> List[Message]:
     )
 
 
+def get_last_by_conversation_id(conversation_id: str) -> Message:
+    return (
+        session.query(Message)
+        .filter(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.desc())
+        .first()
+    )
+
+
 def get(message_id: str) -> Message:
     return session.query(Message).filter(Message.id == message_id).first()
 

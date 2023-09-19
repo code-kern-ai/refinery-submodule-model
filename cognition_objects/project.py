@@ -37,7 +37,8 @@ def create(
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> CognitionProject:
-    operator_routing_source_code = """
+    operator_routing_source_code = """def routing(record):
+    return "Precise Query Strategy"
 """
 
     project: CognitionProject = CognitionProject(
