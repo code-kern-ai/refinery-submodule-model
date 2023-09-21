@@ -52,6 +52,7 @@ def get_user_count(organization_id: str, project_id: str) -> List[Any]:
         GROUP BY created_by ) count_data
     ON u.id = count_data.created_by
     WHERE u.role != '{enums.UserRoles.ANNOTATOR.value}'
+        AND u.organization_id = '{organization_id}'
     """
     return general.execute_all(sql)
 

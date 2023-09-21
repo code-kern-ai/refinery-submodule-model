@@ -35,6 +35,10 @@ def get_all(organization_id: str) -> List[Project]:
     )
 
 
+def get_all_all() -> List[Project]:
+    return session.query(Project).all()
+
+
 def get_blank_tokenizer_from_project(project_id: str) -> str:
     project_item = get(project_id)
     return (
@@ -384,7 +388,6 @@ def __build_sql_confusion_matrix_classification(
     labeling_task_id: str,
     slice_id: Optional[str] = None,
 ) -> str:
-
     slice_filter = ""
     if slice_id:
         slice_filter = f"""
