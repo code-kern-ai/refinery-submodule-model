@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from src.controller import pipeline
-from src.controller.business_objects.project.gates import call_gates_project
 
 from ..cognition_objects import message, project as cognition_project
 from ..business_objects import general
