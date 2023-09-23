@@ -15,15 +15,19 @@ def get(retriever_id: str) -> Retriever:
 
 
 def get_all_by_project_id_and_strategy_step_id(
-    project_id: str, strategy_step_id: str
+    project_id: str, strategy_step_id: str, enabled: Optional[bool] = None
 ) -> List[Retriever]:
-    return (
-        session.query(Retriever)
-        .filter(Retriever.project_id == project_id)
-        .filter(Retriever.strategy_step_id == strategy_step_id)
-        .order_by(Retriever.created_at.asc())
-        .all()
+    query = session.query(Retriever).filter(
+        Retriever.project_id == project_id,
+        Retriever.strategy_step_id == strategy_step_id,
     )
+
+    if enabled is not None:
+        query = query.filter(Retriever.enabled == enabled)
+
+    query = query.order_by(Retriever.created_at.asc())
+
+    return query.all()
 
 
 def create(
@@ -56,6 +60,7 @@ def update(
     name: Optional[str] = None,
     description: Optional[str] = None,
     source_code: Optional[str] = None,
+    enabled: Optional[bool] = None,
     with_commit: bool = True,
 ) -> Retriever:
     retriever: Retriever = get(retriever_id)
@@ -65,6 +70,9 @@ def update(
         retriever.description = description
     if source_code:
         retriever.source_code = source_code
+    if enabled is not None:
+        print("XXX", flush=True)
+        retriever.enabled = enabled
     general.flush_or_commit(with_commit)
     return retriever
 
