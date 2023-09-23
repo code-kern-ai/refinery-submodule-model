@@ -1151,3 +1151,24 @@ class Retriever(Base):
     )
     source_code = Column(String)
     enabled = Column(Boolean, default=True)
+
+
+class EnvironmentVariable(Base):
+    __tablename__ = Tablenames.ENVIRONMENT_VARIABLE.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    value = Column(String)
+    is_secret = Column(Boolean)

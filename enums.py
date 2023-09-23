@@ -119,6 +119,7 @@ class Tablenames(Enum):
     STRATEGY = "strategy"
     STRATEGY_STEP = "strategy_step"
     RETRIEVER = "retriever"
+    ENVIRONMENT_VARIABLE = "environment_variable"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
