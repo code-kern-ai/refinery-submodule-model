@@ -465,3 +465,12 @@ class StrategyStepType(Enum):
     RELEVANCE = "RELEVANCE"
     NONE = "NONE"
     PYTHON = "PYTHON"
+
+    def get_description(self):
+        MAPPING = {
+            "RETRIEVAL": "This step is used to search for documents",
+            "RELEVANCE": "This step is used to define the query",
+            "NONE": "This step is used to define the query",
+            "PYTHON": "This step is used to define the query",
+        }
+        return MAPPING.get(self.value, "No description available")
