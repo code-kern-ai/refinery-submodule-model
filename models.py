@@ -1172,3 +1172,26 @@ class EnvironmentVariable(Base):
     description = Column(String)
     value = Column(String)
     is_secret = Column(Boolean)
+
+
+
+class CognitionPersonalAccessToken(Base):
+    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    scope = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    expires_at = Column(DateTime, nullable=True)
+    last_used = Column(DateTime, nullable=True)
+    token = Column(String)
