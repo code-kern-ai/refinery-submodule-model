@@ -66,6 +66,12 @@ class UserRoles(Enum):
     ANNOTATOR = "ANNOTATOR"
 
 
+class MessageRoles(Enum):
+    SYSTEM = "SYSTEM"
+    USER = "USER"
+    ASSISTANT = "ASSISTANT"
+
+
 class LinkTypes(Enum):
     DATA_SLICE = "DATA_SLICE"
     HEURISTIC = "HEURISTIC"
@@ -108,6 +114,12 @@ class Tablenames(Enum):
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
     ADMIN_MESSAGE = "admin_message"
     TASK_QUEUE = "task_queue"
+    CONVERSATION = "conversation"
+    MESSAGE = "message"
+    STRATEGY = "strategy"
+    STRATEGY_STEP = "strategy_step"
+    RETRIEVER = "retriever"
+    ENVIRONMENT_VARIABLE = "environment_variable"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -218,6 +230,7 @@ class UploadTypes(Enum):
     LABEL_STUDIO = "LABEL_STUDIO"
     DEFAULT = "DEFAULT"
     WORKFLOW_STORE = "WORKFLOW_STORE"
+    COGNITION = "COGNITION"
 
 
 class TokenizerTask(Enum):
@@ -447,3 +460,19 @@ class SampleProjectType(Enum):
     AG_NEWS = "AG News"
     CONVERSATIONAL_AI_INITIAL = "Conversational AI - initial"
     CONVERSATIONAL_AI = "Conversational AI"
+
+
+class StrategyStepType(Enum):
+    RETRIEVAL = "RETRIEVAL"
+    RELEVANCE = "RELEVANCE"
+    NONE = "NONE"
+    PYTHON = "PYTHON"
+
+    def get_description(self):
+        MAPPING = {
+            "RETRIEVAL": "This step is used to search for documents",
+            "RELEVANCE": "This step is used to define the query",
+            "NONE": "This step is used to define the query",
+            "PYTHON": "This step is used to define the query",
+        }
+        return MAPPING.get(self.value, "No description available")

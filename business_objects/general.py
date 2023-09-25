@@ -108,6 +108,7 @@ def test_database_connection() -> Dict[str, Any]:
         result["error"] = str(e.__class__.__name__)
     return result
 
+
 def refresh(obj: Any) -> Any:
     session.refresh(obj)
     return obj
