@@ -438,6 +438,7 @@ class TaskType(Enum):
     INFORMATION_SOURCE = "information_source"
     UPLOAD_TASK = "upload"
     WEAK_SUPERVISION = "weak_supervision"
+    TASK_QUEUE = "task_queue"
 
 
 class AgreementType(Enum):
