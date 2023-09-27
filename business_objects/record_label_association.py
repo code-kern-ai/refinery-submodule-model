@@ -116,7 +116,7 @@ def get_label_payload_for_qdrant(
 ) -> Dict[str, Dict[str, Any]]:
     source_type_filter = ""
     if source_type is None:
-        source_type_filter = "'WEAK_SUPERVISION'"
+        source_type_filter = f"'{enums.LabelSource.WEAK_SUPERVISION.value}'"
     else:
         source_type_filter = "'" + "','".join(source_type) + "'"
     record_id_filter = ""
@@ -144,7 +144,11 @@ def get_label_payload_for_qdrant(
             ON ltl.project_id = lt.project_id AND ltl.labeling_task_id = lt.id
         WHERE rla.project_id = '{project_id}' 
             AND lt.task_type = '{enums.LabelingTaskType.CLASSIFICATION.value}' 
-            AND rla.source_type IN ({source_type_filter}) 
+            AND rla.source_type IN ({source_type_filter})
+            AND (
+                (rla.source_type = '{enums.LabelSource.MANUAL.value}' AND rla.is_valid_manual_label = TRUE)
+                OR rla.source_type != '{enums.LabelSource.MANUAL.value}'
+            )
             {record_id_filter}
         GROUP BY rla.record_id, rla.source_type )x
     GROUP BY record_id """
