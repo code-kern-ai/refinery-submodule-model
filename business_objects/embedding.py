@@ -180,16 +180,16 @@ def get_tensors_by_embedding_id(embedding_id: str) -> List[Any]:
     )
 
 
-def get_tensor_ids_by_embedding_id(
+def get_tensor_ids_and_record_ids_by_embedding_id(
     embedding_id: str, record_ids: List[str] = None
 ) -> List[Any]:
     query = session.query(
         cast(models.EmbeddingTensor.id, TEXT),
+        cast(models.EmbeddingTensor.record_id, TEXT),
     ).filter(models.EmbeddingTensor.embedding_id == embedding_id)
     if record_ids:
         query = query.filter(models.EmbeddingTensor.record_id.in_(record_ids))
-    tensor_ids = query.all()
-    return [tensor_id for tensor_id, in tensor_ids]
+    return query.all()
 
 
 def get_record_ids_by_embedding_id(embedding_id: str) -> List[str]:
