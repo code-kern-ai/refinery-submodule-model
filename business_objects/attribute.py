@@ -431,3 +431,24 @@ def get_unique_values(project_id: str, attribute_name: str) -> List[str]:
         ORDER BY 1
     """
     return [r[0] for r in general.execute(query)]
+
+
+def is_attribute_tokenization_finished(
+    project_id: str, attribute_id: str
+) -> bool:
+    query = f"""
+    SELECT rtt.state
+    FROM attribute a
+    INNER JOIN record_tokenization_task rtt
+        ON a.project_id = rtt.project_id AND rtt."type" = '{enums.TokenizerTask.TYPE_DOC_BIN.value}' 
+        AND a.started_at < rtt.started_at AND a.name = rtt.attribute_name
+    WHERE a.project_id = '{project_id}' AND a.id = '{attribute_id}'
+    ORDER BY rtt.started_at
+    LIMIT 1 """
+
+    value = general.execute_first(query)
+
+    if value is None:
+        return False
+    return value[0] in [enums.TokenizerTask.STATE_FAILED.value, enums.TokenizerTask.STATE_FINISHED.value]
+

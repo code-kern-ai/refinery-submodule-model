@@ -439,6 +439,7 @@ class TaskType(Enum):
     UPLOAD_TASK = "upload"
     WEAK_SUPERVISION = "weak_supervision"
     TASK_QUEUE = "task_queue"
+    TASK_QUEUE_ACTION = "task_queue_action"
 
 
 class AgreementType(Enum):

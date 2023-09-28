@@ -193,6 +193,28 @@ def get_exclusion_record_ids_for_task(task_id: str) -> List[str]:
     return exclusion_ids
 
 
+def get_all_states(project_id: str, source_id: Optional[str] = None) -> Dict[str, str]:
+    source_add = ""
+    if source_id:
+        source_add = f" AND _is.id = '{source_id}'"
+    query = f"""
+    SELECT 
+        _is.id::TEXT,
+        isp.state state
+    FROM information_source _is
+    LEFT JOIN LATERAL(
+        SELECT isp.id,isp.state,isp.created_at
+        FROM information_source_payload isp
+        WHERE _is.id = isp.source_id 
+        AND _is.project_id = isp.project_id
+        ORDER BY isp.iteration DESC
+        LIMIT 1
+    )isp ON TRUE
+    WHERE _is.project_id = '{project_id}' {source_add} """
+
+    return {r[0]: r[1] for r in general.execute_all(query)}
+
+
 def get_overview_data(
     project_id: str, is_model_callback: bool = False
 ) -> List[Dict[str, Any]]:
@@ -489,7 +511,6 @@ def update_is_selected_for_project(
     with_commit: bool = False,
     is_model_callback: bool = False,
 ) -> None:
-
     if is_model_callback:
         type_selection = " = 'MODEL_CALLBACK'"
     else:
