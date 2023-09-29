@@ -479,8 +479,10 @@ class StrategyStepType(Enum):
         }
         return MAPPING.get(self.value, "No description available")
 
+
 class PipelineSteps(Enum):
     INCOMING_QUERY = "INCOMING_QUERY"
     QUERY_ENRICHMENT = "QUERY_ENRICHMENT"
     ROUTE_STRATEGY = "ROUTE_STRATEGY"
     STRATEGY_STEP = "STRATEGY_STEP"
+    ASSISTANT_RESPONSE = "ASSISTANT_RESPONSE"
