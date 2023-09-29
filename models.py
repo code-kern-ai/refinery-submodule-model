@@ -1154,6 +1154,7 @@ class PipelineLogs(Base):
     )
     has_error = Column(Boolean)
     content = Column(String)
+    time_elapsed = Column(Float)
 
 
 class Retriever(Base):

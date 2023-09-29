@@ -21,6 +21,7 @@ def create(
     step_type: str,
     step_id: str,
     has_error: bool,
+    time_elapsed: float,
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> PipelineLogs:
@@ -33,6 +34,7 @@ def create(
         step_type=step_type,
         step_id=step_id,
         has_error=has_error,
+        time_elapsed=time_elapsed,
     )
 
     general.add(log, with_commit)
