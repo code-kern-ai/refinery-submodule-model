@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import List, Dict, Optional, Any, Tuple
+from typing import List, Dict, Optional, Any, Tuple, Iterable
 
 from sqlalchemy import or_
 from sqlalchemy.orm.session import make_transient
@@ -107,6 +107,56 @@ def get_tokens(project_id: str) -> List[Any]:
         ;
         """
     return general.execute_all(query)
+
+
+def get_label_payload_for_qdrant(
+    project_id: str,
+    source_type: Optional[List[enums.LabelSource]] = None,
+    record_ids: Optional[Iterable[str]] = None,
+) -> Dict[str, Dict[str, Any]]:
+    source_type_filter = ""
+    if source_type is None:
+        source_type_filter = f"'{enums.LabelSource.WEAK_SUPERVISION.value}'"
+    else:
+        source_type_filter = "'" + "','".join(source_type) + "'"
+    record_id_filter = ""
+
+    if record_ids is not None:
+        record_id_filter = "'" + "','".join(record_ids) + "'"
+        record_id_filter = f"AND rla.record_id IN ({record_id_filter})"
+    query = f"""
+    SELECT 
+        record_id::TEXT,
+        jsonb_object_agg(source_type, base_json) payload_label_extension
+    FROM (
+        SELECT 
+            rla.record_id,
+            rla.source_type, 
+            jsonb_object_agg(lt.name, 
+            CASE 
+                WHEN rla.confidence IS NOT NULL THEN jsonb_build_object('label',ltl.name, 'confidence', rla.confidence )
+                ELSE jsonb_build_object('label',ltl.name)
+            END ) base_json	
+        FROM record_label_association rla
+        INNER JOIN labeling_task_label ltl
+            ON rla.project_id = ltl.project_id AND rla.labeling_task_label_id = ltl.id
+        INNER JOIN labeling_task lt
+            ON ltl.project_id = lt.project_id AND ltl.labeling_task_id = lt.id
+        WHERE rla.project_id = '{project_id}' 
+            AND lt.task_type = '{enums.LabelingTaskType.CLASSIFICATION.value}' 
+            AND rla.source_type IN ({source_type_filter})
+            AND (
+                (rla.source_type = '{enums.LabelSource.MANUAL.value}' AND rla.is_valid_manual_label = TRUE)
+                OR rla.source_type != '{enums.LabelSource.MANUAL.value}'
+            )
+            {record_id_filter}
+        GROUP BY rla.record_id, rla.source_type )x
+    GROUP BY record_id """
+
+    values = general.execute_all(query)
+    if not values:
+        return {}
+    return {row[0]: row[1] for row in values}
 
 
 def get_manual_tokens_by_record_id(

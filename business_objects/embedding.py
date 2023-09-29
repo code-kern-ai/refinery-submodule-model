@@ -180,6 +180,18 @@ def get_tensors_by_embedding_id(embedding_id: str) -> List[Any]:
     )
 
 
+def get_tensor_ids_and_record_ids_by_embedding_id(
+    embedding_id: str, record_ids: List[str] = None
+) -> List[Any]:
+    query = session.query(
+        cast(models.EmbeddingTensor.id, TEXT),
+        cast(models.EmbeddingTensor.record_id, TEXT),
+    ).filter(models.EmbeddingTensor.embedding_id == embedding_id)
+    if record_ids:
+        query = query.filter(models.EmbeddingTensor.record_id.in_(record_ids))
+    return query.all()
+
+
 def get_record_ids_by_embedding_id(embedding_id: str) -> List[str]:
     record_ids = (
         session.query(cast(models.EmbeddingTensor.record_id, TEXT))
@@ -202,12 +214,12 @@ def get_tensors_by_record_ids(embedding_id: str, record_ids: List[str]) -> List[
     )
 
 
-def get_tensors_and_attributes_for_qdrant(
-    project_id: str,
-    embedding_id: str,
+def __build_payload_selector(
     attributes_to_include: Optional[Dict[str, str]] = None,
-) -> List[Any]:
-    payload_selector = "NULL"
+) -> str:
+    # empty json object to extend by label data later
+    payload_selector = "jsonb_build_object()"
+
     if attributes_to_include and len(attributes_to_include) > 0:
         payload_selector = ""
         for attr, data_type in attributes_to_include.items():
@@ -218,21 +230,47 @@ def get_tensors_and_attributes_for_qdrant(
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
         payload_selector = f"json_build_object({payload_selector}) payload"
-    id_column = None
-    if has_sub_key(project_id, embedding_id):
-        id_column = "et.id"
-    else:
-        id_column = "r.id"
+    return payload_selector
+
+
+def get_attributes_for_qdrant(
+    project_id: str,
+    record_ids: Optional[List[str]] = None,
+    attributes_to_include: Optional[Dict[str, str]] = None,
+) -> List[Any]:
+    payload_selector = __build_payload_selector(attributes_to_include)
     query = f"""
-    SELECT 
-        {id_column}::TEXT, 
-        et."data", 
+    SELECT
+        r.id::TEXT record_id,
         {payload_selector}
+    FROM record r
+    WHERE r.project_id = '{project_id}'
+    """
+    if record_ids:
+        query += f" AND r.id IN ('{','.join(record_ids)}')"
+    return general.execute_all(query)
+
+
+def get_tensors_and_attributes_for_qdrant(
+    project_id: str,
+    embedding_id: str,
+    attributes_to_include: Optional[Dict[str, str]] = None,
+    record_ids: Optional[List[str]] = None,
+    only_tensor_ids: bool = False,
+) -> List[Any]:
+    payload_selector = __build_payload_selector(attributes_to_include)
+    query = f"""
+    SELECT
+        r.id::TEXT record_id,
+        {'et."data", ' if not only_tensor_ids else ''}{payload_selector},
+        et.id::TEXT tensor_id
     FROM embedding_tensor et
     INNER JOIN record r
         ON et.project_id = r.project_id AND et.record_id = r.id
     WHERE et.project_id = '{project_id}' AND et.embedding_id = '{embedding_id}'
     """
+    if record_ids:
+        query += f" AND r.id IN ('{','.join(record_ids)}')"
 
     return general.execute_all(query)
 

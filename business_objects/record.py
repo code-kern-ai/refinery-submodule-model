@@ -1,5 +1,5 @@
 from __future__ import with_statement
-from typing import List, Dict, Any, Optional, Tuple,Iterable
+from typing import List, Dict, Any, Optional, Tuple, Iterable
 from sqlalchemy import cast, Text
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -29,11 +29,14 @@ def get(project_id: str, record_id: str) -> Record:
 def get_one(project_id: str) -> Record:
     return session.query(Record).filter(Record.project_id == project_id).first()
 
+
 def get_by_record_ids(project_id: str, record_ids: Iterable[str]) -> List[Record]:
     return (
         session.query(Record)
         .filter(Record.project_id == project_id, Record.id.in_(record_ids))
-        .all())
+        .all()
+    )
+
 
 def get_without_project_id(record_id: str) -> Record:
     """
@@ -46,6 +49,15 @@ def get_without_project_id(record_id: str) -> Record:
 
 def get_all(project_id: str) -> List[Record]:
     return session.query(Record).filter(Record.project_id == project_id).all()
+
+
+def get_all_ids(project_id: str) -> List[str]:
+    record_ids = (
+        session.query(cast(Record.id, Text))
+        .filter(Record.project_id == project_id)
+        .all()
+    )
+    return [record_id for record_id, in record_ids]
 
 
 def get_existing_records_by_composite_key(
@@ -381,7 +393,8 @@ def get_attribute_data(
 def count(project_id: str) -> int:
     return session.query(Record).filter(Record.project_id == project_id).count()
 
-def count_attribute_list_entries(project_id: str,attribute_name:str) -> int:
+
+def count_attribute_list_entries(project_id: str, attribute_name: str) -> int:
     query = f"""
     SELECT sum(json_array_length(r.data->'{attribute_name}'))
     FROM record  r
@@ -390,7 +403,7 @@ def count_attribute_list_entries(project_id: str,attribute_name:str) -> int:
     value = general.execute_first(query)
     if not value or not value[0]:
         return 0
-    return value[0] 
+    return value[0]
 
 
 def count_by_project_and_source(
@@ -621,7 +634,7 @@ def delete_user_created_attribute(
 
 def delete_duplicated_rats(with_commit: bool = False) -> None:
     # no project so run for all to prevent expensive join with record table
-    query = f"""    
+    query = """
     DELETE FROM record_tokenized rt
     USING (	
         SELECT record_id, attribute_id, (array_agg(id))[1] AS id_to_del
