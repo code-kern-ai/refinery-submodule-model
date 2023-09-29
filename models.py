@@ -1125,6 +1125,37 @@ class Message(Base):
     facts = Column(ARRAY(JSON))
 
 
+class PipelineLogs(Base):
+    __tablename__ = Tablenames.PIPELINE_LOGS.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    message_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MESSAGE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    step_type = Column(String)
+    step_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+    )
+    has_error = Column(Boolean)
+    content = Column(String)
+
+
 class Retriever(Base):
     __tablename__ = Tablenames.RETRIEVER.value
     __table_args__ = {"schema": "cognition"}
@@ -1172,7 +1203,6 @@ class EnvironmentVariable(Base):
     description = Column(String)
     value = Column(String)
     is_secret = Column(Boolean)
-
 
 
 class CognitionPersonalAccessToken(Base):

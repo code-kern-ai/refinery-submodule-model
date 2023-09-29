@@ -120,6 +120,7 @@ class Tablenames(Enum):
     STRATEGY_STEP = "strategy_step"
     RETRIEVER = "retriever"
     ENVIRONMENT_VARIABLE = "environment_variable"
+    PIPELINE_LOGS = "pipeline_logs"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -477,3 +478,9 @@ class StrategyStepType(Enum):
             "PYTHON": "This step is used to define the query",
         }
         return MAPPING.get(self.value, "No description available")
+
+class PipelineSteps(Enum):
+    INCOMING_QUERY = "INCOMING_QUERY"
+    QUERY_ENRICHMENT = "QUERY_ENRICHMENT"
+    ROUTE_STRATEGY = "ROUTE_STRATEGY"
+    STRATEGY_STEP = "STRATEGY_STEP"
