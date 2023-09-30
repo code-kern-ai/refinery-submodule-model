@@ -1153,6 +1153,7 @@ class PipelineLogs(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
     )
     has_error = Column(Boolean)
+    record_dict_diff_previous = Column(JSON)
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
 
