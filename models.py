@@ -1140,8 +1140,9 @@ class PipelineLogs(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    step_type = Column(String)
-    step_id = Column(
+    pipeline_step_type = Column(String)
+    strategy_step_type = Column(String)
+    strategy_step_id = Column(
         UUID(as_uuid=True),
         ForeignKey(
             f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"

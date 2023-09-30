@@ -15,8 +15,8 @@ def get_all_by_message_id(message_id: str) -> List[PipelineLogs]:
 
 def get_all_by_message_id_until_step(
     message_id: str,
-    step_type: str,
-    step_id: str,
+    strategy_step_type: str,
+    strategy_step_id: str,
 ) -> List[PipelineLogs]:
     pipeline_logs = (
         session.query(PipelineLogs)
@@ -28,11 +28,14 @@ def get_all_by_message_id_until_step(
     pipeline_logs_until_step = []
     for pipeline_log in pipeline_logs:
         pipeline_logs_until_step.append(pipeline_log)
-        if step_id:
-            if pipeline_log.step_type == step_type and pipeline_log.step_id == step_id:
+        if strategy_step_id:
+            if (
+                pipeline_log.strategy_step_type == strategy_step_type
+                and pipeline_log.strategy_step_id == strategy_step_id
+            ):
                 break
         else:
-            if pipeline_log.step_type == step_type:
+            if pipeline_log.strategy_step_type == strategy_step_type:
                 break
 
     return pipeline_logs_until_step
@@ -43,8 +46,9 @@ def create(
     project_id: str,
     user_id: str,
     content: str,
-    step_type: str,
-    step_id: str,
+    pipeline_step_type: str,
+    strategy_step_type: str,
+    strategy_step_id: str,
     has_error: bool,
     time_elapsed: float,
     record_dict_diff_previous: Dict[str, Any],
@@ -57,8 +61,9 @@ def create(
         created_by=user_id,
         content=content,
         created_at=created_at,
-        step_type=step_type,
-        step_id=step_id,
+        pipeline_step_type=pipeline_step_type,
+        strategy_step_type=strategy_step_type,
+        strategy_step_id=strategy_step_id,
         has_error=has_error,
         time_elapsed=time_elapsed,
         record_dict_diff_previous=record_dict_diff_previous,
