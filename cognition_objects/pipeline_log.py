@@ -15,6 +15,7 @@ def get_all_by_message_id(message_id: str) -> List[PipelineLogs]:
 
 def get_all_by_message_id_until_step(
     message_id: str,
+    pipeline_step_type: str,
     strategy_step_type: str,
     strategy_step_id: str,
 ) -> List[PipelineLogs]:
@@ -35,7 +36,7 @@ def get_all_by_message_id_until_step(
             ):
                 break
         else:
-            if pipeline_log.strategy_step_type == strategy_step_type:
+            if pipeline_log.pipeline_step_type == pipeline_step_type:
                 break
 
     return pipeline_logs_until_step
