@@ -5,23 +5,25 @@ from src.controller import pipeline
 from ..cognition_objects import message, project as cognition_project
 from ..business_objects import general
 from ..session import session
-from ..models import Conversation, CognitionProject
+from ..models import CognitionConversation, CognitionProject
 from .. import enums
 from sqlalchemy import func, alias, Integer
 from sqlalchemy.orm import aliased
 
 
-def get(conversation_id: str) -> Conversation:
+def get(conversation_id: str) -> CognitionConversation:
     return (
-        session.query(Conversation).filter(Conversation.id == conversation_id).first()
+        session.query(CognitionConversation)
+        .filter(CognitionConversation.id == conversation_id)
+        .first()
     )
 
 
-def get_all_by_project_id(project_id: str) -> List[Conversation]:
+def get_all_by_project_id(project_id: str) -> List[CognitionConversation]:
     return (
-        session.query(Conversation)
-        .filter(Conversation.project_id == project_id)
-        .order_by(Conversation.created_at.asc())
+        session.query(CognitionConversation)
+        .filter(CognitionConversation.project_id == project_id)
+        .order_by(CognitionConversation.created_at.asc())
         .all()
     )
 
@@ -31,8 +33,8 @@ def create(
     user_id: str,
     with_commit: bool = True,
     created_at: Optional[str] = None,
-) -> Conversation:
-    conversation: Conversation = Conversation(
+) -> CognitionConversation:
+    conversation: CognitionConversation = CognitionConversation(
         project_id=project_id,
         created_by=user_id,
         created_at=created_at,
@@ -46,8 +48,8 @@ def add_message(
     content: str,
     role: str,
     with_commit: bool = True,
-) -> Conversation:
-    conversation_entity: Conversation = get(conversation_id)
+) -> CognitionConversation:
+    conversation_entity: CognitionConversation = get(conversation_id)
 
     message.create(
         conversation_id=conversation_id,
@@ -66,7 +68,7 @@ def update_message(
     message_id: str,
     strategy_id: Optional[str] = None,
     with_commit: bool = True,
-) -> Conversation:
+) -> CognitionConversation:
     message_entity = message.get(message_id)
     if strategy_id is not None:
         message_entity.strategy_id = strategy_id
@@ -76,7 +78,7 @@ def update_message(
 
 
 def delete(conversation_id: str, with_commit: bool = True) -> None:
-    session.query(Conversation).filter(
-        Conversation.id == conversation_id,
+    session.query(CognitionConversation).filter(
+        CognitionConversation.id == conversation_id,
     ).delete()
     general.flush_or_commit(with_commit)
