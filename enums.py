@@ -66,6 +66,12 @@ class UserRoles(Enum):
     ANNOTATOR = "ANNOTATOR"
 
 
+class MessageRoles(Enum):
+    SYSTEM = "SYSTEM"
+    USER = "USER"
+    ASSISTANT = "ASSISTANT"
+
+
 class LinkTypes(Enum):
     DATA_SLICE = "DATA_SLICE"
     HEURISTIC = "HEURISTIC"
@@ -108,6 +114,13 @@ class Tablenames(Enum):
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
     ADMIN_MESSAGE = "admin_message"
     TASK_QUEUE = "task_queue"
+    CONVERSATION = "conversation"
+    MESSAGE = "message"
+    STRATEGY = "strategy"
+    STRATEGY_STEP = "strategy_step"
+    RETRIEVER = "retriever"
+    ENVIRONMENT_VARIABLE = "environment_variable"
+    PIPELINE_LOGS = "pipeline_logs"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -218,6 +231,7 @@ class UploadTypes(Enum):
     LABEL_STUDIO = "LABEL_STUDIO"
     DEFAULT = "DEFAULT"
     WORKFLOW_STORE = "WORKFLOW_STORE"
+    COGNITION = "COGNITION"
 
 
 class TokenizerTask(Enum):
@@ -425,6 +439,15 @@ class TaskType(Enum):
     INFORMATION_SOURCE = "information_source"
     UPLOAD_TASK = "upload"
     WEAK_SUPERVISION = "weak_supervision"
+    TASK_QUEUE = "task_queue"
+    TASK_QUEUE_ACTION = "task_queue_action"
+
+
+class TaskQueueAction(Enum):
+    CREATE_OUTLIER_SLICE = "CREATE_OUTLIER_SLICE"
+    START_GATES = "START_GATES"
+    SEND_WEBSOCKET = "SEND_WEBSOCKET"
+    FINISH_COGNITION_SETUP = "FINISH_COGNITION_SETUP"
 
 
 class AgreementType(Enum):
@@ -446,3 +469,28 @@ class SampleProjectType(Enum):
     AG_NEWS = "AG News"
     CONVERSATIONAL_AI_INITIAL = "Conversational AI - initial"
     CONVERSATIONAL_AI = "Conversational AI"
+
+
+class StrategyStepType(Enum):
+    RETRIEVAL = "RETRIEVAL"
+    RELEVANCE = "RELEVANCE"
+    NONE = "NONE"
+    PYTHON = "PYTHON"
+
+    def get_description(self):
+        MAPPING = {
+            "RETRIEVAL": "This step is used to search for documents",
+            "RELEVANCE": "This step is used to define the query",
+            "NONE": "This step is used to define the query",
+            "PYTHON": "This step is used to define the query",
+        }
+        return MAPPING.get(self.value, "No description available")
+
+
+class PipelineSteps(Enum):
+    INCOMING_QUERY = "INCOMING_QUERY"
+    INCOMING_QUERY_TRY = "INCOMING_QUERY_TRY"
+    QUERY_ENRICHMENT = "QUERY_ENRICHMENT"
+    ROUTE_STRATEGY = "ROUTE_STRATEGY"
+    STRATEGY_STEP = "STRATEGY_STEP"
+    ASSISTANT_RESPONSE = "ASSISTANT_RESPONSE"
