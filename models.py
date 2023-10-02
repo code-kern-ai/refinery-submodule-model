@@ -1031,6 +1031,7 @@ class CognitionProject(Base):
     description = Column(String)
     color = Column(String)
     operator_routing_source_code = Column(String)
+    wizard_running = Column(Boolean, default=False)
 
 
 class Strategy(Base):
