@@ -17,13 +17,28 @@ def get(conversation_id: str) -> Conversation:
     )
 
 
-def get_all_by_project_id(project_id: str) -> List[Conversation]:
-    return (
+def get_all_paginated_by_project_id(
+    project_id: str, page: int, limit: int
+) -> Tuple[int, List[Conversation]]:
+    total_count = (
+        session.query(func.count(Conversation.id))
+        .filter(Conversation.project_id == project_id)
+        .scalar()
+    )
+
+    num_pages = int(total_count / limit)
+    if total_count % limit > 0:
+        num_pages += 1
+
+    paginated_result = (
         session.query(Conversation)
         .filter(Conversation.project_id == project_id)
         .order_by(Conversation.created_at.asc())
+        .limit(limit)
+        .offset((page - 1) * limit)
         .all()
     )
+    return num_pages, paginated_result
 
 
 def create(
