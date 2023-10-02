@@ -21,7 +21,7 @@ def get(conversation_id: str) -> CognitionConversation:
 
 def get_all_paginated_by_project_id(
     project_id: str, page: int, limit: int
-) -> Tuple[int, List[CognitionConversation]]:
+) -> Tuple[int, int, List[CognitionConversation]]:
     total_count = (
         session.query(func.count(CognitionConversation.id))
         .filter(CognitionConversation.project_id == project_id)
@@ -40,7 +40,7 @@ def get_all_paginated_by_project_id(
         .offset((page - 1) * limit)
         .all()
     )
-    return num_pages, paginated_result
+    return total_count, num_pages, paginated_result
 
 
 def create(
