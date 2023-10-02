@@ -1,14 +1,14 @@
 from typing import List, Optional, Dict, Any
 from ..business_objects import general
 from ..session import session
-from ..models import PipelineLogs
+from ..models import CognitionPipelineLogs
 
 
-def get_all_by_message_id(message_id: str) -> List[PipelineLogs]:
+def get_all_by_message_id(message_id: str) -> List[CognitionPipelineLogs]:
     return (
-        session.query(PipelineLogs)
-        .filter(PipelineLogs.message_id == message_id)
-        .order_by(PipelineLogs.created_at.asc())
+        session.query(CognitionPipelineLogs)
+        .filter(CognitionPipelineLogs.message_id == message_id)
+        .order_by(CognitionPipelineLogs.created_at.asc())
         .all()
     )
 
@@ -18,11 +18,11 @@ def get_all_by_message_id_until_step(
     pipeline_step_type: str,
     strategy_step_type: str,
     strategy_step_id: str,
-) -> List[PipelineLogs]:
+) -> List[CognitionPipelineLogs]:
     pipeline_logs = (
-        session.query(PipelineLogs)
-        .filter(PipelineLogs.message_id == message_id)
-        .order_by(PipelineLogs.created_at.asc())
+        session.query(CognitionPipelineLogs)
+        .filter(CognitionPipelineLogs.message_id == message_id)
+        .order_by(CognitionPipelineLogs.created_at.asc())
         .all()
     )
 
@@ -55,8 +55,8 @@ def create(
     record_dict_diff_previous: Dict[str, Any],
     with_commit: bool = True,
     created_at: Optional[str] = None,
-) -> PipelineLogs:
-    log = PipelineLogs(
+) -> CognitionPipelineLogs:
+    log = CognitionPipelineLogs(
         project_id=project_id,
         message_id=message_id,
         created_by=user_id,

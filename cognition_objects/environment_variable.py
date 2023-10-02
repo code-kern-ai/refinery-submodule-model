@@ -1,31 +1,33 @@
 from typing import List, Optional
 from ..business_objects import general
 from ..session import session
-from ..models import EnvironmentVariable
+from ..models import CognitionEnvironmentVariable
 
 
-def get(environment_variable_id: str) -> EnvironmentVariable:
+def get(environment_variable_id: str) -> CognitionEnvironmentVariable:
     return (
-        session.query(EnvironmentVariable)
-        .filter(EnvironmentVariable.id == environment_variable_id)
+        session.query(CognitionEnvironmentVariable)
+        .filter(CognitionEnvironmentVariable.id == environment_variable_id)
         .first()
     )
 
 
-def get_all_by_project_id(project_id: str) -> List[EnvironmentVariable]:
+def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]:
     return (
-        session.query(EnvironmentVariable)
-        .filter(EnvironmentVariable.project_id == project_id)
-        .order_by(EnvironmentVariable.created_at.asc())
+        session.query(CognitionEnvironmentVariable)
+        .filter(CognitionEnvironmentVariable.project_id == project_id)
+        .order_by(CognitionEnvironmentVariable.created_at.asc())
         .all()
     )
 
 
-def get_all_by_ids(environment_variable_ids: List[str]) -> List[EnvironmentVariable]:
+def get_all_by_ids(
+    environment_variable_ids: List[str],
+) -> List[CognitionEnvironmentVariable]:
     return (
-        session.query(EnvironmentVariable)
-        .filter(EnvironmentVariable.id.in_(environment_variable_ids))
-        .order_by(EnvironmentVariable.created_at.asc())
+        session.query(CognitionEnvironmentVariable)
+        .filter(CognitionEnvironmentVariable.id.in_(environment_variable_ids))
+        .order_by(CognitionEnvironmentVariable.created_at.asc())
         .all()
     )
 
@@ -39,8 +41,8 @@ def create(
     is_secret: bool,
     with_commit: bool = True,
     created_at: Optional[str] = None,
-) -> EnvironmentVariable:
-    environment_variable: EnvironmentVariable = EnvironmentVariable(
+) -> CognitionEnvironmentVariable:
+    environment_variable: CognitionEnvironmentVariable = CognitionEnvironmentVariable(
         created_by=user_id,
         project_id=project_id,
         name=name,
@@ -59,8 +61,8 @@ def update(
     description: Optional[str] = None,
     value: Optional[str] = None,
     with_commit: bool = True,
-) -> EnvironmentVariable:
-    environment_variable: EnvironmentVariable = get(environment_variable_id)
+) -> CognitionEnvironmentVariable:
+    environment_variable: CognitionEnvironmentVariable = get(environment_variable_id)
     general.flush_or_commit(with_commit)
 
     if name is not None:
@@ -74,7 +76,7 @@ def update(
 
 
 def delete(environment_variable_id: str, with_commit: bool = True) -> None:
-    session.query(EnvironmentVariable).filter(
-        EnvironmentVariable.id == environment_variable_id,
+    session.query(CognitionEnvironmentVariable).filter(
+        CognitionEnvironmentVariable.id == environment_variable_id,
     ).delete()
     general.flush_or_commit(with_commit)

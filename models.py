@@ -1031,9 +1031,10 @@ class CognitionProject(Base):
     description = Column(String)
     color = Column(String)
     operator_routing_source_code = Column(String)
+    wizard_running = Column(Boolean, default=False)
 
 
-class Strategy(Base):
+class CognitionStrategy(Base):
     __tablename__ = Tablenames.STRATEGY.value
     __table_args__ = {"schema": "cognition"}
     project_id = Column(
@@ -1052,7 +1053,7 @@ class Strategy(Base):
     description = Column(String)
 
 
-class StrategyStep(Base):
+class CognitionStrategyStep(Base):
     __tablename__ = Tablenames.STRATEGY_STEP.value
     __table_args__ = {"schema": "cognition"}
     project_id = Column(
@@ -1078,7 +1079,7 @@ class StrategyStep(Base):
     strategy_step_position = Column(Integer)
 
 
-class Conversation(Base):
+class CognitionConversation(Base):
     __tablename__ = Tablenames.CONVERSATION.value
     __table_args__ = {"schema": "cognition"}
     project_id = Column(
@@ -1095,7 +1096,7 @@ class Conversation(Base):
     created_at = Column(DateTime, default=sql.func.now())
 
 
-class Message(Base):
+class CognitionMessage(Base):
     __tablename__ = Tablenames.MESSAGE.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -1125,7 +1126,7 @@ class Message(Base):
     facts = Column(ARRAY(JSON))
 
 
-class PipelineLogs(Base):
+class CognitionPipelineLogs(Base):
     __tablename__ = Tablenames.PIPELINE_LOGS.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -1159,7 +1160,7 @@ class PipelineLogs(Base):
     time_elapsed = Column(Float)
 
 
-class Retriever(Base):
+class CognitionRetriever(Base):
     __tablename__ = Tablenames.RETRIEVER.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -1187,7 +1188,7 @@ class Retriever(Base):
     enabled = Column(Boolean, default=True)
 
 
-class EnvironmentVariable(Base):
+class CognitionEnvironmentVariable(Base):
     __tablename__ = Tablenames.ENVIRONMENT_VARIABLE.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

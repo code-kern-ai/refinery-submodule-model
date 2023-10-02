@@ -443,6 +443,13 @@ class TaskType(Enum):
     TASK_QUEUE_ACTION = "task_queue_action"
 
 
+class TaskQueueAction(Enum):
+    CREATE_OUTLIER_SLICE = "CREATE_OUTLIER_SLICE"
+    START_GATES = "START_GATES"
+    SEND_WEBSOCKET = "SEND_WEBSOCKET"
+    FINISH_COGNITION_SETUP = "FINISH_COGNITION_SETUP"
+
+
 class AgreementType(Enum):
     EMBEDDING = "EMBEDDING"
 

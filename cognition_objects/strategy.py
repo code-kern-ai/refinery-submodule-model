@@ -4,29 +4,35 @@ from typing import Dict, List, Optional, Tuple
 from ..cognition_objects import message
 from ..business_objects import general
 from ..session import session
-from ..models import Strategy
+from ..models import CognitionStrategy
 from .. import enums
 from sqlalchemy import func, alias, Integer
 from sqlalchemy.orm import aliased
 
 
-def get(strategy_id: str) -> Strategy:
-    return session.query(Strategy).filter(Strategy.id == strategy_id).first()
-
-
-def get_by_name(project_id: str, name: str) -> Strategy:
+def get(strategy_id: str) -> CognitionStrategy:
     return (
-        session.query(Strategy)
-        .filter(Strategy.project_id == project_id, Strategy.name == name)
+        session.query(CognitionStrategy)
+        .filter(CognitionStrategy.id == strategy_id)
         .first()
     )
 
 
-def get_all_by_project_id(project_id: str) -> List[Strategy]:
+def get_by_name(project_id: str, name: str) -> CognitionStrategy:
     return (
-        session.query(Strategy)
-        .filter(Strategy.project_id == project_id)
-        .order_by(Strategy.created_at.asc())
+        session.query(CognitionStrategy)
+        .filter(
+            CognitionStrategy.project_id == project_id, CognitionStrategy.name == name
+        )
+        .first()
+    )
+
+
+def get_all_by_project_id(project_id: str) -> List[CognitionStrategy]:
+    return (
+        session.query(CognitionStrategy)
+        .filter(CognitionStrategy.project_id == project_id)
+        .order_by(CognitionStrategy.created_at.asc())
         .all()
     )
 
@@ -38,8 +44,8 @@ def create(
     description: str,
     with_commit: bool = True,
     created_at: Optional[str] = None,
-) -> Strategy:
-    strategy: Strategy = Strategy(
+) -> CognitionStrategy:
+    strategy: CognitionStrategy = CognitionStrategy(
         project_id=project_id,
         created_by=user_id,
         created_at=created_at,
@@ -52,7 +58,7 @@ def create(
 
 
 def delete(strategy_id: str, with_commit: bool = True) -> None:
-    session.query(Strategy).filter(
-        Strategy.id == strategy_id,
+    session.query(CognitionStrategy).filter(
+        CognitionStrategy.id == strategy_id,
     ).delete()
     general.flush_or_commit(with_commit)

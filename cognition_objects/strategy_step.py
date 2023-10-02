@@ -4,21 +4,25 @@ from typing import Dict, List, Optional, Tuple
 from . import message
 from ..business_objects import general
 from ..session import session
-from ..models import StrategyStep
+from ..models import CognitionStrategyStep
 from .. import enums
 from sqlalchemy import func, alias, Integer
 from sqlalchemy.orm import aliased
 
 
-def get(strategy_id: str) -> StrategyStep:
-    return session.query(StrategyStep).filter(StrategyStep.id == strategy_id).first()
-
-
-def get_all_by_strategy_id(strategy_id: str) -> List[StrategyStep]:
+def get(strategy_id: str) -> CognitionStrategyStep:
     return (
-        session.query(StrategyStep)
-        .filter(StrategyStep.strategy_id == strategy_id)
-        .order_by(StrategyStep.strategy_step_position.asc())
+        session.query(CognitionStrategyStep)
+        .filter(CognitionStrategyStep.id == strategy_id)
+        .first()
+    )
+
+
+def get_all_by_strategy_id(strategy_id: str) -> List[CognitionStrategyStep]:
+    return (
+        session.query(CognitionStrategyStep)
+        .filter(CognitionStrategyStep.strategy_id == strategy_id)
+        .order_by(CognitionStrategyStep.strategy_step_position.asc())
         .all()
     )
 
@@ -33,8 +37,8 @@ def create(
     strategy_step_position: int,
     with_commit: bool = True,
     created_at: Optional[str] = None,
-) -> StrategyStep:
-    strategy: StrategyStep = StrategyStep(
+) -> CognitionStrategyStep:
+    strategy: CognitionStrategyStep = CognitionStrategyStep(
         project_id=project_id,
         strategy_id=strategy_id,
         created_by=user_id,
@@ -50,7 +54,7 @@ def create(
 
 
 def delete(strategy_id: str, with_commit: bool = True) -> None:
-    session.query(StrategyStep).filter(
-        StrategyStep.id == strategy_id,
+    session.query(CognitionStrategyStep).filter(
+        CognitionStrategyStep.id == strategy_id,
     ).delete()
     general.flush_or_commit(with_commit)
