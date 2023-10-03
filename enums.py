@@ -499,3 +499,4 @@ class PipelineSteps(Enum):
 
 class MarkdownFileCategoryOrigin(Enum):
     PDF = "PDF"
+    WEB = "WEB"
