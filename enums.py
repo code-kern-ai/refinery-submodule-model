@@ -122,6 +122,7 @@ class Tablenames(Enum):
     ENVIRONMENT_VARIABLE = "environment_variable"
     PIPELINE_LOGS = "pipeline_logs"
     MARKDOWN_FILE = "markdown_file"
+    MARKDOWN_FILE_CHUNK = "markdown_file_chunk"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
