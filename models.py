@@ -1229,3 +1229,24 @@ class CognitionPersonalAccessToken(Base):
     expires_at = Column(DateTime, nullable=True)
     last_used = Column(DateTime, nullable=True)
     token = Column(String)
+
+
+class CognitionMarkdownFile(Base):
+    __tablename__ = Tablenames.MARKDOWN_FILE.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    file_name = Column(String)
+    content = Column(String)
+    category_origin = Column(String)
+    error = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())

@@ -121,6 +121,7 @@ class Tablenames(Enum):
     RETRIEVER = "retriever"
     ENVIRONMENT_VARIABLE = "environment_variable"
     PIPELINE_LOGS = "pipeline_logs"
+    MARKDOWN_FILE = "markdown_file"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -494,3 +495,7 @@ class PipelineSteps(Enum):
     ROUTE_STRATEGY = "ROUTE_STRATEGY"
     STRATEGY_STEP = "STRATEGY_STEP"
     ASSISTANT_RESPONSE = "ASSISTANT_RESPONSE"
+
+
+class MarkdownFileCategoryOrigin(Enum):
+    PDF = "PDF"
