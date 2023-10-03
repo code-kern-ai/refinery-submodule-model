@@ -74,11 +74,14 @@ def create(
 def update(
     markdown_file_id: str,
     content: Optional[str] = None,
+    is_reviewed: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = get(markdown_file_id)
     if content is not None:
         markdown_file.content = content
+    if is_reviewed is not None:
+        markdown_file.is_reviewed = is_reviewed
 
     general.flush_or_commit(with_commit)
 
