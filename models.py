@@ -1251,19 +1251,3 @@ class CognitionMarkdownFile(Base):
     error = Column(String)
     is_reviewed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=sql.func.now())
-
-
-class CognitionMarkdownFileChunk(Base):
-    __tablename__ = Tablenames.MARKDOWN_FILE_CHUNK.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    markdown_file_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.MARKDOWN_FILE.value}.id", ondelete="CASCADE"
-        ),
-        index=True,
-    )
-    start_index = Column(Integer)
-    end_index = Column(Integer)
-    created_at = Column(DateTime, default=sql.func.now())
