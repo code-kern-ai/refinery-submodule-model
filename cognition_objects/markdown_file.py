@@ -57,7 +57,7 @@ def create(
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> CognitionMarkdownFile:
-    strategy: CognitionMarkdownFile = CognitionMarkdownFile(
+    markdown_file: CognitionMarkdownFile = CognitionMarkdownFile(
         organization_id=org_id,
         user_id=user_id,
         created_at=created_at,
@@ -66,9 +66,23 @@ def create(
         error=error,
         category_origin=category_origin,
     )
-    general.add(strategy, with_commit)
+    general.add(markdown_file, with_commit)
 
-    return strategy
+    return markdown_file
+
+
+def update(
+    markdown_file_id: str,
+    content: Optional[str] = None,
+    with_commit: bool = True,
+) -> CognitionMarkdownFile:
+    markdown_file: CognitionMarkdownFile = get(markdown_file_id)
+    if content is not None:
+        markdown_file.content = content
+
+    general.flush_or_commit(with_commit)
+
+    return markdown_file
 
 
 def delete(md_file_id: str, with_commit: bool = True) -> None:
