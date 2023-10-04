@@ -66,8 +66,7 @@ def create(
 
 def add_message(
     conversation_id: str,
-    content: str,
-    role: str,
+    query: str,
     with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity: CognitionConversation = get(conversation_id)
@@ -76,8 +75,7 @@ def add_message(
         conversation_id=conversation_id,
         project_id=conversation_entity.project_id,
         user_id=conversation_entity.created_by,
-        content=content,
-        role=role,
+        query=query,
         with_commit=with_commit,
     )
 
@@ -87,12 +85,15 @@ def add_message(
 def update_message(
     conversation_id: str,
     message_id: str,
+    answer: Optional[str] = None,
     strategy_id: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     message_entity = message.get(message_id)
     if strategy_id is not None:
         message_entity.strategy_id = strategy_id
+    if answer is not None:
+        message_entity.answer = answer
     general.flush_or_commit(with_commit)
     conversation_entity = get(conversation_id)
     return conversation_entity

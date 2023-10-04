@@ -1121,9 +1121,13 @@ class CognitionMessage(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    role = Column(String)
-    content = Column(String)
+    query = Column(String)
     facts = Column(ARRAY(JSON))
+    answer = Column(String)
+
+    # None = not yet answered, True = positive, false = negative
+    positive_feedback = Column(Boolean)
+    feedback_message = Column(String)
 
 
 class CognitionPipelineLogs(Base):
