@@ -28,18 +28,24 @@ def get_all_paginated_by_project_id(
         .scalar()
     )
 
-    num_pages = int(total_count / limit)
-    if total_count % limit > 0:
-        num_pages += 1
+    if total_count == 0:
+        num_pages = 0
+    else:
+        num_pages = int(total_count / limit)
+        if total_count % limit > 0:
+            num_pages += 1
 
-    paginated_result = (
-        session.query(CognitionConversation)
-        .filter(CognitionConversation.project_id == project_id)
-        .order_by(CognitionConversation.created_at.asc())
-        .limit(limit)
-        .offset((page - 1) * limit)
-        .all()
-    )
+    if page > 0:
+        paginated_result = (
+            session.query(CognitionConversation)
+            .filter(CognitionConversation.project_id == project_id)
+            .order_by(CognitionConversation.created_at.asc())
+            .limit(limit)
+            .offset((page - 1) * limit)
+            .all()
+        )
+    else:
+        paginated_result = []
     return total_count, num_pages, paginated_result
 
 
@@ -96,4 +102,11 @@ def delete(conversation_id: str, with_commit: bool = True) -> None:
     session.query(CognitionConversation).filter(
         CognitionConversation.id == conversation_id,
     ).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_many(conversation_ids: List[str], with_commit: bool = True) -> None:
+    session.query(CognitionConversation).filter(
+        CognitionConversation.id.in_(conversation_ids),
+    ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)

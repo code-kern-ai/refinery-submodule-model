@@ -93,3 +93,10 @@ def delete(md_file_id: str, with_commit: bool = True) -> None:
         CognitionMarkdownFile.id == md_file_id,
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def delete_many(md_file_ids: List[str], with_commit: bool = True) -> None:
+    session.query(CognitionMarkdownFile).filter(
+        CognitionMarkdownFile.id.in_(md_file_ids),
+    ).delete(synchronize_session=False)
+    general.flush_or_commit(with_commit)
