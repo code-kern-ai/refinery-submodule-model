@@ -26,6 +26,18 @@ def get_last_by_conversation_id(conversation_id: str) -> CognitionMessage:
     )
 
 
+def get_last_n_by_conversation_id(
+    conversation_id: str, n: int
+) -> List[CognitionMessage]:
+    return (
+        session.query(CognitionMessage)
+        .filter(CognitionMessage.conversation_id == conversation_id)
+        .order_by(CognitionMessage.created_at.desc())
+        .limit(n)
+        .all()
+    )
+
+
 def get(message_id: str) -> CognitionMessage:
     return (
         session.query(CognitionMessage)
