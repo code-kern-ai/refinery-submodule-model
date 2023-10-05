@@ -57,6 +57,22 @@ def create(
     return strategy
 
 
+def update(
+    strategy_id: str,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    with_commit: bool = True,
+) -> CognitionStrategy:
+    strategy = get(strategy_id)
+    if name is not None:
+        strategy.name = name
+    if description is not None:
+        strategy.description = description
+    general.add(strategy, with_commit)
+
+    return strategy
+
+
 def delete(strategy_id: str, with_commit: bool = True) -> None:
     session.query(CognitionStrategy).filter(
         CognitionStrategy.id == strategy_id,

@@ -53,6 +53,20 @@ def create(
     return strategy
 
 
+def update(
+    strategy_step_id: str,
+    strategy_step_position: Optional[int] = None,
+    with_commit: bool = True,
+) -> CognitionStrategyStep:
+    strategy_step: CognitionStrategyStep = get(strategy_step_id)
+
+    if strategy_step_position is not None:
+        strategy_step.strategy_step_position = strategy_step_position
+
+    general.flush_or_commit(with_commit)
+    return strategy_step
+
+
 def delete(strategy_id: str, with_commit: bool = True) -> None:
     session.query(CognitionStrategyStep).filter(
         CognitionStrategyStep.id == strategy_id,
