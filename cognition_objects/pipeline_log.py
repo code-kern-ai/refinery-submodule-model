@@ -53,6 +53,7 @@ def create(
     has_error: bool,
     time_elapsed: float,
     record_dict_diff_previous: Dict[str, Any],
+    scope_dict_diff_previous: Dict[str, Any],
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> CognitionPipelineLogs:
@@ -67,7 +68,8 @@ def create(
         strategy_step_id=strategy_step_id,
         has_error=has_error,
         time_elapsed=time_elapsed,
-        record_dict_diff_previous=record_dict_diff_previous,
+        record_dict_diff_previous_message=record_dict_diff_previous,
+        scope_dict_diff_previous_message=scope_dict_diff_previous,
     )
 
     general.add(log, with_commit)

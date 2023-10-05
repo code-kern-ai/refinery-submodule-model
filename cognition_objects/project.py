@@ -37,8 +37,10 @@ def create(
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> CognitionProject:
-    operator_routing_source_code = """def routing(record):
-    return "Precise Query Strategy"
+    operator_routing_source_code = """from typing import Dict, Any, Tuple
+    
+def routing(record: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+    return "Precise Query Strategy", scope_dict
 """
 
     project: CognitionProject = CognitionProject(

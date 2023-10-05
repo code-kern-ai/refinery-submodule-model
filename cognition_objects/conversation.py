@@ -1,14 +1,10 @@
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple
-from src.controller import pipeline
+from typing import Dict, List, Optional, Tuple, Any
 
-from ..cognition_objects import message, project as cognition_project
+from ..cognition_objects import message
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionConversation, CognitionProject
-from .. import enums
+from ..models import CognitionConversation
 from sqlalchemy import func, alias, Integer
-from sqlalchemy.orm import aliased
 
 
 def get(conversation_id: str) -> CognitionConversation:
@@ -59,6 +55,7 @@ def create(
         project_id=project_id,
         created_by=user_id,
         created_at=created_at,
+        scope_dict={},
     )
     general.add(conversation, with_commit)
     return conversation
@@ -82,11 +79,23 @@ def add_message(
     return conversation_entity
 
 
+def update(
+    conversation_id: str,
+    scope_dict: Optional[Dict[str, Any]] = None,
+) -> CognitionConversation:
+    conversation_entity = get(conversation_id)
+    if scope_dict is not None:
+        conversation_entity.scope_dict = scope_dict
+    general.flush_or_commit(True)
+    return conversation_entity
+
+
 def update_message(
     conversation_id: str,
     message_id: str,
     answer: Optional[str] = None,
     strategy_id: Optional[str] = None,
+    scope_dict_diff_previous_conversation: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     message_entity = message.get(message_id)
@@ -94,6 +103,10 @@ def update_message(
         message_entity.strategy_id = strategy_id
     if answer is not None:
         message_entity.answer = answer
+    if scope_dict_diff_previous_conversation is not None:
+        message_entity.scope_dict_diff_previous_conversation = (
+            scope_dict_diff_previous_conversation
+        )
     general.flush_or_commit(with_commit)
     conversation_entity = get(conversation_id)
     return conversation_entity

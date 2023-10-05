@@ -1094,6 +1094,7 @@ class CognitionConversation(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+    scope_dict = Column(JSON)
 
 
 class CognitionMessage(Base):
@@ -1129,6 +1130,8 @@ class CognitionMessage(Base):
     positive_feedback = Column(Boolean)
     feedback_message = Column(String)
 
+    scope_dict_diff_previous_conversation = Column(JSON)
+
 
 class CognitionPipelineLogs(Base):
     __tablename__ = Tablenames.PIPELINE_LOGS.value
@@ -1159,7 +1162,8 @@ class CognitionPipelineLogs(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
     )
     has_error = Column(Boolean)
-    record_dict_diff_previous = Column(JSON)
+    scope_dict_diff_previous_message = Column(JSON)
+    record_dict_diff_previous_message = Column(JSON)
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
 
