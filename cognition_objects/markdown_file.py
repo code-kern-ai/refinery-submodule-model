@@ -47,6 +47,20 @@ def get_all_paginated_for_category_origin(
     return total_count, num_pages, query_results
 
 
+def get_all_reviewed_for_category_origin(
+    org_id: str,
+    category_origin: str,
+) -> List[CognitionMarkdownFile]:
+    return (
+        session.query(CognitionMarkdownFile)
+        .filter(CognitionMarkdownFile.organization_id == org_id)
+        .filter(CognitionMarkdownFile.category_origin == category_origin)
+        .filter(CognitionMarkdownFile.is_reviewed == True)
+        .order_by(CognitionMarkdownFile.created_at.asc())
+        .all()
+    )
+
+
 def create(
     org_id: str,
     user_id: str,
