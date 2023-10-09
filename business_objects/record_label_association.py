@@ -800,29 +800,25 @@ def check_label_duplication_classification(
     return True
 
 
-def is_any_record_manually_labeled(project_id: str) -> bool:
-    query = f"""
-    SELECT id
-    FROM record_label_association rla
-    WHERE project_id = '{project_id}'
-    AND source_type = '{enums.LabelSource.MANUAL.value}'
-    LIMIT 1
-    """
-    value = general.execute_first(query)
-    return value is not None
-
-
-def is_any_record_manually_labeled_by_lt_id(
-    project_id: str, labeling_task_id: str
+def is_any_record_manually_labeled(
+    project_id: str, labeling_task_id: Optional[str] = None
 ) -> bool:
+    query_join_add = ""
+    query_where_add = ""
+    if labeling_task_id:
+        query_join_add = """
+        INNER JOIN labeling_task_label ltl
+        ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id"""
+        query_where_add = f"""
+        AND ltl.labeling_task_id = '{labeling_task_id}'"""
+
     query = f"""
     SELECT rla.id
     FROM record_label_association rla
-    INNER JOIN labeling_task_label ltl
-        ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id
+    {query_join_add}
     WHERE rla.project_id = '{project_id}'
-    AND ltl.labeling_task_id = '{labeling_task_id}'
     AND rla.source_type = '{enums.LabelSource.MANUAL.value}'
+    {query_where_add}
     LIMIT 1
     """
     value = general.execute_first(query)
