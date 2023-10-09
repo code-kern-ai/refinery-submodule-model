@@ -105,23 +105,6 @@ def get_selected_information_sources(project_id: str) -> str:
     return ", ".join([str(x.name) for x in information_sources])
 
 
-def get_task_information_sources(project_id: str, labeling_task_id: str) -> str:
-    information_sources = (
-        session.query(InformationSource.name)
-        .filter(
-            InformationSource.project_id == project_id,
-            InformationSource.labeling_task_id == labeling_task_id,
-            InformationSourceStatistics.source_id == InformationSource.id,
-            InformationSourceStatistics.true_positives
-            > 0,  # only collect valid options
-        )
-        .all()
-    )
-    if not information_sources:
-        return ""
-    return ", ".join([str(x.name) for x in information_sources])
-
-
 def get_payloads_by_project_id(project_id: str) -> List[Any]:
     query: str = f"""
         SELECT 
