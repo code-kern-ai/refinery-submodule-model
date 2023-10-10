@@ -116,6 +116,21 @@ def count_records_without_tokenization(project_id: str) -> int:
     return general.execute_first(query).c
 
 
+def count_records_without_manual_label(project_id: str) -> int:
+    query = f"""
+    SELECT COUNT(r.id) c
+    FROM record r
+    LEFT JOIN (
+        SELECT record_id
+        FROM record_label_association rla
+        WHERE rla.project_id = '{project_id}' AND rla.source_type = '{enums.LabelSource.MANUAL.value}'
+        GROUP BY record_id ) rla
+        ON r.id = rla.record_id
+    WHERE r.project_id = '{project_id}' AND rla.record_id IS NULL
+    """
+    return general.execute_first(query).c
+
+
 def get_attribute_data_with_doc_bins_of_records(
     project_id: str, attribute_name: str
 ) -> List[Any]:
