@@ -1,5 +1,8 @@
 from typing import List, Optional, Any, Dict, Union
 from sqlalchemy.sql import func
+from sqlalchemy import cast, Integer
+from sqlalchemy.sql.functions import coalesce
+
 
 from . import general
 
@@ -11,6 +14,7 @@ from ..models import (
     LabelingTaskLabel,
     Project,
     RecordLabelAssociation,
+    Record,
 )
 
 
@@ -46,6 +50,19 @@ def get_blank_tokenizer_from_project(project_id: str) -> str:
         if not project_item.tokenizer_blank
         else project_item.tokenizer_blank
     )
+
+
+def get_max_running_id(project_id: str) -> int:
+    max_running_id = (
+        session.query(
+            func.max(coalesce(cast(Record.data.op("->>")("running_id"), Integer), -1))
+        )
+        .filter(
+            Record.project_id == project_id,
+        )
+        .scalar()
+    )
+    return max_running_id or -1
 
 
 def get_general_project_stats(
