@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlalchemy import cast, TEXT
 from typing import Dict, List, Any, Optional
 
 from submodules.model import enums
@@ -45,6 +46,20 @@ def get_all(project_id: str) -> List[InformationSource]:
     )
 
 
+def get_all_ids_by_labeling_task_id(
+    project_id: str, labeling_task_id: str
+) -> List[str]:
+    values = (
+        session.query(cast(InformationSource.id, TEXT))
+        .filter(
+            InformationSource.project_id == project_id,
+            InformationSource.labeling_task_id == labeling_task_id,
+        )
+        .all()
+    )
+    return [value[0] for value in values]
+
+
 def get_all_statistics(project_id: str) -> List[InformationSourceStatistics]:
     return (
         session.query(InformationSourceStatistics)
@@ -82,23 +97,6 @@ def get_selected_information_sources(project_id: str) -> str:
         .filter(
             InformationSource.project_id == project_id,
             InformationSource.is_selected == True,
-        )
-        .all()
-    )
-    if not information_sources:
-        return ""
-    return ", ".join([str(x.name) for x in information_sources])
-
-
-def get_task_information_sources(project_id: str, labeling_task_id: str) -> str:
-    information_sources = (
-        session.query(InformationSource.name)
-        .filter(
-            InformationSource.project_id == project_id,
-            InformationSource.labeling_task_id == labeling_task_id,
-            InformationSourceStatistics.source_id == InformationSource.id,
-            InformationSourceStatistics.true_positives
-            > 0,  # only collect valid options
         )
         .all()
     )
