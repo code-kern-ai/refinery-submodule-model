@@ -311,7 +311,14 @@ def get_qdrant_limit_factor(
 def get_manually_labeled_tensors_by_embedding_id(
     project_id: str,
     embedding_id: str,
+    limit: Optional[int] = None,
 ) -> List[Any]:
+    add_limit = ""
+    if limit:
+        add_limit = f"""
+        ORDER BY random()
+        LIMIT {limit}
+        """
     query = f"""
     SELECT et.record_id::TEXT,et.data
     FROM embedding_tensor et
@@ -322,6 +329,7 @@ def get_manually_labeled_tensors_by_embedding_id(
         GROUP BY record_id ) rla
         ON et.record_id = rla.record_id
     WHERE et.embedding_id = '{embedding_id}'
+    {add_limit}
     """
     return general.execute_all(query)
 
@@ -345,7 +353,13 @@ def has_sub_key(
 def get_not_manually_labeled_tensors_by_embedding_id(
     project_id: str,
     embedding_id: str,
+    limit: Optional[int] = None,
 ) -> List[Any]:
+    if limit:
+        add_limit = f"""
+        ORDER BY random()
+        LIMIT {limit}
+        """
     query = f"""
     SELECT et.record_id::TEXT,et.data
     FROM embedding_tensor et
@@ -356,6 +370,7 @@ def get_not_manually_labeled_tensors_by_embedding_id(
         GROUP BY record_id ) rla
         ON et.record_id = rla.record_id
     WHERE et.embedding_id = '{embedding_id}' AND rla.record_id IS NULL
+    {add_limit}
     """
     return general.execute_all(query)
 
