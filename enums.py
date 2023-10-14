@@ -122,6 +122,7 @@ class Tablenames(Enum):
     ENVIRONMENT_VARIABLE = "environment_variable"
     PIPELINE_LOGS = "pipeline_logs"
     MARKDOWN_FILE = "markdown_file"
+    REFINERY_SYNCHRONIZATION_TASK = "refinery_synchronization_task"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -500,3 +501,16 @@ class PipelineSteps(Enum):
 class MarkdownFileCategoryOrigin(Enum):
     PDF = "PDF"
     WEB = "WEB"
+
+
+class RefinerySynchronizationTaskState(Enum):
+    CREATED = "CREATED"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
+
+
+class RefinerySynchronizationIntervalOption(Enum):
+    NEVER = "NEVER"
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"

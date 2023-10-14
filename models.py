@@ -1032,6 +1032,7 @@ class CognitionProject(Base):
     color = Column(String)
     operator_routing_source_code = Column(String)
     wizard_running = Column(Boolean, default=False)
+    refinery_synchronization_interval_option = Column(String)
 
 
 class CognitionStrategy(Base):
@@ -1259,3 +1260,29 @@ class CognitionMarkdownFile(Base):
     error = Column(String)
     is_reviewed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=sql.func.now())
+
+
+class CognitionRefinerySynchronizationTask(Base):
+    __tablename__ = Tablenames.REFINERY_SYNCHRONIZATION_TASK.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    cognition_project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    refinery_project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    finished_at = Column(DateTime)
+    state = Column(String)  # e.g. CREATED, FINISHED, FAILED
+    logs = Column(ARRAY(String))
+    num_records_created = Column(Integer)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )

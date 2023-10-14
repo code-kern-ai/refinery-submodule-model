@@ -25,6 +25,21 @@ def get_all(org_id) -> List[CognitionProject]:
     )
 
 
+def get_all_for_synchronization_option(
+    org_id: str, synchronization_option: str
+) -> List[CognitionProject]:
+    return (
+        session.query(CognitionProject)
+        .filter(CognitionProject.organization_id == org_id)
+        .filter(
+            CognitionProject.refinery_synchronization_interval_option
+            == synchronization_option
+        )
+        .order_by(CognitionProject.created_at.asc())
+        .all()
+    )
+
+
 def create(
     name: str,
     description: str,
@@ -54,6 +69,7 @@ def routing(record: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[str, Di
         refinery_query_project_id=refinery_queries_project_id,
         refinery_relevance_project_id=refinery_relevances_project_id,
         operator_routing_source_code=operator_routing_source_code,
+        refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
     )
     general.add(project, with_commit)
     return project
@@ -64,6 +80,7 @@ def update(
     name: Optional[str] = None,
     description: Optional[str] = None,
     operator_routing_source_code: Optional[str] = None,
+    refinery_synchronization_interval_option: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -73,6 +90,10 @@ def update(
         project.description = description
     if operator_routing_source_code is not None:
         project.operator_routing_source_code = operator_routing_source_code
+    if refinery_synchronization_interval_option is not None:
+        project.refinery_synchronization_interval_option = (
+            refinery_synchronization_interval_option
+        )
     general.flush_or_commit(with_commit)
     return project
 
