@@ -27,6 +27,15 @@ def get_all_by_project_id(
     )
 
 
+def get_last_by_project_id(project_id: str) -> CognitionRefinerySynchronizationTask:
+    return (
+        session.query(CognitionRefinerySynchronizationTask)
+        .filter(CognitionRefinerySynchronizationTask.cognition_project_id == project_id)
+        .order_by(CognitionRefinerySynchronizationTask.created_at.desc())
+        .first()
+    )
+
+
 def create(
     project_id: str,
     refinery_project_id: str,
