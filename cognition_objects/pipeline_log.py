@@ -75,3 +75,14 @@ def create(
     general.add(log, with_commit)
 
     return log
+
+
+def delete_all_by_message_id(
+    message_id: str,
+    with_commit: bool = True,
+) -> None:
+    session.query(CognitionPipelineLogs).filter(
+        CognitionPipelineLogs.message_id == message_id
+    ).delete()
+
+    general.flush_or_commit(with_commit)
