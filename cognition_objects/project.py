@@ -54,8 +54,12 @@ def create(
 ) -> CognitionProject:
     operator_routing_source_code = """from typing import Dict, Any, Tuple
     
-def routing(record: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
-    return "Precise Query Strategy", scope_dict
+def routing(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> Tuple[str, Dict[str, Any]]:
+    record_dict['routing'] = 'None Query Strategy'
+    return record_dict, scope_dict
+
 """
 
     project: CognitionProject = CognitionProject(
