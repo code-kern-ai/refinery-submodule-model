@@ -123,6 +123,8 @@ class Tablenames(Enum):
     PIPELINE_LOGS = "pipeline_logs"
     MARKDOWN_FILE = "markdown_file"
     REFINERY_SYNCHRONIZATION_TASK = "refinery_synchronization_task"
+    PYTHON_STEP = "python_step"
+    LLM_STEP = "llm_step"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs

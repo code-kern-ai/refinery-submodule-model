@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple
 from . import message
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionStrategyStep
+from ..models import CognitionStrategyStep, CognitionPythonStep
 from .. import enums
 from sqlalchemy import func, alias, Integer
 from sqlalchemy.orm import aliased
