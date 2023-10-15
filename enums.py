@@ -480,6 +480,7 @@ class StrategyStepType(Enum):
     RELEVANCE = "RELEVANCE"
     NONE = "NONE"
     PYTHON = "PYTHON"
+    LLM = "LLM"
 
     def get_description(self):
         MAPPING = {
@@ -487,6 +488,7 @@ class StrategyStepType(Enum):
             "RELEVANCE": "This step is used to define the query",
             "NONE": "This step is used to define the query",
             "PYTHON": "This step is used to define the query",
+            "LLM": "This step is used to define the query",
         }
         return MAPPING.get(self.value, "No description available")
 
