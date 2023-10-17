@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from . import message
 from ..business_objects import general
@@ -35,6 +35,11 @@ def create(
 ) -> CognitionLLMStep:
     llm_identifier = "openai"
     template_prompt = "You are an AI assistant."
+    question_prompt = """User query: {{ record.query }}
+<br>
+<br>
+Add some contextual data here if you want to.
+"""
     llm_config = {}
 
     llm_step: CognitionLLMStep = CognitionLLMStep(
@@ -43,6 +48,7 @@ def create(
         created_by=user_id,
         llm_identifier=llm_identifier,
         template_prompt=template_prompt,
+        question_prompt=question_prompt,
         llm_config=llm_config,
         created_at=created_at,
     )
@@ -53,16 +59,19 @@ def create(
 
 def update(
     llm_step_id: str,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    llm_config: Optional[Dict[str, Any]] = None,
+    template_prompt: Optional[str] = None,
+    question_prompt: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionLLMStep:
     python_step: CognitionLLMStep = get(llm_step_id)
 
-    if name:
-        python_step.name = name
-    if description:
-        python_step.description = description
+    if llm_config is not None:
+        python_step.llm_config = llm_config.copy()
+    if template_prompt is not None:
+        python_step.template_prompt = template_prompt
+    if question_prompt is not None:
+        python_step.question_prompt = question_prompt
 
     general.flush_or_commit(with_commit)
     return python_step
