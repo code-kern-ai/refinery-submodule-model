@@ -519,3 +519,7 @@ class RefinerySynchronizationIntervalOption(Enum):
     DAILY = "DAILY"
     WEEKLY = "WEEKLY"
     MONTHLY = "MONTHLY"
+
+
+class LLMProvider(Enum):
+    OPENAI = "openai"

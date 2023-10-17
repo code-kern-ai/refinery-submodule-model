@@ -12,6 +12,18 @@ def get(environment_variable_id: str) -> CognitionEnvironmentVariable:
     )
 
 
+def get_by_name(
+    project_id: str,
+    name: str,
+) -> CognitionEnvironmentVariable:
+    return (
+        session.query(CognitionEnvironmentVariable)
+        .filter(CognitionEnvironmentVariable.project_id == project_id)
+        .filter(CognitionEnvironmentVariable.name == name)
+        .first()
+    )
+
+
 def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]:
     return (
         session.query(CognitionEnvironmentVariable)
