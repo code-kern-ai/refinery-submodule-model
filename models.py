@@ -1213,8 +1213,6 @@ class CognitionPythonStep(Base):
         ),
         index=True,
     )
-    name = Column(String)
-    description = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
@@ -1240,15 +1238,20 @@ class CognitionLLMStep(Base):
         ),
         index=True,
     )
-    name = Column(String)
-    description = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    llm_key = Column(String)
+    environment_variable_id_api_key = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.ENVIRONMENT_VARIABLE.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    llm_identifier = Column(String)
     llm_config = Column(JSON)
     template_prompt = Column(String)
 

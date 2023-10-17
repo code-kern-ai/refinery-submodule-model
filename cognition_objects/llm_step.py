@@ -33,7 +33,7 @@ def create(
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> CognitionLLMStep:
-    llm_key = "gpt-3.5-turbo"
+    llm_identifier = "openai"
     template_prompt = "You are an AI assistant."
     llm_config = {}
 
@@ -41,7 +41,7 @@ def create(
         project_id=project_id,
         strategy_step_id=strategy_step_id,
         created_by=user_id,
-        llm_key=llm_key,
+        llm_identifier=llm_identifier,
         template_prompt=template_prompt,
         llm_config=llm_config,
         created_at=created_at,

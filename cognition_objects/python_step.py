@@ -52,17 +52,11 @@ def routing(record_dict: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[Di
 
 def update(
     python_step_id: str,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
     source_code: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionPythonStep:
     python_step: CognitionPythonStep = get(python_step_id)
 
-    if name:
-        python_step.name = name
-    if description:
-        python_step.description = description
     if source_code:
         python_step.source_code = source_code
 
