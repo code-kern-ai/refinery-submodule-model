@@ -508,6 +508,7 @@ def update_is_selected_for_project(
     update_value: bool,
     with_commit: bool = False,
     is_model_callback: bool = False,
+    only_with_state: Optional[enums.PayloadState] = None,
 ) -> None:
     if is_model_callback:
         type_selection = " = 'MODEL_CALLBACK'"
@@ -518,11 +519,20 @@ def update_is_selected_for_project(
     else:
         # to ensure nothing wrong gets set
         str_value = "FALSE"
+
+    id_selection = ""
+    if only_with_state:
+        states = get_all_states(project_id)
+        ids = [key for key in states if states[key]==only_with_state.value]
+        if len(ids) == 0:
+            return
+        id_selection = "AND id IN ('" + "', '".join(ids) + "')"
     query = f"""
     UPDATE information_source
     SET is_selected = {str_value}
     WHERE project_id = '{project_id}'
     AND type {type_selection}
+    {id_selection}
     """
     general.execute(query)
     general.flush_or_commit(with_commit)
