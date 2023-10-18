@@ -2,6 +2,7 @@ from typing import List, Optional, Dict, Any
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionPipelineLogs
+from datetime import datetime
 
 
 def get_all_by_message_id(message_id: str) -> List[CognitionPipelineLogs]:
@@ -17,7 +18,7 @@ def get_all_by_message_id_until_step(
     message_id: str,
     pipeline_step_type: str,
     strategy_step_type: str,
-    strategy_step_id: str,
+    strategy_step_id: Optional[str] = None,
 ) -> List[CognitionPipelineLogs]:
     pipeline_logs = (
         session.query(CognitionPipelineLogs)
@@ -55,7 +56,7 @@ def create(
     record_dict_diff_previous: Dict[str, Any],
     scope_dict_diff_previous: Dict[str, Any],
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionPipelineLogs:
     log = CognitionPipelineLogs(
         project_id=project_id,

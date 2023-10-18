@@ -1,19 +1,15 @@
+from typing import List, Optional
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 
-from . import message
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionStrategyStep, CognitionPythonStep
-from .. import enums
-from sqlalchemy import func, alias, Integer
-from sqlalchemy.orm import aliased
+from ..models import CognitionStrategyStep
 
 
-def get(strategy_id: str) -> CognitionStrategyStep:
+def get(strategy_step_id: str) -> CognitionStrategyStep:
     return (
         session.query(CognitionStrategyStep)
-        .filter(CognitionStrategyStep.id == strategy_id)
+        .filter(CognitionStrategyStep.id == strategy_step_id)
         .first()
     )
 
@@ -36,7 +32,7 @@ def create(
     strategy_step_type: str,
     strategy_step_position: int,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionStrategyStep:
     strategy: CognitionStrategyStep = CognitionStrategyStep(
         project_id=project_id,

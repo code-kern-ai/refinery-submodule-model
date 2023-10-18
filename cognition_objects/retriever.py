@@ -1,13 +1,9 @@
+from typing import List, Optional
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 
-from . import message
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionRetriever
-from .. import enums
-from sqlalchemy import func, alias, Integer
-from sqlalchemy.orm import aliased
 
 
 def get(retriever_id: str) -> CognitionRetriever:
@@ -42,7 +38,7 @@ def create(
     description: str,
     source_code: str,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionRetriever:
     retriever: CognitionRetriever = CognitionRetriever(
         project_id=project_id,
@@ -75,7 +71,6 @@ def update(
     if source_code:
         retriever.source_code = source_code
     if enabled is not None:
-        print("XXX", flush=True)
         retriever.enabled = enabled
     general.flush_or_commit(with_commit)
     return retriever

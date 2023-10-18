@@ -1,10 +1,11 @@
 from typing import Dict, List, Optional, Tuple, Any
 
+from datetime import datetime
+
 from ..cognition_objects import message
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionConversation
-from sqlalchemy import func, alias, Integer
 
 
 def get(conversation_id: str) -> CognitionConversation:
@@ -19,9 +20,9 @@ def get_all_paginated_by_project_id(
     project_id: str, page: int, limit: int
 ) -> Tuple[int, int, List[CognitionConversation]]:
     total_count = (
-        session.query(func.count(CognitionConversation.id))
+        session.query(CognitionConversation.id)
         .filter(CognitionConversation.project_id == project_id)
-        .scalar()
+        .count()
     )
 
     if total_count == 0:
@@ -49,7 +50,7 @@ def create(
     project_id: str,
     user_id: str,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionConversation:
     conversation: CognitionConversation = CognitionConversation(
         project_id=project_id,
@@ -82,11 +83,12 @@ def add_message(
 def update(
     conversation_id: str,
     scope_dict: Optional[Dict[str, Any]] = None,
+    with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity = get(conversation_id)
     if scope_dict is not None:
         conversation_entity.scope_dict = scope_dict
-    general.flush_or_commit(True)
+    general.flush_or_commit(with_commit)
     return conversation_entity
 
 

@@ -1,11 +1,8 @@
+from typing import List, Optional
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMessage
-from .. import enums
-from sqlalchemy import func, alias, Integer
-from sqlalchemy.orm import aliased
 
 
 def get_all_by_conversation_id(conversation_id: str) -> List[CognitionMessage]:
@@ -60,7 +57,7 @@ def create(
     user_id: str,
     query: str,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionMessage:
     message = CognitionMessage(
         project_id=project_id,

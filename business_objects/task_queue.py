@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Union
 from sqlalchemy import text
 
 from . import general
@@ -74,7 +74,7 @@ def add(
     project_id: str,
     task_type: enums.TaskType,
     created_by: str,
-    task_info: Dict[str, str],
+    task_info: Union[List[Dict[str, str]], Dict[str, str]],
     priority: bool,
     with_commit: bool = False,
 ) -> TaskQueue:
@@ -104,7 +104,11 @@ def set_all_tasks_inactive(with_commit: bool = False):
     general.flush_or_commit(with_commit)
 
 
-def update_task_info(task_id: str, task_info: Any, with_commit: bool = False):
+def update_task_info(
+    task_id: str,
+    task_info: Union[List[Dict[str, str]], Dict[str, str]],
+    with_commit: bool = False,
+):
     task_item = get(task_id)
     if not task_item:
         return

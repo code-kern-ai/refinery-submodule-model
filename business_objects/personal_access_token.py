@@ -6,7 +6,7 @@ from submodules.model.models import PersonalAccessToken, CognitionPersonalAccess
 
 
 def __get_token_type(
-    in_cognition_scope,
+    in_cognition_scope: bool,
 ) -> Union[PersonalAccessToken, CognitionPersonalAccessToken]:
     if in_cognition_scope:
         return CognitionPersonalAccessToken

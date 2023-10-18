@@ -1,4 +1,5 @@
 from typing import List, Optional
+from datetime import datetime
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionEnvironmentVariable
@@ -52,7 +53,7 @@ def create(
     value: str,
     is_secret: bool,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionEnvironmentVariable:
     environment_variable: CognitionEnvironmentVariable = CognitionEnvironmentVariable(
         created_by=user_id,
@@ -75,7 +76,6 @@ def update(
     with_commit: bool = True,
 ) -> CognitionEnvironmentVariable:
     environment_variable: CognitionEnvironmentVariable = get(environment_variable_id)
-    general.flush_or_commit(with_commit)
 
     if name is not None:
         environment_variable.name = name

@@ -1,13 +1,9 @@
+from typing import List, Optional, Tuple
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 
-from ..cognition_objects import message
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMarkdownFile
-from .. import enums
-from sqlalchemy import func, alias, Integer
-from sqlalchemy.orm import aliased
 
 
 def get(md_file_id: str) -> CognitionMarkdownFile:
@@ -25,9 +21,9 @@ def get_all_paginated_for_category_origin(
     limit: int,
 ) -> Tuple[int, int, List[CognitionMarkdownFile]]:
     total_count = (
-        session.query(func.count(CognitionMarkdownFile.id))
+        session.query(CognitionMarkdownFile.id)
         .filter(CognitionMarkdownFile.organization_id == org_id)
-        .scalar()
+        .count()
     )
 
     num_pages = int(total_count / limit)
@@ -69,7 +65,7 @@ def create(
     content: Optional[str] = None,
     error: Optional[str] = None,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = CognitionMarkdownFile(
         organization_id=org_id,

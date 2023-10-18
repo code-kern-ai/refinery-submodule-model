@@ -1,13 +1,9 @@
+from typing import List, Optional
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 
-from ..cognition_objects import message
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionStrategy
-from .. import enums
-from sqlalchemy import func, alias, Integer
-from sqlalchemy.orm import aliased
 
 
 def get(strategy_id: str) -> CognitionStrategy:
@@ -43,7 +39,7 @@ def create(
     name: str,
     description: str,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionStrategy:
     strategy: CognitionStrategy = CognitionStrategy(
         project_id=project_id,

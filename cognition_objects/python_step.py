@@ -1,13 +1,9 @@
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
-from . import message
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionPythonStep
-from .. import enums
-from sqlalchemy import func, alias, Integer
-from sqlalchemy.orm import aliased
+from datetime import datetime
 
 
 def get(python_step_id: str) -> CognitionPythonStep:
@@ -31,9 +27,9 @@ def create(
     strategy_step_id: str,
     user_id: str,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionPythonStep:
-    source_code = f"""from typing import Dict, Any, Tuple
+    source_code = """from typing import Dict, Any, Tuple
 
 def routing(record_dict: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     return record_dict, scope_dict

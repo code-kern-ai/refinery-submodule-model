@@ -30,7 +30,7 @@ def set_notifications_to_not_initial(
         models.Notification.user_id == user_id,
         models.Notification.state == enums.NotificationState.INITIAL.value,
     )
-    if not keep_errors:
+    if keep_errors:
         query = query.filter(
             models.Notification.level != enums.Notification.ERROR.value
         )
