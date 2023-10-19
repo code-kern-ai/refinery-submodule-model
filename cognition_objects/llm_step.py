@@ -40,7 +40,15 @@ def create(
 <br>
 Add some contextual data here if you want to.
 """
-    llm_config = {}
+    llm_config = {
+        "model": "gpt-3.5-turbo",
+        "temperature": 0,
+        "maxLength": 1024,
+        "stopSequences": [],
+        "topP": 1,
+        "frequencyPenalty": 0,
+        "presencePenalty": 0,
+    }
 
     llm_step: CognitionLLMStep = CognitionLLMStep(
         project_id=project_id,
