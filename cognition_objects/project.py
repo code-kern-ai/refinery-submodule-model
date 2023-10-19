@@ -1,11 +1,9 @@
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionProject
 from .. import enums
-from sqlalchemy import func, alias, Integer
-from sqlalchemy.orm import aliased
+from datetime import datetime
 
 
 def get(project_id: str) -> CognitionProject:
@@ -50,10 +48,10 @@ def create(
     refinery_queries_project_id: str,
     refinery_relevances_project_id: str,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionProject:
     operator_routing_source_code = """from typing import Dict, Any, Tuple
-    
+
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
 ) -> Tuple[str, Dict[str, Any]]:

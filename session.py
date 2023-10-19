@@ -1,6 +1,5 @@
 import os
 from contextvars import ContextVar
-import uuid
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exc import PendingRollbackError

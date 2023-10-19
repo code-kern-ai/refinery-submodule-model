@@ -1,4 +1,3 @@
-from re import T
 import uuid
 
 from .enums import (
@@ -1244,7 +1243,7 @@ class CognitionLLMStep(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    
+
     llm_identifier = Column(String)
     llm_config = Column(JSON)
     template_prompt = Column(String)

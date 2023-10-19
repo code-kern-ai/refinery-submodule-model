@@ -1,11 +1,9 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionRefinerySynchronizationTask
 from .. import enums
-from sqlalchemy import func, alias, Integer
-from sqlalchemy.orm import aliased
 
 
 def get(task_id: str) -> CognitionRefinerySynchronizationTask:
@@ -40,7 +38,7 @@ def create(
     project_id: str,
     refinery_project_id: str,
     with_commit: bool = True,
-    created_at: Optional[str] = None,
+    created_at: Optional[datetime] = None,
 ) -> CognitionRefinerySynchronizationTask:
     task = CognitionRefinerySynchronizationTask(
         cognition_project_id=project_id,
