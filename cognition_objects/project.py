@@ -68,7 +68,7 @@ def routing(
         created_by=user_id,
         created_at=created_at,
         refinery_references_project_id=refinery_references_project_id,
-        refinery_query_project_id=refinery_queries_project_id,
+        refinery_question_project_id=refinery_queries_project_id,
         refinery_relevance_project_id=refinery_relevances_project_id,
         operator_routing_source_code=operator_routing_source_code,
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,

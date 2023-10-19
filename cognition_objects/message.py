@@ -55,7 +55,7 @@ def create(
     conversation_id: str,
     project_id: str,
     user_id: str,
-    query: str,
+    question: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionMessage:
@@ -64,7 +64,7 @@ def create(
         conversation_id=conversation_id,
         created_by=user_id,
         created_at=created_at,
-        query=query,
+        question=question,
         facts=[],
     )
 

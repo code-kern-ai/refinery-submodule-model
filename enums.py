@@ -486,18 +486,18 @@ class StrategyStepType(Enum):
     def get_description(self):
         MAPPING = {
             "RETRIEVAL": "This step is used to search for documents",
-            "RELEVANCE": "This step is used to define the query",
-            "NONE": "This step is used to define the query",
-            "PYTHON": "This step is used to define the query",
-            "LLM": "This step is used to define the query",
+            "RELEVANCE": "This step is used to define the question",
+            "NONE": "This step is used to define the question",
+            "PYTHON": "This step is used to define the question",
+            "LLM": "This step is used to define the question",
         }
         return MAPPING.get(self.value, "No description available")
 
 
 class PipelineSteps(Enum):
-    INCOMING_QUERY = "INCOMING_QUERY"
-    INCOMING_QUERY_TRY = "INCOMING_QUERY_TRY"
-    QUERY_ENRICHMENT = "QUERY_ENRICHMENT"
+    INCOMING_QUESTION = "INCOMING_QUESTION"
+    INCOMING_QUESTION_TRY = "INCOMING_QUESTION_TRY"
+    QUESTION_ENRICHMENT = "QUESTION_ENRICHMENT"
     ROUTE_STRATEGY = "ROUTE_STRATEGY"
     STRATEGY_STEP = "STRATEGY_STEP"
     ASSISTANT_RESPONSE = "ASSISTANT_RESPONSE"

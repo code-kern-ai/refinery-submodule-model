@@ -30,7 +30,7 @@ def create(
 ) -> CognitionLLMStep:
     llm_identifier = "openai"
     template_prompt = "You are an AI assistant."
-    question_prompt = """User query: {{ record.query }}
+    question_prompt = """User question: {{ record.question }}
 <br>
 <br>
 Add some contextual data here if you want to.

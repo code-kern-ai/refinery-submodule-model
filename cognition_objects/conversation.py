@@ -64,7 +64,7 @@ def create(
 
 def add_message(
     conversation_id: str,
-    query: str,
+    question: str,
     with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity: CognitionConversation = get(conversation_id)
@@ -73,7 +73,7 @@ def add_message(
         conversation_id=conversation_id,
         project_id=conversation_entity.project_id,
         user_id=conversation_entity.created_by,
-        query=query,
+        question=question,
         with_commit=with_commit,
     )
 
