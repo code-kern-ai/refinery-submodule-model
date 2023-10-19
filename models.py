@@ -1016,7 +1016,7 @@ class CognitionProject(Base):
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    refinery_query_project_id = Column(
+    refinery_question_project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
@@ -1122,7 +1122,7 @@ class CognitionMessage(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    query = Column(String)
+    question = Column(String)
     facts = Column(ARRAY(JSON))
     answer = Column(String)
 
