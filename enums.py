@@ -503,6 +503,13 @@ class PipelineSteps(Enum):
     ASSISTANT_RESPONSE = "ASSISTANT_RESPONSE"
 
 
+class PipelineStepState(Enum):
+    STARTED = "STARTED"
+    RUNNING = "RUNNING"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
+
+
 class MarkdownFileCategoryOrigin(Enum):
     PDF = "PDF"
     WEB = "WEB"
