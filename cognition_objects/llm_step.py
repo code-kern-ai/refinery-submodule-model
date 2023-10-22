@@ -21,6 +21,31 @@ def get_llm_strategy_step_data(strategy_step_id: str) -> CognitionLLMStep:
     )
 
 
+def get_default_config_for_llm_identifier(llm_identifier: str) -> Dict[str, Any]:
+    if llm_identifier == "Open AI":
+        return {
+            "model": "gpt-3.5-turbo",
+            "temperature": 0,
+            "maxLength": 1024,
+            "stopSequences": [],
+            "topP": 1,
+            "frequencyPenalty": 0,
+            "presencePenalty": 0,
+        }
+    elif llm_identifier == "Open-Source":
+        return {
+            "model": "TheBloke/CodeLlama-7B-Instruct-GGUF",
+            "temperature": 0,
+            "maxLength": 400,
+            "stopSequences": [],
+            "topP": 1,
+            "frequencyPenalty": 0,
+            "presencePenalty": 0,
+        }
+    else:
+        raise ValueError(f"Unknown LLM identifier: {llm_identifier}")
+
+
 def create(
     project_id: str,
     strategy_step_id: str,
@@ -28,7 +53,7 @@ def create(
     with_commit: bool = True,
     created_at: Optional[str] = None,
 ) -> CognitionLLMStep:
-    llm_identifier = "openai"
+    llm_identifier = "Open AI"
     template_prompt = "You are an AI assistant."
     question_prompt = """User question: {{ record.question }}
 <br>
@@ -62,13 +87,19 @@ Add some contextual data here if you want to.
 
 def update(
     llm_step_id: str,
+    llm_identifier: Optional[str] = None,
     llm_config: Optional[Dict[str, Any]] = None,
     template_prompt: Optional[str] = None,
     question_prompt: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionLLMStep:
     python_step: CognitionLLMStep = get(llm_step_id)
+    if llm_identifier is not None:
+        if llm_identifier != python_step.llm_identifier:
+            llm_config = get_default_config_for_llm_identifier(llm_identifier)
+            python_step.llm_config = llm_config.copy()
 
+        python_step.llm_identifier = llm_identifier
     if llm_config is not None:
         python_step.llm_config = llm_config.copy()
     if template_prompt is not None:

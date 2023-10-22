@@ -529,4 +529,5 @@ class RefinerySynchronizationIntervalOption(Enum):
 
 
 class LLMProvider(Enum):
-    OPENAI = "openai"
+    OPENAI = "Open AI"
+    OPEN_SOURCE = "Open-Source"
