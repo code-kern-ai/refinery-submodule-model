@@ -55,7 +55,7 @@ def create(
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
 ) -> Tuple[str, Dict[str, Any]]:
-    record_dict['routing'] = 'None Query Strategy'
+    record_dict['routing'] = 'Low-code strategy'
     return record_dict, scope_dict
 
 """
