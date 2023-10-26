@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionLLMStep
+from .. import enums
 
 
 def get(llm_step_id: str) -> CognitionLLMStep:
@@ -19,31 +20,6 @@ def get_llm_strategy_step_data(strategy_step_id: str) -> CognitionLLMStep:
         .filter(CognitionLLMStep.strategy_step_id == strategy_step_id)
         .first()
     )
-
-
-def get_default_config_for_llm_identifier(llm_identifier: str) -> Dict[str, Any]:
-    if llm_identifier == "Open AI":
-        return {
-            "model": "gpt-3.5-turbo",
-            "temperature": 0,
-            "maxLength": 1024,
-            "stopSequences": [],
-            "topP": 1,
-            "frequencyPenalty": 0,
-            "presencePenalty": 0,
-        }
-    elif llm_identifier == "Open-Source":
-        return {
-            "model": "TheBloke/CodeLlama-7B-Instruct-GGUF",
-            "temperature": 0,
-            "maxLength": 400,
-            "stopSequences": [],
-            "topP": 1,
-            "frequencyPenalty": 0,
-            "presencePenalty": 0,
-        }
-    else:
-        raise ValueError(f"Unknown LLM identifier: {llm_identifier}")
 
 
 def create(
@@ -95,9 +71,9 @@ def update(
 ) -> CognitionLLMStep:
     python_step: CognitionLLMStep = get(llm_step_id)
     if llm_identifier is not None:
-        if llm_identifier != python_step.llm_identifier:
-            llm_config = get_default_config_for_llm_identifier(llm_identifier)
-            python_step.llm_config = llm_config.copy()
+        # if llm_identifier != python_step.llm_identifier:
+        #     # llm_config = get_default_config_for_llm_identifier(llm_identifier)
+        #     python_step.llm_config = llm_config.copy()
 
         python_step.llm_identifier = llm_identifier
     if llm_config is not None:
