@@ -55,7 +55,10 @@ def create(
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
 ) -> Tuple[str, Dict[str, Any]]:
-    record_dict['routing'] = 'Low-code strategy'
+    if True: # add a condition here to differentiate when to use what strategy
+        record_dict['routing'] = 'Common RAG'
+    else:
+        record_dict['routing'] = 'Low-code strategy'
     return record_dict, scope_dict
 
 """

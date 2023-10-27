@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionLLMStep
-from .. import enums
 
 
 def get(llm_step_id: str) -> CognitionLLMStep:
@@ -12,6 +11,19 @@ def get(llm_step_id: str) -> CognitionLLMStep:
         .filter(CognitionLLMStep.id == llm_step_id)
         .first()
     )
+
+
+def get_first_from_project(project_id: str) -> CognitionLLMStep:
+    # only viable directly after project creation since this returns the first (and only) step
+    query = f"""
+    SELECT cls.*, css.strategy_id
+    FROM cognition.llm_step cls
+    INNER JOIN cognition.strategy_step css 
+        ON cls.project_id = css.project_id AND cls.strategy_step_id = css.id
+    WHERE cls.project_id = '{project_id}'
+    LIMIT 1
+    """
+    return general.execute_first(query)
 
 
 def get_llm_strategy_step_data(strategy_step_id: str) -> CognitionLLMStep:
@@ -71,10 +83,6 @@ def update(
 ) -> CognitionLLMStep:
     python_step: CognitionLLMStep = get(llm_step_id)
     if llm_identifier is not None:
-        # if llm_identifier != python_step.llm_identifier:
-        #     # llm_config = get_default_config_for_llm_identifier(llm_identifier)
-        #     python_step.llm_config = llm_config.copy()
-
         python_step.llm_identifier = llm_identifier
     if llm_config is not None:
         python_step.llm_config = llm_config.copy()
