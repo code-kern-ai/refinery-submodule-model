@@ -119,6 +119,7 @@ class Tablenames(Enum):
     STRATEGY = "strategy"
     STRATEGY_STEP = "strategy_step"
     RETRIEVER = "retriever"
+    RETRIEVER_PART = "retriever_part"
     ENVIRONMENT_VARIABLE = "environment_variable"
     PIPELINE_LOGS = "pipeline_logs"
     MARKDOWN_FILE = "markdown_file"
