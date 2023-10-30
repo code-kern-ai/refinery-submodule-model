@@ -1,13 +1,15 @@
 import os
 from typing import Tuple, Any, Union, List, Dict
 import collections
-from re import sub
+from re import sub, match, compile
 
 from uuid import UUID
 from datetime import datetime
 
 from sqlalchemy.engine.row import Row
 from .models import Base
+
+CAMEL_CASE_PATTERN = compile(r"^([a-z]+[A-Z]?)*$")
 
 
 def collect_engine_variables() -> Tuple[int, int, bool, bool]:
@@ -128,6 +130,8 @@ def __to_json_serializable(x: Any):
 
 
 def __to_camel_case(name: str):
+    if is_camel_case(name):
+        return name
     name = sub(r"(_|-)+", " ", name).title().replace(" ", "")
     return "".join([name[0].lower(), name[1:]])
 
@@ -139,3 +143,10 @@ def is_list_like(value: Any) -> bool:
         and not isinstance(value, dict)
         and not isinstance(value, Row)
     )
+
+
+def is_camel_case(text: str) -> bool:
+    if match(CAMEL_CASE_PATTERN, text):
+        return True
+    else:
+        return False
