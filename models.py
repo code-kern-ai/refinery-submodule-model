@@ -76,6 +76,20 @@ def parent_to_child_relationship(
         )
 
 
+# -------------------- INFO_ ----------------------
+#
+# Table column order convention:
+# note that this is a guideline and not a strict rule
+# e.g. context based columns should generally be grouped together
+#
+# 0. __tablename__ & __table_args__ if needed
+# 1. id (primary key/s)
+# 2. foreign keys
+#   2.1 sort from broader scope to more specific (e.g. org_id > proj_id > user_id)
+# 3. other columns
+#   3.1 sort from broader scope to more specific (e.g. name > description > some flag)
+# 4. columns added after initial creation
+#
 # -------------------- GLOBAL_ --------------------
 class AppVersion(Base):
     __tablename__ = Tablenames.APP_VERSION.value
@@ -1005,27 +1019,27 @@ class CognitionProject(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
     refinery_references_project_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
         index=True,
     )
     refinery_question_project_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
         index=True,
     )
     refinery_relevance_project_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
     color = Column(String)
@@ -1037,15 +1051,16 @@ class CognitionProject(Base):
 class CognitionStrategy(Base):
     __tablename__ = Tablenames.STRATEGY.value
     __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
     project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
@@ -1056,12 +1071,12 @@ class CognitionStrategy(Base):
 class CognitionStrategyStep(Base):
     __tablename__ = Tablenames.STRATEGY_STEP.value
     __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     strategy_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="CASCADE"),
@@ -1069,7 +1084,7 @@ class CognitionStrategyStep(Base):
     )
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
@@ -1082,15 +1097,15 @@ class CognitionStrategyStep(Base):
 class CognitionConversation(Base):
     __tablename__ = Tablenames.CONVERSATION.value
     __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
@@ -1106,19 +1121,19 @@ class CognitionMessage(Base):
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    conversation_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
     strategy_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
@@ -1142,14 +1157,6 @@ class CognitionPipelineLogs(Base):
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    message_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.MESSAGE.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    pipeline_step_type = Column(String)
-    strategy_step_type = Column(String)
     strategy_step_id = Column(
         UUID(as_uuid=True),
         ForeignKey(
@@ -1157,10 +1164,20 @@ class CognitionPipelineLogs(Base):
         ),
         index=True,
     )
+    message_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MESSAGE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
     )
+    created_at = Column(DateTime, default=sql.func.now())
+    pipeline_step_type = Column(String)
+    strategy_step_type = Column(String)
+
     has_error = Column(Boolean)
     scope_dict_diff_previous_message = Column(JSON)
     record_dict_diff_previous_message = Column(JSON)
@@ -1184,12 +1201,12 @@ class CognitionRetriever(Base):
         ),
         index=True,
     )
-    created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    created_at = Column(DateTime, default=sql.func.now())
     search_input_field = Column(String)
     meta_data = Column(String)
 
@@ -1198,17 +1215,22 @@ class CognitionRetrieverPart(Base):
     __tablename__ = Tablenames.RETRIEVER_PART.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     retriever_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.RETRIEVER.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    created_at = Column(DateTime, default=sql.func.now())
     embedding_name = Column(String)
     number_records = Column(Integer)
     enabled = Column(Boolean, default=True)
@@ -1230,12 +1252,12 @@ class CognitionPythonStep(Base):
         ),
         index=True,
     )
-    created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    created_at = Column(DateTime, default=sql.func.now())
     source_code = Column(String)
 
 
@@ -1255,12 +1277,12 @@ class CognitionLLMStep(Base):
         ),
         index=True,
     )
-    created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    created_at = Column(DateTime, default=sql.func.now())
 
     llm_identifier = Column(String)
     llm_config = Column(JSON)
@@ -1277,12 +1299,12 @@ class CognitionEnvironmentVariable(Base):
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
     value = Column(String)
@@ -1298,16 +1320,16 @@ class CognitionPersonalAccessToken(Base):
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    user_id = Column(
+    created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     scope = Column(String)
-    created_at = Column(DateTime, default=sql.func.now())
-    expires_at = Column(DateTime, nullable=True)
-    last_used = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime)
+    last_used = Column(DateTime)
     token = Column(String)
 
 
@@ -1315,22 +1337,22 @@ class CognitionMarkdownFile(Base):
     __tablename__ = Tablenames.MARKDOWN_FILE.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
     organization_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
     file_name = Column(String)
     content = Column(String)
     category_origin = Column(String)
     error = Column(String)
     is_reviewed = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=sql.func.now())
 
 
 class CognitionRefinerySynchronizationTask(Base):
@@ -1347,13 +1369,13 @@ class CognitionRefinerySynchronizationTask(Base):
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    created_at = Column(DateTime, default=sql.func.now())
-    finished_at = Column(DateTime)
-    state = Column(String)  # e.g. CREATED, FINISHED, FAILED
-    logs = Column(ARRAY(String))
-    num_records_created = Column(Integer)
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    created_at = Column(DateTime, default=sql.func.now())
+    finished_at = Column(DateTime)
+    state = Column(String)  # e.g. CREATED, FINISHED, FAILED
+    logs = Column(ARRAY(String))
+    num_records_created = Column(Integer)
