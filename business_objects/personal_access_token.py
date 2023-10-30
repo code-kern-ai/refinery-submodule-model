@@ -15,14 +15,17 @@ def __get_token_type(
 
 
 def get_by_user_and_name(
-    project_id: str, user_id: str, name: str, in_cognition_scope: Optional[bool] = False
+    project_id: str,
+    created_by: str,
+    name: str,
+    in_cognition_scope: Optional[bool] = False,
 ) -> Union[PersonalAccessToken, CognitionPersonalAccessToken]:
     token_table = __get_token_type(in_cognition_scope)
     return (
         session.query(token_table)
         .filter(
             token_table.project_id == project_id,
-            token_table.user_id == user_id,
+            token_table.created_by == created_by,
             token_table.name == name,
         )
         .first()
@@ -53,7 +56,7 @@ def get_by_token(
 
 def create(
     project_id: str,
-    user_id: str,
+    created_by: str,
     name: str,
     scope: str,
     expires_at: datetime,
@@ -64,7 +67,7 @@ def create(
     token_table = __get_token_type(in_cognition_scope)
     personal_access_token = token_table(
         project_id=project_id,
-        user_id=user_id,
+        created_by=created_by,
         name=name,
         scope=scope,
         token=token,

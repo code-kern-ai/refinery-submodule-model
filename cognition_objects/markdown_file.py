@@ -59,7 +59,7 @@ def get_all_reviewed_for_category_origin(
 
 def create(
     org_id: str,
-    user_id: str,
+    created_by: str,
     file_name: str,
     category_origin: str,
     content: Optional[str] = None,
@@ -69,7 +69,7 @@ def create(
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = CognitionMarkdownFile(
         organization_id=org_id,
-        user_id=user_id,
+        created_by=created_by,
         created_at=created_at,
         file_name=file_name,
         content=content,
