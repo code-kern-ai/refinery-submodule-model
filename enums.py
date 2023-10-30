@@ -485,14 +485,16 @@ class StrategyStepType(Enum):
     LLM = "LLM"
 
     def get_description(self):
-        MAPPING = {
-            "RETRIEVAL": "Fetch facts from a DB",
-            "RELEVANCE": "Classify retrieved facts",
-            "NONE": "Dummy step",
-            "PYTHON": "Custom python function",
-            "LLM": "Run a LLM",
-        }
-        return MAPPING.get(self.value, "No description available")
+        return STEP_DESCRIPTIONS.get(self, "No description available")
+
+
+STEP_DESCRIPTIONS = {
+    StrategyStepType.RETRIEVAL: "Fetch facts from a DB",
+    StrategyStepType.RELEVANCE: "Classify retrieved facts",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.PYTHON: "Custom python function",
+    StrategyStepType.LLM: "Run a LLM",
+}
 
 
 class PipelineSteps(Enum):
