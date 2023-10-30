@@ -1184,15 +1184,33 @@ class CognitionRetriever(Base):
         ),
         index=True,
     )
-    name = Column(String)
-    description = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    source_code = Column(String)
+    search_input_field = Column(String)
+    meta_data = Column(String)
+
+
+class CognitionRetrieverPart(Base):
+    __tablename__ = Tablenames.RETRIEVER_PART.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    retriever_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.RETRIEVER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    embedding_name = Column(String)
+    number_records = Column(Integer)
     enabled = Column(Boolean, default=True)
 
 
