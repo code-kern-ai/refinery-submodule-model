@@ -60,6 +60,37 @@ def get_all_ids(project_id: str) -> List[str]:
     return [record_id for record_id, in record_ids]
 
 
+def get_sample_data_of(
+    project_id: str,
+    attribute_name: str,
+    limit: int = 10,
+    add_condition: Optional[str] = None,
+) -> List[Any]:
+    # any return since json value is return (-> vs ->>) so casting isn't necessary
+    where_add = ""
+    if add_condition:
+        where_add = "AND " + add_condition
+
+    query = f"""
+    SELECT r.data->'{attribute_name}'
+    FROM record r
+    WHERE r.project_id = '{project_id}'
+    {where_add}
+    ORDER BY RANDOM()
+    LIMIT {limit}
+    """
+    return [row[0] for row in general.execute_all(query)]
+
+
+def get_max_running_id(project_id: str) -> int:
+    query = f"""
+    SELECT max(CAST(DATA->>'running_id' AS INTEGER)) max_running_id
+    FROM record
+    WHERE project_id = '{project_id}'
+    """
+    return general.execute_first(query)[0]
+
+
 def get_existing_records_by_composite_key(
     project_id: str,
     records_data: List[Dict[str, Any]],

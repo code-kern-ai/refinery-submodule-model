@@ -66,6 +66,12 @@ class UserRoles(Enum):
     ANNOTATOR = "ANNOTATOR"
 
 
+class MessageRoles(Enum):
+    SYSTEM = "SYSTEM"
+    USER = "USER"
+    ASSISTANT = "ASSISTANT"
+
+
 class LinkTypes(Enum):
     DATA_SLICE = "DATA_SLICE"
     HEURISTIC = "HEURISTIC"
@@ -108,6 +114,18 @@ class Tablenames(Enum):
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
     ADMIN_MESSAGE = "admin_message"
     TASK_QUEUE = "task_queue"
+    CONVERSATION = "conversation"
+    MESSAGE = "message"
+    STRATEGY = "strategy"
+    STRATEGY_STEP = "strategy_step"
+    RETRIEVER = "retriever"
+    RETRIEVER_PART = "retriever_part"
+    ENVIRONMENT_VARIABLE = "environment_variable"
+    PIPELINE_LOGS = "pipeline_logs"
+    MARKDOWN_FILE = "markdown_file"
+    REFINERY_SYNCHRONIZATION_TASK = "refinery_synchronization_task"
+    PYTHON_STEP = "python_step"
+    LLM_STEP = "llm_step"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -218,6 +236,7 @@ class UploadTypes(Enum):
     LABEL_STUDIO = "LABEL_STUDIO"
     DEFAULT = "DEFAULT"
     WORKFLOW_STORE = "WORKFLOW_STORE"
+    COGNITION = "COGNITION"
 
 
 class TokenizerTask(Enum):
@@ -425,6 +444,16 @@ class TaskType(Enum):
     INFORMATION_SOURCE = "information_source"
     UPLOAD_TASK = "upload"
     WEAK_SUPERVISION = "weak_supervision"
+    TASK_QUEUE = "task_queue"
+    TASK_QUEUE_ACTION = "task_queue_action"
+
+
+class TaskQueueAction(Enum):
+    CREATE_OUTLIER_SLICE = "CREATE_OUTLIER_SLICE"
+    START_GATES = "START_GATES"
+    SEND_WEBSOCKET = "SEND_WEBSOCKET"
+    FINISH_COGNITION_SETUP = "FINISH_COGNITION_SETUP"
+    RUN_WEAK_SUPERVISION = "RUN_WEAK_SUPERVISION"
 
 
 class AgreementType(Enum):
@@ -446,3 +475,63 @@ class SampleProjectType(Enum):
     AG_NEWS = "AG News"
     CONVERSATIONAL_AI_INITIAL = "Conversational AI - initial"
     CONVERSATIONAL_AI = "Conversational AI"
+
+
+class StrategyStepType(Enum):
+    RETRIEVAL = "RETRIEVAL"
+    RELEVANCE = "RELEVANCE"
+    NONE = "NONE"
+    PYTHON = "PYTHON"
+    LLM = "LLM"
+
+    def get_description(self):
+        return STEP_DESCRIPTIONS.get(self, "No description available")
+
+
+STEP_DESCRIPTIONS = {
+    StrategyStepType.RETRIEVAL: "Fetch facts from a DB",
+    StrategyStepType.RELEVANCE: "Classify retrieved facts",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.PYTHON: "Custom python function",
+    StrategyStepType.LLM: "Run a LLM",
+}
+
+
+class PipelineSteps(Enum):
+    INCOMING_QUESTION = "INCOMING_QUESTION"
+    INCOMING_QUESTION_TRY = "INCOMING_QUESTION_TRY"
+    QUESTION_ENRICHMENT = "QUESTION_ENRICHMENT"
+    ROUTE_STRATEGY = "ROUTE_STRATEGY"
+    STRATEGY_STEP = "STRATEGY_STEP"
+    ASSISTANT_RESPONSE = "ASSISTANT_RESPONSE"
+
+
+class PipelineStepState(Enum):
+    STARTED = "STARTED"
+    RUNNING = "RUNNING"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
+
+
+class MarkdownFileCategoryOrigin(Enum):
+    PDF = "PDF"
+    WEB = "WEB"
+
+
+class RefinerySynchronizationTaskState(Enum):
+    CREATED = "CREATED"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
+
+
+class RefinerySynchronizationIntervalOption(Enum):
+    NEVER = "NEVER"
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+
+
+class LLMProvider(Enum):
+    OPENAI = "Open AI"
+    OPEN_SOURCE = "Open-Source"
+    AZURE = "Azure"

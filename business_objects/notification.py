@@ -22,6 +22,25 @@ def get_duplicated(
     )
 
 
+def set_notifications_to_not_initial(
+    project_id: str, user_id: str, keep_errors: bool = True
+) -> None:
+    query = session.query(models.Notification).filter(
+        models.Notification.project_id == project_id,
+        models.Notification.user_id == user_id,
+        models.Notification.state == enums.NotificationState.INITIAL.value,
+    )
+    if keep_errors:
+        query = query.filter(
+            models.Notification.level != enums.Notification.ERROR.value
+        )
+    query.update(
+        {models.Notification.state: enums.NotificationState.NOT_INITIAL.value},
+        synchronize_session=False,
+    )
+    general.commit()
+
+
 def get_notifications_by_user_id(user_id: str) -> List[Notification]:
     notifications: List[Notification] = (
         session.query(Notification)
@@ -93,7 +112,6 @@ def create(
     notification_type: str,
     with_commit: bool = False,
 ) -> Notification:
-
     notification: Notification = models.Notification(
         message=message,
         important=False,

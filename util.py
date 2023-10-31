@@ -1,5 +1,15 @@
 import os
-from typing import Tuple
+from typing import Tuple, Any, Union, List, Dict
+import collections
+from re import sub, match, compile
+
+from uuid import UUID
+from datetime import datetime
+
+from sqlalchemy.engine.row import Row
+from .models import Base
+
+CAMEL_CASE_PATTERN = compile(r"^([a-z]+[A-Z]?)*$")
 
 
 def collect_engine_variables() -> Tuple[int, int, bool, bool]:
@@ -72,3 +82,71 @@ def collect_engine_variables() -> Tuple[int, int, bool, bool]:
             )
 
     return pool_size, pool_max_overflow, pool_recycle, pool_use_lifo, pool_pre_ping
+
+
+# Row object is with a common SELECT query
+# otherwise it's e.g. a Class Object (instance of Base)
+def sql_alchemy_to_dict(sql_alchemy_object: Any, for_frontend: bool = False):
+    result = __sql_alchemy_to_dict(sql_alchemy_object)
+    if for_frontend:
+        return to_frontend_obj(result)
+    return result
+
+
+def __sql_alchemy_to_dict(sql_alchemy_object: Any):
+    if isinstance(sql_alchemy_object, list):
+        # list is for all() queries
+        return [__sql_alchemy_to_dict(x) for x in sql_alchemy_object]
+
+    elif isinstance(sql_alchemy_object, Row):
+        # basic SELECT .. FROM query)
+        # _mapping is a RowMapping object that is not serializable but dict like
+        return dict(sql_alchemy_object._mapping)
+    elif isinstance(sql_alchemy_object, Base):
+        return {
+            c.name: getattr(sql_alchemy_object, c.name)
+            for c in sql_alchemy_object.__table__.columns
+        }
+    else:
+        return sql_alchemy_object
+
+
+def to_frontend_obj(value: Union[List, Dict]):
+    if isinstance(value, dict):
+        return {__to_camel_case(k): to_frontend_obj(v) for k, v in value.items()}
+    elif is_list_like(value):
+        return [to_frontend_obj(x) for x in value]
+    else:
+        return __to_json_serializable(value)
+
+
+def __to_json_serializable(x: Any):
+    if isinstance(x, datetime):
+        return x.isoformat()
+    elif isinstance(x, UUID):
+        return str(x)
+    else:
+        return x
+
+
+def __to_camel_case(name: str):
+    if is_camel_case(name):
+        return name
+    name = sub(r"(_|-)+", " ", name).title().replace(" ", "")
+    return "".join([name[0].lower(), name[1:]])
+
+
+def is_list_like(value: Any) -> bool:
+    return (
+        isinstance(value, collections.Iterable)
+        and not isinstance(value, str)
+        and not isinstance(value, dict)
+        and not isinstance(value, Row)
+    )
+
+
+def is_camel_case(text: str) -> bool:
+    if match(CAMEL_CASE_PATTERN, text):
+        return True
+    else:
+        return False

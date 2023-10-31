@@ -191,6 +191,28 @@ def get_exclusion_record_ids_for_task(task_id: str) -> List[str]:
     return exclusion_ids
 
 
+def get_all_states(project_id: str, source_id: Optional[str] = None) -> Dict[str, str]:
+    source_add = ""
+    if source_id:
+        source_add = f" AND _is.id = '{source_id}'"
+    query = f"""
+    SELECT 
+        _is.id::TEXT,
+        isp.state state
+    FROM information_source _is
+    LEFT JOIN LATERAL(
+        SELECT isp.id,isp.state,isp.created_at
+        FROM information_source_payload isp
+        WHERE _is.id = isp.source_id 
+        AND _is.project_id = isp.project_id
+        ORDER BY isp.iteration DESC
+        LIMIT 1
+    )isp ON TRUE
+    WHERE _is.project_id = '{project_id}' {source_add} """
+
+    return {r[0]: r[1] for r in general.execute_all(query)}
+
+
 def get_overview_data(
     project_id: str, is_model_callback: bool = False
 ) -> List[Dict[str, Any]]:
@@ -486,8 +508,8 @@ def update_is_selected_for_project(
     update_value: bool,
     with_commit: bool = False,
     is_model_callback: bool = False,
+    only_with_state: Optional[enums.PayloadState] = None,
 ) -> None:
-
     if is_model_callback:
         type_selection = " = 'MODEL_CALLBACK'"
     else:
@@ -497,11 +519,20 @@ def update_is_selected_for_project(
     else:
         # to ensure nothing wrong gets set
         str_value = "FALSE"
+
+    id_selection = ""
+    if only_with_state:
+        states = get_all_states(project_id)
+        ids = [key for key in states if states[key]==only_with_state.value]
+        if len(ids) == 0:
+            return
+        id_selection = "AND id IN ('" + "', '".join(ids) + "')"
     query = f"""
     UPDATE information_source
     SET is_selected = {str_value}
     WHERE project_id = '{project_id}'
     AND type {type_selection}
+    {id_selection}
     """
     general.execute(query)
     general.flush_or_commit(with_commit)

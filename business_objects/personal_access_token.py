@@ -1,39 +1,54 @@
 import datetime
-from typing import List
+from typing import List, Optional, Union
 from ..session import session
 from submodules.model.business_objects import general
-from submodules.model.models import PersonalAccessToken
-from datetime import date
+from submodules.model.models import PersonalAccessToken, CognitionPersonalAccessToken
+
+
+def __get_token_type(
+    in_cognition_scope: bool,
+) -> Union[PersonalAccessToken, CognitionPersonalAccessToken]:
+    if in_cognition_scope:
+        return CognitionPersonalAccessToken
+    else:
+        return PersonalAccessToken
 
 
 def get_by_user_and_name(
-    project_id: str, user_id: str, name: str
-) -> PersonalAccessToken:
+    project_id: str,
+    created_by: str,
+    name: str,
+    in_cognition_scope: Optional[bool] = False,
+) -> Union[PersonalAccessToken, CognitionPersonalAccessToken]:
+    token_table = __get_token_type(in_cognition_scope)
     return (
-        session.query(PersonalAccessToken)
+        session.query(token_table)
         .filter(
-            PersonalAccessToken.project_id == project_id,
-            PersonalAccessToken.user_id == user_id,
-            PersonalAccessToken.name == name,
+            token_table.project_id == project_id,
+            token_table.created_by == created_by,
+            token_table.name == name,
         )
         .first()
     )
 
 
-def get_all(project_id: str) -> List[PersonalAccessToken]:
-    return (
-        session.query(PersonalAccessToken)
-        .filter(PersonalAccessToken.project_id == project_id)
-        .all()
-    )
+def get_all(
+    project_id: str, in_cognition_scope: Optional[bool] = False
+) -> List[Union[PersonalAccessToken, CognitionPersonalAccessToken]]:
+    token_table = __get_token_type(in_cognition_scope)
+
+    return session.query(token_table).filter(token_table.project_id == project_id).all()
 
 
-def get_by_token(project_id: str, token: str) -> PersonalAccessToken:
+def get_by_token(
+    project_id: str, token: str, in_cognition_scope: Optional[bool] = False
+) -> Union[PersonalAccessToken, CognitionPersonalAccessToken]:
+    token_table = __get_token_type(in_cognition_scope)
     return (
-        session.query(PersonalAccessToken)
+        session.query(token_table)
         .filter(
-            PersonalAccessToken.project_id == project_id,
-            PersonalAccessToken.token == token,
+            token_table.project_id == project_id,
+            token_table.token == token,
         )
         .first()
     )
@@ -41,16 +56,18 @@ def get_by_token(project_id: str, token: str) -> PersonalAccessToken:
 
 def create(
     project_id: str,
-    user_id: str,
+    created_by: str,
     name: str,
     scope: str,
     expires_at: datetime,
     token: str,
+    in_cognition_scope: Optional[bool] = False,
     with_commit: bool = False,
 ) -> None:
-    personal_access_token = PersonalAccessToken(
+    token_table = __get_token_type(in_cognition_scope)
+    personal_access_token = token_table(
         project_id=project_id,
-        user_id=user_id,
+        created_by=created_by,
         name=name,
         scope=scope,
         token=token,
@@ -62,21 +79,29 @@ def create(
 def delete(
     project_id: str,
     token_id: str,
+    in_cognition_scope: Optional[bool] = False,
     with_commit: bool = False,
 ) -> None:
-    session.query(PersonalAccessToken).filter(
-        PersonalAccessToken.project_id == project_id,
-        PersonalAccessToken.id == token_id,
+    token_table = __get_token_type(in_cognition_scope)
+    session.query(token_table).filter(
+        token_table.project_id == project_id,
+        token_table.id == token_id,
     ).delete()
     general.flush_or_commit(with_commit)
 
 
-def update_last_used(project_id: str, token_id: str, with_commit: bool = False) -> None:
+def update_last_used(
+    project_id: str,
+    token_id: str,
+    with_commit: bool = False,
+    in_cognition_scope: Optional[bool] = False,
+) -> None:
+    token_table = __get_token_type(in_cognition_scope)
     token_item = (
-        session.query(PersonalAccessToken)
+        session.query(token_table)
         .filter(
-            PersonalAccessToken.project_id == project_id,
-            PersonalAccessToken.id == token_id,
+            token_table.project_id == project_id,
+            token_table.id == token_id,
         )
         .first()
     )
