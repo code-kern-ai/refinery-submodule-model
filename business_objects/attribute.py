@@ -18,6 +18,18 @@ def get(project_id: str, attribute_id: str) -> Attribute:
         .first()
     )
 
+def get_running_id_name(project_id:str) -> str:
+    result = (
+        session.query(Attribute)
+        .filter(Attribute.project_id == project_id,
+                Attribute.name.like("running_id%"),
+                Attribute.data_type == enums.DataTypes.INTEGER.value)
+        .order_by(Attribute.relative_position.asc())
+        .first()
+    )
+    if result:
+        return result.name
+    return None
 
 def get_data_type(project_id: str, name: str) -> str:
     data_type: Any = (
