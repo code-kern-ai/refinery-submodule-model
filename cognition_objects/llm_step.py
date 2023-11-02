@@ -43,10 +43,12 @@ def create(
 ) -> CognitionLLMStep:
     llm_identifier = "Open AI"
     template_prompt = "You are an AI assistant."
-    question_prompt = """User question: {{ record.question }}
-<br>
-<br>
-Add some contextual data here if you want to.
+    question_prompt = """User question: {{ record.question }} <br><br>
+Please use the following references to answer the question:<br>
+{{#retrieval_results}}
+    <br>{{reference}}<br>
+   ----------
+{{/retrieval_results}}
 """
     llm_config = {
         "model": "gpt-3.5-turbo",
