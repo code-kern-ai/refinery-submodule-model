@@ -1,9 +1,11 @@
 from typing import List, Optional, Tuple
 from datetime import datetime
 
+from submodules.model import enums
+
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionMarkdownFile
+from ..models import CognitionMarkdownFile, CognitionMarkdownLLMLogs
 
 
 def get(md_file_id: str) -> CognitionMarkdownFile:
@@ -75,6 +77,7 @@ def create(
         content=content,
         error=error,
         category_origin=category_origin,
+        state=enums.CognitionMarkdownFileState.CREATED.value,
     )
     general.add(markdown_file, with_commit)
 
@@ -85,6 +88,9 @@ def update(
     markdown_file_id: str,
     content: Optional[str] = None,
     is_reviewed: Optional[bool] = None,
+    state: Optional[str] = None,
+    finished_at: Optional[datetime] = None,
+    error: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = get(markdown_file_id)
@@ -92,11 +98,36 @@ def update(
         markdown_file.content = content
     if is_reviewed is not None:
         markdown_file.is_reviewed = is_reviewed
+    if state is not None:
+        markdown_file.state = state
+    if finished_at is not None:
+        markdown_file.finished_at = finished_at
+    if error is not None:
+        markdown_file.error = error
 
     general.flush_or_commit(with_commit)
 
     return markdown_file
 
+
+def create_md_llm_log(
+        markdown_file_id: str,
+        input_text: str,
+        output_text: Optional[str] = None,
+        error: Optional[str] = None,
+        created_at: Optional[datetime] = None,
+        finished_at: Optional[datetime] = None,
+        with_commit: bool = True,
+) -> None:
+    md_llm_log = CognitionMarkdownLLMLogs(
+        markdown_file_id=markdown_file_id,
+        input=input_text,
+        output=output_text,
+        error=error,
+        created_at=created_at,
+        finished_at=finished_at,
+    )
+    general.add(md_llm_log, with_commit)
 
 def delete(md_file_id: str, with_commit: bool = True) -> None:
     session.query(CognitionMarkdownFile).filter(

@@ -1348,11 +1348,29 @@ class CognitionMarkdownFile(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+    finished_at = Column(DateTime)
     file_name = Column(String)
     content = Column(String)
     category_origin = Column(String)
     error = Column(String)
+    state = Column(String)
     is_reviewed = Column(Boolean, default=False)
+
+
+class CognitionMarkdownLLMLogs(Base):
+    __tablename__ = Tablenames.MARKDOWN_LLM_LOGS.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    markdown_file_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MARKDOWN_FILE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    finished_at = Column(DateTime)
+    input = Column(String)
+    output = Column(String)
+    error = Column(String)
 
 
 class CognitionRefinerySynchronizationTask(Base):
