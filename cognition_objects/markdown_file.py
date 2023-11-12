@@ -18,21 +18,21 @@ def get(md_file_id: str) -> CognitionMarkdownFile:
 def get_all_for_dataset_id(dataset_id: str) -> List[CognitionMarkdownFile]:
     return (
         session.query(CognitionMarkdownFile)
-        # .filter(CognitionMarkdownFile.dataset_id == dataset_id)
+        .filter(CognitionMarkdownFile.dataset_id == dataset_id)
         .order_by(CognitionMarkdownFile.created_at.asc())
         .all()
     )
 
-def get_all_paginated_for_category_origin(
+def get_all_paginated_for_dataset(
     org_id: str,
-    category_origin: str,
+    dataset_id: str,
     page: int,
     limit: int,
 ) -> Tuple[int, int, List[CognitionMarkdownFile]]:
     total_count = (
         session.query(CognitionMarkdownFile.id)
         .filter(CognitionMarkdownFile.organization_id == org_id)
-        .filter(CognitionMarkdownFile.category_origin == category_origin)
+        .filter(CognitionMarkdownFile.dataset_id == dataset_id)
         .count()
     )
 
@@ -43,7 +43,7 @@ def get_all_paginated_for_category_origin(
     query_results = (
         session.query(CognitionMarkdownFile)
         .filter(CognitionMarkdownFile.organization_id == org_id)
-        .filter(CognitionMarkdownFile.category_origin == category_origin)
+        .filter(CognitionMarkdownFile.dataset_id == dataset_id)
         .order_by(CognitionMarkdownFile.created_at.asc())
         .limit(limit)
         .offset((page - 1) * limit)
@@ -53,14 +53,14 @@ def get_all_paginated_for_category_origin(
     return total_count, num_pages, query_results
 
 
-def get_all_reviewed_for_category_origin(
+def get_all_reviewed_for_dataset(
     org_id: str,
-    category_origin: str,
+    dataset_id: str,
 ) -> List[CognitionMarkdownFile]:
     return (
         session.query(CognitionMarkdownFile)
         .filter(CognitionMarkdownFile.organization_id == org_id)
-        .filter(CognitionMarkdownFile.category_origin == category_origin)
+        .filter(CognitionMarkdownFile.dataset_id == dataset_id)
         .filter(CognitionMarkdownFile.is_reviewed == True)
         .order_by(CognitionMarkdownFile.created_at.asc())
         .all()

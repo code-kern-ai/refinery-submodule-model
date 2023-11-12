@@ -90,3 +90,9 @@ def delete(dataset_id: str, with_commit: bool = True) -> None:
         CognitionMarkdownDataset.id == dataset_id
     ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
+
+def delete_many(dataset_ids: List[str], with_commit: bool = True) -> None:
+    session.query(CognitionMarkdownDataset).filter(
+        CognitionMarkdownDataset.id.in_(dataset_ids)
+    ).delete(synchronize_session=False)
+    general.flush_or_commit(with_commit)
