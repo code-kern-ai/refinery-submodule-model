@@ -1350,6 +1350,7 @@ class CognitionMarkdownDataset(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
+    tokenizer = Column(String)
     category_origin = Column(String)
 
 

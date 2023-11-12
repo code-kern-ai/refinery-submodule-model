@@ -50,7 +50,8 @@ def create(
     category_origin: str,
     name: str,
     description: str,
-        with_commit: bool = True,
+    tokenizer: str,
+    with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionMarkdownDataset:
     new_dataset = CognitionMarkdownDataset(
@@ -59,6 +60,7 @@ def create(
         category_origin=category_origin,
         name=name,
         description=description,
+        tokenizer=tokenizer,
         created_at=created_at
     )
 
