@@ -25,6 +25,7 @@ def get_all_paginated_for_category_origin(
     total_count = (
         session.query(CognitionMarkdownFile.id)
         .filter(CognitionMarkdownFile.organization_id == org_id)
+        .filter(CognitionMarkdownFile.category_origin == category_origin)
         .count()
     )
 
