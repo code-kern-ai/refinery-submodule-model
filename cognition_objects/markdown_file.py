@@ -15,6 +15,13 @@ def get(md_file_id: str) -> CognitionMarkdownFile:
         .first()
     )
 
+def get_all_for_dataset_id(dataset_id: str) -> List[CognitionMarkdownFile]:
+    return (
+        session.query(CognitionMarkdownFile)
+        # .filter(CognitionMarkdownFile.dataset_id == dataset_id)
+        .order_by(CognitionMarkdownFile.created_at.asc())
+        .all()
+    )
 
 def get_all_paginated_for_category_origin(
     org_id: str,
@@ -59,6 +66,7 @@ def get_all_reviewed_for_category_origin(
         .all()
     )
 
+
 def get_all_logs_for_md_file_id(md_file_id: str) -> List[CognitionMarkdownLLMLogs]:
     return (
         session.query(CognitionMarkdownLLMLogs)
@@ -67,8 +75,10 @@ def get_all_logs_for_md_file_id(md_file_id: str) -> List[CognitionMarkdownLLMLog
         .all()
     )
 
+
 def create(
     org_id: str,
+    dataset_id: str,
     created_by: str,
     file_name: str,
     category_origin: str,
@@ -77,8 +87,10 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionMarkdownFile:
+    
     markdown_file: CognitionMarkdownFile = CognitionMarkdownFile(
         organization_id=org_id,
+        dataset_id=dataset_id,
         created_by=created_by,
         created_at=created_at,
         file_name=file_name,
