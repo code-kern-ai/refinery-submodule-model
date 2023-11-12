@@ -58,6 +58,13 @@ def get_all_reviewed_for_category_origin(
         .all()
     )
 
+def get_all_logs_for_md_file_id(md_file_id: str) -> List[CognitionMarkdownLLMLogs]:
+    return (
+        session.query(CognitionMarkdownLLMLogs)
+        .filter(CognitionMarkdownLLMLogs.markdown_file_id == md_file_id)
+        .order_by(CognitionMarkdownLLMLogs.created_at.asc())
+        .all()
+    )
 
 def create(
     org_id: str,
