@@ -32,6 +32,9 @@ def get_all_paginated_by_project_id(
         if total_count % limit > 0:
             num_pages += 1
 
+    if page == -1:
+        page = num_pages
+
     if page > 0:
         paginated_result = (
             session.query(CognitionConversation)
