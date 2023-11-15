@@ -518,6 +518,7 @@ class PipelineStepState(Enum):
 class MarkdownFileCategoryOrigin(Enum):
     PDF = "PDF"
     WEB = "WEB"
+    SPREADSHEET = "SPREADSHEET"
 
 
 class RefinerySynchronizationTaskState(Enum):
