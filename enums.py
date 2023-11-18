@@ -126,6 +126,8 @@ class Tablenames(Enum):
     REFINERY_SYNCHRONIZATION_TASK = "refinery_synchronization_task"
     PYTHON_STEP = "python_step"
     LLM_STEP = "llm_step"
+    MARKDOWN_LLM_LOGS = "markdown_llm_logs"
+    MARKDOWN_DATASET = "markdown_dataset"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -517,6 +519,7 @@ class PipelineStepState(Enum):
 class MarkdownFileCategoryOrigin(Enum):
     PDF = "PDF"
     WEB = "WEB"
+    SPREADSHEET = "SPREADSHEET"
 
 
 class RefinerySynchronizationTaskState(Enum):
@@ -536,3 +539,10 @@ class LLMProvider(Enum):
     OPENAI = "Open AI"
     OPEN_SOURCE = "Open-Source"
     AZURE = "Azure"
+
+class CognitionMarkdownFileState(Enum):
+    CREATED = "CREATED"
+    SPLITTING = "SPLITTING"
+    TRANSFORMING = "TRANSFORMING"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
