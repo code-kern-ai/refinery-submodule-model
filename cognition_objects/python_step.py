@@ -31,7 +31,7 @@ def create(
 ) -> CognitionPythonStep:
     source_code = """from typing import Dict, Any, Tuple
 
-def routing(record_dict: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+def python_step(record_dict: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     return record_dict, scope_dict
 """
     python_step: CognitionPythonStep = CognitionPythonStep(
