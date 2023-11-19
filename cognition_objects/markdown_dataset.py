@@ -5,7 +5,7 @@ from submodules.model import enums
 
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionMarkdownDataset
+from ..models import CognitionMarkdownDataset, Project
 
 def get(id: str) -> CognitionMarkdownDataset:
     return (
@@ -51,11 +51,13 @@ def create(
     name: str,
     description: str,
     tokenizer: str,
+    refinery_project_id: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionMarkdownDataset:
     new_dataset = CognitionMarkdownDataset(
         organization_id=org_id,
+        refinery_project_id=refinery_project_id,
         created_by=created_by,
         category_origin=category_origin,
         name=name,
@@ -94,6 +96,16 @@ def delete(dataset_id: str, with_commit: bool = True) -> None:
     general.flush_or_commit(with_commit)
 
 def delete_many(dataset_ids: List[str], with_commit: bool = True) -> None:
+
+    datasets = session.query(CognitionMarkdownDataset).filter(
+        CognitionMarkdownDataset.id.in_(dataset_ids)
+    ).all()
+
+    for dataset in datasets:
+        session.query(Project).filter(
+            Project.id == dataset.refinery_project_id
+        ).delete(synchronize_session=False)
+
     session.query(CognitionMarkdownDataset).filter(
         CognitionMarkdownDataset.id.in_(dataset_ids)
     ).delete(synchronize_session=False)
