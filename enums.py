@@ -446,6 +446,7 @@ class TaskType(Enum):
     INFORMATION_SOURCE = "information_source"
     UPLOAD_TASK = "upload"
     WEAK_SUPERVISION = "weak_supervision"
+    PARSE_MARKDOWN_FILE = "PARSE_MARKDOWN_FILE"
     TASK_QUEUE = "task_queue"
     TASK_QUEUE_ACTION = "task_queue_action"
 
