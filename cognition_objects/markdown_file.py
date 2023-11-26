@@ -15,13 +15,21 @@ def get(md_file_id: str) -> CognitionMarkdownFile:
         .first()
     )
 
-def get_all_for_dataset_id(dataset_id: str) -> List[CognitionMarkdownFile]:
-    return (
+def get_all_for_dataset_id(
+        dataset_id: str,
+        only_reviewed: bool,                       
+    ) -> List[CognitionMarkdownFile]:
+
+    query = (
         session.query(CognitionMarkdownFile)
         .filter(CognitionMarkdownFile.dataset_id == dataset_id)
-        .order_by(CognitionMarkdownFile.created_at.asc())
-        .all()
     )
+
+    if only_reviewed:
+        query = query.filter(CognitionMarkdownFile.is_reviewed == True)
+
+    query = query.order_by(CognitionMarkdownFile.created_at.asc())
+    return query.all()
 
 def get_all_paginated_for_dataset(
     org_id: str,
@@ -53,18 +61,6 @@ def get_all_paginated_for_dataset(
     return total_count, num_pages, query_results
 
 
-def get_all_reviewed_for_dataset(
-    org_id: str,
-    dataset_id: str,
-) -> List[CognitionMarkdownFile]:
-    return (
-        session.query(CognitionMarkdownFile)
-        .filter(CognitionMarkdownFile.organization_id == org_id)
-        .filter(CognitionMarkdownFile.dataset_id == dataset_id)
-        .filter(CognitionMarkdownFile.is_reviewed == True)
-        .order_by(CognitionMarkdownFile.created_at.asc())
-        .all()
-    )
 
 
 def get_all_logs_for_md_file_id(md_file_id: str) -> List[CognitionMarkdownLLMLogs]:
@@ -97,7 +93,7 @@ def create(
         content=content,
         error=error,
         category_origin=category_origin,
-        state=enums.CognitionMarkdownFileState.CREATED.value,
+        state=enums.CognitionMarkdownFileState.QUEUE.value,
     )
     general.add(markdown_file, with_commit)
 
@@ -109,6 +105,7 @@ def update(
     content: Optional[str] = None,
     is_reviewed: Optional[bool] = None,
     state: Optional[str] = None,
+    started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
     error: Optional[str] = None,
     with_commit: bool = True,
@@ -120,6 +117,8 @@ def update(
         markdown_file.is_reviewed = is_reviewed
     if state is not None:
         markdown_file.state = state
+    if started_at is not None:
+        markdown_file.started_at = started_at
     if finished_at is not None:
         markdown_file.finished_at = finished_at
     if error is not None:

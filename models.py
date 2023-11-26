@@ -1379,6 +1379,7 @@ class CognitionMarkdownFile(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+    started_at = Column(DateTime)
     finished_at = Column(DateTime)
     file_name = Column(String)
     content = Column(String)
