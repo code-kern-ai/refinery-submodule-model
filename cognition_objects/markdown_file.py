@@ -17,6 +17,7 @@ def get(md_file_id: str) -> CognitionMarkdownFile:
 
 def get_all_for_dataset_id(
         dataset_id: str,
+        only_finished: bool,
         only_reviewed: bool,                       
     ) -> List[CognitionMarkdownFile]:
 
@@ -24,6 +25,9 @@ def get_all_for_dataset_id(
         session.query(CognitionMarkdownFile)
         .filter(CognitionMarkdownFile.dataset_id == dataset_id)
     )
+
+    if only_finished:
+        query = query.filter(CognitionMarkdownFile.state == enums.CognitionMarkdownFileState.FINISHED.value)
 
     if only_reviewed:
         query = query.filter(CognitionMarkdownFile.is_reviewed == True)
@@ -131,6 +135,7 @@ def update(
 
 def create_md_llm_log(
         markdown_file_id: str,
+        model_used: str,
         input_text: str,
         output_text: Optional[str] = None,
         error: Optional[str] = None,
@@ -145,6 +150,7 @@ def create_md_llm_log(
         error=error,
         created_at=created_at,
         finished_at=finished_at,
+        model_used=model_used,
     )
     general.add(md_llm_log, with_commit)
 

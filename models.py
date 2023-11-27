@@ -1400,6 +1400,7 @@ class CognitionMarkdownLLMLogs(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
+    model_used = Column(String)
     input = Column(String)
     output = Column(String)
     error = Column(String)
