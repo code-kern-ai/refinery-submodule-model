@@ -6,10 +6,13 @@ from ..models import CognitionRefinerySynchronizationTask
 from .. import enums
 
 
-def get(task_id: str) -> CognitionRefinerySynchronizationTask:
+def get(project_id: str, task_id: str) -> CognitionRefinerySynchronizationTask:
     return (
         session.query(CognitionRefinerySynchronizationTask)
-        .filter(CognitionRefinerySynchronizationTask.id == task_id)
+        .filter(
+            CognitionRefinerySynchronizationTask.cognition_project_id == project_id,
+            CognitionRefinerySynchronizationTask.id == task_id,
+        )
         .first()
     )
 
@@ -54,6 +57,7 @@ def create(
 
 
 def update(
+    project_id: str,
     task_id: str,
     state: Optional[str] = None,
     finished_at: Optional[datetime] = None,
@@ -61,7 +65,7 @@ def update(
     num_records_created: Optional[int] = None,
     with_commit: bool = True,
 ) -> CognitionRefinerySynchronizationTask:
-    task = get(task_id=task_id)
+    task = get(project_id=project_id, task_id=task_id)
 
     if state is not None:
         task.state = state
