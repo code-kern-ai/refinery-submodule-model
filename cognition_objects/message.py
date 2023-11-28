@@ -5,48 +5,67 @@ from ..session import session
 from ..models import CognitionMessage
 
 
-def get_all_by_conversation_id(conversation_id: str) -> List[CognitionMessage]:
+def get_all_by_conversation_id(
+    project_id: str, conversation_id: str
+) -> List[CognitionMessage]:
     return (
         session.query(CognitionMessage)
-        .filter(CognitionMessage.conversation_id == conversation_id)
+        .filter(
+            CognitionMessage.project_id == project_id,
+            CognitionMessage.conversation_id == conversation_id,
+        )
         .order_by(CognitionMessage.created_at.asc())
         .all()
     )
 
 
-def get_last_by_conversation_id(conversation_id: str) -> CognitionMessage:
+def get_last_by_conversation_id(
+    project_id: str, conversation_id: str
+) -> CognitionMessage:
     return (
         session.query(CognitionMessage)
-        .filter(CognitionMessage.conversation_id == conversation_id)
+        .filter(
+            CognitionMessage.project_id == project_id,
+            CognitionMessage.conversation_id == conversation_id,
+        )
         .order_by(CognitionMessage.created_at.desc())
         .first()
     )
 
 
 def get_last_n_by_conversation_id(
-    conversation_id: str, n: int
+    project_id: str, conversation_id: str, n: int
 ) -> List[CognitionMessage]:
     return (
         session.query(CognitionMessage)
-        .filter(CognitionMessage.conversation_id == conversation_id)
+        .filter(
+            CognitionMessage.project_id == project_id,
+            CognitionMessage.conversation_id == conversation_id,
+        )
         .order_by(CognitionMessage.created_at.desc())
         .limit(n)
         .all()
     )
 
 
-def get(message_id: str) -> CognitionMessage:
+def get(project_id: str, message_id: str) -> CognitionMessage:
     return (
         session.query(CognitionMessage)
-        .filter(CognitionMessage.id == message_id)
+        .filter(
+            CognitionMessage.project_id == project_id,
+            CognitionMessage.id == message_id,
+        )
         .first()
     )
 
 
-def get_by_strategy_id(strategy_id: str) -> CognitionMessage:
+def get_by_strategy_id(project_id: str, strategy_id: str) -> CognitionMessage:
     return (
         session.query(CognitionMessage)
-        .filter(CognitionMessage.strategy_id == strategy_id)
+        .filter(
+            CognitionMessage.project_id == project_id,
+            CognitionMessage.strategy_id == strategy_id,
+        )
         .first()
     )
 
@@ -73,8 +92,9 @@ def create(
     return message
 
 
-def delete(message_id: str, with_commit: bool = True) -> None:
+def delete(project_id: str, message_id: str, with_commit: bool = True) -> None:
     session.query(CognitionMessage).filter(
+        CognitionMessage.project_id == project_id,
         CognitionMessage.id == message_id,
     ).delete()
     general.flush_or_commit(with_commit)

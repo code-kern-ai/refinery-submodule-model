@@ -109,7 +109,7 @@ def update_message(
     scope_dict_diff_previous_conversation: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
-    message_entity = message.get(message_id)
+    message_entity = message.get(project_id, message_id)
     if strategy_id is not None:
         message_entity.strategy_id = strategy_id
     if answer is not None:
