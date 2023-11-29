@@ -67,7 +67,9 @@ def create(
     with_commit: bool = False,
 ) -> None:
     token_table = __get_token_type(in_cognition_scope)
-    personal_access_token = token_table(
+    personal_access_token: Union[
+        PersonalAccessToken, CognitionPersonalAccessToken
+    ] = token_table(
         project_id=project_id,
         name=name,
         scope=scope,
@@ -79,6 +81,7 @@ def create(
     else:
         personal_access_token.user_id = created_by
     general.add(personal_access_token, with_commit)
+    return personal_access_token
 
 
 def delete(
