@@ -1,5 +1,6 @@
 import os
 from typing import Tuple, Any, Union, List, Dict
+from pydantic import BaseModel
 import collections
 from re import sub, match, compile
 
@@ -142,6 +143,7 @@ def is_list_like(value: Any) -> bool:
         and not isinstance(value, str)
         and not isinstance(value, dict)
         and not isinstance(value, Row)
+        and not isinstance(value, BaseModel)
     )
 
 
