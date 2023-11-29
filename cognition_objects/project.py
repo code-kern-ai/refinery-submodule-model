@@ -47,6 +47,7 @@ def create(
     refinery_references_project_id: str,
     refinery_queries_project_id: str,
     refinery_relevances_project_id: str,
+    interface_type: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionProject:
@@ -74,6 +75,7 @@ def routing(
         refinery_question_project_id=refinery_queries_project_id,
         refinery_relevance_project_id=refinery_relevances_project_id,
         operator_routing_source_code=operator_routing_source_code,
+        interface_type=interface_type,
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
     )
     general.add(project, with_commit)

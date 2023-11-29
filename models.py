@@ -1045,6 +1045,7 @@ class CognitionProject(Base):
     color = Column(String)
     operator_routing_source_code = Column(String)
     wizard_running = Column(Boolean, default=False)
+    interface_type = Column(String)
     refinery_synchronization_interval_option = Column(String)
 
 
