@@ -5,10 +5,13 @@ from ..session import session
 from ..models import CognitionLLMStep
 
 
-def get(llm_step_id: str) -> CognitionLLMStep:
+def get(project_id: str, llm_step_id: str) -> CognitionLLMStep:
     return (
         session.query(CognitionLLMStep)
-        .filter(CognitionLLMStep.id == llm_step_id)
+        .filter(
+            CognitionLLMStep.project_id == project_id,
+            CognitionLLMStep.id == llm_step_id,
+        )
         .first()
     )
 
@@ -26,10 +29,15 @@ def get_first_from_project(project_id: str) -> CognitionLLMStep:
     return general.execute_first(query)
 
 
-def get_llm_strategy_step_data(strategy_step_id: str) -> CognitionLLMStep:
+def get_llm_strategy_step_data(
+    project_id: str, strategy_step_id: str
+) -> CognitionLLMStep:
     return (
         session.query(CognitionLLMStep)
-        .filter(CognitionLLMStep.strategy_step_id == strategy_step_id)
+        .filter(
+            CognitionLLMStep.project_id == project_id,
+            CognitionLLMStep.strategy_step_id == strategy_step_id,
+        )
         .first()
     )
 
@@ -76,6 +84,7 @@ Please use the following references to answer the question:<br>
 
 
 def update(
+    project_id: str,
     llm_step_id: str,
     llm_identifier: Optional[str] = None,
     llm_config: Optional[Dict[str, Any]] = None,
@@ -83,7 +92,7 @@ def update(
     question_prompt: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionLLMStep:
-    python_step: CognitionLLMStep = get(llm_step_id)
+    python_step: CognitionLLMStep = get(project_id, llm_step_id)
     if llm_identifier is not None:
         python_step.llm_identifier = llm_identifier
     if llm_config is not None:

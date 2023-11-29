@@ -6,26 +6,37 @@ from ..session import session
 from ..models import CognitionRetriever, CognitionRetrieverPart
 
 
-def get(retriever_id: str) -> CognitionRetriever:
+def get(project_id: str, retriever_id: str) -> CognitionRetriever:
     return (
         session.query(CognitionRetriever)
-        .filter(CognitionRetriever.id == retriever_id)
+        .filter(
+            CognitionRetriever.project_id == project_id,
+            CognitionRetriever.id == retriever_id,
+        )
         .first()
     )
 
 
-def get_part(retriever_part_id: str) -> CognitionRetrieverPart:
+def get_part(project_id: str, retriever_part_id: str) -> CognitionRetrieverPart:
     return (
         session.query(CognitionRetrieverPart)
-        .filter(CognitionRetrieverPart.id == retriever_part_id)
+        .filter(
+            CognitionRetrieverPart.project_id == project_id,
+            CognitionRetrieverPart.id == retriever_part_id,
+        )
         .first()
     )
 
 
-def get_all_parts_by_retriever_id(retriever_id: str) -> List[CognitionRetrieverPart]:
+def get_all_parts_by_retriever_id(
+    project_id: str, retriever_id: str
+) -> List[CognitionRetrieverPart]:
     return (
         session.query(CognitionRetrieverPart)
-        .filter(CognitionRetrieverPart.retriever_id == retriever_id)
+        .filter(
+            CognitionRetrieverPart.project_id == project_id,
+            CognitionRetrieverPart.retriever_id == retriever_id,
+        )
         .order_by(CognitionRetrieverPart.created_at)
         .all()
     )
@@ -67,6 +78,7 @@ def create(
 
 
 def create_part(
+    project_id: str,
     retriever_id: str,
     embedding_name: str,
     number_records: int,
@@ -76,6 +88,7 @@ def create_part(
     created_at: Optional[datetime] = None,
 ) -> CognitionRetrieverPart:
     retriever_part: CognitionRetrieverPart = CognitionRetrieverPart(
+        project_id=project_id,
         retriever_id=retriever_id,
         embedding_name=embedding_name,
         number_records=number_records,
@@ -89,12 +102,13 @@ def create_part(
 
 
 def update(
+    project_id: str,
     retriever_id: str,
     meta_data: Optional[Dict[str, Any]] = None,
     search_input_field: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionRetriever:
-    retriever: CognitionRetriever = get(retriever_id)
+    retriever: CognitionRetriever = get(project_id, retriever_id)
     if meta_data is not None:
         retriever.meta_data = meta_data
     if search_input_field is not None:
@@ -104,12 +118,13 @@ def update(
 
 
 def update_part(
+    project_id: str,
     retriever_part_id: str,
     number_records: Optional[int] = None,
     enabled: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionRetrieverPart:
-    retriever_part: CognitionRetrieverPart = get_part(retriever_part_id)
+    retriever_part: CognitionRetrieverPart = get_part(project_id, retriever_part_id)
     if number_records:
         retriever_part.number_records = number_records
     if enabled is not None:
@@ -118,15 +133,19 @@ def update_part(
     return retriever_part
 
 
-def delete(retriever_id: str, with_commit: bool = True) -> None:
+def delete(project_id: str, retriever_id: str, with_commit: bool = True) -> None:
     session.query(CognitionRetriever).filter(
+        CognitionRetriever.project_id == project_id,
         CognitionRetriever.id == retriever_id,
     ).delete()
     general.flush_or_commit(with_commit)
 
 
-def delete_part(retriever_part_id: str, with_commit: bool = True) -> None:
+def delete_part(
+    project_id: str, retriever_part_id: str, with_commit: bool = True
+) -> None:
     session.query(CognitionRetrieverPart).filter(
+        CognitionRetrieverPart.project_id == project_id,
         CognitionRetrieverPart.id == retriever_part_id,
     ).delete()
     general.flush_or_commit(with_commit)

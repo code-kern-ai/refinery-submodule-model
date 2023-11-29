@@ -8,10 +8,13 @@ from ..session import session
 from ..models import CognitionConversation
 
 
-def get(conversation_id: str) -> CognitionConversation:
+def get(project_id: str, conversation_id: str) -> CognitionConversation:
     return (
         session.query(CognitionConversation)
-        .filter(CognitionConversation.id == conversation_id)
+        .filter(
+            CognitionConversation.project_id == project_id,
+            CognitionConversation.id == conversation_id,
+        )
         .first()
     )
 
@@ -66,11 +69,12 @@ def create(
 
 
 def add_message(
+    project_id: str,
     conversation_id: str,
     question: str,
     with_commit: bool = True,
 ) -> CognitionConversation:
-    conversation_entity: CognitionConversation = get(conversation_id)
+    conversation_entity: CognitionConversation = get(project_id, conversation_id)
 
     message.create(
         conversation_id=conversation_id,
@@ -84,11 +88,12 @@ def add_message(
 
 
 def update(
+    project_id: str,
     conversation_id: str,
     scope_dict: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
-    conversation_entity = get(conversation_id)
+    conversation_entity = get(project_id, conversation_id)
     if scope_dict is not None:
         conversation_entity.scope_dict = scope_dict
     general.flush_or_commit(with_commit)
@@ -96,6 +101,7 @@ def update(
 
 
 def update_message(
+    project_id: str,
     conversation_id: str,
     message_id: str,
     answer: Optional[str] = None,
@@ -103,7 +109,7 @@ def update_message(
     scope_dict_diff_previous_conversation: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
-    message_entity = message.get(message_id)
+    message_entity = message.get(project_id, message_id)
     if strategy_id is not None:
         message_entity.strategy_id = strategy_id
     if answer is not None:
@@ -113,19 +119,23 @@ def update_message(
             scope_dict_diff_previous_conversation
         )
     general.flush_or_commit(with_commit)
-    conversation_entity = get(conversation_id)
+    conversation_entity = get(project_id, conversation_id)
     return conversation_entity
 
 
-def delete(conversation_id: str, with_commit: bool = True) -> None:
+def delete(project_id: str, conversation_id: str, with_commit: bool = True) -> None:
     session.query(CognitionConversation).filter(
+        CognitionConversation.project_id == project_id,
         CognitionConversation.id == conversation_id,
     ).delete()
     general.flush_or_commit(with_commit)
 
 
-def delete_many(conversation_ids: List[str], with_commit: bool = True) -> None:
+def delete_many(
+    project_id: str, conversation_ids: List[str], with_commit: bool = True
+) -> None:
     session.query(CognitionConversation).filter(
+        CognitionConversation.project_id == project_id,
         CognitionConversation.id.in_(conversation_ids),
     ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
