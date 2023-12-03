@@ -556,3 +556,10 @@ class CognitionMarkdownFileState(Enum):
     TRANSFORMING = "TRANSFORMING"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+
+
+class EmitType(Enum):
+    ANSWER = "ANSWER"
+    RETRIEVAL_RESULTS = "RETRIEVAL_RESULTS"
+    FOLLOW_UPS = "FOLLOW_UPS"
+    SELECTION = "SELECTION"
