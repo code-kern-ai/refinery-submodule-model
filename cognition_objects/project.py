@@ -88,9 +88,11 @@ def update(
     description: Optional[str] = None,
     operator_routing_source_code: Optional[str] = None,
     refinery_synchronization_interval_option: Optional[str] = None,
+    enable_query_enrichment: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
+    print("enable_query_enrichment", enable_query_enrichment, flush=True)
     if name is not None:
         project.name = name
     if description is not None:
@@ -101,6 +103,8 @@ def update(
         project.refinery_synchronization_interval_option = (
             refinery_synchronization_interval_option
         )
+    if enable_query_enrichment is not None:
+        project.enable_query_enrichment = enable_query_enrichment
     general.flush_or_commit(with_commit)
     return project
 

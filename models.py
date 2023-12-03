@@ -1046,6 +1046,7 @@ class CognitionProject(Base):
     operator_routing_source_code = Column(String)
     wizard_running = Column(Boolean, default=False)
     interface_type = Column(String)
+    enable_query_enrichment = Column(Boolean, default=True)
     refinery_synchronization_interval_option = Column(String)
 
 
@@ -1094,6 +1095,7 @@ class CognitionStrategyStep(Base):
     strategy_step_type = Column(String)
     strategy_step_position = Column(Integer)
     progress_text = Column(String)
+    enable_emissions = Column(Boolean, default=True)
 
 
 class CognitionConversation(Base):
