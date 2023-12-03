@@ -39,6 +39,7 @@ def create(
     description: str,
     strategy_step_type: str,
     strategy_step_position: int,
+    progress_text: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionStrategyStep:
@@ -49,6 +50,7 @@ def create(
         created_at=created_at,
         name=name,
         description=description,
+        progress_text=progress_text,
         strategy_step_type=strategy_step_type,
         strategy_step_position=strategy_step_position,
     )

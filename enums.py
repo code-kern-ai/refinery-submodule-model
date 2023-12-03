@@ -489,14 +489,24 @@ class StrategyStepType(Enum):
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
+    
+    def get_progress_text(self):
+        return STEP_PROGRESS_TEXTS.get(self, "No progress text available")
 
 
 STEP_DESCRIPTIONS = {
     StrategyStepType.RETRIEVAL: "Fetch facts from a DB",
     StrategyStepType.RELEVANCE: "Classify retrieved facts",
-    StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Custom python function",
     StrategyStepType.LLM: "Run a LLM",
+}
+
+STEP_PROGRESS_TEXTS = {
+    StrategyStepType.RETRIEVAL: "Retrieving facts",
+    StrategyStepType.RELEVANCE: "Classifying facts",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.PYTHON: "Running custom python function",
+    StrategyStepType.LLM: "Running LLM",
 }
 
 

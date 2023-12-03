@@ -1093,6 +1093,7 @@ class CognitionStrategyStep(Base):
     description = Column(String)
     strategy_step_type = Column(String)
     strategy_step_position = Column(Integer)
+    progress_text = Column(String)
 
 
 class CognitionConversation(Base):
