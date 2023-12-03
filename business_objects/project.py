@@ -4,7 +4,7 @@ from sqlalchemy import cast, Integer
 from sqlalchemy.sql.functions import coalesce
 
 
-from . import general
+from . import general, attribute
 
 from .. import enums
 from ..session import session
@@ -53,9 +53,14 @@ def get_blank_tokenizer_from_project(project_id: str) -> str:
 
 
 def get_max_running_id(project_id: str) -> int:
+
+    running_id_like_name = attribute.get_running_id_name(project_id)
+    if not running_id_like_name:
+        raise ValueError("Can't find running_id column")
+
     max_running_id = (
         session.query(
-            func.max(coalesce(cast(Record.data.op("->>")("running_id"), Integer), -1))
+            func.max(coalesce(cast(Record.data.op("->>")(running_id_like_name), Integer), -1))
         )
         .filter(
             Record.project_id == project_id,

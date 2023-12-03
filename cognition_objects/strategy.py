@@ -6,10 +6,13 @@ from ..session import session
 from ..models import CognitionStrategy
 
 
-def get(strategy_id: str) -> CognitionStrategy:
+def get(project_id: str, strategy_id: str) -> CognitionStrategy:
     return (
         session.query(CognitionStrategy)
-        .filter(CognitionStrategy.id == strategy_id)
+        .filter(
+            CognitionStrategy.project_id == project_id,
+            CognitionStrategy.id == strategy_id,
+        )
         .first()
     )
 
@@ -54,12 +57,13 @@ def create(
 
 
 def update(
+    project_id: str,
     strategy_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionStrategy:
-    strategy = get(strategy_id)
+    strategy = get(project_id, strategy_id)
     if name is not None:
         strategy.name = name
     if description is not None:
@@ -69,8 +73,9 @@ def update(
     return strategy
 
 
-def delete(strategy_id: str, with_commit: bool = True) -> None:
+def delete(project_id: str, strategy_id: str, with_commit: bool = True) -> None:
     session.query(CognitionStrategy).filter(
+        CognitionStrategy.project_id == project_id,
         CognitionStrategy.id == strategy_id,
     ).delete()
     general.flush_or_commit(with_commit)

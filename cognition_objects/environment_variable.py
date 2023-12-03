@@ -5,10 +5,13 @@ from ..session import session
 from ..models import CognitionEnvironmentVariable
 
 
-def get(environment_variable_id: str) -> CognitionEnvironmentVariable:
+def get(project_id: str, environment_variable_id: str) -> CognitionEnvironmentVariable:
     return (
         session.query(CognitionEnvironmentVariable)
-        .filter(CognitionEnvironmentVariable.id == environment_variable_id)
+        .filter(
+            CognitionEnvironmentVariable.project_id == project_id,
+            CognitionEnvironmentVariable.id == environment_variable_id,
+        )
         .first()
     )
 
@@ -29,17 +32,6 @@ def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]
     return (
         session.query(CognitionEnvironmentVariable)
         .filter(CognitionEnvironmentVariable.project_id == project_id)
-        .order_by(CognitionEnvironmentVariable.created_at.asc())
-        .all()
-    )
-
-
-def get_all_by_ids(
-    environment_variable_ids: List[str],
-) -> List[CognitionEnvironmentVariable]:
-    return (
-        session.query(CognitionEnvironmentVariable)
-        .filter(CognitionEnvironmentVariable.id.in_(environment_variable_ids))
         .order_by(CognitionEnvironmentVariable.created_at.asc())
         .all()
     )
@@ -69,13 +61,16 @@ def create(
 
 
 def update(
+    project_id: str,
     environment_variable_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
     value: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionEnvironmentVariable:
-    environment_variable: CognitionEnvironmentVariable = get(environment_variable_id)
+    environment_variable: CognitionEnvironmentVariable = get(
+        project_id, environment_variable_id
+    )
 
     if name is not None:
         environment_variable.name = name
@@ -87,8 +82,11 @@ def update(
     return environment_variable
 
 
-def delete(environment_variable_id: str, with_commit: bool = True) -> None:
+def delete(
+    project_id: str, environment_variable_id: str, with_commit: bool = True
+) -> None:
     session.query(CognitionEnvironmentVariable).filter(
+        CognitionEnvironmentVariable.project_id == project_id,
         CognitionEnvironmentVariable.id == environment_variable_id,
     ).delete()
     general.flush_or_commit(with_commit)

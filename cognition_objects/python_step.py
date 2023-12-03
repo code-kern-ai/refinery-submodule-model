@@ -6,18 +6,26 @@ from ..models import CognitionPythonStep
 from datetime import datetime
 
 
-def get(python_step_id: str) -> CognitionPythonStep:
+def get(project_id: str, python_step_id: str) -> CognitionPythonStep:
     return (
         session.query(CognitionPythonStep)
-        .filter(CognitionPythonStep.id == python_step_id)
+        .filter(
+            CognitionPythonStep.project_id == project_id,
+            CognitionPythonStep.id == python_step_id,
+        )
         .first()
     )
 
 
-def get_python_strategy_step_data(strategy_step_id: str) -> CognitionPythonStep:
+def get_python_strategy_step_data(
+    project_id: str, strategy_step_id: str
+) -> CognitionPythonStep:
     return (
         session.query(CognitionPythonStep)
-        .filter(CognitionPythonStep.strategy_step_id == strategy_step_id)
+        .filter(
+            CognitionPythonStep.project_id == project_id,
+            CognitionPythonStep.strategy_step_id == strategy_step_id,
+        )
         .first()
     )
 
@@ -31,7 +39,7 @@ def create(
 ) -> CognitionPythonStep:
     source_code = """from typing import Dict, Any, Tuple
 
-def routing(record_dict: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+def python_step(record_dict: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     return record_dict, scope_dict
 """
     python_step: CognitionPythonStep = CognitionPythonStep(
@@ -47,11 +55,12 @@ def routing(record_dict: Dict[str, Any], scope_dict: Dict[str, Any]) -> Tuple[Di
 
 
 def update(
+    project_id: str,
     python_step_id: str,
     source_code: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionPythonStep:
-    python_step: CognitionPythonStep = get(python_step_id)
+    python_step: CognitionPythonStep = get(project_id, python_step_id)
 
     if source_code:
         python_step.source_code = source_code
