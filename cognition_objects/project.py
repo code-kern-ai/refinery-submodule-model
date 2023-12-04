@@ -92,7 +92,6 @@ def update(
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
-    print("enable_query_enrichment", enable_query_enrichment, flush=True)
     if name is not None:
         project.name = name
     if description is not None:
