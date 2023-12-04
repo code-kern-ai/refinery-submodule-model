@@ -1143,6 +1143,7 @@ class CognitionMessage(Base):
     created_at = Column(DateTime, default=sql.func.now())
     question = Column(String)
     facts = Column(ARRAY(JSON))
+    selection_widget = Column(ARRAY(JSON))
     answer = Column(String)
 
     # None = not yet answered, True = positive, false = negative
@@ -1320,7 +1321,7 @@ class CognitionSelectionStep(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now(), nullable=False)
-    config = Column(JSON)
+    config = Column(ARRAY(JSON))
 
 
 class CognitionEnvironmentVariable(Base):

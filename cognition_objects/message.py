@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 from ..business_objects import general
 from ..session import session
@@ -87,6 +87,23 @@ def create(
         facts=[],
     )
 
+    general.add(message, with_commit)
+
+    return message
+
+
+def update(
+    project_id: str,
+    message_id: str,
+    answer: Optional[str] = None,
+    facts: Optional[List[Dict[str, Any]]] = None,
+    with_commit: bool = True,
+) -> CognitionMessage:
+    message = get(project_id, message_id)
+    if answer is not None:
+        message.answer = answer
+    if facts is not None:
+        message.facts = facts
     general.add(message, with_commit)
 
     return message

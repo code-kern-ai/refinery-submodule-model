@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from ..business_objects import general
 from ..session import session
@@ -43,7 +43,7 @@ def create(
         strategy_step_id=strategy_step_id,
         created_by=user_id,
         created_at=created_at,
-        config={"data": []},
+        config=[],
     )
     general.add(selection_step, with_commit)
 
@@ -53,7 +53,7 @@ def create(
 def update(
     project_id: str,
     selection_step_id: str,
-    config: Optional[Dict[str, Any]] = None,
+    config: Optional[List[Dict[str, Any]]] = None,
     with_commit: bool = True,
 ) -> CognitionSelectionStep:
     selection_step: CognitionSelectionStep = get(project_id, selection_step_id)
