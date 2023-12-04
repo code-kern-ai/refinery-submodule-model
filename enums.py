@@ -128,6 +128,7 @@ class Tablenames(Enum):
     LLM_STEP = "llm_step"
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
+    SELECTION_STEP = "selection_step"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -486,6 +487,7 @@ class StrategyStepType(Enum):
     NONE = "NONE"
     PYTHON = "PYTHON"
     LLM = "LLM"
+    SELECTION = "SELECTION"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -499,6 +501,8 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.RELEVANCE: "Classify retrieved facts",
     StrategyStepType.PYTHON: "Custom python function",
     StrategyStepType.LLM: "Run a LLM",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.SELECTION: "Select data",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -507,6 +511,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Running custom python function",
     StrategyStepType.LLM: "Running LLM",
+    StrategyStepType.SELECTION: "Selecting data",
 }
 
 

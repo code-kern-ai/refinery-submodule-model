@@ -1294,6 +1294,35 @@ class CognitionLLMStep(Base):
     question_prompt = Column(String)
 
 
+class CognitionSelectionStep(Base):
+    __tablename__ = Tablenames.SELECTION_STEP.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    strategy_step_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+        nullable=False,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        nullable=False,
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now(), nullable=False)
+    config = Column(JSON)
+
+
 class CognitionEnvironmentVariable(Base):
     __tablename__ = Tablenames.ENVIRONMENT_VARIABLE.value
     __table_args__ = {"schema": "cognition"}
