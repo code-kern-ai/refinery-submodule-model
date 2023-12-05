@@ -1,5 +1,6 @@
 from typing import List, Optional, Dict
 from datetime import datetime
+from sqlalchemy.orm.attributes import flag_modified
 
 from ..business_objects import general
 from ..session import session
@@ -91,6 +92,7 @@ def update(
         strategy_step.position = position
     if config is not None:
         strategy_step.config = config
+        flag_modified(strategy_step, "config")
 
     general.flush_or_commit(with_commit)
     return strategy_step
