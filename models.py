@@ -1090,8 +1090,9 @@ class CognitionStrategyStep(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
-    strategy_step_type = Column(String)
-    strategy_step_position = Column(Integer)
+    step_type = Column(String)
+    position = Column(Integer)
+    config = Column(JSON)
 
 
 class CognitionConversation(Base):
@@ -1185,109 +1186,109 @@ class CognitionPipelineLogs(Base):
     time_elapsed = Column(Float)
 
 
-class CognitionRetriever(Base):
-    __tablename__ = Tablenames.RETRIEVER.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    strategy_step_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
-        ),
-        index=True,
-    )
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    search_input_field = Column(String)
-    meta_data = Column(String)
+# class CognitionRetriever(Base):
+#     __tablename__ = Tablenames.RETRIEVER.value
+#     __table_args__ = {"schema": "cognition"}
+#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+#     project_id = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+#         index=True,
+#     )
+#     strategy_step_id = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(
+#             f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
+#         ),
+#         index=True,
+#     )
+#     created_by = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+#         index=True,
+#     )
+#     created_at = Column(DateTime, default=sql.func.now())
+#     search_input_field = Column(String)
+#     meta_data = Column(String)
 
 
-class CognitionRetrieverPart(Base):
-    __tablename__ = Tablenames.RETRIEVER_PART.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    retriever_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.RETRIEVER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    embedding_name = Column(String)
-    number_records = Column(Integer)
-    enabled = Column(Boolean, default=True)
+# class CognitionRetrieverPart(Base):
+#     __tablename__ = Tablenames.RETRIEVER_PART.value
+#     __table_args__ = {"schema": "cognition"}
+#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+#     project_id = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+#         index=True,
+#     )
+#     retriever_id = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(f"cognition.{Tablenames.RETRIEVER.value}.id", ondelete="CASCADE"),
+#         index=True,
+#     )
+#     created_by = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+#         index=True,
+#     )
+#     created_at = Column(DateTime, default=sql.func.now())
+#     embedding_name = Column(String)
+#     number_records = Column(Integer)
+#     enabled = Column(Boolean, default=True)
 
 
-class CognitionPythonStep(Base):
-    __tablename__ = Tablenames.PYTHON_STEP.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    strategy_step_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
-        ),
-        index=True,
-    )
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    source_code = Column(String)
+# class CognitionPythonStep(Base):
+#     __tablename__ = Tablenames.PYTHON_STEP.value
+#     __table_args__ = {"schema": "cognition"}
+#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+#     project_id = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+#         index=True,
+#     )
+#     strategy_step_id = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(
+#             f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
+#         ),
+#         index=True,
+#     )
+#     created_by = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+#         index=True,
+#     )
+#     created_at = Column(DateTime, default=sql.func.now())
+#     source_code = Column(String)
 
 
-class CognitionLLMStep(Base):
-    __tablename__ = Tablenames.LLM_STEP.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    strategy_step_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
-        ),
-        index=True,
-    )
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
+# class CognitionLLMStep(Base):
+#     __tablename__ = Tablenames.LLM_STEP.value
+#     __table_args__ = {"schema": "cognition"}
+#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+#     project_id = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+#         index=True,
+#     )
+#     strategy_step_id = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(
+#             f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
+#         ),
+#         index=True,
+#     )
+#     created_by = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+#         index=True,
+#     )
+#     created_at = Column(DateTime, default=sql.func.now())
 
-    llm_identifier = Column(String)
-    llm_config = Column(JSON)
-    template_prompt = Column(String)
-    question_prompt = Column(String)
+#     llm_identifier = Column(String)
+#     llm_config = Column(JSON)
+#     template_prompt = Column(String)
+#     question_prompt = Column(String)
 
 
 class CognitionEnvironmentVariable(Base):
@@ -1365,7 +1366,9 @@ class CognitionMarkdownFile(Base):
     )
     dataset_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.MARKDOWN_DATASET.value}.id", ondelete="CASCADE"),
+        ForeignKey(
+            f"cognition.{Tablenames.MARKDOWN_DATASET.value}.id", ondelete="CASCADE"
+        ),
         index=True,
     )
     created_by = Column(
@@ -1389,7 +1392,9 @@ class CognitionMarkdownLLMLogs(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     markdown_file_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.MARKDOWN_FILE.value}.id", ondelete="CASCADE"),
+        ForeignKey(
+            f"cognition.{Tablenames.MARKDOWN_FILE.value}.id", ondelete="CASCADE"
+        ),
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
