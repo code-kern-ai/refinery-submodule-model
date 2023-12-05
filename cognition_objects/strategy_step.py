@@ -62,12 +62,18 @@ def create(
 def update(
     project_id: str,
     strategy_step_id: str,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     position: Optional[int] = None,
     config: Optional[Dict] = None,
     with_commit: bool = True,
 ) -> CognitionStrategyStep:
     strategy_step: CognitionStrategyStep = get(project_id, strategy_step_id)
 
+    if name is not None:
+        strategy_step.name = name
+    if description is not None:
+        strategy_step.description = description
     if position is not None:
         strategy_step.position = position
     if config is not None:
