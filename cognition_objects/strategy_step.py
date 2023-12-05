@@ -4,6 +4,7 @@ from datetime import datetime
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionStrategyStep
+from ..enums import StrategyStepType
 
 
 def get(project_id: str, strategy_step_id: str) -> CognitionStrategyStep:
@@ -28,6 +29,18 @@ def get_all_by_strategy_id(
         )
         .order_by(CognitionStrategyStep.position.asc())
         .all()
+    )
+
+
+def get_first_llm_step_from_project(project_id: str) -> CognitionStrategyStep:
+    # only viable directly after project creation since this returns the first (and only) step
+    return (
+        session.query(CognitionStrategyStep)
+        .filter(
+            CognitionStrategyStep.project_id == project_id,
+            CognitionStrategyStep.step_type == StrategyStepType.LLM.value,
+        )
+        .first()
     )
 
 

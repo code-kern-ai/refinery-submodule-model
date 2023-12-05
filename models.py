@@ -1186,35 +1186,6 @@ class CognitionPipelineLogs(Base):
     time_elapsed = Column(Float)
 
 
-# class CognitionLLMStep(Base):
-#     __tablename__ = Tablenames.LLM_STEP.value
-#     __table_args__ = {"schema": "cognition"}
-#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-#     project_id = Column(
-#         UUID(as_uuid=True),
-#         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-#         index=True,
-#     )
-#     strategy_step_id = Column(
-#         UUID(as_uuid=True),
-#         ForeignKey(
-#             f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
-#         ),
-#         index=True,
-#     )
-#     created_by = Column(
-#         UUID(as_uuid=True),
-#         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-#         index=True,
-#     )
-#     created_at = Column(DateTime, default=sql.func.now())
-
-#     llm_identifier = Column(String)
-#     llm_config = Column(JSON)
-#     template_prompt = Column(String)
-#     question_prompt = Column(String)
-
-
 class CognitionEnvironmentVariable(Base):
     __tablename__ = Tablenames.ENVIRONMENT_VARIABLE.value
     __table_args__ = {"schema": "cognition"}
