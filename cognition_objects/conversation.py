@@ -76,7 +76,7 @@ def add_message(
 ) -> CognitionConversation:
     conversation_entity: CognitionConversation = get(project_id, conversation_id)
 
-    message.create(
+    message_entity = message.create(
         conversation_id=conversation_id,
         project_id=conversation_entity.project_id,
         user_id=conversation_entity.created_by,
@@ -84,7 +84,7 @@ def add_message(
         with_commit=with_commit,
     )
 
-    return conversation_entity
+    return message_entity, conversation_entity
 
 
 def update(

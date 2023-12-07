@@ -500,7 +500,7 @@ STEP_DESCRIPTIONS = {
 }
 
 
-class PipelineSteps(Enum):
+class PipelineStep(Enum):
     INCOMING_QUESTION = "INCOMING_QUESTION"
     INCOMING_QUESTION_TRY = "INCOMING_QUESTION_TRY"
     QUESTION_ENRICHMENT = "QUESTION_ENRICHMENT"
@@ -539,6 +539,7 @@ class LLMProvider(Enum):
     OPENAI = "Open AI"
     OPEN_SOURCE = "Open-Source"
     AZURE = "Azure"
+
 
 class CognitionMarkdownFileState(Enum):
     CREATED = "CREATED"
