@@ -97,6 +97,7 @@ def update(
     message_id: str,
     answer: Optional[str] = None,
     facts: Optional[List[Dict[str, Any]]] = None,
+    selection_widget: Optional[List[Dict[str, Any]]] = None,
     with_commit: bool = True,
 ) -> CognitionMessage:
     message = get(project_id, message_id)
@@ -104,6 +105,8 @@ def update(
         message.answer = answer
     if facts is not None:
         message.facts = facts
+    if selection_widget is not None:
+        message.selection_widget = selection_widget
     general.add(message, with_commit)
 
     return message
