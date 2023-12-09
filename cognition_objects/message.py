@@ -85,6 +85,7 @@ def create(
         created_at=created_at,
         question=question,
         facts=[],
+        selection_widget=[],
     )
 
     general.add(message, with_commit)
