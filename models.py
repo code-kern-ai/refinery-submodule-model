@@ -1146,8 +1146,8 @@ class CognitionMessage(Base):
     selection_widget = Column(ARRAY(JSON))
     answer = Column(String)
 
-    # None = not yet answered, True = positive, false = negative
-    positive_feedback = Column(Boolean)
+    feedback_value = Column(String)
+    feedback_category = Column(String)
     feedback_message = Column(String)
 
     scope_dict_diff_previous_conversation = Column(JSON)
