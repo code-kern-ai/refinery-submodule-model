@@ -54,6 +54,7 @@ def create(
     question_prompt = """User question: {{ record.question }} <br><br>
 Please use the following references to answer the question:<br>
 {{#retrieval_results}}
+    **{{name}}**
     <br>{{reference}}<br>
    ----------
 {{/retrieval_results}}
