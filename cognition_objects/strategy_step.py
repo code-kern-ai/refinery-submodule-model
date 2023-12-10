@@ -43,6 +43,11 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionStrategyStep:
+    
+    execute_if_source_code = """def check_execute(record_dict, scope_dict):
+    return True
+"""
+
     strategy: CognitionStrategyStep = CognitionStrategyStep(
         project_id=project_id,
         strategy_id=strategy_id,
@@ -53,6 +58,7 @@ def create(
         progress_text=progress_text,
         strategy_step_type=strategy_step_type,
         strategy_step_position=strategy_step_position,
+        execute_if_source_code=execute_if_source_code,
     )
     general.add(strategy, with_commit)
 
@@ -63,12 +69,15 @@ def update(
     project_id: str,
     strategy_step_id: str,
     strategy_step_position: Optional[int] = None,
+    execute_if_source_code: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionStrategyStep:
     strategy_step: CognitionStrategyStep = get(project_id, strategy_step_id)
 
     if strategy_step_position is not None:
         strategy_step.strategy_step_position = strategy_step_position
+    if execute_if_source_code is not None:
+        strategy_step.execute_if_source_code = execute_if_source_code
 
     general.flush_or_commit(with_commit)
     return strategy_step

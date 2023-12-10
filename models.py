@@ -1096,6 +1096,7 @@ class CognitionStrategyStep(Base):
     strategy_step_position = Column(Integer)
     progress_text = Column(String)
     enable_emissions = Column(Boolean, default=True)
+    execute_if_source_code = Column(String)
 
 
 class CognitionConversation(Base):
@@ -1188,6 +1189,7 @@ class CognitionPipelineLogs(Base):
     record_dict_diff_previous_message = Column(JSON)
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
+    skipped_step = Column(Boolean, default=False)
 
 
 class CognitionRetriever(Base):
