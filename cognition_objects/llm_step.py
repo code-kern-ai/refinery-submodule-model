@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionLLMStep
+from .. import enums
 
 
 def get(project_id: str, llm_step_id: str) -> CognitionLLMStep:
@@ -47,18 +48,10 @@ def create(
     strategy_step_id: str,
     user_id: str,
     with_commit: bool = True,
+    usage_type: Optional[str] = None,
     created_at: Optional[str] = None,
 ) -> CognitionLLMStep:
-    llm_identifier = "Open AI"
-    template_prompt = "You are an AI assistant."
-    question_prompt = """User question: {{ record.question }} <br><br>
-Please use the following references to answer the question:<br>
-{{#retrieval_results}}
-    **{{name}}**
-    <br>{{reference}}<br>
-   ----------
-{{/retrieval_results}}
-"""
+    llm_identifier = "Open AI"    
     llm_config = {
         "model": "gpt-3.5-turbo",
         "temperature": 0,
@@ -68,6 +61,31 @@ Please use the following references to answer the question:<br>
         "frequencyPenalty": 0,
         "presencePenalty": 0,
     }
+    if usage_type is None:
+        usage_type = enums.CognitionLLMStepUsageType.BASE.value
+
+    if usage_type == enums.CognitionLLMStepUsageType.BASE.value:
+        template_prompt = "You are an AI assistant."
+        question_prompt = """User question: {{ record.question }} <br><br>
+Please use the following references to answer the question:<br>
+{{#retrieval_results}}
+    **{{name}}**
+    <br>{{reference}}<br>
+   ----------
+{{/retrieval_results}}
+"""
+    elif usage_type == enums.CognitionLLMStepUsageType.QUERY_REPHRASING.value:
+        template_prompt = "Rephrase the user question to work as a google search query."
+        question_prompt = """User question: {{ record.question }}
+Previous response: {{record.answer_prev_1}}
+Previous question: {{record.answer_prev_1}}
+Previous response: {{record.answer_prev_2}}
+Previous question: {{record.answer_prev_2}}
+Previous response: {{record.answer_prev_3}}
+Previous question: {{record.answer_prev_3}}
+"""
+    else:
+        raise ValueError(f"Unknown usage type {usage_type}")
 
     llm_step: CognitionLLMStep = CognitionLLMStep(
         project_id=project_id,
@@ -78,6 +96,7 @@ Please use the following references to answer the question:<br>
         question_prompt=question_prompt,
         llm_config=llm_config,
         created_at=created_at,
+        usage_type=usage_type,
     )
     general.add(llm_step, with_commit)
 

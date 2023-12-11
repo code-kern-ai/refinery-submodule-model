@@ -129,6 +129,7 @@ class Tablenames(Enum):
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
     SELECTION_STEP = "selection_step"
+    WEBSEARCH_STEP = "websearch_step"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -488,6 +489,8 @@ class StrategyStepType(Enum):
     PYTHON = "PYTHON"
     LLM = "LLM"
     SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+    WEBSEARCH = "WEBSEARCH"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -503,6 +506,8 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.LLM: "Run a LLM",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.SELECTION: "Select data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrase query",
+    StrategyStepType.WEBSEARCH: "Search the web",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -512,6 +517,8 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.PYTHON: "Running custom python function",
     StrategyStepType.LLM: "Running LLM",
     StrategyStepType.SELECTION: "Selecting data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrasing query",
+    StrategyStepType.WEBSEARCH: "Searching the web",
 }
 
 
@@ -568,3 +575,8 @@ class EmitType(Enum):
     RETRIEVAL_RESULTS = "RETRIEVAL_RESULTS"
     FOLLOW_UPS = "FOLLOW_UPS"
     SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+
+class CognitionLLMStepUsageType(Enum):
+    BASE = "BASE"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
