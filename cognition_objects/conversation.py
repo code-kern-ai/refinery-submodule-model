@@ -71,20 +71,19 @@ def create(
 def add_message(
     project_id: str,
     conversation_id: str,
+    user_id: str,
     question: str,
     with_commit: bool = True,
 ) -> CognitionConversation:
-    conversation_entity: CognitionConversation = get(project_id, conversation_id)
-
     message_entity = message.create(
         conversation_id=conversation_id,
-        project_id=conversation_entity.project_id,
-        user_id=conversation_entity.created_by,
+        project_id=project_id,
+        user_id=user_id,
         question=question,
         with_commit=with_commit,
     )
 
-    return message_entity, conversation_entity
+    return message_entity
 
 
 def update(
