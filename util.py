@@ -1,4 +1,3 @@
-import json
 import os
 from typing import Tuple, Any, Union, List, Dict
 from pydantic import BaseModel
@@ -118,10 +117,6 @@ def to_frontend_obj(value: Union[List, Dict]):
         return {__to_camel_case(k): to_frontend_obj(v) for k, v in value.items()}
     elif is_list_like(value):
         return [to_frontend_obj(x) for x in value]
-    elif isinstance(
-        value, BaseModel
-    ):  # TODO: fix to get it working now but better be placed in client_response.py
-        return to_json(value)
     else:
         return __to_json_serializable(value)
 
@@ -157,7 +152,3 @@ def is_camel_case(text: str) -> bool:
         return True
     else:
         return False
-
-
-def to_json(obj: BaseModel):
-    return json.loads(obj.json())
