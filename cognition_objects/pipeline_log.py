@@ -5,24 +5,33 @@ from ..models import CognitionPipelineLogs
 from datetime import datetime
 
 
-def get_all_by_message_id(message_id: str) -> List[CognitionPipelineLogs]:
+def get_all_by_message_id(
+    project_id: str, message_id: str
+) -> List[CognitionPipelineLogs]:
     return (
         session.query(CognitionPipelineLogs)
-        .filter(CognitionPipelineLogs.message_id == message_id)
+        .filter(
+            CognitionPipelineLogs.project_id == project_id,
+            CognitionPipelineLogs.message_id == message_id,
+        )
         .order_by(CognitionPipelineLogs.created_at.asc())
         .all()
     )
 
 
 def get_all_by_message_id_until_step(
+    project_id: str,
     message_id: str,
     pipeline_step_type: str,
     strategy_step_type: str,
     strategy_step_id: Optional[str] = None,
 ) -> List[CognitionPipelineLogs]:
-    pipeline_logs = (
+    pipeline_logs: List[CognitionPipelineLogs] = (
         session.query(CognitionPipelineLogs)
-        .filter(CognitionPipelineLogs.message_id == message_id)
+        .filter(
+            CognitionPipelineLogs.project_id == project_id,
+            CognitionPipelineLogs.message_id == message_id,
+        )
         .order_by(CognitionPipelineLogs.created_at.asc())
         .all()
     )
@@ -79,11 +88,13 @@ def create(
 
 
 def delete_all_by_message_id(
+    project_id: str,
     message_id: str,
     with_commit: bool = True,
 ) -> None:
     session.query(CognitionPipelineLogs).filter(
-        CognitionPipelineLogs.message_id == message_id
+        CognitionPipelineLogs.project_id == project_id,
+        CognitionPipelineLogs.message_id == message_id,
     ).delete()
 
     general.flush_or_commit(with_commit)

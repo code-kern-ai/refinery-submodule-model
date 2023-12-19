@@ -1,18 +1,21 @@
 from typing import List, Optional, Tuple
 from datetime import datetime
 
-from submodules.model import enums
-
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMarkdownDataset, Project
 
-def get(id: str) -> CognitionMarkdownDataset:
+
+def get(org_id: str, id: str) -> CognitionMarkdownDataset:
     return (
         session.query(CognitionMarkdownDataset)
-        .filter(CognitionMarkdownDataset.id == id)
+        .filter(
+            CognitionMarkdownDataset.organization_id == org_id,
+            CognitionMarkdownDataset.id == id,
+        )
         .first()
     )
+
 
 def get_all_paginated_for_category_origin(
     org_id: str,
@@ -20,7 +23,6 @@ def get_all_paginated_for_category_origin(
     page: int,
     limit: int,
 ) -> Tuple[int, int, List[CognitionMarkdownDataset]]:
-
     total_count = (
         session.query(CognitionMarkdownDataset.id)
         .filter(CognitionMarkdownDataset.organization_id == org_id)
@@ -44,6 +46,7 @@ def get_all_paginated_for_category_origin(
 
     return total_count, num_pages, query_results
 
+
 def create(
     org_id: str,
     created_by: str,
@@ -63,7 +66,7 @@ def create(
         name=name,
         description=description,
         tokenizer=tokenizer,
-        created_at=created_at
+        created_at=created_at,
     )
 
     general.add(new_dataset, with_commit)
@@ -72,12 +75,13 @@ def create(
 
 
 def update(
+    org_id: str,
     dataset_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionMarkdownDataset:
-    dataset = get(dataset_id)
+    dataset = get(org_id, dataset_id)
 
     if name:
         dataset.name = name
@@ -89,24 +93,27 @@ def update(
 
     return dataset
 
-def delete(dataset_id: str, with_commit: bool = True) -> None:
+
+def delete(org_id: str, dataset_id: str, with_commit: bool = True) -> None:
     session.query(CognitionMarkdownDataset).filter(
-        CognitionMarkdownDataset.id == dataset_id
+        CognitionMarkdownDataset.organization_id == org_id,
+        CognitionMarkdownDataset.id == dataset_id,
     ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
 
-def delete_many(dataset_ids: List[str], with_commit: bool = True) -> None:
 
-    datasets = session.query(CognitionMarkdownDataset).filter(
-        CognitionMarkdownDataset.id.in_(dataset_ids)
-    ).all()
+def delete_many(org_id: str, dataset_ids: List[str], with_commit: bool = True) -> None:
+    datasets = (
+        session.query(CognitionMarkdownDataset)
+        .filter(
+            CognitionMarkdownDataset.organization_id == org_id,
+            CognitionMarkdownDataset.id.in_(dataset_ids),
+        )
+        .all()
+    )
 
     for dataset in datasets:
         session.query(Project).filter(
-            Project.id == dataset.refinery_project_id
+            Project.organization_id == org_id, Project.id == dataset.refinery_project_id
         ).delete(synchronize_session=False)
-
-    session.query(CognitionMarkdownDataset).filter(
-        CognitionMarkdownDataset.id.in_(dataset_ids)
-    ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)

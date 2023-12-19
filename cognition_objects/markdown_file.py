@@ -1,39 +1,46 @@
 from typing import List, Optional, Tuple
 from datetime import datetime
 
-from submodules.model import enums
-
+from .. import enums
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMarkdownFile, CognitionMarkdownLLMLogs
 
 
-def get(md_file_id: str) -> CognitionMarkdownFile:
+def get(org_id: str, md_file_id: str) -> CognitionMarkdownFile:
     return (
         session.query(CognitionMarkdownFile)
-        .filter(CognitionMarkdownFile.id == md_file_id)
+        .filter(
+            CognitionMarkdownFile.organization_id == org_id,
+            CognitionMarkdownFile.id == md_file_id,
+        )
         .first()
     )
 
-def get_all_for_dataset_id(
-        dataset_id: str,
-        only_finished: bool,
-        only_reviewed: bool,                       
-    ) -> List[CognitionMarkdownFile]:
 
-    query = (
-        session.query(CognitionMarkdownFile)
-        .filter(CognitionMarkdownFile.dataset_id == dataset_id)
+def get_all_for_dataset_id(
+    org_id: str,
+    dataset_id: str,
+    only_finished: bool,
+    only_reviewed: bool,
+) -> List[CognitionMarkdownFile]:
+    query = session.query(CognitionMarkdownFile).filter(
+        CognitionMarkdownFile.organization_id == org_id,
+        CognitionMarkdownFile.dataset_id == dataset_id,
     )
 
     if only_finished:
-        query = query.filter(CognitionMarkdownFile.state == enums.CognitionMarkdownFileState.FINISHED.value)
+        query = query.filter(
+            CognitionMarkdownFile.state
+            == enums.CognitionMarkdownFileState.FINISHED.value
+        )
 
     if only_reviewed:
         query = query.filter(CognitionMarkdownFile.is_reviewed == True)
 
     query = query.order_by(CognitionMarkdownFile.created_at.asc())
     return query.all()
+
 
 def get_all_paginated_for_dataset(
     org_id: str,
@@ -65,8 +72,6 @@ def get_all_paginated_for_dataset(
     return total_count, num_pages, query_results
 
 
-
-
 def get_all_logs_for_md_file_id(md_file_id: str) -> List[CognitionMarkdownLLMLogs]:
     return (
         session.query(CognitionMarkdownLLMLogs)
@@ -87,7 +92,6 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionMarkdownFile:
-    
     markdown_file: CognitionMarkdownFile = CognitionMarkdownFile(
         organization_id=org_id,
         dataset_id=dataset_id,
@@ -105,6 +109,7 @@ def create(
 
 
 def update(
+    org_id: str,
     markdown_file_id: str,
     content: Optional[str] = None,
     is_reviewed: Optional[bool] = None,
@@ -114,7 +119,7 @@ def update(
     error: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionMarkdownFile:
-    markdown_file: CognitionMarkdownFile = get(markdown_file_id)
+    markdown_file: CognitionMarkdownFile = get(org_id, markdown_file_id)
     if content is not None:
         markdown_file.content = content
     if is_reviewed is not None:
@@ -134,14 +139,14 @@ def update(
 
 
 def create_md_llm_log(
-        markdown_file_id: str,
-        model_used: str,
-        input_text: str,
-        output_text: Optional[str] = None,
-        error: Optional[str] = None,
-        created_at: Optional[datetime] = None,
-        finished_at: Optional[datetime] = None,
-        with_commit: bool = True,
+    markdown_file_id: str,
+    model_used: str,
+    input_text: str,
+    output_text: Optional[str] = None,
+    error: Optional[str] = None,
+    created_at: Optional[datetime] = None,
+    finished_at: Optional[datetime] = None,
+    with_commit: bool = True,
 ) -> None:
     md_llm_log = CognitionMarkdownLLMLogs(
         markdown_file_id=markdown_file_id,
@@ -154,15 +159,18 @@ def create_md_llm_log(
     )
     general.add(md_llm_log, with_commit)
 
-def delete(md_file_id: str, with_commit: bool = True) -> None:
+
+def delete(org_id: str, md_file_id: str, with_commit: bool = True) -> None:
     session.query(CognitionMarkdownFile).filter(
+        CognitionMarkdownFile.organization_id == org_id,
         CognitionMarkdownFile.id == md_file_id,
     ).delete()
     general.flush_or_commit(with_commit)
 
 
-def delete_many(md_file_ids: List[str], with_commit: bool = True) -> None:
+def delete_many(org_id: str, md_file_ids: List[str], with_commit: bool = True) -> None:
     session.query(CognitionMarkdownFile).filter(
+        CognitionMarkdownFile.organization_id == org_id,
         CognitionMarkdownFile.id.in_(md_file_ids),
     ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
