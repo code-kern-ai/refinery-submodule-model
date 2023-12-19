@@ -1243,6 +1243,11 @@ class CognitionMarkdownDataset(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    refinery_project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
@@ -1277,6 +1282,7 @@ class CognitionMarkdownFile(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+    started_at = Column(DateTime)
     finished_at = Column(DateTime)
     file_name = Column(String)
     content = Column(String)
@@ -1299,6 +1305,7 @@ class CognitionMarkdownLLMLogs(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
+    model_used = Column(String)
     input = Column(String)
     output = Column(String)
     error = Column(String)

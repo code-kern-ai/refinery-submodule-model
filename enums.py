@@ -542,7 +542,8 @@ class LLMProvider(Enum):
 
 
 class CognitionMarkdownFileState(Enum):
-    CREATED = "CREATED"
+    QUEUE = "QUEUE"
+    TOKENIZING = "TOKENIZING"
     SPLITTING = "SPLITTING"
     TRANSFORMING = "TRANSFORMING"
     FINISHED = "FINISHED"

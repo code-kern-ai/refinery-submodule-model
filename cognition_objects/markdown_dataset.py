@@ -3,7 +3,7 @@ from datetime import datetime
 
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionMarkdownDataset
+from ..models import CognitionMarkdownDataset, Project
 
 
 def get(org_id: str, id: str) -> CognitionMarkdownDataset:
@@ -54,11 +54,13 @@ def create(
     name: str,
     description: str,
     tokenizer: str,
+    refinery_project_id: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionMarkdownDataset:
     new_dataset = CognitionMarkdownDataset(
         organization_id=org_id,
+        refinery_project_id=refinery_project_id,
         created_by=created_by,
         category_origin=category_origin,
         name=name,
@@ -101,8 +103,17 @@ def delete(org_id: str, dataset_id: str, with_commit: bool = True) -> None:
 
 
 def delete_many(org_id: str, dataset_ids: List[str], with_commit: bool = True) -> None:
-    session.query(CognitionMarkdownDataset).filter(
-        CognitionMarkdownDataset.organization_id == org_id,
-        CognitionMarkdownDataset.id.in_(dataset_ids),
-    ).delete(synchronize_session=False)
+    datasets = (
+        session.query(CognitionMarkdownDataset)
+        .filter(
+            CognitionMarkdownDataset.organization_id == org_id,
+            CognitionMarkdownDataset.id.in_(dataset_ids),
+        )
+        .all()
+    )
+
+    for dataset in datasets:
+        session.query(Project).filter(
+            Project.organization_id == org_id, Project.id == dataset.refinery_project_id
+        ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
