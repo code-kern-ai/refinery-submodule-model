@@ -26,7 +26,7 @@ def get_all_by_message_id_until_step(
     strategy_step_type: str,
     strategy_step_id: Optional[str] = None,
 ) -> List[CognitionPipelineLogs]:
-    pipeline_logs = (
+    pipeline_logs: List[CognitionPipelineLogs] = (
         session.query(CognitionPipelineLogs)
         .filter(
             CognitionPipelineLogs.project_id == project_id,
