@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 from datetime import datetime
 
 from .. import enums
@@ -16,6 +16,11 @@ def get(org_id: str, md_file_id: str) -> CognitionMarkdownFile:
         )
         .first()
     )
+
+
+def get_enriched(org_id: str, md_file_id: str) -> Dict[str, Any]:
+    enriched_query = __get_enriched_query(org_id=org_id, md_file_id=md_file_id)
+    return general.execute_first(enriched_query)
 
 
 def get_all_for_dataset_id(
@@ -42,6 +47,35 @@ def get_all_for_dataset_id(
     return query.all()
 
 
+def __get_enriched_query(
+    org_id: str,
+    md_file_id: Optional[str] = None,
+    dataset_id: Optional[str] = None,
+    query_add: Optional[str] = "",
+) -> str:
+    where_add = ""
+    if md_file_id:
+        where_add += f" AND mf.id = '{md_file_id}'"
+    if dataset_id:
+        where_add += f" AND mf.dataset_id = '{dataset_id}'"
+
+    query = """
+    SELECT mf.*, COALESCE(mll.llm_logs, '{}') AS llm_logs
+    FROM cognition.markdown_file mf
+    LEFT JOIN (
+        SELECT llm_logs_row.markdown_file_id, array_agg(row_to_json(llm_logs_row)) AS llm_logs
+        FROM (
+            SELECT mll_inner.*
+            FROM cognition.markdown_llm_logs mll_inner
+        ) llm_logs_row
+        GROUP BY llm_logs_row.markdown_file_id
+    ) mll ON mf.id = mll.markdown_file_id
+    """
+    query += f"WHERE mf.organization_id = '{org_id}' {where_add}"
+    query += query_add
+    return query
+
+
 def get_all_paginated_for_dataset(
     org_id: str,
     dataset_id: str,
@@ -59,15 +93,15 @@ def get_all_paginated_for_dataset(
     if total_count % limit > 0:
         num_pages += 1
 
-    query_results = (
-        session.query(CognitionMarkdownFile)
-        .filter(CognitionMarkdownFile.organization_id == org_id)
-        .filter(CognitionMarkdownFile.dataset_id == dataset_id)
-        .order_by(CognitionMarkdownFile.created_at.asc())
-        .limit(limit)
-        .offset((page - 1) * limit)
-        .all()
+    query_add = f"""
+    ORDER BY mf.created_by
+    LIMIT {limit}
+    OFFSET {(page - 1) * limit}
+    """
+    enriched_query = __get_enriched_query(
+        org_id=org_id, dataset_id=dataset_id, query_add=query_add
     )
+    query_results = general.execute_all(enriched_query)
 
     return total_count, num_pages, query_results
 
