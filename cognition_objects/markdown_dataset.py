@@ -127,26 +127,21 @@ def update(
     return dataset
 
 
-def delete(org_id: str, dataset_id: str, with_commit: bool = True) -> None:
+def delete_many(org_id: str, dataset_ids: List[str], with_commit: bool = True) -> None:
+    session.query(Project).filter(
+        Project.organization_id == org_id,
+        Project.id.in_(
+            session.query(CognitionMarkdownDataset.refinery_project_id).filter(
+                CognitionMarkdownDataset.organization_id == org_id,
+                CognitionMarkdownDataset.id.in_(dataset_ids),
+                CognitionMarkdownDataset.refinery_project_id.isnot(None),
+            )
+        ),
+    ).delete(synchronize_session=False)
+
     session.query(CognitionMarkdownDataset).filter(
         CognitionMarkdownDataset.organization_id == org_id,
-        CognitionMarkdownDataset.id == dataset_id,
+        CognitionMarkdownDataset.id.in_(dataset_ids),
     ).delete(synchronize_session=False)
-    general.flush_or_commit(with_commit)
 
-
-def delete_many(org_id: str, dataset_ids: List[str], with_commit: bool = True) -> None:
-    datasets = (
-        session.query(CognitionMarkdownDataset)
-        .filter(
-            CognitionMarkdownDataset.organization_id == org_id,
-            CognitionMarkdownDataset.id.in_(dataset_ids),
-        )
-        .all()
-    )
-
-    for dataset in datasets:
-        session.query(Project).filter(
-            Project.organization_id == org_id, Project.id == dataset.refinery_project_id
-        ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
