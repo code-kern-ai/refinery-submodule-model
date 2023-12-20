@@ -2,7 +2,11 @@ from typing import List, Optional
 from datetime import datetime
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionEnvironmentVariable
+from ..models import (
+    CognitionEnvironmentVariable,
+    CognitionMarkdownFile,
+    CognitionMarkdownDataset,
+)
 
 
 def get(project_id: str, environment_variable_id: str) -> CognitionEnvironmentVariable:
@@ -24,6 +28,25 @@ def get_by_name(
         session.query(CognitionEnvironmentVariable)
         .filter(CognitionEnvironmentVariable.project_id == project_id)
         .filter(CognitionEnvironmentVariable.name == name)
+        .first()
+    )
+
+
+def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
+    return (
+        session.query(CognitionEnvironmentVariable)
+        .join(
+            CognitionMarkdownDataset,
+            CognitionMarkdownDataset.environment_variable_id
+            == CognitionEnvironmentVariable.id,
+        )
+        .join(
+            CognitionMarkdownFile,
+            CognitionMarkdownFile.dataset_id == CognitionMarkdownDataset.id,
+        )
+        .filter(
+            CognitionMarkdownFile.id == md_file_id,
+        )
         .first()
     )
 
