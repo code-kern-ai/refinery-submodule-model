@@ -1248,6 +1248,13 @@ class CognitionMarkdownDataset(Base):
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    environment_variable_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.ENVIRONMENT_VARIABLE.value}.id", ondelete="SET NULL"
+        ),
+        index=True,
+    )
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
