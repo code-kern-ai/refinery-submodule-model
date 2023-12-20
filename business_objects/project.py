@@ -17,6 +17,8 @@ from ..models import (
     Record,
 )
 
+QUEUE_PROJECT_NAME = "@@HIDDEN_QUEUE_PROJECT@@"
+
 
 def get(project_id: str) -> Project:
     return session.query(Project).filter(Project.id == project_id).first()
@@ -53,14 +55,15 @@ def get_blank_tokenizer_from_project(project_id: str) -> str:
 
 
 def get_max_running_id(project_id: str) -> int:
-
     running_id_like_name = attribute.get_running_id_name(project_id)
     if not running_id_like_name:
         raise ValueError("Can't find running_id column")
 
     max_running_id = (
         session.query(
-            func.max(coalesce(cast(Record.data.op("->>")(running_id_like_name), Integer), -1))
+            func.max(
+                coalesce(cast(Record.data.op("->>")(running_id_like_name), Integer), -1)
+            )
         )
         .filter(
             Record.project_id == project_id,
@@ -208,6 +211,39 @@ def get_zero_shot_project_config(project_id: str, payload_id: str) -> Any:
     return general.execute_first(query)
 
 
+def get_or_create_queue_project(
+    org_id: str, user_id: str, with_commit: bool = False
+) -> Project:
+    ## user_id is a "last used by" indicator
+
+    prj = (
+        session.query(Project)
+        .filter(
+            Project.organization_id == org_id,
+            Project.name == QUEUE_PROJECT_NAME,
+        )
+        .first()
+    )
+
+    if prj:
+        if str(prj.created_by) != user_id:
+            prj.created_by = user_id
+            general.flush_or_commit(with_commit)
+        return prj
+
+    prj = create(
+        org_id,
+        QUEUE_PROJECT_NAME,
+        "Queue project for org specific queue tasks",
+        user_id,
+        with_commit=False,
+    )
+
+    prj.status = enums.ProjectStatus.HIDDEN.value
+    general.flush_or_commit(with_commit)
+    return prj
+
+
 def create(
     organization_id: str,
     name: str,
@@ -353,7 +389,7 @@ def __build_sql_confusion_matrix_extraction(
         SELECT rl.record_id
         FROM relevant_labels rl
         INNER JOIN relevant_labels rl2
-        	ON rl.record_id = rl2.record_id
+            ON rl.record_id = rl2.record_id
         WHERE rl.source_type = '{enums.LabelSource.MANUAL.value}' AND rl2.source_type = '{enums.LabelSource.WEAK_SUPERVISION.value}'
         GROUP BY rl.record_id ),
     manual AS(
@@ -593,7 +629,7 @@ def get_project_size(project_id: str) -> List[Any]:
 
 def __get_project_size_sql(project_id: str) -> str:
     return f"""
-    	SELECT order_, table_, description, prj_size_bytes, pg_size_pretty(prj_size_bytes) prj_size_readable
+        SELECT order_, table_, description, prj_size_bytes, pg_size_pretty(prj_size_bytes) prj_size_readable
         FROM (
             SELECT order_, table_, description, COALESCE(prj_size_bytes,0) prj_size_bytes
             FROM (
@@ -609,7 +645,7 @@ def __get_project_size_sql(project_id: str) -> str:
                 FROM information_source in_s
                 INNER JOIN information_source_statistics iss
                     ON in_s.id = iss.source_id AND in_s.project_id = iss.project_id
-                WHERE in_s.project_id = '{project_id}'		
+                WHERE in_s.project_id = '{project_id}'  
                 UNION ALL 
                 SELECT 6 order_, 'information sources payloads' table_, 'not needed to start a new run' description, sum(pg_column_size(isp.*)) prj_size_bytes
                 FROM (

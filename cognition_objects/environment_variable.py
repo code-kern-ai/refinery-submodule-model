@@ -53,24 +53,11 @@ def can_access_org_env_var(org_id: str, environment_variable_id: str) -> bool:
     # since org specific env vars dont have a project_id but we still need to check the access rights
     # we collect from the requested env var and match with org id from middleware
 
-    return session.query(
-        CognitionEnvironmentVariable.query(CognitionEnvironmentVariable.organization_id)
-        .filter(
-            CognitionEnvironmentVariable.id == environment_variable_id,
-            CognitionEnvironmentVariable.organization_id == org_id,
-        )
-        .exists()
-    ).scalar()
-    # result = (
-    #     session.query(CognitionEnvironmentVariable.organization_id)
-    #     .filter(CognitionEnvironmentVariable.id == environment_variable_id)
-    #     .filter(CognitionEnvironmentVariable.organization_id == environment_variable_id)
-    #     .first()
-    # )
-
-    # if not result or result[0] != org_id:
-    #     return False
-    # return True
+    q = session.query(CognitionEnvironmentVariable.organization_id).filter(
+        CognitionEnvironmentVariable.id == environment_variable_id,
+        CognitionEnvironmentVariable.organization_id == org_id,
+    )
+    return session.query(q.exists()).scalar()
 
 
 def create(

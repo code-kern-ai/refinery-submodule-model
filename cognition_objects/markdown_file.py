@@ -115,6 +115,17 @@ def get_all_logs_for_md_file_id(md_file_id: str) -> List[CognitionMarkdownLLMLog
     )
 
 
+def can_access_file(org_id: str, file_id: str) -> bool:
+    # since org specific files dont have a project_id but we still need to check the access rights
+    # we collect from the requested file and match with org id from middleware/internal routing
+
+    q = session.query(CognitionMarkdownFile.organization_id).filter(
+        CognitionMarkdownFile.id == file_id,
+        CognitionMarkdownFile.organization_id == org_id,
+    )
+    return session.query(q.exists()).scalar()
+
+
 def create(
     org_id: str,
     dataset_id: str,
