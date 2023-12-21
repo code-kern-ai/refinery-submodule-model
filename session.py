@@ -1,3 +1,4 @@
+from typing import Any
 import os
 from contextvars import ContextVar
 from sqlalchemy import create_engine
@@ -52,3 +53,9 @@ def check_session_and_rollback():
         print(traceback.format_exc(), flush=True)
         while session.registry().in_transaction():
             session.rollback()
+
+
+def get_engine_dialect() -> Any:
+    if not engine:
+        return None
+    return engine.dialect

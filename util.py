@@ -3,12 +3,13 @@ from typing import Tuple, Any, Union, List, Dict
 from pydantic import BaseModel
 import collections
 from re import sub, match, compile
-
+import sqlalchemy
 from uuid import UUID
 from datetime import datetime
 
 from sqlalchemy.engine.row import Row
 from .models import Base
+from .business_objects import general
 
 CAMEL_CASE_PATTERN = compile(r"^([a-z]+[A-Z]?)*$")
 
@@ -152,3 +153,34 @@ def is_camel_case(text: str) -> bool:
         return True
     else:
         return False
+
+
+# str is expected but depending on the attack vector e.g. the type hints don't mean anything so an int could still receive a string
+# the idea is that every directly inserted variable (e.g. project_id) is run through this function before being used in a plain text query
+# orm model is sufficient for most cases but for raw queries we mask all directly included variables
+def prevent_sql_injection(variable_value: Union[str, Any], remove_quotes: bool) -> str:
+    # Example usage, note that some_int is e.g. typed as int but sql injection attack only works with a string.
+    # Type checks are already done by fastapi but to ensure there aren't any issues with faulty type hints we do a check here as well
+    # some_str = prevent_sql_injection(some_str, isinstance(some_str, str))
+    # some_int = prevent_sql_injection(some_int, isinstance(some_str, int))
+
+    if isinstance(variable_value, str):
+        return __mask_sql_str(variable_value, remove_quotes)
+    elif isinstance(variable_value, list):
+        return [__mask_sql_str(x, remove_quotes) for x in variable_value]
+    elif isinstance(variable_value, dict):
+        return {k: __mask_sql_str(v, remove_quotes) for k, v in variable_value.items()}
+    return variable_value
+
+
+def __mask_sql_str(sql_str: str, remove_quotes: bool) -> str:
+    if not isinstance(sql_str, str):
+        raise ValueError("sql_str is not a string")
+
+    value = sqlalchemy.String("").literal_processor(dialect=general.get_dialect())(
+        value=sql_str
+    )
+
+    if remove_quotes:
+        return value[1:-1]
+    return value

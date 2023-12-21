@@ -16,6 +16,7 @@ class ProjectStatus(Enum):
     INIT_COMPLETE = "INIT_COMPLETE"
     IN_DELETION = "IN_DELETION"
     INIT_SAMPLE_PROJECT = "INIT_SAMPLE_PROJECT"
+    HIDDEN = "HIDDEN"
 
 
 class RecordCategory(Enum):
@@ -542,7 +543,8 @@ class LLMProvider(Enum):
 
 
 class CognitionMarkdownFileState(Enum):
-    CREATED = "CREATED"
+    QUEUE = "QUEUE"
+    TOKENIZING = "TOKENIZING"
     SPLITTING = "SPLITTING"
     TRANSFORMING = "TRANSFORMING"
     FINISHED = "FINISHED"

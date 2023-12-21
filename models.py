@@ -1190,6 +1190,11 @@ class CognitionEnvironmentVariable(Base):
     __tablename__ = Tablenames.ENVIRONMENT_VARIABLE.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
@@ -1238,6 +1243,18 @@ class CognitionMarkdownDataset(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    refinery_project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    environment_variable_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.ENVIRONMENT_VARIABLE.value}.id", ondelete="SET NULL"
+        ),
+        index=True,
+    )
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
@@ -1247,6 +1264,8 @@ class CognitionMarkdownDataset(Base):
     name = Column(String)
     description = Column(String)
     tokenizer = Column(String)
+
+    # might want to index this in the future since it's based on an enum
     category_origin = Column(String)
 
 
@@ -1272,6 +1291,7 @@ class CognitionMarkdownFile(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+    started_at = Column(DateTime)
     finished_at = Column(DateTime)
     file_name = Column(String)
     content = Column(String)
@@ -1294,6 +1314,7 @@ class CognitionMarkdownLLMLogs(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
+    model_used = Column(String)
     input = Column(String)
     output = Column(String)
     error = Column(String)
