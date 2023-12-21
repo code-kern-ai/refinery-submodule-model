@@ -1264,6 +1264,8 @@ class CognitionMarkdownDataset(Base):
     name = Column(String)
     description = Column(String)
     tokenizer = Column(String)
+
+    # might want to index this in the future since it's based on an enum
     category_origin = Column(String)
 
 

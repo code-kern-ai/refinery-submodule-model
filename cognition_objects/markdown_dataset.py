@@ -4,7 +4,8 @@ from datetime import datetime
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMarkdownDataset, Project
-from ..enums import Tablenames
+from ..enums import Tablenames, MarkdownFileCategoryOrigin
+from ..util import prevent_sql_injection
 
 
 def get(org_id: str, id: str) -> CognitionMarkdownDataset:
@@ -26,10 +27,11 @@ def __get_enriched_query(
 ) -> str:
     where_add = ""
     if id:
+        id = prevent_sql_injection(id)
         where_add += f" AND md.id = '{id}'"
     elif category_origin:
         where_add += f" AND md.category_origin = '{category_origin}'"
-
+    org_id = prevent_sql_injection(org_id)
     return f"""
         SELECT md.*, COALESCE(mf.num_files, 0) AS num_files, COALESCE(mf.num_reviewed_files, 0) AS num_reviewed_files
         FROM cognition.{Tablenames.MARKDOWN_DATASET.value} md
@@ -76,6 +78,32 @@ def get_all_paginated_for_category_origin(
     query_results = general.execute_all(enriched_query)
 
     return total_count, num_pages, query_results
+
+
+def get_dataset_count_dict(org_id: str) -> Dict[str, int]:
+    # no need to access with get since all possible values are known (or at least should be)
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+
+    option_select = "' as category \nUNION ALL\nSELECT '".join(
+        [e.value for e in MarkdownFileCategoryOrigin]
+    )
+    option_select = "SELECT '" + option_select + "'"
+
+    query = f"""
+    SELECT jsonb_object_agg(category,c)
+    FROM (
+        SELECT category, COALESCE(COUNT(md.id),0) c
+        FROM (
+            {option_select} ) o
+        LEFT JOIN cognition.markdown_dataset md
+            ON o.category = md.category_origin AND md.organization_id = '{org_id}'
+        GROUP BY category
+    )x
+    """
+    result = general.execute_first(query)
+    if result and result[0]:
+        return result[0]
+    raise Exception("No results found")
 
 
 def create(

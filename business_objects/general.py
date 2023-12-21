@@ -1,7 +1,7 @@
 import uuid
 from typing import Any, Dict, List, Optional, Union
 from sqlalchemy.orm.session import make_transient as make_transient_original
-from ..session import session
+from ..session import session, engine
 from ..session import request_id_ctx_var
 from ..session import check_session_and_rollback as check_and_roll
 
@@ -75,6 +75,10 @@ def set_seed(seed: float = 0) -> None:
 
 def get_bind() -> Any:
     return session.get_bind()
+
+
+def get_dialect() -> Any:
+    return engine.dialect
 
 
 def rollback() -> None:
