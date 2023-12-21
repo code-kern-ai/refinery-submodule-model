@@ -31,7 +31,7 @@ def __get_enriched_query(
         where_add += f" AND md.id = '{id}'"
     elif category_origin:
         where_add += f" AND md.category_origin = '{category_origin}'"
-    org_id = prevent_sql_injection(org_id, isinstance(id, str))
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     return f"""
         SELECT md.*, COALESCE(mf.num_files, 0) AS num_files, COALESCE(mf.num_reviewed_files, 0) AS num_reviewed_files
         FROM cognition.{Tablenames.MARKDOWN_DATASET.value} md
