@@ -1,6 +1,7 @@
 from typing import List, Optional,Dict
 from datetime import datetime
 from ..business_objects import general
+from . import project as cognition_project
 from ..session import session
 from ..models import (
     CognitionEnvironmentVariable,
@@ -8,6 +9,7 @@ from ..models import (
     CognitionMarkdownDataset,
 )
 from ..util import prevent_sql_injection
+from sqlalchemy import or_
 
 def get(project_id: str, environment_variable_id: str) -> CognitionEnvironmentVariable:
     return (
@@ -24,9 +26,14 @@ def get_by_name(
     project_id: str,
     name: str,
 ) -> CognitionEnvironmentVariable:
+    org_id = cognition_project.get(project_id)
+    if not org_id:
+        raise ValueError("Couldn't find project in organization")
+    org_id = str(org_id.organization_id)
+    # depending on the scope the org_id or project_id are empty so for a get_by_name we need to check both
     return (
         session.query(CognitionEnvironmentVariable)
-        .filter(CognitionEnvironmentVariable.project_id == project_id)
+        .filter(or_(CognitionEnvironmentVariable.project_id == project_id,CognitionEnvironmentVariable.organization_id == org_id))
         .filter(CognitionEnvironmentVariable.name == name)
         .first()
     )
@@ -80,7 +87,7 @@ def get_all_in_org(org_id:str, only_project_id:Optional[str]=None) -> List[Dict[
     project_filter = ""
     if only_project_id:
         only_project_id = prevent_sql_injection(only_project_id,isinstance(only_project_id,str))
-        project_filter = f"(AND ev.project_id = '{only_project_id}' OR ev.project_id IS NULL)"
+        project_filter = f"AND (ev.project_id = '{only_project_id}' OR ev.project_id IS NULL)"
     query = f"""
     SELECT array_agg(row_to_json(x))
     FROM (
