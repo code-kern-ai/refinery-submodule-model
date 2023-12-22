@@ -4,7 +4,7 @@ from sqlalchemy.orm.session import make_transient as make_transient_original
 from ..session import session, engine
 from ..session import request_id_ctx_var
 from ..session import check_session_and_rollback as check_and_roll
-
+from ..enums import Tablenames,try_parse_enum_value
 
 def get_ctx_token() -> Any:
     return request_id_ctx_var.set(str(uuid.uuid4()))
@@ -116,3 +116,39 @@ def test_database_connection() -> Dict[str, Any]:
 def refresh(obj: Any) -> Any:
     session.refresh(obj)
     return obj
+
+INDENT = "    "
+def construct_select_columns(table:str,table_schema: Optional[str]=None,prefix:Optional[str]= None, exclude_columns: Optional[Union[str,List[str]]]= None, indent:int=1) -> str:
+
+    table_enum:Tablenames = try_parse_enum_value(table,Tablenames)
+
+    if table_schema is None:
+        table_schema = "public"
+    
+    if not prefix:
+        prefix = ""
+    else:
+        prefix += "."
+
+    column_exclusion = ""
+    if exclude_columns:
+        if isinstance(exclude_columns,str):
+            column_exclusion = f"AND c.column_name != '{exclude_columns}'"
+        else:   
+            column_exclusion = "AND c.column_name NOT IN ('"+ "','".join(exclude_columns) + "')"
+    else:
+        return prefix + "*"
+
+    query = f"""
+    SELECT column_name
+    FROM information_schema.columns As c
+    WHERE table_name = '{table_enum.value}'
+    AND c.table_schema = '{table_schema}'
+    {column_exclusion}
+    ORDER BY ordinal_position
+    """
+
+    columns = [prefix + r[0] for r in execute_all(query)]
+    join_on_me = ",\n"
+    join_on_me+= INDENT*indent
+    return join_on_me.join(columns)

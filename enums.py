@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Any
 
 
 class DataTypes(Enum):
@@ -549,3 +550,18 @@ class CognitionMarkdownFileState(Enum):
     TRANSFORMING = "TRANSFORMING"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+
+
+
+
+
+
+
+def try_parse_enum_value(string:str, enumType:Enum,raise_me:bool = True) -> Any:
+    try:
+        parsed = enumType[string.upper()]
+    except KeyError:
+        if raise_me:
+            raise ValueError(f"Invalid value {string} for enum {enumType}")
+        return
+    return parsed

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional,Dict
 from datetime import datetime
 from ..business_objects import general
 from ..session import session
@@ -7,7 +7,7 @@ from ..models import (
     CognitionMarkdownFile,
     CognitionMarkdownDataset,
 )
-
+from ..util import prevent_sql_injection
 
 def get(project_id: str, environment_variable_id: str) -> CognitionEnvironmentVariable:
     return (
@@ -71,6 +71,37 @@ def get_all_by_org_id(org_id: str) -> List[CognitionEnvironmentVariable]:
         .all()
     )
 
+
+def get_all_in_org(org_id:str, only_project_id:Optional[str]=None) -> List[Dict[str,str]]:
+    # collects everything (org and none or specific) from an org and ensures value is hidden
+    org_id = prevent_sql_injection(org_id,isinstance(org_id,str))
+    base_select_columns = general.construct_select_columns("environment_variable","cognition","ev",["value","organization_id"],3)
+
+    project_filter = ""
+    if only_project_id:
+        only_project_id = prevent_sql_injection(only_project_id,isinstance(only_project_id,str))
+        project_filter = f"(AND ev.project_id = '{only_project_id}' OR ev.project_id IS NULL)"
+    query = f"""
+    SELECT array_agg(row_to_json(x))
+    FROM (
+        SELECT 
+            {base_select_columns},
+            CASE WHEN ev.is_secret THEN NULL ELSE ev.value END "value",
+            LENGTH(ev.value) "value_length",
+            CASE WHEN ev.project_id IS NULL THEN 'ORGANIZATION' ELSE 'PROJECT' END "scope",
+            p.name project_name,
+            COALESCE(ev.organization_id, p.organization_id) organization_id
+        FROM cognition.environment_variable ev
+        LEFT JOIN cognition.project p
+            ON ev.project_id = p.id AND p.organization_id = '{org_id}'
+        WHERE (ev.organization_id IS NULL OR ev.organization_id = '{org_id}')
+        {project_filter}
+    ) x
+    """
+    result = general.execute_first(query)
+    if result and result[0]:
+        return result[0]
+    return []
 
 def can_access_org_env_var(org_id: str, environment_variable_id: str) -> bool:
     # since org specific env vars dont have a project_id but we still need to check the access rights
