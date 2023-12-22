@@ -552,12 +552,7 @@ class CognitionMarkdownFileState(Enum):
     FAILED = "FAILED"
 
 
-
-
-
-
-
-def try_parse_enum_value(string:str, enumType:Enum,raise_me:bool = True) -> Any:
+def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> Any:
     try:
         parsed = enumType[string.upper()]
     except KeyError:

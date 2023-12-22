@@ -1,4 +1,4 @@
-from typing import List, Optional,Dict
+from typing import List, Optional, Dict
 from datetime import datetime
 from ..business_objects import general
 from . import project as cognition_project
@@ -10,6 +10,7 @@ from ..models import (
 )
 from ..util import prevent_sql_injection
 from sqlalchemy import or_
+
 
 def get(project_id: str, environment_variable_id: str) -> CognitionEnvironmentVariable:
     return (
@@ -33,7 +34,12 @@ def get_by_name(
     # depending on the scope the org_id or project_id are empty so for a get_by_name we need to check both
     return (
         session.query(CognitionEnvironmentVariable)
-        .filter(or_(CognitionEnvironmentVariable.project_id == project_id,CognitionEnvironmentVariable.organization_id == org_id))
+        .filter(
+            or_(
+                CognitionEnvironmentVariable.project_id == project_id,
+                CognitionEnvironmentVariable.organization_id == org_id,
+            )
+        )
         .filter(CognitionEnvironmentVariable.name == name)
         .first()
     )
@@ -79,15 +85,23 @@ def get_all_by_org_id(org_id: str) -> List[CognitionEnvironmentVariable]:
     )
 
 
-def get_all_in_org(org_id:str, only_project_id:Optional[str]=None) -> List[Dict[str,str]]:
+def get_all_in_org(
+    org_id: str, only_project_id: Optional[str] = None
+) -> List[Dict[str, str]]:
     # collects everything (org and none or specific) from an org and ensures value is hidden
-    org_id = prevent_sql_injection(org_id,isinstance(org_id,str))
-    base_select_columns = general.construct_select_columns("environment_variable","cognition","ev",["value","organization_id"],3)
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+    base_select_columns = general.construct_select_columns(
+        "environment_variable", "cognition", "ev", ["value", "organization_id"], 3
+    )
 
     project_filter = ""
     if only_project_id:
-        only_project_id = prevent_sql_injection(only_project_id,isinstance(only_project_id,str))
-        project_filter = f"AND (ev.project_id = '{only_project_id}' OR ev.project_id IS NULL)"
+        only_project_id = prevent_sql_injection(
+            only_project_id, isinstance(only_project_id, str)
+        )
+        project_filter = (
+            f"AND (ev.project_id = '{only_project_id}' OR ev.project_id IS NULL)"
+        )
     query = f"""
     SELECT array_agg(row_to_json(x))
     FROM (
@@ -109,6 +123,7 @@ def get_all_in_org(org_id:str, only_project_id:Optional[str]=None) -> List[Dict[
     if result and result[0]:
         return result[0]
     return []
+
 
 def can_access_org_env_var(org_id: str, environment_variable_id: str) -> bool:
     # since org specific env vars dont have a project_id but we still need to check the access rights
