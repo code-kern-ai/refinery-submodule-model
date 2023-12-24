@@ -63,6 +63,15 @@ def routing(
 
 """
 
+    execute_query_enrichment_if_source_code = """from typing import Dict, Any, Tuple
+
+def check_execute(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> bool:
+    return True
+
+"""
+
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
@@ -75,6 +84,7 @@ def routing(
         refinery_relevance_project_id=refinery_relevances_project_id,
         operator_routing_source_code=operator_routing_source_code,
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
+        execute_query_enrichment_if_source_code=execute_query_enrichment_if_source_code,
     )
     general.add(project, with_commit)
     return project
@@ -86,6 +96,7 @@ def update(
     description: Optional[str] = None,
     operator_routing_source_code: Optional[str] = None,
     refinery_synchronization_interval_option: Optional[str] = None,
+    execute_query_enrichment_if_source_code: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -98,6 +109,10 @@ def update(
     if refinery_synchronization_interval_option is not None:
         project.refinery_synchronization_interval_option = (
             refinery_synchronization_interval_option
+        )
+    if execute_query_enrichment_if_source_code is not None:
+        project.execute_query_enrichment_if_source_code = (
+            execute_query_enrichment_if_source_code
         )
     general.flush_or_commit(with_commit)
     return project

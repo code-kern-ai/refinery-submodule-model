@@ -1046,6 +1046,8 @@ class CognitionProject(Base):
     operator_routing_source_code = Column(String)
     wizard_running = Column(Boolean, default=False)
     refinery_synchronization_interval_option = Column(String)
+    interface_type = Column(String)
+    execute_query_enrichment_if_source_code = Column(String)
 
 
 class CognitionStrategy(Base):
@@ -1093,6 +1095,9 @@ class CognitionStrategyStep(Base):
     step_type = Column(String)
     position = Column(Integer)
     config = Column(JSON)
+    progress_text = Column(String)
+    enable_emissions = Column(Boolean, default=True)
+    execute_if_source_code = Column(String)
 
 
 class CognitionConversation(Base):
@@ -1140,10 +1145,11 @@ class CognitionMessage(Base):
     created_at = Column(DateTime, default=sql.func.now())
     question = Column(String)
     facts = Column(ARRAY(JSON))
+    selection_widget = Column(ARRAY(JSON))
     answer = Column(String)
 
-    # None = not yet answered, True = positive, false = negative
-    positive_feedback = Column(Boolean)
+    feedback_value = Column(String)
+    feedback_category = Column(String)
     feedback_message = Column(String)
 
     scope_dict_diff_previous_conversation = Column(JSON)
@@ -1184,6 +1190,7 @@ class CognitionPipelineLogs(Base):
     record_dict_diff_previous_message = Column(JSON)
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
+    skipped_step = Column(Boolean, default=False)
 
 
 class CognitionEnvironmentVariable(Base):

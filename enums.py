@@ -488,18 +488,39 @@ class StrategyStepType(Enum):
     NONE = "NONE"
     PYTHON = "PYTHON"
     LLM = "LLM"
+    SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+    WEBSEARCH = "WEBSEARCH"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
+    
+    def get_progress_text(self):
+        return STEP_PROGRESS_TEXTS.get(self, "No progress text available")
 
 
 STEP_DESCRIPTIONS = {
     StrategyStepType.RETRIEVAL: "Fetch facts from a DB",
     StrategyStepType.RELEVANCE: "Classify retrieved facts",
-    StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Custom python function",
     StrategyStepType.LLM: "Run a LLM",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.SELECTION: "Select data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrase query",
+    StrategyStepType.WEBSEARCH: "Search the web",
 }
+
+STEP_PROGRESS_TEXTS = {
+    StrategyStepType.RETRIEVAL: "Retrieving facts",
+    StrategyStepType.RELEVANCE: "Classifying facts",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.PYTHON: "Running custom python function",
+    StrategyStepType.LLM: "Running LLM",
+    StrategyStepType.SELECTION: "Selecting data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrasing query",
+    StrategyStepType.WEBSEARCH: "Searching the web",
+}
+
 
 
 class PipelineStep(Enum):
@@ -560,3 +581,14 @@ def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> 
             raise ValueError(f"Invalid value {string} for enum {enumType}")
         return
     return parsed
+
+class EmitType(Enum):
+    ANSWER = "ANSWER"
+    RETRIEVAL_RESULTS = "RETRIEVAL_RESULTS"
+    FOLLOW_UPS = "FOLLOW_UPS"
+    SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+
+class CognitionLLMStepUsageType(Enum):
+    BASE = "BASE"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
