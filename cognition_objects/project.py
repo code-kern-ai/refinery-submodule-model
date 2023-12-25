@@ -95,6 +95,7 @@ def update(
     name: Optional[str] = None,
     description: Optional[str] = None,
     customer_color_primary: Optional[str] = None,
+    customer_color_primary_only_accent: Optional[bool] = None,
     customer_color_secondary: Optional[str] = None,
     operator_routing_source_code: Optional[str] = None,
     refinery_synchronization_interval_option: Optional[str] = None,
@@ -108,6 +109,10 @@ def update(
         project.description = description
     if customer_color_primary is not None:
         project.customer_color_primary = customer_color_primary
+    if customer_color_primary_only_accent is not None:
+        project.customer_color_primary_only_accent = (
+            customer_color_primary_only_accent
+        )
     if customer_color_secondary is not None:
         project.customer_color_secondary = customer_color_secondary
     if operator_routing_source_code is not None:
