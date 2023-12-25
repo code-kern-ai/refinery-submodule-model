@@ -94,6 +94,8 @@ def update(
     project_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    customer_color_primary: Optional[str] = None,
+    customer_color_secondary: Optional[str] = None,
     operator_routing_source_code: Optional[str] = None,
     refinery_synchronization_interval_option: Optional[str] = None,
     execute_query_enrichment_if_source_code: Optional[str] = None,
@@ -104,6 +106,10 @@ def update(
         project.name = name
     if description is not None:
         project.description = description
+    if customer_color_primary is not None:
+        project.customer_color_primary = customer_color_primary
+    if customer_color_secondary is not None:
+        project.customer_color_secondary = customer_color_secondary
     if operator_routing_source_code is not None:
         project.operator_routing_source_code = operator_routing_source_code
     if refinery_synchronization_interval_option is not None:

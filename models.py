@@ -1049,6 +1049,9 @@ class CognitionProject(Base):
     interface_type = Column(String)
     execute_query_enrichment_if_source_code = Column(String)
 
+    customer_logo_uri = Column(String)
+    customer_color_primary = Column(String, default="#4ade80")
+    customer_color_secondary = Column(String, default="#4ade80")
 
 class CognitionStrategy(Base):
     __tablename__ = Tablenames.STRATEGY.value
