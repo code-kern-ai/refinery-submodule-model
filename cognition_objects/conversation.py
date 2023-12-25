@@ -42,7 +42,7 @@ def get_all_paginated_by_project_id(
         paginated_result = (
             session.query(CognitionConversation)
             .filter(CognitionConversation.project_id == project_id)
-            .order_by(CognitionConversation.created_at.asc())
+            .order_by(CognitionConversation.created_at.desc())
             .limit(limit)
             .offset((page - 1) * limit)
             .all()
