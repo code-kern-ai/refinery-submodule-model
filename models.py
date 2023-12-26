@@ -157,6 +157,7 @@ class User(Base):
         index=True,
     )
     role = Column(String, default=UserRoles.ENGINEER.value)  # enum UserRoles
+    language_display = Column(String, default="en")
     notifications = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.NOTIFICATION,

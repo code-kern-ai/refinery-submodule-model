@@ -100,6 +100,13 @@ def update_organization(
     user.organization_id = organization_id
     general.flush_or_commit(with_commit)
 
+def update_language_display(
+    user_id: str, language_display: str, with_commit: bool = False
+) -> None:
+    user = get(user_id)
+    user.language_display = language_display
+    general.flush_or_commit(with_commit)
+
 
 def __create_migration_user() -> str:
     organization_item = organization.get_by_name("migration")
