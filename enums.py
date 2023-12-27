@@ -492,6 +492,7 @@ class StrategyStepType(Enum):
     SELECTION = "SELECTION"
     QUERY_REPHRASING = "QUERY_REPHRASING"
     WEBSEARCH = "WEBSEARCH"
+    TRUNCATE_CONTEXT = "TRUNCATE_CONTEXT"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -509,6 +510,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.SELECTION: "Select data",
     StrategyStepType.QUERY_REPHRASING: "Rephrase query",
     StrategyStepType.WEBSEARCH: "Search the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -520,6 +522,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.SELECTION: "Selecting data",
     StrategyStepType.QUERY_REPHRASING: "Rephrasing query",
     StrategyStepType.WEBSEARCH: "Searching the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
 }
 
 
