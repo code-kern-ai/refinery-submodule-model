@@ -1054,6 +1054,7 @@ class CognitionProject(Base):
     customer_color_primary_only_accent = Column(Boolean, default=False)
     customer_color_secondary = Column(String, default="#9333ea")
 
+
 class CognitionStrategy(Base):
     __tablename__ = Tablenames.STRATEGY.value
     __table_args__ = {"schema": "cognition"}
@@ -1355,3 +1356,37 @@ class CognitionRefinerySynchronizationTask(Base):
     state = Column(String)  # e.g. CREATED, FINISHED, FAILED
     logs = Column(ARRAY(String))
     num_records_created = Column(Integer)
+
+
+class CognitionConsumptionLog(Base):
+    __tablename__ = Tablenames.CONSUMPTION_LOG.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    strategy_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    message_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MESSAGE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    complexity = Column(String)
+    state = Column(String)

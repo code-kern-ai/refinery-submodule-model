@@ -130,6 +130,7 @@ class Tablenames(Enum):
     LLM_STEP = "llm_step"
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
+    CONSUMPTION_LOG = "consumption_log"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -599,3 +600,15 @@ class StrategyComplexity(Enum):
     SIMPLE = "SIMPLE"
     MEDIUM = "MEDIUM"
     COMPLEX = "COMPLEX"
+
+
+class StrategyComplexityPrice(Enum):
+    SIMPLE = 0.25
+    MEDIUM = 0.5
+    COMPLEX = 0.75
+
+
+class ConsumptionLogState(Enum):
+    CREATED = "CREATED"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
