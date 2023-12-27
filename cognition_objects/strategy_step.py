@@ -58,7 +58,6 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionStrategyStep:
-    
     execute_if_source_code = """from typing import Dict, Any, Tuple
 
 def check_execute(
@@ -93,6 +92,8 @@ def update(
     position: Optional[int] = None,
     config: Optional[Dict] = None,
     progress_text: Optional[str] = None,
+    enable_emissions: Optional[bool] = None,
+    execute_if_source_code: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionStrategyStep:
     strategy_step: CognitionStrategyStep = get(project_id, strategy_step_id)
@@ -108,6 +109,10 @@ def update(
         flag_modified(strategy_step, "config")
     if progress_text is not None:
         strategy_step.progress_text = progress_text
+    if enable_emissions is not None:
+        strategy_step.enable_emissions = enable_emissions
+    if execute_if_source_code is not None:
+        strategy_step.execute_if_source_code = execute_if_source_code
 
     general.flush_or_commit(with_commit)
     return strategy_step
