@@ -494,7 +494,7 @@ class StrategyStepType(Enum):
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
-    
+
     def get_progress_text(self):
         return STEP_PROGRESS_TEXTS.get(self, "No progress text available")
 
@@ -520,7 +520,6 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.QUERY_REPHRASING: "Rephrasing query",
     StrategyStepType.WEBSEARCH: "Searching the web",
 }
-
 
 
 class PipelineStep(Enum):
@@ -582,6 +581,7 @@ def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> 
         return
     return parsed
 
+
 class EmitType(Enum):
     ANSWER = "ANSWER"
     RETRIEVAL_RESULTS = "RETRIEVAL_RESULTS"
@@ -589,6 +589,13 @@ class EmitType(Enum):
     SELECTION = "SELECTION"
     QUERY_REPHRASING = "QUERY_REPHRASING"
 
+
 class CognitionLLMStepUsageType(Enum):
     BASE = "BASE"
     QUERY_REPHRASING = "QUERY_REPHRASING"
+
+
+class StrategyComplexity(Enum):
+    SIMPLE = "SIMPLE"
+    MEDIUM = "MEDIUM"
+    COMPLEX = "COMPLEX"
