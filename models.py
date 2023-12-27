@@ -1152,6 +1152,7 @@ class CognitionMessage(Base):
     facts = Column(ARRAY(JSON))
     selection_widget = Column(ARRAY(JSON))
     answer = Column(String)
+    header = Column(String)
 
     feedback_value = Column(String)
     feedback_category = Column(String)
