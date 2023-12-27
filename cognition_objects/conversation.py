@@ -104,6 +104,9 @@ def update_message(
     conversation_id: str,
     message_id: str,
     answer: Optional[str] = None,
+    feedback_value: Optional[str] = None,
+    feedback_category: Optional[str] = None,
+    feedback_message: Optional[str] = None,
     strategy_id: Optional[str] = None,
     scope_dict_diff_previous_conversation: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
@@ -113,6 +116,12 @@ def update_message(
         message_entity.strategy_id = strategy_id
     if answer is not None:
         message_entity.answer = answer
+    if feedback_value is not None:
+        message_entity.feedback_value = feedback_value
+    if feedback_category is not None:
+        message_entity.feedback_category = feedback_category
+    if feedback_message is not None:
+        message_entity.feedback_message = feedback_message
     if scope_dict_diff_previous_conversation is not None:
         message_entity.scope_dict_diff_previous_conversation = (
             scope_dict_diff_previous_conversation
