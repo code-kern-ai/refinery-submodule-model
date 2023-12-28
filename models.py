@@ -1122,6 +1122,7 @@ class CognitionConversation(Base):
     created_at = Column(DateTime, default=sql.func.now())
     scope_dict = Column(JSON)
     header = Column(String)
+    error = Column(String)
 
 
 class CognitionMessage(Base):

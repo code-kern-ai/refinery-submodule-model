@@ -91,6 +91,7 @@ def update(
     conversation_id: str,
     scope_dict: Optional[Dict[str, Any]] = None,
     header: Optional[str] = None,
+    error: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity = get(project_id, conversation_id)
@@ -98,6 +99,19 @@ def update(
         conversation_entity.scope_dict = scope_dict
     if header is not None:
         conversation_entity.header = header
+    if error is not None:
+        conversation_entity.error = error
+    general.flush_or_commit(with_commit)
+    return conversation_entity
+
+
+def clear_error(
+    project_id: str,
+    conversation_id: str,
+    with_commit: bool = True,
+) -> CognitionConversation:
+    conversation_entity = get(project_id, conversation_id)
+    conversation_entity.error = None
     general.flush_or_commit(with_commit)
     return conversation_entity
 
