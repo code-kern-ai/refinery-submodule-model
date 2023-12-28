@@ -497,6 +497,9 @@ class StrategyStepType(Enum):
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
+    
+    def get_when_to_use(self):
+        return STEP_WHEN_TO_USE.get(self, "No description available")
 
     def get_progress_text(self):
         return STEP_PROGRESS_TEXTS.get(self, "No progress text available")
@@ -513,6 +516,19 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.WEBSEARCH: "Search the web",
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
     StrategyStepType.HEADER: "Writing header",
+}
+
+STEP_WHEN_TO_USE = {
+    StrategyStepType.RETRIEVAL: "When you want to retrieve facts from a database",
+    StrategyStepType.RELEVANCE: "When you want to classify retrieved facts",
+    StrategyStepType.PYTHON: "When you want to run a custom python function",
+    StrategyStepType.LLM: "When you want to run a LLM",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.SELECTION: "When you want to select data",
+    StrategyStepType.QUERY_REPHRASING: "When you want to rephrase a query",
+    StrategyStepType.WEBSEARCH: "When you want to search the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
+    StrategyStepType.HEADER: "When you want to write a header",
 }
 
 STEP_PROGRESS_TEXTS = {
