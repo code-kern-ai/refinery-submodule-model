@@ -85,7 +85,6 @@ def create(
         created_at=created_at,
         question=question,
         facts=[],
-        header=question,
     )
 
     general.add(message, with_commit)
@@ -102,7 +101,6 @@ def update(
     feedback_value: Optional[str] = None,
     feedback_category: Optional[str] = None,
     feedback_message: Optional[str] = None,
-    header: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionMessage:
     message = get(project_id, message_id)
@@ -118,8 +116,6 @@ def update(
         message.feedback_category = feedback_category
     if feedback_message is not None:
         message.feedback_message = feedback_message
-    if header is not None:
-        message.header = header
 
     general.flush_or_commit(with_commit)
 

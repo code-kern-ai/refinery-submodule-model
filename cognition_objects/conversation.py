@@ -90,11 +90,14 @@ def update(
     project_id: str,
     conversation_id: str,
     scope_dict: Optional[Dict[str, Any]] = None,
+    header: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity = get(project_id, conversation_id)
     if scope_dict is not None:
         conversation_entity.scope_dict = scope_dict
+    if header is not None:
+        conversation_entity.header = header
     general.flush_or_commit(with_commit)
     return conversation_entity
 
