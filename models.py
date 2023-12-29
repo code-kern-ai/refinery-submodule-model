@@ -1011,6 +1011,27 @@ class TaskQueue(Base):
 
 
 # --- COGNITION TABLES
+class CognitionTeam(Base):
+    __tablename__ = Tablenames.TEAM.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    description = Column(String)
+
+
 class CognitionProject(Base):
     __tablename__ = Tablenames.PROJECT.value
     __table_args__ = {"schema": "cognition"}
@@ -1018,6 +1039,11 @@ class CognitionProject(Base):
     organization_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    team_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.TEAM.value}.id", ondelete="CASCADE"),
         index=True,
     )
     refinery_references_project_id = Column(
@@ -1392,3 +1418,28 @@ class CognitionConsumptionLog(Base):
     created_at = Column(DateTime, default=sql.func.now())
     complexity = Column(String)
     state = Column(String)
+
+
+class CognitionTeamMember(Base):
+    __tablename__ = Tablenames.TEAM_MEMBER.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    team_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.TEAM.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )

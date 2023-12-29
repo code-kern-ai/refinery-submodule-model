@@ -131,6 +131,8 @@ class Tablenames(Enum):
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
     CONSUMPTION_LOG = "consumption_log"
+    TEAM = "team"
+    TEAM_MEMBER = "team_member"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -497,7 +499,7 @@ class StrategyStepType(Enum):
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
-    
+
     def get_when_to_use(self):
         return STEP_WHEN_TO_USE.get(self, "No description available")
 
