@@ -110,9 +110,7 @@ def update(
     if customer_color_primary is not None:
         project.customer_color_primary = customer_color_primary
     if customer_color_primary_only_accent is not None:
-        project.customer_color_primary_only_accent = (
-            customer_color_primary_only_accent
-        )
+        project.customer_color_primary_only_accent = customer_color_primary_only_accent
     if customer_color_secondary is not None:
         project.customer_color_secondary = customer_color_secondary
     if operator_routing_source_code is not None:

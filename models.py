@@ -1041,11 +1041,6 @@ class CognitionProject(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    team_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.TEAM.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
     refinery_references_project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
@@ -1434,6 +1429,31 @@ class CognitionTeamMember(Base):
     user_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class CognitionTeamProjectAccess(Base):
+    __tablename__ = Tablenames.TEAM_PROJECT_ACCESS.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    team_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.TEAM.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
 

@@ -35,6 +35,17 @@ def get_all_by_user_id(user_id: str) -> List[CognitionTeamMember]:
     )
 
 
+def get_by_team_and_user_id(team_id: str, user_id: str) -> CognitionTeamMember:
+    return (
+        session.query(CognitionTeamMember)
+        .filter(
+            CognitionTeamMember.team_id == team_id,
+            CognitionTeamMember.user_id == user_id,
+        )
+        .first()
+    )
+
+
 def create(
     team_id: str,
     user_id: str,

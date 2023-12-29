@@ -133,6 +133,7 @@ class Tablenames(Enum):
     CONSUMPTION_LOG = "consumption_log"
     TEAM = "team"
     TEAM_MEMBER = "team_member"
+    TEAM_PROJECT_ACCESS = "team_project_access"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
