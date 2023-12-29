@@ -212,7 +212,9 @@ def get_zero_shot_project_config(project_id: str, payload_id: str) -> Any:
 
 
 def get_or_create_queue_project(
-    org_id: str, user_id: str, with_commit: bool = False
+    org_id: str,
+    user_id: str,
+    with_commit: bool = False,
 ) -> Project:
     ## user_id is a "last used by" indicator
 
@@ -244,12 +246,37 @@ def get_or_create_queue_project(
     return prj
 
 
+def create_dataset_project(
+    org_id: str,
+    user_id: str,
+    name: str,
+    description: str,
+    tokenizer: str,
+    with_commit: bool = False,
+) -> Project:
+    ## user_id is a "last used by" indicator
+
+    prj = create(
+        organization_id=org_id,
+        name=name,
+        description=description,
+        created_by=user_id,
+        tokenizer=tokenizer,
+        tokenizer_blank=tokenizer[:2],
+        with_commit=with_commit,
+    )
+
+    return prj
+
+
 def create(
     organization_id: str,
     name: str,
     description: str,
     created_by: str,
     created_at: Optional[str] = None,
+    tokenizer: Optional[str] = None,
+    tokenizer_blank: Optional[str] = None,
     with_commit: bool = False,
     status: enums.ProjectStatus = enums.ProjectStatus.INIT_UPLOAD,
 ) -> Project:
@@ -260,6 +287,8 @@ def create(
         created_by=created_by,
         created_at=created_at,
         status=status.value,
+        tokenizer=tokenizer,
+        tokenizer_blank=tokenizer_blank,
     )
     general.add(project, with_commit)
     return project
