@@ -1135,6 +1135,7 @@ class CognitionConversation(Base):
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    synopsis_spreadsheet_row_id = String()
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
@@ -1457,6 +1458,56 @@ class CognitionTeamProjectAccess(Base):
         index=True,
     )
 
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class CognitionSynopsisSpreadsheet(Base):
+    __tablename__ = Tablenames.SYNOPSIS_SPREADSHEET.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    dataset_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.MARKDOWN_DATASET.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    filter_attribute_name = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class CognitionSynopsisSpreadsheetRow(Base):
+    __tablename__ = Tablenames.SYNOPSIS_SPREADSHEET_ROW.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    spreadsheet_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.SYNOPSIS_SPREADSHEET.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),

@@ -19,6 +19,19 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
     )
 
 
+def get_all_by_spreadsheet_row_id(
+    spreadsheet_row_id: str,
+) -> List[CognitionConversation]:
+    return (
+        session.query(CognitionConversation)
+        .filter(
+            CognitionConversation.synopsis_spreadsheet_row_id == spreadsheet_row_id,
+        )
+        .order_by(CognitionConversation.created_at.asc())
+        .all()
+    )
+
+
 def get_all_paginated_by_project_id(
     project_id: str, page: int, limit: int
 ) -> Tuple[int, int, List[CognitionConversation]]:
@@ -56,6 +69,7 @@ def create(
     project_id: str,
     user_id: str,
     with_commit: bool = True,
+    spreadsheet_row_id: Optional[str] = None,
     created_at: Optional[datetime] = None,
 ) -> CognitionConversation:
     conversation: CognitionConversation = CognitionConversation(
@@ -63,6 +77,7 @@ def create(
         created_by=user_id,
         created_at=created_at,
         scope_dict={},
+        synopsis_spreadsheet_row_id=spreadsheet_row_id,
     )
     general.add(conversation, with_commit)
     return conversation
