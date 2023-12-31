@@ -47,8 +47,15 @@ def create(
     return spreadsheet_row
 
 
-def delete(spreadsheet_row_id: str, with_commit: bool = True) -> None:
+def delete(
+    project_id: str,
+    spreadsheet_id: str,
+    spreadsheet_row_id: str,
+    with_commit: bool = True,
+) -> None:
     session.query(CognitionSynopsisSpreadsheetRow).filter(
         CognitionSynopsisSpreadsheetRow.id == spreadsheet_row_id,
+        CognitionSynopsisSpreadsheetRow.spreadsheet_id == spreadsheet_id,
+        CognitionSynopsisSpreadsheetRow.project_id == project_id,
     ).delete()
     general.flush_or_commit(with_commit)

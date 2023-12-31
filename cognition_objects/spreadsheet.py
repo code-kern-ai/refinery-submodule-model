@@ -67,8 +67,9 @@ def update(
     return spreadsheet
 
 
-def delete(spreadsheet_id: str, with_commit: bool = True) -> None:
+def delete(project_id: str, spreadsheet_id: str, with_commit: bool = True) -> None:
     session.query(CognitionSynopsisSpreadsheet).filter(
         CognitionSynopsisSpreadsheet.id == spreadsheet_id,
+        CognitionSynopsisSpreadsheet.project_id == project_id,
     ).delete()
     general.flush_or_commit(with_commit)
