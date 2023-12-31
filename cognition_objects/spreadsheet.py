@@ -7,11 +7,12 @@ from ..session import session
 from ..models import CognitionSynopsisSpreadsheet
 
 
-def get(spreadsheet_id: str) -> CognitionSynopsisSpreadsheet:
+def get(project_id: str, spreadsheet_id: str) -> CognitionSynopsisSpreadsheet:
     return (
         session.query(CognitionSynopsisSpreadsheet)
         .filter(
             CognitionSynopsisSpreadsheet.id == spreadsheet_id,
+            CognitionSynopsisSpreadsheet.project_id == project_id,
         )
         .first()
     )
@@ -52,12 +53,13 @@ def create(
 
 
 def update(
+    project_id: str,
     spreadsheet_id: str,
     name: Optional[str] = None,
     filter_name: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionSynopsisSpreadsheet:
-    spreadsheet = get(spreadsheet_id)
+    spreadsheet = get(project_id, spreadsheet_id)
     if name is not None:
         spreadsheet.name = name
     if filter_name is not None:
