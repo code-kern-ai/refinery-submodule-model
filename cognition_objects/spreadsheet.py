@@ -34,9 +34,11 @@ def get_all_by_project_id(
 def create(
     project_id: str,
     user_id: str,
-    dataset_id: str,
     name: str,
-    filter_name: str,
+    synopsis_type: str,
+    dataset_id: Optional[str] = None,
+    filter_name: Optional[str] = None,
+    task_scope_dict: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionSynopsisSpreadsheet:
@@ -45,6 +47,8 @@ def create(
         dataset_id=dataset_id,
         name=name,
         filter_attribute_name=filter_name,
+        synopsis_type=synopsis_type,
+        task_scope_dict=task_scope_dict,
         created_at=created_at,
         created_by=user_id,
     )

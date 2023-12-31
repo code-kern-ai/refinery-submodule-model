@@ -1486,6 +1486,8 @@ class CognitionSynopsisSpreadsheet(Base):
         index=True,
     )
     name = Column(String)
+    synopsis_type = Column(String)
+    task_scope_dict = Column(JSON)
     filter_attribute_name = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
