@@ -69,6 +69,7 @@ def create(
     project_id: str,
     user_id: str,
     with_commit: bool = True,
+    synopsis_column: Optional[str] = None,
     spreadsheet_row_id: Optional[str] = None,
     created_at: Optional[datetime] = None,
 ) -> CognitionConversation:
@@ -77,6 +78,7 @@ def create(
         created_by=user_id,
         created_at=created_at,
         scope_dict={},
+        synopsis_column=synopsis_column,
         synopsis_spreadsheet_row_id=spreadsheet_row_id,
     )
     general.add(conversation, with_commit)

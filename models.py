@@ -1135,7 +1135,6 @@ class CognitionConversation(Base):
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    synopsis_spreadsheet_row_id = String()
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
@@ -1145,6 +1144,10 @@ class CognitionConversation(Base):
     scope_dict = Column(JSON)
     header = Column(String)
     error = Column(String)
+
+    # synopsis-specific
+    synopsis_spreadsheet_row_id = Column(String)
+    synopsis_column = Column(String)
 
 
 class CognitionMessage(Base):
