@@ -1,5 +1,5 @@
 from typing import List
-from submodules.model.models import AdminMessage
+from ..models import AdminMessage
 from . import general
 from ..session import session
 from datetime import datetime
