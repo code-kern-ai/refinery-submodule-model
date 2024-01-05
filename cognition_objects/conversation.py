@@ -68,6 +68,7 @@ def create(
     return conversation
 
 
+# TODO: replace usage with create from message.py and delete this function
 def add_message(
     project_id: str,
     conversation_id: str,
@@ -90,20 +91,41 @@ def update(
     project_id: str,
     conversation_id: str,
     scope_dict: Optional[Dict[str, Any]] = None,
+    header: Optional[str] = None,
+    error: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity = get(project_id, conversation_id)
     if scope_dict is not None:
         conversation_entity.scope_dict = scope_dict
+    if header is not None:
+        conversation_entity.header = header
+    if error is not None:
+        conversation_entity.error = error
     general.flush_or_commit(with_commit)
     return conversation_entity
 
 
+def clear_error(
+    project_id: str,
+    conversation_id: str,
+    with_commit: bool = True,
+) -> CognitionConversation:
+    conversation_entity = get(project_id, conversation_id)
+    conversation_entity.error = None
+    general.flush_or_commit(with_commit)
+    return conversation_entity
+
+
+# TODO: replace usage with update from message.py and delete this function
 def update_message(
     project_id: str,
     conversation_id: str,
     message_id: str,
     answer: Optional[str] = None,
+    feedback_value: Optional[str] = None,
+    feedback_category: Optional[str] = None,
+    feedback_message: Optional[str] = None,
     strategy_id: Optional[str] = None,
     scope_dict_diff_previous_conversation: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
@@ -113,6 +135,12 @@ def update_message(
         message_entity.strategy_id = strategy_id
     if answer is not None:
         message_entity.answer = answer
+    if feedback_value is not None:
+        message_entity.feedback_value = feedback_value
+    if feedback_category is not None:
+        message_entity.feedback_category = feedback_category
+    if feedback_message is not None:
+        message_entity.feedback_message = feedback_message
     if scope_dict_diff_previous_conversation is not None:
         message_entity.scope_dict_diff_previous_conversation = (
             scope_dict_diff_previous_conversation

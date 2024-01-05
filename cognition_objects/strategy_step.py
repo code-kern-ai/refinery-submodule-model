@@ -54,9 +54,18 @@ def create(
     step_type: str,
     position: int,
     config: Dict,
+    progress_text: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionStrategyStep:
+    execute_if_source_code = """from typing import Dict, Any, Tuple
+
+def check_execute(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> bool:
+    return True
+"""
+
     strategy: CognitionStrategyStep = CognitionStrategyStep(
         project_id=project_id,
         strategy_id=strategy_id,
@@ -67,6 +76,8 @@ def create(
         step_type=step_type,
         position=position,
         config=config,
+        progress_text=progress_text,
+        execute_if_source_code=execute_if_source_code,
     )
     general.add(strategy, with_commit)
 
@@ -80,6 +91,8 @@ def update(
     description: Optional[str] = None,
     position: Optional[int] = None,
     config: Optional[Dict] = None,
+    progress_text: Optional[str] = None,
+    execute_if_source_code: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionStrategyStep:
     strategy_step: CognitionStrategyStep = get(project_id, strategy_step_id)
@@ -93,6 +106,10 @@ def update(
     if config is not None:
         strategy_step.config = config
         flag_modified(strategy_step, "config")
+    if progress_text is not None:
+        strategy_step.progress_text = progress_text
+    if execute_if_source_code is not None:
+        strategy_step.execute_if_source_code = execute_if_source_code
 
     general.flush_or_commit(with_commit)
     return strategy_step

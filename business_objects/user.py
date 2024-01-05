@@ -58,7 +58,7 @@ def get_user_count(organization_id: str, project_id: str) -> List[Any]:
 
 
 def get_migration_user() -> str:
-    query = f"""
+    query = """
     SELECT u.id
     FROM public.user u
     INNER JOIN organization o
@@ -119,6 +119,14 @@ def __create_migration_user() -> str:
     """
     user = general.execute_first(query)
     return user.id
+
+
+def update_language_display(
+    user_id: str, language_display: str, with_commit: bool = False
+) -> None:
+    user = get(user_id)
+    user.language_display = language_display
+    general.flush_or_commit(with_commit)
 
 
 def __create_migration_organization():
