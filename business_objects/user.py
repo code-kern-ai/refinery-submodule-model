@@ -121,14 +121,6 @@ def __create_migration_user() -> str:
     return user.id
 
 
-def update_language_display(
-    user_id: str, language_display: str, with_commit: bool = False
-) -> None:
-    user = get(user_id)
-    user.language_display = language_display
-    general.flush_or_commit(with_commit)
-
-
 def __create_migration_organization():
     query = f"""    
     INSERT INTO organization 
