@@ -578,6 +578,20 @@ class CognitionMarkdownFileState(Enum):
     FAILED = "FAILED"
 
 
+class CognitionInterfaceType(Enum):
+    CHAT = "CHAT"
+    COMPARE = "COMPARE"
+    ENRICH = "ENRICH"
+
+
+class EmitType(Enum):
+    ANSWER = "ANSWER"
+    RETRIEVAL_RESULTS = "RETRIEVAL_RESULTS"
+    FOLLOW_UPS = "FOLLOW_UPS"
+    SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+
+
 def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> Any:
     try:
         parsed = enumType[string.upper()]
