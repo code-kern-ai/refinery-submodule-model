@@ -637,13 +637,18 @@ def update_add_user_created_attribute(
     with_commit: bool = False,
 ) -> None:
     attribute_item = attribute.get(project_id, attribute_id)
-
-    for i, (record_id, attribute_value) in enumerate(calculated_attributes.items()):
+    changed = 0
+    for record_id, attribute_value in calculated_attributes.items():
         record_item = get(project_id=project_id, record_id=record_id)
+        if not record_item:
+            # this can happen if an record was deleted or the tokenizer file isn't up to date
+            continue
         record_item.data[attribute_item.name] = attribute_value
         flag_modified(record_item, "data")
-        if (i + 1) % 1000 == 0:
+        if changed > 1000:
+            changed = 0
             general.flush_or_commit(with_commit)
+        changed += 1
     general.flush_or_commit(with_commit)
 
 
