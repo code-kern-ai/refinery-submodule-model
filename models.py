@@ -157,6 +157,7 @@ class User(Base):
         index=True,
     )
     role = Column(String, default=UserRoles.ENGINEER.value)  # enum UserRoles
+    language_display = Column(String, default="en")
     notifications = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.NOTIFICATION,
@@ -1010,6 +1011,27 @@ class TaskQueue(Base):
 
 
 # --- COGNITION TABLES
+class CognitionTeam(Base):
+    __tablename__ = Tablenames.TEAM.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    description = Column(String)
+
+
 class CognitionProject(Base):
     __tablename__ = Tablenames.PROJECT.value
     __table_args__ = {"schema": "cognition"}
@@ -1046,6 +1068,12 @@ class CognitionProject(Base):
     operator_routing_source_code = Column(String)
     wizard_running = Column(Boolean, default=False)
     refinery_synchronization_interval_option = Column(String)
+    interface_type = Column(String)
+    execute_query_enrichment_if_source_code = Column(String)
+
+    customer_color_primary = Column(String, default="#18181b")
+    customer_color_primary_only_accent = Column(Boolean, default=False)
+    customer_color_secondary = Column(String, default="#9333ea")
 
 
 class CognitionStrategy(Base):
@@ -1093,6 +1121,9 @@ class CognitionStrategyStep(Base):
     step_type = Column(String)
     position = Column(Integer)
     config = Column(JSON)
+    progress_text = Column(String)
+    enable_emissions = Column(Boolean, default=True)
+    execute_if_source_code = Column(String)
 
 
 class CognitionConversation(Base):
@@ -1111,6 +1142,12 @@ class CognitionConversation(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     scope_dict = Column(JSON)
+    header = Column(String)
+    error = Column(String)
+
+    # synopsis-specific
+    synopsis_spreadsheet_row_id = Column(String)
+    synopsis_column = Column(String)
 
 
 class CognitionMessage(Base):
@@ -1140,10 +1177,11 @@ class CognitionMessage(Base):
     created_at = Column(DateTime, default=sql.func.now())
     question = Column(String)
     facts = Column(ARRAY(JSON))
+    selection_widget = Column(ARRAY(JSON))
     answer = Column(String)
 
-    # None = not yet answered, True = positive, false = negative
-    positive_feedback = Column(Boolean)
+    feedback_value = Column(String)
+    feedback_category = Column(String)
     feedback_message = Column(String)
 
     scope_dict_diff_previous_conversation = Column(JSON)
@@ -1184,6 +1222,7 @@ class CognitionPipelineLogs(Base):
     record_dict_diff_previous_message = Column(JSON)
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
+    skipped_step = Column(Boolean, default=False)
 
 
 class CognitionEnvironmentVariable(Base):
@@ -1344,3 +1383,139 @@ class CognitionRefinerySynchronizationTask(Base):
     state = Column(String)  # e.g. CREATED, FINISHED, FAILED
     logs = Column(ARRAY(String))
     num_records_created = Column(Integer)
+
+
+class CognitionConsumptionLog(Base):
+    __tablename__ = Tablenames.CONSUMPTION_LOG.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    strategy_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    message_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MESSAGE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    complexity = Column(String)
+    state = Column(String)
+
+
+class CognitionTeamMember(Base):
+    __tablename__ = Tablenames.TEAM_MEMBER.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    team_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.TEAM.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class CognitionTeamProjectAccess(Base):
+    __tablename__ = Tablenames.TEAM_PROJECT_ACCESS.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    team_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.TEAM.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class CognitionSynopsisSpreadsheet(Base):
+    __tablename__ = Tablenames.SYNOPSIS_SPREADSHEET.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    dataset_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.MARKDOWN_DATASET.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    synopsis_type = Column(String)
+    task_scope_dict = Column(JSON)
+    filter_attribute_name = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class CognitionSynopsisSpreadsheetRow(Base):
+    __tablename__ = Tablenames.SYNOPSIS_SPREADSHEET_ROW.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    spreadsheet_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.SYNOPSIS_SPREADSHEET.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )

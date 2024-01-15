@@ -52,16 +52,20 @@ def get_enriched(org_id: str, id: str) -> Dict[str, Any]:
 
 def get_all_paginated_for_category_origin(
     org_id: str,
-    category_origin: str,
     page: int,
     limit: int,
+    category_origin: Optional[str] = None,
 ) -> Tuple[int, int, List[CognitionMarkdownDataset]]:
-    total_count = (
-        session.query(CognitionMarkdownDataset.id)
-        .filter(CognitionMarkdownDataset.organization_id == org_id)
-        .filter(CognitionMarkdownDataset.category_origin == category_origin)
-        .count()
+    query = session.query(CognitionMarkdownDataset.id).filter(
+        CognitionMarkdownDataset.organization_id == org_id
     )
+
+    if category_origin is not None:
+        query = query.filter(
+            CognitionMarkdownDataset.category_origin == category_origin
+        )
+
+    total_count = query.count()
 
     num_pages = int(total_count / limit)
     if total_count % limit > 0:

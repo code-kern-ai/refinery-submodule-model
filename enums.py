@@ -130,6 +130,12 @@ class Tablenames(Enum):
     LLM_STEP = "llm_step"
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
+    CONSUMPTION_LOG = "consumption_log"
+    TEAM = "team"
+    TEAM_MEMBER = "team_member"
+    TEAM_PROJECT_ACCESS = "team_project_access"
+    SYNOPSIS_SPREADSHEET = "synopsis_spreadsheet"
+    SYNOPSIS_SPREADSHEET_ROW = "synopsis_spreadsheet_row"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -488,17 +494,59 @@ class StrategyStepType(Enum):
     NONE = "NONE"
     PYTHON = "PYTHON"
     LLM = "LLM"
+    SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+    WEBSEARCH = "WEBSEARCH"
+    TRUNCATE_CONTEXT = "TRUNCATE_CONTEXT"
+    HEADER = "HEADER"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
+
+    def get_when_to_use(self):
+        return STEP_WHEN_TO_USE.get(self, "No description available")
+
+    def get_progress_text(self):
+        return STEP_PROGRESS_TEXTS.get(self, "No progress text available")
 
 
 STEP_DESCRIPTIONS = {
     StrategyStepType.RETRIEVAL: "Fetch facts from a DB",
     StrategyStepType.RELEVANCE: "Classify retrieved facts",
-    StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Custom python function",
     StrategyStepType.LLM: "Run a LLM",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.SELECTION: "Select data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrase query",
+    StrategyStepType.WEBSEARCH: "Search the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
+    StrategyStepType.HEADER: "Writing header",
+}
+
+STEP_WHEN_TO_USE = {
+    StrategyStepType.RETRIEVAL: "When you want to retrieve facts from a database",
+    StrategyStepType.RELEVANCE: "When you want to classify retrieved facts",
+    StrategyStepType.PYTHON: "When you want to run a custom python function",
+    StrategyStepType.LLM: "When you want to run a LLM",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.SELECTION: "When you want to select data",
+    StrategyStepType.QUERY_REPHRASING: "When you want to rephrase a query",
+    StrategyStepType.WEBSEARCH: "When you want to search the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
+    StrategyStepType.HEADER: "When you want to write a header",
+}
+
+STEP_PROGRESS_TEXTS = {
+    StrategyStepType.RETRIEVAL: "Retrieving facts",
+    StrategyStepType.RELEVANCE: "Classifying facts",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.PYTHON: "Running custom python function",
+    StrategyStepType.LLM: "Running LLM",
+    StrategyStepType.SELECTION: "Selecting data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrasing query",
+    StrategyStepType.WEBSEARCH: "Searching the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
+    StrategyStepType.HEADER: "Headline generation",
 }
 
 
@@ -560,3 +608,34 @@ def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> 
             raise ValueError(f"Invalid value {string} for enum {enumType}")
         return
     return parsed
+
+
+class EmitType(Enum):
+    ANSWER = "ANSWER"
+    RETRIEVAL_RESULTS = "RETRIEVAL_RESULTS"
+    FOLLOW_UPS = "FOLLOW_UPS"
+    SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+
+
+class CognitionLLMStepUsageType(Enum):
+    BASE = "BASE"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+
+
+class StrategyComplexity(Enum):
+    SIMPLE = "SIMPLE"
+    MEDIUM = "MEDIUM"
+    COMPLEX = "COMPLEX"
+
+
+class StrategyComplexityPrice(Enum):
+    SIMPLE = 0.25
+    MEDIUM = 0.5
+    COMPLEX = 0.75
+
+
+class ConsumptionLogState(Enum):
+    CREATED = "CREATED"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"

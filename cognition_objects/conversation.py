@@ -19,6 +19,19 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
     )
 
 
+def get_all_by_spreadsheet_row_id(
+    spreadsheet_row_id: str,
+) -> List[CognitionConversation]:
+    return (
+        session.query(CognitionConversation)
+        .filter(
+            CognitionConversation.synopsis_spreadsheet_row_id == spreadsheet_row_id,
+        )
+        .order_by(CognitionConversation.created_at.asc())
+        .all()
+    )
+
+
 def get_all_paginated_by_project_id(
     project_id: str, page: int, limit: int
 ) -> Tuple[int, int, List[CognitionConversation]]:
@@ -42,7 +55,7 @@ def get_all_paginated_by_project_id(
         paginated_result = (
             session.query(CognitionConversation)
             .filter(CognitionConversation.project_id == project_id)
-            .order_by(CognitionConversation.created_at.asc())
+            .order_by(CognitionConversation.created_at.desc())
             .limit(limit)
             .offset((page - 1) * limit)
             .all()
@@ -56,6 +69,8 @@ def create(
     project_id: str,
     user_id: str,
     with_commit: bool = True,
+    synopsis_column: Optional[str] = None,
+    spreadsheet_row_id: Optional[str] = None,
     created_at: Optional[datetime] = None,
 ) -> CognitionConversation:
     conversation: CognitionConversation = CognitionConversation(
@@ -63,6 +78,8 @@ def create(
         created_by=user_id,
         created_at=created_at,
         scope_dict={},
+        synopsis_column=synopsis_column,
+        synopsis_spreadsheet_row_id=spreadsheet_row_id,
     )
     general.add(conversation, with_commit)
     return conversation
@@ -90,11 +107,28 @@ def update(
     project_id: str,
     conversation_id: str,
     scope_dict: Optional[Dict[str, Any]] = None,
+    header: Optional[str] = None,
+    error: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity = get(project_id, conversation_id)
     if scope_dict is not None:
         conversation_entity.scope_dict = scope_dict
+    if header is not None:
+        conversation_entity.header = header
+    if error is not None:
+        conversation_entity.error = error
+    general.flush_or_commit(with_commit)
+    return conversation_entity
+
+
+def clear_error(
+    project_id: str,
+    conversation_id: str,
+    with_commit: bool = True,
+) -> CognitionConversation:
+    conversation_entity = get(project_id, conversation_id)
+    conversation_entity.error = None
     general.flush_or_commit(with_commit)
     return conversation_entity
 
@@ -104,6 +138,9 @@ def update_message(
     conversation_id: str,
     message_id: str,
     answer: Optional[str] = None,
+    feedback_value: Optional[str] = None,
+    feedback_category: Optional[str] = None,
+    feedback_message: Optional[str] = None,
     strategy_id: Optional[str] = None,
     scope_dict_diff_previous_conversation: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
@@ -113,6 +150,12 @@ def update_message(
         message_entity.strategy_id = strategy_id
     if answer is not None:
         message_entity.answer = answer
+    if feedback_value is not None:
+        message_entity.feedback_value = feedback_value
+    if feedback_category is not None:
+        message_entity.feedback_category = feedback_category
+    if feedback_message is not None:
+        message_entity.feedback_message = feedback_message
     if scope_dict_diff_previous_conversation is not None:
         message_entity.scope_dict_diff_previous_conversation = (
             scope_dict_diff_previous_conversation
