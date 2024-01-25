@@ -38,6 +38,16 @@ def get_all_for_synchronization_option(
     )
 
 
+EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE = """from typing import Dict, Any, Tuple
+
+def check_execute(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> bool:
+    return True
+
+"""
+
+
 def create(
     name: str,
     description: str,
@@ -64,15 +74,6 @@ def routing(
 
 """
 
-    execute_query_enrichment_if_source_code = """from typing import Dict, Any, Tuple
-
-def check_execute(
-    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
-) -> bool:
-    return True
-
-"""
-
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
@@ -86,7 +87,7 @@ def check_execute(
         refinery_relevance_project_id=refinery_relevances_project_id,
         operator_routing_source_code=operator_routing_source_code,
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
-        execute_query_enrichment_if_source_code=execute_query_enrichment_if_source_code,
+        execute_query_enrichment_if_source_code=EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE,
     )
     general.add(project, with_commit)
     return project

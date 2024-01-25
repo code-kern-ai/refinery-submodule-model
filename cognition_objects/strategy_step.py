@@ -45,6 +45,15 @@ def get_first_llm_step_from_project(project_id: str) -> CognitionStrategyStep:
     )
 
 
+EXECUTE_IF_SOURCE_CODE = """from typing import Dict, Any, Tuple
+
+def check_execute(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> bool:
+    return True
+"""
+
+
 def create(
     project_id: str,
     strategy_id: str,
@@ -58,14 +67,6 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionStrategyStep:
-    execute_if_source_code = """from typing import Dict, Any, Tuple
-
-def check_execute(
-    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
-) -> bool:
-    return True
-"""
-
     strategy: CognitionStrategyStep = CognitionStrategyStep(
         project_id=project_id,
         strategy_id=strategy_id,
@@ -77,7 +78,7 @@ def check_execute(
         position=position,
         config=config,
         progress_text=progress_text,
-        execute_if_source_code=execute_if_source_code,
+        execute_if_source_code=EXECUTE_IF_SOURCE_CODE,
     )
     general.add(strategy, with_commit)
 
