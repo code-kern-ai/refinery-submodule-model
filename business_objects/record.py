@@ -16,6 +16,7 @@ from ..models import (
     RecordTokenized,
 )
 from ..session import session
+from ..util import prevent_sql_injection
 
 
 def get(project_id: str, record_id: str) -> Record:
@@ -66,6 +67,11 @@ def get_sample_data_of(
     limit: int = 10,
     add_condition: Optional[str] = None,
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
+    limit = prevent_sql_injection(limit, isinstance(limit, int))
     # any return since json value is return (-> vs ->>) so casting isn't necessary
     where_add = ""
     if add_condition:
@@ -83,6 +89,7 @@ def get_sample_data_of(
 
 
 def get_max_running_id(project_id: str) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT max(CAST(DATA->>'running_id' AS INTEGER)) max_running_id
     FROM record
@@ -140,6 +147,7 @@ def get_ids_of_manual_records_by_labeling_task(
 
 
 def count_records_without_tokenization(project_id: str) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT count(r.id) c
     FROM ({get_records_without_tokenization(project_id, 0, True)}) r
@@ -148,6 +156,7 @@ def count_records_without_tokenization(project_id: str) -> int:
 
 
 def count_records_without_manual_label(project_id: str) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT COUNT(r.id) c
     FROM record r
@@ -165,6 +174,10 @@ def count_records_without_manual_label(project_id: str) -> int:
 def get_attribute_data_with_doc_bins_of_records(
     project_id: str, attribute_name: str
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
     query = f"""
     SELECT 
         rt.id, 
@@ -194,6 +207,10 @@ def update_bytes_of_record_tokenized(
 
 
 def update_columns_of_tokenized_records(rt_ids: str, attribute_name: str) -> None:
+    # rt_ids = prevent_sql_injection(rt_ids, isinstance(rt_ids, str)) # excluded since prepared with ()
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
     query = f"""
     UPDATE record_tokenized 
     SET columns = array_append(columns, '{attribute_name}')
@@ -206,6 +223,9 @@ def update_columns_of_tokenized_records(rt_ids: str, attribute_name: str) -> Non
 def get_missing_rats_records(
     project_id: str, attribute_id: str, limit: int = 0
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_id = prevent_sql_injection(attribute_id, isinstance(attribute_id, str))
+    limit = prevent_sql_injection(limit, isinstance(limit, int))
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
     attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
     if attribute_id:
@@ -233,6 +253,8 @@ def get_missing_rats_records(
 def get_records_without_tokenization(
     project_id: str, limit: int = 0, query_only: bool = False
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    limit = prevent_sql_injection(limit, isinstance(limit, int))
     query = f"""
     SELECT r.id, r.data, rt."columns"
     FROM record r
@@ -257,6 +279,9 @@ def get_missing_tokenized_records(
     limit: int = 0,
     query_only: bool = False,
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    # attribute_names_string = prevent_sql_injection(attribute_names_string, isinstance(attribute_names_string, str)) # excluded since prepared string not single value
+    limit = prevent_sql_injection(limit, isinstance(limit, int))
     query = f"""
     SELECT r.id, r.data, rt."columns"
     FROM record r
@@ -310,6 +335,7 @@ def get_count_test_uploaded(project_id: str) -> int:
 
 
 def get_token_statistics_by_project_id(project_id: str) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
         SELECT
             statistics.id,
@@ -330,6 +356,8 @@ def get_token_statistics_by_project_id(project_id: str) -> List[Any]:
 
 
 def get_attribute_calculation_sample_records(project_id: str, n: int = 10) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    n = prevent_sql_injection(n, isinstance(n, int))
     query = f"""
         SELECT record.id::TEXT, record."data"
         FROM record
@@ -343,6 +371,7 @@ def get_attribute_calculation_sample_records(project_id: str, n: int = 10) -> Li
 
 
 def get_missing_columns_str(project_id: str) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT att.name
     FROM attribute att
@@ -368,6 +397,11 @@ def get_missing_columns_str(project_id: str) -> str:
 def get_zero_shot_n_random_records(
     project_id: str, attribute_name: str, n: int = 10
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
+    n = prevent_sql_injection(n, isinstance(n, int))
     sql = f"""
         SELECT r.id, r."data", r."data" ->> '{attribute_name}' "text"
         FROM record r
@@ -381,6 +415,9 @@ def get_zero_shot_n_random_records(
 def get_record_id_groups(project_id: str, group_size: int = 20) -> List[List[str]]:
     if group_size <= 0:
         return None
+
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    group_size = prevent_sql_injection(group_size, isinstance(group_size, int))
     query = f"""
     SELECT array_agg(id) record_ids
     FROM (
@@ -397,6 +434,11 @@ def get_record_id_groups(project_id: str, group_size: int = 20) -> List[List[str
 def get_record_data_for_id_group(
     project_id: str, record_ids: List[str], attribute_name: str
 ) -> Dict[str, str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    record_ids = [prevent_sql_injection(r, isinstance(r, str)) for r in record_ids]
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
     record_where = " id IN ('" + "','".join(record_ids) + "')"
     query = f"""
     SELECT id::TEXT, data::JSON->'{attribute_name}' AS "{attribute_name}"
@@ -412,6 +454,10 @@ def get_record_data_for_id_group(
 def get_attribute_data(
     project_id: str, attribute_name: str
 ) -> Tuple[List[str], List[str]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
     query = None
     order = __get_order_by(project_id)
     if attribute.get_by_name(project_id, attribute_name).data_type == "EMBEDDING_LIST":
@@ -441,6 +487,10 @@ def count(project_id: str) -> int:
 
 
 def count_attribute_list_entries(project_id: str, attribute_name: str) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
     query = f"""
     SELECT sum(json_array_length(r.data->'{attribute_name}'))
     FROM record  r
@@ -472,6 +522,8 @@ def count_by_project_and_source(
 def count_missing_rats_records(
     project_id: str, attribute_id: Optional[str] = None
 ) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_id = prevent_sql_injection(attribute_id, isinstance(attribute_id, str))
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
     attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
     if attribute_id:
@@ -495,6 +547,7 @@ def count_missing_rats_records(
 
 
 def count_missing_tokenized_records(project_id: str) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT COUNT(*)
     FROM (
@@ -505,6 +558,7 @@ def count_missing_tokenized_records(project_id: str) -> int:
 
 
 def count_tokenized_records(project_id: str) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT COUNT(*) c
     FROM record_tokenized rt
@@ -699,6 +753,8 @@ def delete_duplicated_rats(with_commit: bool = False) -> None:
 
 
 def has_byte_data(project_id: str, record_id: str) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    record_id = prevent_sql_injection(record_id, isinstance(record_id, str))
     query = f"""
     SELECT id
     FROM record_tokenized
@@ -779,6 +835,8 @@ def __get_order_by(project_id: str, first_x: int = 3) -> str:
 
 
 def get_first_no_text_column(project_id: str, record_id: str) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    record_id = prevent_sql_injection(record_id, isinstance(record_id, str))
     query = f"""
     SELECT '''' || x.name || ': ' || (r.data ->>x.name) || '''' AS name_col
     FROM record r,

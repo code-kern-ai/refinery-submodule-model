@@ -1,10 +1,12 @@
-from typing import List, Dict, Optional, Tuple, List, Any
+from typing import List, Dict, Optional, Tuple, Any
 
 from . import general
 from ..business_objects import payload
 from .. import models, enums
 from ..models import LabelingTaskLabel, LabelingTask
 from ..session import session
+
+from ..util import prevent_sql_injection
 
 
 def get_all_ids(project_id: str, labeling_task_id: str) -> List[Any]:
@@ -73,6 +75,7 @@ def get_by_name(
 
 
 def get_label_ids_by_task_and_label_name(project_id: str) -> Dict[str, Dict[str, str]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     """Returns dict with task and label information like:
     {
         label_task_name: {
@@ -100,6 +103,7 @@ def get_label_ids_by_task_and_label_name(project_id: str) -> Dict[str, Dict[str,
 
 
 def get_labels_by_tasks(project_id: str) -> Dict[str, List[str]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     results: List = general.execute_all(
         f"""
         SELECT ltl.name, lt.name
@@ -205,7 +209,6 @@ def create_labels(
     labels_data: Dict[str, List[str]],
     with_commit: bool = False,
 ) -> None:
-
     colorOptions = [
         "red",
         "orange",

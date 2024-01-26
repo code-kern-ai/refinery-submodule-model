@@ -2,11 +2,17 @@ from typing import List, Any
 
 from . import general
 from .. import enums
+from ..util import prevent_sql_injection
 
 
 def get_current_inter_annotator_classification_users(
     project_id: str, labeling_task_id: str, slice_id: str
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     query = __get_base_query_classification_user_to_labling_task(
         project_id, labeling_task_id, slice_id
     )
@@ -25,6 +31,12 @@ def get_current_inter_annotator_classification_users(
 def get_all_inter_annotator_classification_users(
     project_id: str, labeling_task_id: str, slice_id: str
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
+
     query = __get_base_query_classification_user_to_labling_task(
         project_id, labeling_task_id, slice_id
     )
@@ -53,6 +65,12 @@ def get_all_inter_annotator_classification_users(
 def get_classification_user_by_user_label_count(
     project_id: str, labeling_task_id: str, slice_id: str
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
+
     query = __get_base_query_classification_user_to_labling_task(
         project_id, labeling_task_id, slice_id
     )
@@ -74,7 +92,11 @@ def get_classification_user_by_user_label_count(
 def get_extraction_user_max_lookup(
     project_id: str, labeling_task_id: str, slice_id: str
 ) -> List[Any]:
-
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     query = f"""
     WITH  relevant_rlas AS(
         SELECT rla.id, rla.record_id, CASE WHEN is_gold_star IS NOT NULL THEN '{enums.InterAnnotatorConstants.ID_GOLD_USER.value}' ELSE rla.created_by::TEXT END user_id
@@ -118,6 +140,11 @@ def get_inter_annotator_extraction_users(
     slice_id: str,
     all_user: bool,
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     query = __get_base_query_extraction_user_to_labling_task(
         project_id, labeling_task_id, slice_id
     )
@@ -156,6 +183,11 @@ def get_inter_annotator_extraction_users(
 def get_extraction_user_by_user_label_count(
     project_id: str, labeling_task_id: str, slice_id: str
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     query = __get_base_query_extraction_user_to_labling_task(
         project_id, labeling_task_id, slice_id
     )
@@ -175,6 +207,11 @@ def get_extraction_user_by_user_label_count(
 def check_inter_annotator_classification_records_only_used_once(
     project_id: str, labeling_task_id: str, slice_id: str
 ) -> Any:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     query = __get_base_query_classification_user_to_labling_task(
         project_id, labeling_task_id, slice_id
     )
@@ -187,24 +224,29 @@ def check_inter_annotator_classification_records_only_used_once(
 def __get_base_query_extraction_user_to_labling_task(
     project_id: str, labeling_task_id: str, slice_id: str
 ) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     return f"""
     WITH user_labels AS (
-	SELECT 
-		rla.record_id,
-		ltl.labeling_task_id,
-		CASE WHEN is_gold_star IS NOT NULL THEN '{enums.InterAnnotatorConstants.ID_GOLD_USER.value}' ELSE COALESCE(rla.created_by::TEXT,'{enums.InterAnnotatorConstants.ID_NULL_USER.value}') END user_id,
-		rla.id rla_id,
-		COUNT(*) c,
-		array_agg(rlat.token_index || '-' || rla.labeling_task_label_id::TEXT ORDER BY rlat.token_index) t_index
-	FROM record_label_association rla
+    SELECT 
+        rla.record_id,
+        ltl.labeling_task_id,
+        CASE WHEN is_gold_star IS NOT NULL THEN '{enums.InterAnnotatorConstants.ID_GOLD_USER.value}' ELSE COALESCE(rla.created_by::TEXT,'{enums.InterAnnotatorConstants.ID_NULL_USER.value}') END user_id,
+        rla.id rla_id,
+        COUNT(*) c,
+        array_agg(rlat.token_index || '-' || rla.labeling_task_label_id::TEXT ORDER BY rlat.token_index) t_index
+    FROM record_label_association rla
     {__get_slice_add(slice_id)}
-	INNER JOIN labeling_task_label ltl
-	  ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id  
-	INNER JOIN record_label_association_token rlat
-	  ON rla.id = rlat.record_label_association_id
-	WHERE rla.project_id = '{project_id}' AND ltl.labeling_task_id = '{labeling_task_id}'
-		AND rla.source_type = '{enums.LabelSource.MANUAL.value}'
-	GROUP BY rla.record_id,ltl.labeling_task_id,user_id,rla.id)
+    INNER JOIN labeling_task_label ltl
+        ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id  
+    INNER JOIN record_label_association_token rlat
+        ON rla.id = rlat.record_label_association_id
+    WHERE rla.project_id = '{project_id}' AND ltl.labeling_task_id = '{labeling_task_id}'
+        AND rla.source_type = '{enums.LabelSource.MANUAL.value}'
+    GROUP BY rla.record_id,ltl.labeling_task_id,user_id,rla.id)
     """
 
 
@@ -212,7 +254,7 @@ def __get_slice_add(slice_id: str) -> str:
     slice_add: str = ""
     if slice_id:
         slice_add = f"""INNER JOIN data_slice_record_association dsra
-         	ON rla.record_id = dsra.record_id AND rla.project_id = dsra.project_id AND dsra.data_slice_id = '{slice_id}'"""
+            ON rla.record_id = dsra.record_id AND rla.project_id = dsra.project_id AND dsra.data_slice_id = '{slice_id}'"""
     return slice_add
 
 
@@ -229,6 +271,6 @@ def __get_base_query_classification_user_to_labling_task(
             ON ltl.labeling_task_id = lt.id AND ltl.project_id = lt.project_id
         {__get_slice_add(slice_id)}
         WHERE rla.project_id = '{project_id}' AND lt.id = '{labeling_task_id}'
-      	    AND rla.source_type = '{enums.LabelSource.MANUAL.value}'
-	    GROUP BY rla.record_id, rla.labeling_task_label_id, user_id)   
+            AND rla.source_type = '{enums.LabelSource.MANUAL.value}'
+        GROUP BY rla.record_id, rla.labeling_task_label_id, user_id)   
     """

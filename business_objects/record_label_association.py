@@ -16,6 +16,8 @@ from ..models import (
 from ..session import session
 from ..business_objects import general, labeling_task_label, labeling_task, payload
 
+from ..util import prevent_sql_injection
+
 
 def get_all_with_filter(
     project_id: str,
@@ -44,6 +46,12 @@ def get_all_with_filter(
 def check_any_id_is_source_related(
     project_id: str, record_id: str, association_ids: List[str]
 ) -> List[str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    record_id = prevent_sql_injection(record_id, isinstance(record_id, str))
+    association_ids = [
+        prevent_sql_injection(association_id, isinstance(association_id, str))
+        for association_id in association_ids
+    ]
     query = f"""
     SELECT array_agg(source_id::TEXT)
     FROM record_label_association
@@ -59,7 +67,7 @@ def check_any_id_is_source_related(
 
 
 def get_project_ids_with_rlas() -> List[Any]:
-    query = f"""
+    query = """
     SELECT project_id::TEXT
     FROM record_label_association
     GROUP BY project_id
@@ -73,7 +81,10 @@ def get_project_ids_with_rlas() -> List[Any]:
 def get_labeling_tasks_from_ids(project_id: str, rla_ids: List[str]) -> List[Any]:
     if not rla_ids:
         return []
-
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    rla_ids = [
+        prevent_sql_injection(rla_id, isinstance(rla_id, str)) for rla_id in rla_ids
+    ]
     rla_id_filter = "'" + "', '".join(rla_ids) + "'"
     query = f"""
     SELECT ltl.labeling_task_id::TEXT
@@ -91,6 +102,7 @@ def get_labeling_tasks_from_ids(project_id: str, rla_ids: List[str]) -> List[Any
 
 
 def get_tokens(project_id: str) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
         SELECT
             record_label_association.id,
@@ -111,17 +123,25 @@ def get_tokens(project_id: str) -> List[Any]:
 
 def get_label_payload_for_qdrant(
     project_id: str,
-    source_type: Optional[List[enums.LabelSource]] = None,
+    source_type: Optional[List[str]] = None,
     record_ids: Optional[Iterable[str]] = None,
 ) -> Dict[str, Dict[str, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+
     source_type_filter = ""
     if source_type is None:
         source_type_filter = f"'{enums.LabelSource.WEAK_SUPERVISION.value}'"
     else:
+        source_type = [
+            prevent_sql_injection(st, isinstance(st, str)) for st in source_type
+        ]
         source_type_filter = "'" + "','".join(source_type) + "'"
     record_id_filter = ""
 
     if record_ids is not None:
+        record_ids = [
+            prevent_sql_injection(rid, isinstance(rid, str)) for rid in record_ids
+        ]
         record_id_filter = "'" + "','".join(record_ids) + "'"
         record_id_filter = f"AND rla.record_id IN ({record_id_filter})"
     query = f"""
@@ -207,6 +227,10 @@ def get_latest(project_id: str, top_n: int) -> List[RecordLabelAssociation]:
 
 
 def get_manual_records(project_id: str, labeling_task_id: str) -> List[str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
     query = f"""
         SELECT record_id::TEXT
         FROM record_label_association rla
@@ -301,6 +325,7 @@ def get_all_extraction_tokens_for_information_source(
 
 
 def count_null_labels(project_id: str) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT COUNT(*) 
     FROM record_label_association rla
@@ -515,6 +540,11 @@ def update_is_relevant_manual_label(
     record_id: str,
     with_commit: bool = False,
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    record_id = prevent_sql_injection(record_id, isinstance(record_id, str))
     query = __get_base_query_valid_labels_manual_for_update(
         project_id, labeling_task_id, record_id
     )
@@ -543,6 +573,10 @@ def update_is_relevant_manual_label(
 def update_used_information_sources(
     project_id: str, weak_supervision_id: str, with_commit: bool = False
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    weak_supervision_id = prevent_sql_injection(
+        weak_supervision_id, isinstance(weak_supervision_id, str)
+    )
     # set old to null
     session.query(RecordLabelAssociation).filter(
         RecordLabelAssociation.project_id == project_id,
@@ -551,7 +585,6 @@ def update_used_information_sources(
     ).update(
         {"weak_supervision_id": None},
     )
-
     # set current to new id -- unfortunatly is orm not able to do that with a join
     general.execute(
         f"""
@@ -590,6 +623,7 @@ def update_record_label_associations(
 def update_is_valid_manual_label_for_project(
     project_id: str, with_commit: bool = False
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = __get_base_query_valid_labels_manual_for_update(project_id)
     query += f"""
     UPDATE record_label_association rlaOri
@@ -608,6 +642,10 @@ def update_is_valid_manual_label_for_project(
 
 
 def update_null_labels(project_id: str, label_reference_error_id: str) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    label_reference_error_id = prevent_sql_injection(
+        label_reference_error_id, isinstance(label_reference_error_id, str)
+    )
     update_query = f"""
     UPDATE record_label_association
     SET labeling_task_label_id = '{label_reference_error_id}'
@@ -647,7 +685,10 @@ def delete_record_label_associations(
 ) -> None:
     if not record_task_concatenation:
         return
-
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    record_task_concatenation = prevent_sql_injection(
+        record_task_concatenation, isinstance(record_task_concatenation, str)
+    )
     sql = f""" DELETE FROM record_label_association
         WHERE id IN (
             SELECT rla.id
@@ -718,6 +759,14 @@ def delete_by_ids(
 def delete_by_record_attribute_tuples(
     project_id: str, to_del: List[Tuple[str, str]], with_commit: bool = False
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    to_del = [
+        (
+            prevent_sql_injection(record_id, isinstance(record_id, str)),
+            prevent_sql_injection(attribute_id, isinstance(attribute_id, str)),
+        )
+        for record_id, attribute_id in to_del
+    ]
     # deletes labels based on record_id and attribute tuples for record changes
     # means only extraction labels on record x & attribute y are deleted
 
@@ -767,6 +816,10 @@ def check_label_duplication_classification(
 ) -> bool:
     if len(label_ids) == 0:
         return False
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    record_id = prevent_sql_injection(record_id, isinstance(record_id, str))
+    user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
+    label_ids = [prevent_sql_injection(li) for li in label_ids]
     label_id_str = "'" + "', '".join(label_ids) + "'"
     # sleep a bit to ensure requests went through
     time.sleep(0.5)
@@ -803,6 +856,10 @@ def check_label_duplication_classification(
 def is_any_record_manually_labeled(
     project_id: str, labeling_task_id: Optional[str] = None
 ) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
     query_join_add = ""
     query_where_add = ""
     if labeling_task_id:
@@ -1011,6 +1068,10 @@ def __get_same_answer_extraction_query(
 def get_manual_classifications_for_labeling_task_as_json(
     project_id: str, labeling_task_id: str
 ) -> List[Dict[Any, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
     base_query = payload.get_base_query_valid_labels_manual(
         project_id, labeling_task_id
     )
@@ -1034,6 +1095,10 @@ def get_manual_classifications_for_labeling_task_as_json(
 def get_manual_extraction_tokens_for_labeling_task_as_json(
     project_id: str, labeling_task_id: str
 ) -> List[Dict[Any, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
     base_query = payload.get_base_query_valid_labels_manual(
         project_id, labeling_task_id
     )
@@ -1059,6 +1124,8 @@ def get_manual_extraction_tokens_for_labeling_task_as_json(
 def update_user_id_for_sample_project(
     project_id: str, user_id: str, with_commit: bool = False
 ):
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
     query = f"""
     SELECT created_by, COUNT(*) c
     FROM record_label_association rla
@@ -1081,7 +1148,13 @@ def update_user_id_for_sample_project(
 def get_percentage_of_labeled_records_for_slice(
     project_id: str, annotator_id: str, slice_id: str, labeling_task_id: str
 ) -> float:
-    query = get_percentage_of_labeled_records_for_slice_query(
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    annotator_id = prevent_sql_injection(annotator_id, isinstance(annotator_id, str))
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    query = __get_percentage_of_labeled_records_for_slice_query(
         project_id, annotator_id, slice_id, labeling_task_id
     )
     value = general.execute_first(query)
@@ -1090,7 +1163,7 @@ def get_percentage_of_labeled_records_for_slice(
     return value[0]
 
 
-def get_percentage_of_labeled_records_for_slice_query(
+def __get_percentage_of_labeled_records_for_slice_query(
     project_id: str, annotator_id: str, slice_id: str, labeling_task_id: str
 ) -> str:
     return f"""
@@ -1106,7 +1179,7 @@ def get_percentage_of_labeled_records_for_slice_query(
                 SELECT rla.id 
                 FROM record_label_association rla
                 INNER JOIN labeling_task_label ltl
-            	    ON rla.project_id = ltl.project_id AND rla.labeling_task_label_id = ltl.id AND ltl.labeling_task_id = '{labeling_task_id}'
+                    ON rla.project_id = ltl.project_id AND rla.labeling_task_label_id = ltl.id AND ltl.labeling_task_id = '{labeling_task_id}'
                 WHERE r.id = rla.record_id
                 AND r.project_id = rla.project_id
                 AND rla.source_type = 'INFORMATION_SOURCE'

@@ -7,6 +7,7 @@ from submodules.model import enums
 from ..session import session
 from ..models import Organization, Project
 from ..business_objects import project, user, general
+from ..util import prevent_sql_injection
 
 
 def get(id: str) -> Organization:
@@ -41,6 +42,9 @@ def get_organization_id(project_id: str, user_id: str) -> str:
 def get_organization_overview_stats(
     organization_id: str,
 ) -> List[Dict[str, Union[str, int]]]:
+    organization_id = prevent_sql_injection(
+        organization_id, isinstance(organization_id, str)
+    )
     values = general.execute_first(
         __get_organization_overview_stats_query(organization_id)
     )

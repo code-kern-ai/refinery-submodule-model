@@ -1,11 +1,13 @@
 from datetime import datetime
-from submodules.model.models import InformationSource, LabelingAccessLink
+from submodules.model.models import LabelingAccessLink
 from . import general
 from .. import enums
 from ..session import session
 from typing import Any, Dict, List, Optional
 from sqlalchemy import sql
 from sqlalchemy import or_, and_
+
+from ..util import prevent_sql_injection
 
 
 def get(link_id: str) -> LabelingAccessLink:
@@ -41,7 +43,6 @@ def get_ensure_access(link_id: str) -> LabelingAccessLink:
 def get_all_by_type_and_external_id(
     project_id: str, type: enums.LinkTypes, id: str
 ) -> List[LabelingAccessLink]:
-
     query = session.query(LabelingAccessLink).filter(
         LabelingAccessLink.project_id == project_id,
     )
@@ -72,6 +73,7 @@ def get_all_by_type_and_external_id(
 
 
 def __get_add_ids_data_slice(project_id: str, slice_id: str) -> List[str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT  array_agg(lal.id::TEXT)
     FROM labeling_access_link lal
@@ -96,6 +98,8 @@ def get_by_all_by_project_id(project_id: str) -> List[LabelingAccessLink]:
 def get_by_all_by_user_id(
     project_id: str, user_id: str, user_role: enums.UserRoles
 ) -> List[LabelingAccessLink]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
     if user_role == enums.UserRoles.ANNOTATOR:
         query = f"""
         SELECT _is.id::TEXT
@@ -140,7 +144,6 @@ def create(
     changed_at: Optional[datetime] = None,
     with_commit: bool = False,
 ) -> LabelingAccessLink:
-
     link = LabelingAccessLink(
         project_id=project_id,
         link=link,

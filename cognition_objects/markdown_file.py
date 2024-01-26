@@ -5,6 +5,7 @@ from .. import enums
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMarkdownFile, CognitionMarkdownLLMLogs
+from ..util import prevent_sql_injection
 
 
 def get(org_id: str, md_file_id: str) -> CognitionMarkdownFile:
@@ -53,10 +54,13 @@ def __get_enriched_query(
     dataset_id: Optional[str] = None,
     query_add: Optional[str] = "",
 ) -> str:
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     where_add = ""
     if md_file_id:
+        md_file_id = prevent_sql_injection(md_file_id, isinstance(md_file_id, str))
         where_add += f" AND mf.id = '{md_file_id}'"
     if dataset_id:
+        prevent_sql_injection(dataset_id, isinstance(dataset_id, str))
         where_add += f" AND mf.dataset_id = '{dataset_id}'"
 
     query = """
@@ -92,7 +96,8 @@ def get_all_paginated_for_dataset(
     num_pages = int(total_count / limit)
     if total_count % limit > 0:
         num_pages += 1
-
+    limit = prevent_sql_injection(limit, isinstance(limit, int))
+    page = prevent_sql_injection(page, isinstance(page, int))
     query_add = f"""
     ORDER BY mf.created_by
     LIMIT {limit}

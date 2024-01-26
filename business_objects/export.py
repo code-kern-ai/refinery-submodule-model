@@ -5,12 +5,18 @@ from .. import enums
 from ..business_objects.payload import get_base_query_valid_labels_manual
 from ..models import Attribute
 from . import user_session
+from ..util import prevent_sql_injection
 
 OUTSIDE_CONSTANT = "OUTSIDE"
+
 
 def build_full_record_sql_export(
     project_id: str, attributes: List[Attribute], user_session_id: str
 ) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    user_session_id = prevent_sql_injection(
+        user_session_id, isinstance(user_session_id, str)
+    )
     select_part: str = ""
     for att in attributes:
         if select_part != "":
@@ -29,7 +35,7 @@ def build_full_record_sql_export(
 
     if select_add:
         select_part += ",\n" + select_add
-    return get_final_sql(
+    return __get_final_sql(
         project_id,
         select_part,
         classification_part,
@@ -72,7 +78,7 @@ def __build_user_session_part(project_id: str, user_session_id: str) -> Tuple[st
 
 
 def __build_classification_part(project_id: str) -> Tuple[str, str]:
-    classification_case = get_case_classification(project_id)
+    classification_case = __get_case_classification(project_id)
     if not classification_case:
         return "", ""
 
@@ -95,7 +101,7 @@ string_agg(confidence::TEXT,', ' ORDER BY record_id) FILTER (WHERE source_type =
 {classification_task.col_name[:-1]}__{enums.LabelSource.WEAK_SUPERVISION.value}\",
 {classification_task.col_name[:-1]}__{enums.LabelSource.WEAK_SUPERVISION.value}__confidence\""""
 
-    classification_sql = get_classification_labels(
+    classification_sql = __get_classification_labels(
         project_id, columns_str_agg, label_case
     )
 
@@ -103,12 +109,12 @@ string_agg(confidence::TEXT,', ' ORDER BY record_id) FILTER (WHERE source_type =
 
 
 def __build_extraction_part(project_id: str, session_sql: str) -> Tuple[str, str]:
-    extraction_case = get_case_information_extraction(project_id)
+    extraction_case = __get_case_information_extraction(project_id)
 
     if not extraction_case:
         return "", ""
 
-    token_limit = get_max_token(project_id, session_sql)
+    token_limit = __get_max_token(project_id, session_sql)
     if not token_limit:
         raise Exception("No token limit found, was tokenization already completed?")
 
@@ -144,7 +150,7 @@ def __build_extraction_part(project_id: str, session_sql: str) -> Tuple[str, str
 {extraction_task.col_name[:-1]}__{enums.LabelSource.WEAK_SUPERVISION.value}\",
 {extraction_task.col_name[:-1]}__{enums.LabelSource.WEAK_SUPERVISION.value}__confidence\""""
 
-    extraction_sql = get_extraction_labels_BIO(
+    extraction_sql = __get_extraction_labels_BIO(
         project_id,
         token_limit,
         columns_arr_agg,
@@ -157,7 +163,7 @@ def __build_extraction_part(project_id: str, session_sql: str) -> Tuple[str, str
     return extraction_sql, select_add
 
 
-def get_final_sql(
+def __get_final_sql(
     project_id: str,
     select_part: str,
     classification_part: str,
@@ -201,7 +207,7 @@ def get_final_sql(
     )
 
 
-def get_case_information_extraction(project_id: str) -> List[Any]:
+def __get_case_information_extraction(project_id: str) -> List[Any]:
     sql = f"""
     SELECT *, 'CASE lt.id WHEN ''' || task_id || ''' THEN ltl.name END ' || Replace(col_name,'''','''''') AS case_task
     FROM (
@@ -218,7 +224,7 @@ def get_case_information_extraction(project_id: str) -> List[Any]:
     return general.execute_all(sql)
 
 
-def get_classification_labels(
+def __get_classification_labels(
     project_id: str, columns_str_agg: str, label_case: str
 ) -> str:
     return f"""
@@ -256,7 +262,7 @@ def get_classification_labels(
     # CASE labeling_task_label_id WHEN 'cf613784-c91a-451f-84fb-1997a2f83edd' THEN 'Positive' WHEN 'c798e9d4-9e66-4295-a24a-ce81dc4d20be' THEN 'Negative' WHEN '20f6136a-837f-4806-9716-36da74a9c910' THEN 'Neutral' ELSE NULL END "title__Sentiment"
 
 
-def get_extraction_labels_BIO(
+def __get_extraction_labels_BIO(
     project_id: str,
     token_limit: int,
     columns_arr_agg: str,
@@ -349,7 +355,7 @@ def get_extraction_labels_BIO(
     # CASE lt.id WHEN 'becc9f74-1549-4f8a-b295-52321787d416' THEN ltl.name END "content__Extract Data"
 
 
-def get_case_classification(project_id: str) -> List[Any]:
+def __get_case_classification(project_id: str) -> List[Any]:
     sql = f"""
     SELECT *
     FROM (
@@ -372,7 +378,7 @@ def get_case_classification(project_id: str) -> List[Any]:
     return general.execute_all(sql)
 
 
-def get_max_token(project_id: str, session_sql: Optional[str] = None) -> int:
+def __get_max_token(project_id: str, session_sql: Optional[str] = None) -> int:
     sql = f"""    
     SELECT MAX(rats.num_token) AS max_token
     FROM {__get_from_part(session_sql)}

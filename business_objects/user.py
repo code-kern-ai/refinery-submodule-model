@@ -3,6 +3,8 @@ from .. import User, enums
 from ..session import session
 from typing import List, Any, Optional
 
+from ..util import prevent_sql_injection
+
 
 def get(user_id: str) -> User:
     return session.query(User).get(user_id)
@@ -28,6 +30,10 @@ def get_count_assigned() -> int:
 
 
 def get_user_count(organization_id: str, project_id: str) -> List[Any]:
+    organization_id = prevent_sql_injection(
+        organization_id, isinstance(organization_id, str)
+    )
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     sql = f"""
     SELECT  
         u.id, 
@@ -58,7 +64,7 @@ def get_user_count(organization_id: str, project_id: str) -> List[Any]:
 
 
 def get_migration_user() -> str:
-    query = f"""
+    query = """
     SELECT u.id
     FROM public.user u
     INNER JOIN organization o

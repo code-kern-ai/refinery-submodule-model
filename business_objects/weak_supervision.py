@@ -12,6 +12,7 @@ from ..models import (
 from .. import enums
 from ..business_objects import general
 from ..session import session
+from ..util import prevent_sql_injection
 
 
 def get_task(project_id: str, ws_task_id: str) -> WeakSupervisionTask:
@@ -82,6 +83,10 @@ def create_task(
 def update_weak_supervision_task_stats(
     project_id: str, weak_supervision_task_id: str, with_commit: bool = False
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    weak_supervision_task_id = prevent_sql_injection(
+        weak_supervision_task_id, isinstance(weak_supervision_task_id, str)
+    )
     task: WeakSupervisionTask = (
         session.query(WeakSupervisionTask)
         .filter(
@@ -144,7 +149,6 @@ def store_data(
         LabelingTask.id == labeling_task_id,
     ).delete(synchronize_session="fetch")
     if task_type == enums.LabelingTaskType.CLASSIFICATION.value:
-
         for record_id, association_dict_list in results.items():
             record_label_associations = [
                 RecordLabelAssociation(

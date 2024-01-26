@@ -1,12 +1,11 @@
 from datetime import datetime
-import json
 from typing import Any, List, Dict, Optional, Tuple
 
 from ..business_objects import general
 from ..models import DataSlice, DataSliceRecordAssociation
 from ..session import session
 from .. import enums
-from ..business_objects import information_source
+from ..util import prevent_sql_injection
 
 
 def get(
@@ -154,6 +153,13 @@ def update_data_slice_record_association_outlier_scores(
     outlier_scores: List,
     with_commit: bool = False,
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    data_slice_id = prevent_sql_injection(data_slice_id, isinstance(data_slice_id, str))
+    outlier_ids = [prevent_sql_injection(id, isinstance(id, str)) for id in outlier_ids]
+    outlier_scores = [
+        prevent_sql_injection(score, isinstance(score, float))
+        for score in outlier_scores
+    ]
     sql_strings = [
         "UPDATE data_slice_record_association",
         "SET outlier_score = (CASE record_id",
@@ -185,6 +191,7 @@ def delete(project_id: str, data_slice_id: str, with_commit: bool = False) -> No
 def update_slice_type_manual_for_project(
     project_id: str, with_commit: bool = False
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = __get_updata_slice_type_manual_query()
     if project_id:
         query += f" AND project_id = '{project_id}'"
@@ -238,13 +245,20 @@ def __get_record_ids_and_first_unlabeled_pos_query(
     source_id: str,
     labeling_task_id: str,
 ):
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
+    data_slice_id = prevent_sql_injection(data_slice_id, isinstance(data_slice_id, str))
+    source_id = prevent_sql_injection(source_id, isinstance(source_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
     source_id_add = ""
     if source_id:
         source_id_add = f"AND rla.source_id = '{source_id}'"
     labeling_task_id_add = ""
     if labeling_task_id:
         labeling_task_id_add = f"""INNER JOIN labeling_task_label ltl
-            	ON rla.project_id = ltl.project_id AND rla.labeling_task_label_id = ltl.id AND ltl.labeling_task_id = '{labeling_task_id}'"""
+                ON rla.project_id = ltl.project_id AND rla.labeling_task_label_id = ltl.id AND ltl.labeling_task_id = '{labeling_task_id}'"""
     return f"""
     WITH record_select AS (
     SELECT r.id::TEXT record_id, label_check.has_labels,ROW_NUMBER () OVER(ORDER BY has_labels desc,r.id)-1 rn
