@@ -20,13 +20,16 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
 
 
 def get_all_paginated_by_project_id(
-    project_id: str, page: int, limit: int, order_asc: bool = True
+    project_id: str, page: int, limit: int, order_asc: bool = True, user_id: str = None
 ) -> Tuple[int, int, List[CognitionConversation]]:
-    total_count = (
-        session.query(CognitionConversation.id)
-        .filter(CognitionConversation.project_id == project_id)
-        .count()
+    total_count_query = session.query(CognitionConversation.id).filter(
+        CognitionConversation.project_id == project_id
     )
+    if user_id is not None:
+        total_count_query = total_count_query.filter(
+            CognitionConversation.created_by == user_id
+        )
+    total_count = total_count_query.count()
 
     if total_count == 0:
         num_pages = 0
@@ -42,6 +45,8 @@ def get_all_paginated_by_project_id(
         query = session.query(CognitionConversation).filter(
             CognitionConversation.project_id == project_id
         )
+        if user_id is not None:
+            query = query.filter(CognitionConversation.created_by == user_id)
         if order_asc:
             query = query.order_by(CognitionConversation.created_at.asc())
         else:
