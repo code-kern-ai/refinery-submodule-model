@@ -23,6 +23,10 @@ def get_all(org_id) -> List[CognitionProject]:
     )
 
 
+def get_all_all() -> List[CognitionProject]:
+    return session.query(CognitionProject).all()
+
+
 def get_all_for_synchronization_option(
     org_id: str, synchronization_option: str
 ) -> List[CognitionProject]:
