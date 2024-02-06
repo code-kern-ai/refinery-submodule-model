@@ -69,6 +69,13 @@ def get_all_paginated_for_category_origin(
     if total_count % limit > 0:
         num_pages += 1
 
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+    category_origin = prevent_sql_injection(
+        category_origin, isinstance(category_origin, str)
+    )
+    limit = prevent_sql_injection(limit, isinstance(limit, int))
+    page = prevent_sql_injection(page, isinstance(page, int))
+
     query_add = f"""
         ORDER BY md.created_at
         LIMIT {limit}

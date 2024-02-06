@@ -163,6 +163,8 @@ def prevent_sql_injection(variable_value: Union[str, Any], remove_quotes: bool) 
     # Type checks are already done by fastapi but to ensure there aren't any issues with faulty type hints we do a check here as well
     # some_str = prevent_sql_injection(some_str, isinstance(some_str, str))
     # some_int = prevent_sql_injection(some_int, isinstance(some_str, int))
+    if variable_value is None:
+        return variable_value
 
     if isinstance(variable_value, str):
         return __mask_sql_str(variable_value, remove_quotes)
