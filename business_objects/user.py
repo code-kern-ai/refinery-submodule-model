@@ -58,7 +58,7 @@ def get_user_count(organization_id: str, project_id: str) -> List[Any]:
 
 
 def get_migration_user() -> str:
-    query = f"""
+    query = """
     SELECT u.id
     FROM public.user u
     INNER JOIN organization o

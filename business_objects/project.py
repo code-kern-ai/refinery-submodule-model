@@ -250,6 +250,8 @@ def create(
     description: str,
     created_by: str,
     created_at: Optional[str] = None,
+    tokenizer: Optional[str] = None,
+    tokenizer_blank: Optional[str] = None,
     with_commit: bool = False,
     status: enums.ProjectStatus = enums.ProjectStatus.INIT_UPLOAD,
 ) -> Project:
@@ -260,6 +262,8 @@ def create(
         created_by=created_by,
         created_at=created_at,
         status=status.value,
+        tokenizer=tokenizer,
+        tokenizer_blank=tokenizer_blank,
     )
     general.add(project, with_commit)
     return project
