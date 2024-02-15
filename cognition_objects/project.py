@@ -1,7 +1,7 @@
 from typing import List, Optional
-from ..business_objects import general
+from ..business_objects import general, team_resource
 from ..session import session
-from ..models import CognitionProject
+from ..models import CognitionProject, TeamMember, TeamResource
 from .. import enums
 from datetime import datetime
 
@@ -14,7 +14,21 @@ def get(project_id: str) -> CognitionProject:
     )
 
 
-def get_all(org_id) -> List[CognitionProject]:
+def get_by_user(project_id: str, user_id: str) -> CognitionProject:
+    return (
+        session.query(CognitionProject)
+        .join(TeamResource, TeamResource.resource_id == CognitionProject.id)
+        .join(TeamMember, TeamMember.team_id == TeamResource.team_id)
+        .filter(TeamMember.user_id == user_id)
+        .filter(
+            TeamResource.resource_type == enums.ResourceType.COGNITION_PROJECT.value
+        )
+        .filter(CognitionProject.id == project_id)
+        .first()
+    )
+
+
+def get_all(org_id: str) -> List[CognitionProject]:
     return (
         session.query(CognitionProject)
         .filter(CognitionProject.organization_id == org_id)
@@ -25,6 +39,21 @@ def get_all(org_id) -> List[CognitionProject]:
 
 def get_all_all() -> List[CognitionProject]:
     return session.query(CognitionProject).all()
+
+
+def get_all_by_user(org_id: str, user_id: str) -> List[CognitionProject]:
+    return (
+        session.query(CognitionProject)
+        .join(TeamResource, TeamResource.resource_id == CognitionProject.id)
+        .join(TeamMember, TeamMember.team_id == TeamResource.team_id)
+        .filter(TeamMember.user_id == user_id)
+        .filter(
+            TeamResource.resource_type == enums.ResourceType.COGNITION_PROJECT.value
+        )
+        .filter(CognitionProject.organization_id == org_id)
+        .order_by(CognitionProject.created_at.asc())
+        .all()
+    )
 
 
 def get_all_for_synchronization_option(
@@ -135,6 +164,9 @@ def update(
 
 
 def delete(project_id: str, with_commit: bool = True) -> None:
+    team_resource.delete_by_resource(
+        project_id, enums.ResourceType.COGNITION_PROJECT, with_commit=False
+    )
     session.query(CognitionProject).filter(
         CognitionProject.id == project_id,
     ).delete()

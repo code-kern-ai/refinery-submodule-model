@@ -257,7 +257,7 @@ class TeamResource(Base):
         UUID(as_uuid=True),
         index=True,
     )
-    resource_type = Column(String)
+    resource_type = Column(String)  # of type enums.ResourceType.*.value
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),

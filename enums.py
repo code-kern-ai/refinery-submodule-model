@@ -149,6 +149,10 @@ class Tablenames(Enum):
         )
 
 
+class ResourceType(Enum):
+    COGNITION_PROJECT = "COGNITION_PROJECT"
+
+
 class CommentCategory(Enum):
     UNKNOWN = "unknown"
     LABELING_TASK = "LABELING_TASK"
