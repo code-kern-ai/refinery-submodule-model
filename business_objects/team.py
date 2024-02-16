@@ -18,7 +18,12 @@ def get_with_organization_id(organization_id: str, team_id: str) -> Team:
 
 
 def get_all(organization_id: str) -> List[Team]:
-    return session.query(Team).filter(Team.organization_id == organization_id).all()
+    return (
+        session.query(Team)
+        .filter(Team.organization_id == organization_id)
+        .order_by(Team.name.asc())
+        .all()
+    )
 
 
 def create_team(
