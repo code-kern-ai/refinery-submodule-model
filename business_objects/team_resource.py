@@ -40,6 +40,17 @@ def get_all_by_team(team_id: str, resource_type: enums.ResourceType) -> List:
     )
 
 
+def get_all_by_resource(resource_id: str, resource_type: enums.ResourceType) -> List:
+    return (
+        session.query(TeamResource)
+        .filter(
+            TeamResource.resource_id == resource_id,
+            TeamResource.resource_type == resource_type.value,
+        )
+        .all()
+    )
+
+
 def create(
     team_id: str,
     resource_id: str,
