@@ -28,13 +28,16 @@ def get_by_user(project_id: str, user_id: str) -> CognitionProject:
     )
 
 
-def get_all(org_id: str) -> List[CognitionProject]:
-    return (
-        session.query(CognitionProject)
-        .filter(CognitionProject.organization_id == org_id)
-        .order_by(CognitionProject.created_at.asc())
-        .all()
+def get_all(org_id: str, order_by_name: bool = False) -> List[CognitionProject]:
+    query = session.query(CognitionProject).filter(
+        CognitionProject.organization_id == org_id
     )
+
+    if order_by_name:
+        query = query.order_by(CognitionProject.name.asc())
+    else:
+        query = query.order_by(CognitionProject.created_at.asc())
+    return query.all()
 
 
 def get_all_all() -> List[CognitionProject]:
