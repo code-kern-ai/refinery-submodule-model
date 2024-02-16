@@ -130,6 +130,7 @@ class Tablenames(Enum):
     LLM_STEP = "llm_step"
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
+    WEBSOCKET_ACCESS = "websocket_access"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs

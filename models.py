@@ -1357,3 +1357,23 @@ class CognitionRefinerySynchronizationTask(Base):
     state = Column(String)  # e.g. CREATED, FINISHED, FAILED
     logs = Column(ARRAY(String))
     num_records_created = Column(Integer)
+
+
+class GlobalWebsocketAccess(Base):
+    # table to store prepared websocket configuration.
+    # to ensure stateless communication, the configuration is stored in the database
+    # an entry doesn't mean it will be used but can be used
+    # example code runner that prepares the access but the custom code doesn't have to use it
+    # entries should be cleared on startup
+
+    __tablename__ = Tablenames.WEBSOCKET_ACCESS.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    config = Column(JSON)
+    in_use = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
