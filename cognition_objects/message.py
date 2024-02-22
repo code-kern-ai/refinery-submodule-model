@@ -3,6 +3,7 @@ from datetime import datetime
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMessage
+from ..util import prevent_sql_injection
 
 
 def get_all_by_conversation_id(
@@ -68,6 +69,65 @@ def get_by_strategy_id(project_id: str, strategy_id: str) -> CognitionMessage:
         )
         .first()
     )
+
+
+def get_message_feedback_overview_query(
+    project_id: str, last_x_hours: Optional[int] = None
+) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    where_add = ""
+    if last_x_hours is not None:
+        last_x_hours = prevent_sql_injection(
+            last_x_hours, isinstance(last_x_hours, int)
+        )
+        where_add = f"AND mo.created_at BETWEEN NOW() - INTERVAL '{last_x_hours} HOURS' AND NOW()"
+    return f"""
+    SELECT
+        COALESCE(feedback_value,'ERROR_IN_NEWEST_LOG') feedback_value_or_error, 
+        feedback_message, 
+        feedback_category,
+        question, 
+        answer,
+        x.full_conversation_text,
+        json_build_object(
+            'message_id',mo.id,
+            'conversation_id',mo.conversation_id,
+            'user_id',mo.created_by,
+            'message_created', mo.created_at,
+            'newest_log_has_error', COALESCE(y.has_error,FALSE),
+            'has_error_log_content', ARRAY_TO_STRING( y.content,'\n')
+        )::TEXT message_data
+    FROM cognition.message mo
+    INNER JOIN cognition.conversation C
+        ON mo.project_id = c.project_id AND mo.conversation_id = c.id
+    INNER JOIN (
+        SELECT 
+            project_id,
+            conversation_id,
+            string_agg('Question ' || LPAD(rn::TEXT,3,'0') || ':\n' || question || '\n\nAnswer ' || LPAD(rn::TEXT,3,'0') || ':\n'|| answer,'\n') full_conversation_text
+        FROM (
+            SELECT c.project_id, mi.conversation_id, COALESCE(mi.question,'<null>')question, COALESCE(mi.answer,'<null>')answer, ROW_NUMBER() OVER(PARTITION BY c.id ORDER BY mi.created_at DESC) rn
+            FROM cognition.conversation C
+            INNER JOIN cognition.message mi
+                ON c.project_id = mi.project_id AND c.id = mi.conversation_id
+            WHERE C.project_id = '{project_id}'
+        ) x
+        GROUP BY project_id, conversation_id
+    ) x
+        ON c.project_id = x.project_id AND c.id = x.conversation_id
+    LEFT JOIN LATERAL(
+        SELECT pl.has_error, pl.content
+        FROM cognition.pipeline_logs pl
+        WHERE pl.project_id = mo.project_id
+            AND pl.message_id = mo.id
+            AND pl.has_error
+        ORDER BY pl.created_at DESC
+        LIMIT 1
+    )y ON TRUE
+    WHERE mo.project_id = '{project_id}'
+    AND (mo.feedback_value IS NOT NULL OR y.has_error)
+    {where_add}
+    ORDER BY mo.created_at DESC"""
 
 
 def create(
