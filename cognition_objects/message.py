@@ -97,6 +97,7 @@ def update(
     message_id: str,
     answer: Optional[str] = None,
     facts: Optional[List[Dict[str, Any]]] = None,
+    relations: Optional[List[Dict[str, Any]]] = None,
     selection_widget: Optional[List[Dict[str, Any]]] = None,
     feedback_value: Optional[str] = None,
     feedback_category: Optional[str] = None,
@@ -108,6 +109,8 @@ def update(
         message.answer = answer
     if facts is not None:
         message.facts = facts
+    if relations is not None:
+        message.relations = relations
     if selection_widget is not None:
         message.selection_widget = selection_widget
     if feedback_value is not None:
