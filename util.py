@@ -7,6 +7,8 @@ import sqlalchemy
 from uuid import UUID
 from datetime import datetime
 
+
+from sqlalchemy.sql import text as sql_text
 from sqlalchemy.engine.row import Row
 from .models import Base
 from .business_objects import general
@@ -186,3 +188,7 @@ def __mask_sql_str(sql_str: str, remove_quotes: bool) -> str:
     if remove_quotes:
         return value[1:-1]
     return value
+
+
+def ensure_sql_text(sql: str) -> str:
+    return sql_text(sql)
