@@ -115,7 +115,7 @@ def get_all_in_org(
         FROM cognition.environment_variable ev
         LEFT JOIN cognition.project p
             ON ev.project_id = p.id AND p.organization_id = '{org_id}'
-        WHERE (ev.organization_id IS NULL OR ev.organization_id = '{org_id}')
+        WHERE (p.organization_id = '{org_id}' OR ev.organization_id = '{org_id}')
         {project_filter}
     ) x
     """
