@@ -157,6 +157,7 @@ class User(Base):
         index=True,
     )
     role = Column(String, default=UserRoles.ENGINEER.value)  # enum UserRoles
+    language_display = Column(String, default="en")
     notifications = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.NOTIFICATION,
@@ -1046,6 +1047,12 @@ class CognitionProject(Base):
     operator_routing_source_code = Column(String)
     wizard_running = Column(Boolean, default=False)
     refinery_synchronization_interval_option = Column(String)
+    interface_type = Column(String)
+    execute_query_enrichment_if_source_code = Column(String)
+
+    customer_color_primary = Column(String, default="#18181b")
+    customer_color_primary_only_accent = Column(Boolean, default=False)
+    customer_color_secondary = Column(String, default="#9333ea")
 
 
 class CognitionStrategy(Base):
@@ -1093,6 +1100,8 @@ class CognitionStrategyStep(Base):
     step_type = Column(String)
     position = Column(Integer)
     config = Column(JSON)
+    progress_text = Column(String)
+    execute_if_source_code = Column(String)
 
 
 class CognitionConversation(Base):
@@ -1111,6 +1120,8 @@ class CognitionConversation(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     scope_dict = Column(JSON)
+    header = Column(String)
+    error = Column(String)
 
 
 class CognitionMessage(Base):
@@ -1140,10 +1151,11 @@ class CognitionMessage(Base):
     created_at = Column(DateTime, default=sql.func.now())
     question = Column(String)
     facts = Column(ARRAY(JSON))
+    selection_widget = Column(ARRAY(JSON))
     answer = Column(String)
 
-    # None = not yet answered, True = positive, false = negative
-    positive_feedback = Column(Boolean)
+    feedback_value = Column(String)
+    feedback_category = Column(String)
     feedback_message = Column(String)
 
     scope_dict_diff_previous_conversation = Column(JSON)
@@ -1184,6 +1196,7 @@ class CognitionPipelineLogs(Base):
     record_dict_diff_previous_message = Column(JSON)
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
+    skipped_step = Column(Boolean, default=False)
 
 
 class CognitionEnvironmentVariable(Base):

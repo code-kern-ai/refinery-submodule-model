@@ -20,13 +20,16 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
 
 
 def get_all_paginated_by_project_id(
-    project_id: str, page: int, limit: int
+    project_id: str, page: int, limit: int, order_asc: bool = True, user_id: str = None
 ) -> Tuple[int, int, List[CognitionConversation]]:
-    total_count = (
-        session.query(CognitionConversation.id)
-        .filter(CognitionConversation.project_id == project_id)
-        .count()
+    total_count_query = session.query(CognitionConversation.id).filter(
+        CognitionConversation.project_id == project_id
     )
+    if user_id is not None:
+        total_count_query = total_count_query.filter(
+            CognitionConversation.created_by == user_id
+        )
+    total_count = total_count_query.count()
 
     if total_count == 0:
         num_pages = 0
@@ -39,14 +42,16 @@ def get_all_paginated_by_project_id(
         page = num_pages
 
     if page > 0:
-        paginated_result = (
-            session.query(CognitionConversation)
-            .filter(CognitionConversation.project_id == project_id)
-            .order_by(CognitionConversation.created_at.asc())
-            .limit(limit)
-            .offset((page - 1) * limit)
-            .all()
+        query = session.query(CognitionConversation).filter(
+            CognitionConversation.project_id == project_id
         )
+        if user_id is not None:
+            query = query.filter(CognitionConversation.created_by == user_id)
+        if order_asc:
+            query = query.order_by(CognitionConversation.created_at.asc())
+        else:
+            query = query.order_by(CognitionConversation.created_at.desc())
+        paginated_result = query.limit(limit).offset((page - 1) * limit).all()
     else:
         paginated_result = []
     return total_count, num_pages, paginated_result
@@ -68,6 +73,7 @@ def create(
     return conversation
 
 
+# TODO: replace usage with create from message.py and delete this function
 def add_message(
     project_id: str,
     conversation_id: str,
@@ -90,20 +96,41 @@ def update(
     project_id: str,
     conversation_id: str,
     scope_dict: Optional[Dict[str, Any]] = None,
+    header: Optional[str] = None,
+    error: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity = get(project_id, conversation_id)
     if scope_dict is not None:
         conversation_entity.scope_dict = scope_dict
+    if header is not None:
+        conversation_entity.header = header
+    if error is not None:
+        conversation_entity.error = error
     general.flush_or_commit(with_commit)
     return conversation_entity
 
 
+def clear_error(
+    project_id: str,
+    conversation_id: str,
+    with_commit: bool = True,
+) -> CognitionConversation:
+    conversation_entity = get(project_id, conversation_id)
+    conversation_entity.error = None
+    general.flush_or_commit(with_commit)
+    return conversation_entity
+
+
+# TODO: replace usage with update from message.py and delete this function
 def update_message(
     project_id: str,
     conversation_id: str,
     message_id: str,
     answer: Optional[str] = None,
+    feedback_value: Optional[str] = None,
+    feedback_category: Optional[str] = None,
+    feedback_message: Optional[str] = None,
     strategy_id: Optional[str] = None,
     scope_dict_diff_previous_conversation: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
@@ -113,6 +140,12 @@ def update_message(
         message_entity.strategy_id = strategy_id
     if answer is not None:
         message_entity.answer = answer
+    if feedback_value is not None:
+        message_entity.feedback_value = feedback_value
+    if feedback_category is not None:
+        message_entity.feedback_category = feedback_category
+    if feedback_message is not None:
+        message_entity.feedback_message = feedback_message
     if scope_dict_diff_previous_conversation is not None:
         message_entity.scope_dict_diff_previous_conversation = (
             scope_dict_diff_previous_conversation

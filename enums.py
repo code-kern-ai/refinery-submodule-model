@@ -488,9 +488,16 @@ class StrategyStepType(Enum):
     NONE = "NONE"
     PYTHON = "PYTHON"
     LLM = "LLM"
+    SELECTION = "SELECTION"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
+
+    def get_when_to_use(self):
+        return STEP_WHEN_TO_USE.get(self, "No description available")
+
+    def get_progress_text(self):
+        return STEP_PROGRESS_TEXTS.get(self, "No progress text available")
 
 
 STEP_DESCRIPTIONS = {
@@ -499,6 +506,25 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Custom python function",
     StrategyStepType.LLM: "Run a LLM",
+    StrategyStepType.SELECTION: "Select data",
+}
+
+STEP_WHEN_TO_USE = {
+    StrategyStepType.RETRIEVAL: "When you want to retrieve facts from a database",
+    StrategyStepType.RELEVANCE: "When you want to classify retrieved facts",
+    StrategyStepType.PYTHON: "When you want to run a custom python function",
+    StrategyStepType.LLM: "When you want to run a LLM",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.SELECTION: "When you want to select data",
+}
+
+STEP_PROGRESS_TEXTS = {
+    StrategyStepType.RETRIEVAL: "Retrieving facts",
+    StrategyStepType.RELEVANCE: "Classifying facts",
+    StrategyStepType.NONE: "Dummy step",
+    StrategyStepType.PYTHON: "Running custom python function",
+    StrategyStepType.LLM: "Running LLM",
+    StrategyStepType.SELECTION: "Selecting data",
 }
 
 
@@ -550,6 +576,20 @@ class CognitionMarkdownFileState(Enum):
     TRANSFORMING = "TRANSFORMING"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+
+
+class CognitionInterfaceType(Enum):
+    CHAT = "CHAT"
+    COMPARE = "COMPARE"
+    ENRICH = "ENRICH"
+
+
+class EmitType(Enum):
+    ANSWER = "ANSWER"
+    RETRIEVAL_RESULTS = "RETRIEVAL_RESULTS"
+    FOLLOW_UPS = "FOLLOW_UPS"
+    SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
 
 
 def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> Any:

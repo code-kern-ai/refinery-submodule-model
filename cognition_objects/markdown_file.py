@@ -20,6 +20,8 @@ def get(org_id: str, md_file_id: str) -> CognitionMarkdownFile:
 
 
 def get_enriched(org_id: str, md_file_id: str) -> Dict[str, Any]:
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+    md_file_id = prevent_sql_injection(md_file_id, isinstance(org_id, str))
     enriched_query = __get_enriched_query(org_id=org_id, md_file_id=md_file_id)
     return general.execute_first(enriched_query)
 
@@ -96,6 +98,9 @@ def get_all_paginated_for_dataset(
     num_pages = int(total_count / limit)
     if total_count % limit > 0:
         num_pages += 1
+
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+    dataset_id = prevent_sql_injection(dataset_id, isinstance(org_id, str))
     limit = prevent_sql_injection(limit, isinstance(limit, int))
     page = prevent_sql_injection(page, isinstance(page, int))
     query_add = f"""
