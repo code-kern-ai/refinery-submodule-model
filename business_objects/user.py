@@ -1,4 +1,4 @@
-from . import general, organization
+from . import general, organization, team_member
 from .. import User, enums
 from ..session import session
 from typing import List, Any, Optional
@@ -94,6 +94,7 @@ def create(
 
 
 def remove_organization(user_id: str, with_commit: bool = False) -> None:
+    team_member.delete_by_user_id(user_id, with_commit=False)
     user = get(user_id)
     user.organization_id = None
     general.flush_or_commit(with_commit)
@@ -102,6 +103,7 @@ def remove_organization(user_id: str, with_commit: bool = False) -> None:
 def update_organization(
     user_id: str, organization_id: str, with_commit: bool = False
 ) -> None:
+    team_member.delete_by_user_id(user_id, with_commit=False)
     user = get(user_id)
     user.organization_id = organization_id
     general.flush_or_commit(with_commit)
