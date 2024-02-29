@@ -56,10 +56,13 @@ def __get_enriched_query(
     dataset_id: Optional[str] = None,
     query_add: Optional[str] = "",
 ) -> str:
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     where_add = ""
     if md_file_id:
+        md_file_id = prevent_sql_injection(md_file_id, isinstance(md_file_id, str))
         where_add += f" AND mf.id = '{md_file_id}'"
     if dataset_id:
+        prevent_sql_injection(dataset_id, isinstance(dataset_id, str))
         where_add += f" AND mf.dataset_id = '{dataset_id}'"
 
     query = """

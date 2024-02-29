@@ -6,6 +6,8 @@ from .. import enums
 from ..models import TaskQueue
 from ..session import session
 
+from ..util import prevent_sql_injection
+
 
 def get(task_id: str) -> Optional[TaskQueue]:
     return session.query(TaskQueue).filter(TaskQueue.id == task_id).first()
@@ -44,6 +46,7 @@ def get_waiting_by_attribute_id(project_id: str, attribute_id: str) -> TaskQueue
 
 
 def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQueue:
+    source_id = prevent_sql_injection(source_id, isinstance(source_id, str))
     return (
         session.query(TaskQueue)
         .filter(

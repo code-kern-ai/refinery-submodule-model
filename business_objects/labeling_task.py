@@ -8,6 +8,8 @@ from ..session import session
 from sqlalchemy.sql.expression import cast
 import sqlalchemy
 
+from ..util import prevent_sql_injection
+
 
 def get(project_id: str, task_id: str) -> LabelingTask:
     return (
@@ -32,6 +34,7 @@ def get_task_and_label_by_ids_and_type(
 ) -> List[Dict[str, Union[str, List[Dict[str, str]]]]]:
     if len(task_ids) == 0:
         return []
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     id_filter = "'" + "','".join(task_ids) + "'"
     query = f"""
     SELECT array_agg(row_to_json(all_rows))
@@ -41,7 +44,7 @@ def get_task_and_label_by_ids_and_type(
             lt.name,
             att.name as attribute_name,
             array_agg(
-		  	    json_build_object(
+                json_build_object(
                     'id', ltl.id,
                     'name', ltl.name,
                     'color', ltl.color)) labels
@@ -102,6 +105,11 @@ def get_selected_labeling_task_names(project_id: str) -> str:
 def get_record_classifications_manual(
     project_id: str, labeling_task_id: str, label_id: str
 ) -> Set[str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    label_id = prevent_sql_injection(label_id, isinstance(label_id, str))
     base_query: str = get_base_query_valid_labels_manual(project_id, labeling_task_id)
 
     query: str = (
@@ -138,6 +146,8 @@ def get_record_classifications(
 
 
 def get_relevant_extraction_records(project_id: str, task_id: str) -> List[str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    task_id = prevent_sql_injection(task_id, isinstance(task_id, str))
     base_query: str = get_base_query_valid_labels_manual(project_id, str(task_id))
     query: str = (
         base_query
@@ -156,6 +166,9 @@ def get_relevant_extraction_records(project_id: str, task_id: str) -> List[str]:
 def get_record_extraction_vector_triplets_manual(
     project_id: str, task_id: str, record_id: str
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    task_id = prevent_sql_injection(task_id, isinstance(task_id, str))
+    record_id = prevent_sql_injection(record_id, isinstance(record_id, str))
     base_query: str = get_base_query_valid_labels_manual(
         project_id, labeling_task_id=task_id, record_id=record_id
     )
@@ -188,6 +201,8 @@ def get_record_extraction_vector_triplets_manual(
 def get_record_extraction_vector_triplets_weak_supervision(
     record_id: str, task_id: str
 ) -> List[Any]:
+    record_id = prevent_sql_injection(record_id, isinstance(record_id, str))
+    task_id = prevent_sql_injection(task_id, isinstance(task_id, str))
     query: str = f"""
     SELECT ltl.name,rlat.token_index,rats.num_token
     FROM record_label_association rla
@@ -222,6 +237,7 @@ def get_labeling_task_by_source_id(source_id: str) -> LabelingTask:
 
 
 def get_labeling_task_name_by_label_id(project_id: str) -> Dict:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     results: List = general.execute_all(
         f"""SELECT ltl.id::TEXT, lt.name
         FROM labeling_task_label ltl 

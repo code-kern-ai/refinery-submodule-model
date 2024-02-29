@@ -12,6 +12,7 @@ from ..models import (
     InformationSourceStatistics,
 )
 from ..session import session
+from ..util import prevent_sql_injection
 
 
 def get(project_id: str, source_id: str) -> InformationSource:
@@ -106,6 +107,7 @@ def get_selected_information_sources(project_id: str) -> str:
 
 
 def get_payloads_by_project_id(project_id: str) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query: str = f"""
         SELECT 
             payload.id,
@@ -130,6 +132,10 @@ def get_payloads_by_project_id(project_id: str) -> List[Any]:
 
 
 def get_zero_shot_is_data(project_id: str, information_source_id: str) -> Any:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    information_source_id = prevent_sql_injection(
+        information_source_id, isinstance(information_source_id, str)
+    )
     sql: str = f"""
     SELECT base.*, a.name attribute_name
     FROM (
@@ -160,6 +166,8 @@ def get_zero_shot_is_data(project_id: str, information_source_id: str) -> Any:
 
 
 def get_first_crowd_is_for_annotator(project_id: str, annotator_id: str) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    annotator_id = prevent_sql_injection(annotator_id, isinstance(annotator_id, str))
     query = f"""
     SELECT _is.id::TEXT
     FROM information_source _is
@@ -192,6 +200,8 @@ def get_exclusion_record_ids_for_task(task_id: str) -> List[str]:
 
 
 def get_all_states(project_id: str, source_id: Optional[str] = None) -> Dict[str, str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    source_id = prevent_sql_injection(source_id, isinstance(source_id, str))
     source_add = ""
     if source_id:
         source_add = f" AND _is.id = '{source_id}'"
@@ -216,6 +226,8 @@ def get_all_states(project_id: str, source_id: Optional[str] = None) -> Dict[str
 def get_overview_data(
     project_id: str, is_model_callback: bool = False
 ) -> List[Dict[str, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+
     if is_model_callback:
         type_selection = " = 'MODEL_CALLBACK'"
     else:
@@ -272,6 +284,10 @@ def get_overview_data(
 
 
 def continue_payload(project_id: str, source_id: str, payload_id: str) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    source_id = prevent_sql_injection(source_id, isinstance(source_id, str))
+    payload_id = prevent_sql_injection(payload_id, isinstance(payload_id, str))
+
     query = f"""
     SELECT isp.state
     FROM information_source_payload isp
@@ -510,6 +526,8 @@ def update_is_selected_for_project(
     is_model_callback: bool = False,
     only_with_state: Optional[enums.PayloadState] = None,
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+
     if is_model_callback:
         type_selection = " = 'MODEL_CALLBACK'"
     else:
@@ -523,7 +541,7 @@ def update_is_selected_for_project(
     id_selection = ""
     if only_with_state:
         states = get_all_states(project_id)
-        ids = [key for key in states if states[key]==only_with_state.value]
+        ids = [key for key in states if states[key] == only_with_state.value]
         if len(ids) == 0:
             return
         id_selection = "AND id IN ('" + "', '".join(ids) + "')"

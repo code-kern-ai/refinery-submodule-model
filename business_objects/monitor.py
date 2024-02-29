@@ -2,12 +2,15 @@ from typing import Any, List, Optional
 from . import general
 from .. import enums
 
+from ..util import prevent_sql_injection
+
 
 def get_all_tasks(
     project_id: Optional[str] = None,
     only_running: bool = True,
     limit_per_task: int = 100,
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f""" 
     SELECT tasks.*, p.name project_name, orga.name organization_name
     FROM (
@@ -48,6 +51,8 @@ def set_information_source_payloads_to_failed(
     task_id: Optional[str] = None,
     with_commit: bool = False,
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    task_id = prevent_sql_injection(task_id, isinstance(task_id, str))
     query = f"""
     UPDATE {enums.Tablenames.INFORMATION_SOURCE_PAYLOAD.value}
     SET state = '{enums.PayloadState.FAILED.value}'
@@ -63,6 +68,8 @@ def set_attribute_calculation_to_failed(
     task_id: Optional[str] = None,
     with_commit: bool = False,
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    task_id = prevent_sql_injection(task_id, isinstance(task_id, str))
     query = f"""
     UPDATE {enums.Tablenames.ATTRIBUTE.value}
     SET state = '{enums.AttributeState.FAILED.value}'
@@ -78,6 +85,9 @@ def set_record_tokenization_task_to_failed(
     task_id: Optional[str] = None,
     with_commit: bool = False,
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    task_id = prevent_sql_injection(task_id, isinstance(task_id, str))
+
     query = f"""
     UPDATE {enums.Tablenames.RECORD_TOKENIZATION_TASK.value}
     SET state = '{enums.TokenizerTask.STATE_FAILED.value}'
@@ -93,6 +103,8 @@ def set_embedding_to_failed(
     task_id: Optional[str] = None,
     with_commit: bool = False,
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    task_id = prevent_sql_injection(task_id, isinstance(task_id, str))
     query = f"""
     UPDATE {enums.Tablenames.EMBEDDING.value}
     SET state = '{enums.EmbeddingState.FAILED.value}'
@@ -108,6 +120,8 @@ def set_weak_supervision_to_failed(
     task_id: Optional[str] = None,
     with_commit: bool = False,
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    task_id = prevent_sql_injection(task_id, isinstance(task_id, str))
     query = f"""
     UPDATE {enums.Tablenames.WEAK_SUPERVISION_TASK.value}
     SET state = '{enums.PayloadState.FAILED.value}'
@@ -123,6 +137,8 @@ def set_upload_task_to_failed(
     task_id: Optional[str] = None,
     with_commit: bool = False,
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    task_id = prevent_sql_injection(task_id, isinstance(task_id, str))
     query = f"""
     UPDATE {enums.Tablenames.UPLOAD_TASK.value}
     SET state = '{enums.UploadStates.ERROR.value}'

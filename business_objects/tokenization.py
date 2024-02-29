@@ -8,6 +8,8 @@ from .. import RecordTokenizationTask, enums
 from ..models import RecordAttributeTokenStatistics, RecordTokenized, Record
 from ..session import session
 
+from ..util import prevent_sql_injection
+
 
 def get_records_tokenized(
     project_id: str, record_ids: List[str] = None
@@ -79,9 +81,15 @@ def get_doc_bin_progress(project_id: str) -> str:
 def get_doc_bin_table_to_json(
     project_id: str, missing_columns: str, record_ids: List[str] = None
 ) -> Any:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    # missing_columns = prevent_sql_injection(missing_columns,isinstance(missing_columns,str)) # excluded since already prepared beforehand
     if missing_columns != "":
         missing_columns += ","
     if record_ids:
+        record_ids = [
+            prevent_sql_injection(record_id, isinstance(record_id, str))
+            for record_id in record_ids
+        ]
         record_ids = (
             "AND rt.record_id IN ("
             + ",".join([f"'{record_id}'" for record_id in record_ids])
@@ -130,6 +138,7 @@ def create_tokenization_task(
 
 
 def delete_docbins(project_id: str, with_commit: bool = False) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     DELETE FROM record_tokenized
     WHERE project_id = '{project_id}'
@@ -178,6 +187,7 @@ def delete_token_statistics_by_id(
 def delete_token_statistics_for_project(
     project_id: str, with_commit: bool = False
 ) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     DELETE FROM record_attribute_token_statistics
     WHERE project_id = '{project_id}'
@@ -187,6 +197,7 @@ def delete_token_statistics_for_project(
 
 
 def delete_dublicated_tokenization(project_id: str, with_commit: bool = False) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""    
     DELETE FROM record_tokenized rt
     USING (	
@@ -209,6 +220,7 @@ def delete_tokenization_tasks(project_id: str, with_commit: bool = False) -> Non
 
 
 def is_doc_bin_creation_running(project_id: str) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
         SELECT id
         FROM record_tokenization_task
@@ -223,6 +235,10 @@ def is_doc_bin_creation_running(project_id: str) -> bool:
 def is_doc_bin_creation_running_for_attribute(
     project_id: str, attribute_name: str
 ) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
     query = f"""
         SELECT id
         FROM record_tokenization_task
