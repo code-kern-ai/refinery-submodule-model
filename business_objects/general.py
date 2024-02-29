@@ -27,6 +27,11 @@ def add_all(entities: List[Any], with_commit: bool = False) -> None:
     flush_or_commit(with_commit)
 
 
+def delete(entity: Any, with_commit: bool = False) -> None:
+    session.delete(entity)
+    flush_or_commit(with_commit)
+
+
 def commit() -> None:
     session.commit()
 

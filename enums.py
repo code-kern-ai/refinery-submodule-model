@@ -85,6 +85,9 @@ class Tablenames(Enum):
     AGREEMENT = "agreement"
     USER = "user"
     ORGANIZATION = "organization"
+    TEAM = "team"
+    TEAM_MEMBER = "team_member"
+    TEAM_RESOURCE = "team_resource"
     PROJECT = "project"
     NOTIFICATION = "notification"
     ATTRIBUTE = "attribute"
@@ -145,6 +148,10 @@ class Tablenames(Enum):
                 for idx, word in enumerate(self.value.split("_"))
             ]
         )
+
+
+class TeamResourceType(Enum):
+    COGNITION_PROJECT = "COGNITION_PROJECT"
 
 
 class CommentCategory(Enum):

@@ -2,9 +2,10 @@ from datetime import datetime
 from . import record
 from .. import CommentData
 from . import general, organization
-from .. import User, enums
+from .. import enums
 from ..session import session
 from typing import Dict, List, Any, Optional, Union
+from ..util import prevent_sql_injection
 
 
 def get(comment_id: str) -> CommentData:
@@ -12,6 +13,8 @@ def get(comment_id: str) -> CommentData:
 
 
 def get_as_json(comment_id: str, user_id: str) -> CommentData:
+    comment_id = prevent_sql_injection(comment_id, isinstance(comment_id, str))
+    user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
     query = f"""
     SELECT array_agg(row_to_json(x))
     FROM (
@@ -35,14 +38,18 @@ def get_by_all_by_category(
     project_id: Optional[str] = None,
     as_json: bool = False,
 ) -> Union[List[CommentData], str]:
+    user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
+
     query = f"""
 SELECT *
 FROM public.comment_data
 WHERE xftype = '{category.value}' """
 
     if xfkey:
+        xfkey = prevent_sql_injection(xfkey, isinstance(xfkey, str))
         query += f"\n   AND xfkey = '{xfkey}'"
     if project_id:
+        project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
         query += f"\n   AND project_id = '{project_id}'"
 
     query += f"\n   AND (is_private = false OR created_by = '{user_id}')"
@@ -66,6 +73,11 @@ def get_add_info_category(
     project_id: Optional[str] = None,
     xfkey: Optional[str] = None,
 ) -> List[Dict[str, str]]:
+    if project_id:
+        project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    if xfkey:
+        xfkey = prevent_sql_injection(xfkey, isinstance(xfkey, str))
+
     if category == enums.CommentCategory.LABEL:
         where_add = __build_add_info_where(category, project_id, xfkey, "t")
         query = f"""
@@ -112,18 +124,25 @@ def __build_add_info_where(
     table_indicator: Optional[str] = None,
 ) -> str:
     where = ""
+    if table_indicator:
+        table_indicator = prevent_sql_injection(
+            table_indicator, isinstance(table_indicator, str)
+        )
+
     if not table_indicator:
         table_indicator = ""
     elif table_indicator[-1] != ".":
         table_indicator += "."
 
     if project_id:
+        project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
         if category == enums.CommentCategory.USER:
             org_id = organization.get_id_by_project_id(project_id)
             where = f"WHERE {table_indicator}organization_id = '{org_id}'"
         else:
             where = f"WHERE {table_indicator}project_id = '{project_id}'"
     if xfkey:
+        xfkey = prevent_sql_injection(xfkey, isinstance(xfkey, str))
         if not where:
             where += "WHERE "
         else:
@@ -146,6 +165,9 @@ def get_by_all_by_xfkey(
 def get_record_comments(
     project_id: str, user_id: str, record_ids: List[str]
 ) -> List[Dict[str, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
+    record_ids = [prevent_sql_injection(r, isinstance(r, str)) for r in record_ids]
     if not record_ids:
         return []
     record_in_filter = "'" + "', '".join(record_ids) + "'"
@@ -173,6 +195,11 @@ def has_comments(
     project_id: Optional[str] = None,
     group_by_xfkey: bool = False,
 ) -> Union[bool, Dict[str, bool]]:
+    if xfkey:
+        xfkey = prevent_sql_injection(xfkey, isinstance(xfkey, str))
+    if project_id:
+        project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+
     if group_by_xfkey:
         select = "xfkey::TEXT, COUNT(*)"
     else:
@@ -232,8 +259,11 @@ def next_order_key(
     xftype: str,
     project_id: Optional[str] = None,
 ) -> int:
+    xfkey = prevent_sql_injection(xfkey, isinstance(xfkey, str))
+    xftype = prevent_sql_injection(xftype, isinstance(xftype, str))
     project_add = ""
     if project_id:
+        project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
         project_add = f"AND project_id = '{project_id}'"
 
     query = f"""
@@ -280,6 +310,7 @@ def get_unique_comments_keys_for(
 ) -> List[str]:
     check_project_id = "project_id"
     if project_id:
+        project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
         check_project_id += f" = '{project_id}'"
     else:
         check_project_id += " IS NULL"
