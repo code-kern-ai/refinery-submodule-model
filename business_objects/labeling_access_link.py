@@ -73,7 +73,8 @@ def get_all_by_type_and_external_id(
 
 
 def __get_add_ids_data_slice(project_id: str, slice_id: str) -> List[str]:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))    
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     query = f"""
     SELECT  array_agg(lal.id::TEXT)
     FROM labeling_access_link lal
