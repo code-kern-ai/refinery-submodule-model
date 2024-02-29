@@ -43,9 +43,9 @@ def create(
     team_item = team.get(team_id)
     user_item = user.get(user_id)
     if not team_item or not user_item:
-        return None
+        raise Exception("Team or user not found")
     if team_item.organization_id != user_item.organization_id:
-        return None
+        raise Exception("User not in the same organization as the team")
 
     team_member = TeamMember(
         team_id=team_id,

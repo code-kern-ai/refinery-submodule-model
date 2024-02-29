@@ -149,7 +149,7 @@ class Tablenames(Enum):
         )
 
 
-class ResourceType(Enum):
+class TeamResourceType(Enum):
     COGNITION_PROJECT = "COGNITION_PROJECT"
 
 

@@ -16,7 +16,7 @@ def get(team_id: str, id: str) -> TeamResource:
 
 
 def get_by_team_and_resource(
-    team_id: str, resource_id: str, resource_type: enums.ResourceType
+    team_id: str, resource_id: str, resource_type: enums.TeamResourceType
 ) -> TeamResource:
     return (
         session.query(TeamResource)
@@ -29,7 +29,7 @@ def get_by_team_and_resource(
     )
 
 
-def get_all_by_team(team_id: str, resource_type: enums.ResourceType) -> List:
+def get_all_by_team(team_id: str, resource_type: enums.TeamResourceType) -> List:
     return (
         session.query(TeamResource)
         .filter(
@@ -40,7 +40,9 @@ def get_all_by_team(team_id: str, resource_type: enums.ResourceType) -> List:
     )
 
 
-def get_all_by_resource(resource_id: str, resource_type: enums.ResourceType) -> List:
+def get_all_by_resource(
+    resource_id: str, resource_type: enums.TeamResourceType
+) -> List:
     return (
         session.query(TeamResource)
         .filter(
@@ -54,7 +56,7 @@ def get_all_by_resource(resource_id: str, resource_type: enums.ResourceType) -> 
 def create(
     team_id: str,
     resource_id: str,
-    resource_type: enums.ResourceType,
+    resource_type: enums.TeamResourceType,
     created_by: str,
     created_at: Optional[datetime] = None,
     with_commit: bool = False,
@@ -81,17 +83,17 @@ def create(
     return team_resource
 
 
-def __get_resource(resource_id: str, resource_type: enums.ResourceType):
-    if resource_type == enums.ResourceType.COGNITION_PROJECT:
+def __get_resource(resource_id: str, resource_type: enums.TeamResourceType):
+    if resource_type == enums.TeamResourceType.COGNITION_PROJECT:
         return cognition_project.get(resource_id)
     else:
-        return None
+        raise Exception("Resource type not found")
 
 
 def delete_by_team_and_resource(
     team_id: str,
     resource_id: str,
-    resource_type: enums.ResourceType,
+    resource_type: enums.TeamResourceType,
     with_commit: bool = False,
 ) -> None:
     team_resource = get_by_team_and_resource(team_id, resource_id, resource_type)
@@ -100,7 +102,7 @@ def delete_by_team_and_resource(
 
 
 def delete_by_resource(
-    resource_id: str, resource_type: enums.ResourceType, with_commit: bool = False
+    resource_id: str, resource_type: enums.TeamResourceType, with_commit: bool = False
 ) -> None:
     team_resources = (
         session.query(TeamResource)
