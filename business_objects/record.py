@@ -207,7 +207,7 @@ def update_bytes_of_record_tokenized(
 
 
 def update_columns_of_tokenized_records(rt_ids: str, attribute_name: str) -> None:
-    # rt_ids = prevent_sql_injection(rt_ids, isinstance(rt_ids, str)) # excluded since prepared with ()
+    # rt_ids = prevent_sql_injection(rt_ids, isinstance(rt_ids, str)) # excluded since already prepared beforehand
     attribute_name = prevent_sql_injection(
         attribute_name, isinstance(attribute_name, str)
     )

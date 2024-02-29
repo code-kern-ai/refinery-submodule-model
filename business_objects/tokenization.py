@@ -82,6 +82,7 @@ def get_doc_bin_table_to_json(
     project_id: str, missing_columns: str, record_ids: List[str] = None
 ) -> Any:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    # missing_columns = prevent_sql_injection(missing_columns,isinstance(missing_columns,str)) # excluded since already prepared beforehand
     if missing_columns != "":
         missing_columns += ","
     if record_ids:
