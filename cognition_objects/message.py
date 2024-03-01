@@ -72,15 +72,17 @@ def get_by_strategy_id(project_id: str, strategy_id: str) -> CognitionMessage:
 
 
 def get_message_feedback_overview_query(
-    project_id: str, last_x_hours: Optional[int] = None
+    project_id: str, start_date: Optional[int] = None, to_date: Optional[int] = None
 ) -> str:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
-    if last_x_hours is not None:
-        last_x_hours = prevent_sql_injection(
-            last_x_hours, isinstance(last_x_hours, int)
-        )
-        where_add = f"AND mo.created_at BETWEEN NOW() - INTERVAL '{last_x_hours} HOURS' AND NOW()"
+    if start_date is not None:
+        start_date = prevent_sql_injection(start_date, isinstance(start_date, int))
+        if to_date is not None:
+            to_date = prevent_sql_injection(to_date, isinstance(to_date, int))
+            where_add = f"AND mo.created_at BETWEEN NOW() - INTERVAL '{start_date} HOURS' AND NOW() - INTERVAL '{to_date} HOURS'"
+        else:
+            where_add = f"AND mo.created_at BETWEEN NOW() - INTERVAL '{start_date} HOURS' AND NOW()"
     return f"""
     SELECT
         COALESCE(feedback_value,'ERROR_IN_NEWEST_LOG') feedback_value_or_error, 
