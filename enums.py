@@ -133,6 +133,7 @@ class Tablenames(Enum):
     LLM_STEP = "llm_step"
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
+    WEBSOCKET_ACCESS = "websocket_access"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -597,6 +598,15 @@ class EmitType(Enum):
     FOLLOW_UPS = "FOLLOW_UPS"
     SELECTION = "SELECTION"
     QUERY_REPHRASING = "QUERY_REPHRASING"
+
+# note this is only for websocket interaction between exec env and gateway
+# none of these can/is allowed to interact with the database or anything other than the websocket!
+# means if you want a live update and set it as answer this needs to be done in the exec env code record_dict change
+class AllowedExecEnvMessageTypes(Enum):
+    CHUNK = "CHUNK" # sends a chunk to the ui - same as llm step type
+    SET_UI_MESSAGE = "SET_UI_MESSAGE" # replaces answer in the ui
+    CLOSE = "CLOSE" # closes the websocket - shouldn't be sent by hand!
+
 
 
 def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> Any:
