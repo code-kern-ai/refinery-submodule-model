@@ -72,10 +72,17 @@ def get_by_strategy_id(project_id: str, strategy_id: str) -> CognitionMessage:
 
 
 def get_message_feedback_overview_query(
-    project_id: str, start_date: Optional[int] = None, to_date: Optional[int] = None
+    project_id: str,
+    start_date: Optional[int] = None,
+    to_date: Optional[int] = None,
 ) -> str:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
+    if isinstance(start_date, str) and start_date is not None:
+        start_date = int(start_date) / 3600000
+    if isinstance(to_date, str) and to_date is not None:
+        to_date = int(to_date) / 3600000
+
     if start_date is not None:
         start_date = prevent_sql_injection(start_date, isinstance(start_date, int))
         if to_date is not None:
