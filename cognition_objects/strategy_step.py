@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -111,6 +111,26 @@ def update(
         strategy_step.progress_text = progress_text
     if execute_if_source_code is not None:
         strategy_step.execute_if_source_code = execute_if_source_code
+
+    general.flush_or_commit(with_commit)
+    return strategy_step
+
+
+def update_or_insert_config_value(
+    project_id: str,
+    strategy_step_id: str,
+    configKey: str,
+    configValue: Any,  # also None!
+    with_commit: bool = True,
+) -> CognitionStrategyStep:
+    strategy_step: CognitionStrategyStep = get(project_id, strategy_step_id)
+    if not strategy_step:
+        raise ValueError(f"Strategy step with id {strategy_step_id} not found")
+
+    if not strategy_step.config:
+        strategy_step.config = {}
+    strategy_step.config[configKey] = configValue
+    flag_modified(strategy_step, "config")
 
     general.flush_or_commit(with_commit)
     return strategy_step
