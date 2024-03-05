@@ -6,6 +6,7 @@ from ..cognition_objects import message
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionConversation
+from ..util import prevent_sql_injection
 
 
 def get(project_id: str, conversation_id: str) -> CognitionConversation:
@@ -17,6 +18,73 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
         )
         .first()
     )
+
+
+def get_count(project_id: str) -> int:
+    return (
+        session.query(CognitionConversation)
+        .filter(CognitionConversation.project_id == project_id)
+        .count()
+    )
+
+
+def get_overview_list(
+    project_id: str,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    conversation_id: Optional[str] = None,
+    order_desc: bool = True,
+) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    pagination_add = ""
+    basic_where_add = ""
+    order_key = "DESC" if order_desc else "ASC"
+
+    if limit is not None:
+        limit = prevent_sql_injection(limit, isinstance(limit, int))
+        pagination_add += f"LIMIT {limit}"
+    if offset is not None:
+        offset = prevent_sql_injection(offset, isinstance(offset, int))
+        pagination_add += f" OFFSET {offset}"
+    if conversation_id is not None:
+        conversation_id = prevent_sql_injection(
+            conversation_id, isinstance(conversation_id, str)
+        )
+        basic_where_add += f" AND c.id = '{conversation_id}'"
+
+    query = f"""
+    SELECT x.id::TEXT conversation_id, array_agg(message_data ORDER BY z.created_at asc) message_data
+    FROM (
+        SELECT id, project_id,created_at, error IS NOT NULL has_error
+        FROM cognition.conversation C
+        WHERE c.project_id = '{project_id}' {basic_where_add}
+        ORDER BY c.created_at {order_key}
+        {pagination_add}
+    ) x
+    INNER JOIN (
+        SELECT jsonb_build_object('message_id',m.id, 'question', m.question, 'has_error',y.has_error, 'time_elapsed',zx.time_elapsed) message_data, m.created_at, m.conversation_id, m.project_id
+        FROM cognition.message m
+        LEFT JOIN LATERAL (
+            -- most recent log for message
+            SELECT pl.has_error
+            FROM cognition.pipeline_logs pl
+            WHERE m.project_id = pl.project_id
+                AND m.id = pl.message_id
+            ORDER BY pl.created_at DESC
+            LIMIT 1
+        ) y
+            ON TRUE
+        INNER JOIN (
+            SELECT pl.project_id, pl.message_id , SUM(pl.time_elapsed)::NUMERIC(10,5) time_elapsed
+            FROM cognition.pipeline_logs pl
+            GROUP BY pl.project_id, pl.message_id
+        ) zx
+            ON m.project_id = zx.project_id AND m.id = zx.message_id
+    ) z
+        ON x.project_id = z.project_id AND x.id = z.conversation_id
+    GROUP BY x.id
+    ORDER BY MIN(x.created_at) {order_key} """
+    return general.execute_all(query)
 
 
 def get_all_paginated_by_project_id(
