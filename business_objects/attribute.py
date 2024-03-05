@@ -10,6 +10,8 @@ from ..models import Attribute
 from ..session import session
 from submodules.model import enums
 
+from ..util import prevent_sql_injection
+
 
 def get(project_id: str, attribute_id: str) -> Attribute:
     return (
@@ -18,18 +20,22 @@ def get(project_id: str, attribute_id: str) -> Attribute:
         .first()
     )
 
-def get_running_id_name(project_id:str) -> str:
+
+def get_running_id_name(project_id: str) -> str:
     result = (
         session.query(Attribute)
-        .filter(Attribute.project_id == project_id,
-                Attribute.name.like("running_id%"),
-                Attribute.data_type == enums.DataTypes.INTEGER.value)
+        .filter(
+            Attribute.project_id == project_id,
+            Attribute.name.like("running_id%"),
+            Attribute.data_type == enums.DataTypes.INTEGER.value,
+        )
         .order_by(Attribute.relative_position.asc())
         .first()
     )
     if result:
         return result.name
     return None
+
 
 def get_data_type(project_id: str, name: str) -> str:
     data_type: Any = (
@@ -290,6 +296,7 @@ def delete(project_id: str, attribute_id: str, with_commit: bool = False) -> Non
 
 
 def check_composite_key_is_valid(project_id: str) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     primary_keys: List[Attribute] = get_primary_keys(project_id)
 
     if not primary_keys:
@@ -349,6 +356,10 @@ def add_running_id(
 
 
 def has_records_without_attribute(project_id: str, attribute_name: str) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
     return (
         general.execute_first(
             f"""
@@ -365,6 +376,11 @@ def __build_running_id_update_query(
     project_id: str, attribute_name: str, chunk_size: int = 500
 ) -> str:
     # caution @@OFFSET@@ needs to be replaced by the caller so the query doesn't need to be prepared multiple times
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
+    chunk_size = prevent_sql_injection(chunk_size, isinstance(chunk_size, int))
 
     current_attributes = get_all_ordered(project_id, True)
     json_cols = ",\n".join(
@@ -387,6 +403,10 @@ def __build_running_id_update_query(
 def __build_add_query(
     project_id: str, attribute_name: str, for_retokenization: bool
 ) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
     if for_retokenization:
         remove_query = f"""
         DELETE FROM record_tokenized
@@ -435,6 +455,10 @@ def checked_unique_values(project_id: str, attribute_name: str):
 
 
 def get_unique_values(project_id: str, attribute_name: str) -> List[str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
     query = f"""
         SELECT "data"->>'{attribute_name}'
         FROM record
@@ -445,9 +469,9 @@ def get_unique_values(project_id: str, attribute_name: str) -> List[str]:
     return [r[0] for r in general.execute(query)]
 
 
-def is_attribute_tokenization_finished(
-    project_id: str, attribute_id: str
-) -> bool:
+def is_attribute_tokenization_finished(project_id: str, attribute_id: str) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_id = prevent_sql_injection(attribute_id, isinstance(attribute_id, str))
     query = f"""
     SELECT rtt.state
     FROM attribute a
@@ -462,5 +486,7 @@ def is_attribute_tokenization_finished(
 
     if value is None:
         return False
-    return value[0] in [enums.TokenizerTask.STATE_FAILED.value, enums.TokenizerTask.STATE_FINISHED.value]
-
+    return value[0] in [
+        enums.TokenizerTask.STATE_FAILED.value,
+        enums.TokenizerTask.STATE_FINISHED.value,
+    ]

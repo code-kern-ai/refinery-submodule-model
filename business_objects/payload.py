@@ -6,6 +6,8 @@ from .. import enums
 from ..models import InformationSourcePayload, InformationSource
 from ..session import session
 
+from ..util import prevent_sql_injection
+
 
 def get(project_id: str, payload_id: str) -> InformationSourcePayload:
     return (
@@ -23,7 +25,7 @@ def get_first_running_active_learner(project_id: str) -> InformationSourcePayloa
         session.query(InformationSourcePayload)
         .join(
             InformationSource,
-            (InformationSourcePayload.source_id== InformationSource.id)
+            (InformationSourcePayload.source_id == InformationSource.id)
             & (InformationSourcePayload.project_id == InformationSource.project_id),
         )
         .filter(
@@ -43,6 +45,11 @@ def get_max_token(record_ids: List[str], labeling_task_id: str, project_id: str)
 def get_query_labels_classification(
     project_id: str, labeling_task_id: str, source_type: str
 ) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    source_type = prevent_sql_injection(source_type, isinstance(source_type, str))
     query: str = f"""
     SELECT embeddings.record_id, labels.name
     FROM (
@@ -71,6 +78,10 @@ def get_query_labels_classification(
 def get_query_labels_classification_manual(
     project_id: str, labeling_task_id: str
 ) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
     # gold /gold star + all where all agree need to be found so a bit more complicated
     base_query: str = get_base_query_valid_labels_manual(project_id, labeling_task_id)
     query: str = (
@@ -104,6 +115,11 @@ def get_query_labels_classification_manual(
 def get_query_labels_extraction(
     project_id: str, labeling_task_id: str, source_type: str
 ) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    source_type = prevent_sql_injection(source_type, isinstance(source_type, str))
     query: str = f"""
     SELECT embeddings.record_id::text, labels.name, labels.token_list
     FROM (
@@ -133,6 +149,10 @@ def get_query_labels_extraction(
 
 
 def get_query_labels_extraction_manual(project_id: str, labeling_task_id: str) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
     # gold /gold star + all where all agree need to be found so a bit more complicated
     base_query: str = get_base_query_valid_labels_manual(project_id, labeling_task_id)
     query: str = (
@@ -168,8 +188,15 @@ def get_query_labels_extraction_manual(project_id: str, labeling_task_id: str) -
 
 
 def get_base_query_valid_labels_manual(
-    project_id: str, labeling_task_id: str = "", record_id: str = ""
+    project_id: str,
+    labeling_task_id: Optional[str] = None,
+    record_id: Optional[str] = None,
 ) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    record_id = prevent_sql_injection(record_id, isinstance(record_id, str))
     # is_valid_manual_label is now set on rla creation
     labeling_task_add = ""
     if labeling_task_id:
@@ -188,7 +215,7 @@ def get_base_query_valid_labels_manual(
             AND rla.project_id = '{project_id}' AND ltl.project_id = '{project_id}' 
         {labeling_task_add} 
         {record_id_add} 
-	)
+    )
     """
     return query
 
@@ -196,8 +223,15 @@ def get_base_query_valid_labels_manual(
 def get_query_max_token(
     project_id: str, labeling_task_id: str, record_ids: List[str]
 ) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
     if not isinstance(record_ids, str):
+        record_ids = [prevent_sql_injection(x, isinstance(x, str)) for x in record_ids]
         record_ids = "'" + "','".join(record_ids) + "'"
+    else:
+        record_ids = prevent_sql_injection(record_ids, isinstance(record_ids, str))
 
     query = f"""
     SELECT rats.record_id::TEXT record_id, rats.num_token

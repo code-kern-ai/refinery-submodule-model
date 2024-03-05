@@ -8,6 +8,7 @@ from ..exceptions import (
 )
 from ..session import session
 from ..business_objects import knowledge_base
+from ..util import prevent_sql_injection
 
 
 def get_by_value(knowledge_base_id: str, value: str) -> KnowledgeTerm:
@@ -52,6 +53,7 @@ def get_terms_with_base_names(
 
 
 def get_terms_by_project_id(project_id: str) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
         SELECT
             knowledge_base.id,

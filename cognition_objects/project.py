@@ -1,7 +1,7 @@
 from typing import List, Optional
-from ..business_objects import general
+from ..business_objects import general, team_resource, user
 from ..session import session
-from ..models import CognitionProject
+from ..models import CognitionProject, TeamMember, TeamResource
 from .. import enums
 from datetime import datetime
 
@@ -14,17 +14,57 @@ def get(project_id: str) -> CognitionProject:
     )
 
 
-def get_all(org_id) -> List[CognitionProject]:
+def get_by_user(project_id: str, user_id: str) -> CognitionProject:
+    user_item = user.get(user_id)
+    if user_item.role == enums.UserRoles.ENGINEER.value:
+        return get(project_id)
+
     return (
         session.query(CognitionProject)
-        .filter(CognitionProject.organization_id == org_id)
-        .order_by(CognitionProject.created_at.asc())
-        .all()
+        .join(TeamResource, TeamResource.resource_id == CognitionProject.id)
+        .join(TeamMember, TeamMember.team_id == TeamResource.team_id)
+        .filter(TeamMember.user_id == user_id)
+        .filter(
+            TeamResource.resource_type == enums.TeamResourceType.COGNITION_PROJECT.value
+        )
+        .filter(CognitionProject.id == project_id)
+        .first()
     )
+
+
+def get_all(org_id: str, order_by_name: bool = False) -> List[CognitionProject]:
+    query = session.query(CognitionProject).filter(
+        CognitionProject.organization_id == org_id
+    )
+
+    if order_by_name:
+        query = query.order_by(CognitionProject.name.asc())
+    else:
+        query = query.order_by(CognitionProject.created_at.asc())
+    return query.all()
 
 
 def get_all_all() -> List[CognitionProject]:
     return session.query(CognitionProject).all()
+
+
+def get_all_by_user(org_id: str, user_id: str) -> List[CognitionProject]:
+    user_item = user.get(user_id)
+    if user_item.role == enums.UserRoles.ENGINEER.value:
+        return get_all(org_id)
+
+    return (
+        session.query(CognitionProject)
+        .join(TeamResource, TeamResource.resource_id == CognitionProject.id)
+        .join(TeamMember, TeamMember.team_id == TeamResource.team_id)
+        .filter(TeamMember.user_id == user_id)
+        .filter(
+            TeamResource.resource_type == enums.TeamResourceType.COGNITION_PROJECT.value
+        )
+        .filter(CognitionProject.organization_id == org_id)
+        .order_by(CognitionProject.created_at.asc())
+        .all()
+    )
 
 
 def get_all_for_synchronization_option(
@@ -135,6 +175,9 @@ def update(
 
 
 def delete(project_id: str, with_commit: bool = True) -> None:
+    team_resource.delete_by_resource(
+        project_id, enums.TeamResourceType.COGNITION_PROJECT, with_commit=False
+    )
     session.query(CognitionProject).filter(
         CognitionProject.id == project_id,
     ).delete()

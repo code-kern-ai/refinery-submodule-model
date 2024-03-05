@@ -16,6 +16,7 @@ from ..models import (
     RecordLabelAssociation,
     Record,
 )
+from ..util import prevent_sql_injection
 
 QUEUE_PROJECT_NAME = "@@HIDDEN_QUEUE_PROJECT@@"
 
@@ -78,6 +79,11 @@ def get_general_project_stats(
     labeling_task_id: Optional[str] = None,
     slice_id: Optional[str] = None,
 ) -> List[Dict[str, Union[str, float]]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     values = general.execute_first(
         __build_sql_project_stats(project_id, labeling_task_id, slice_id)
     )
@@ -90,6 +96,11 @@ def get_label_distribution(
     labeling_task_id: Optional[str] = None,
     slice_id: Optional[str] = None,
 ) -> List[Dict[str, Union[str, float]]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     values = general.execute_first(
         __build_sql_label_distribution(project_id, labeling_task_id, slice_id)
     )
@@ -154,6 +165,11 @@ def get_confusion_matrix(
     for_classification: bool,
     slice_id: Optional[str] = None,
 ) -> List[Dict[str, Union[str, float]]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_id = prevent_sql_injection(
+        labeling_task_id, isinstance(labeling_task_id, str)
+    )
+    slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     if for_classification:
         values = general.execute_first(
             __build_sql_confusion_matrix_classification(
@@ -171,6 +187,8 @@ def get_confusion_matrix(
 
 
 def get_zero_shot_project_config(project_id: str, payload_id: str) -> Any:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    payload_id = prevent_sql_injection(payload_id, isinstance(payload_id, str))
     query = f"""
     SELECT base.*, a.name attribute_name
     FROM (
@@ -281,6 +299,7 @@ def delete(project_id: str, with_commit: bool = False) -> None:
 
 
 def delete_by_id(project_id: str, with_commit: bool = False) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     base_query = f"""
     DELETE FROM @@TBL@@
     WHERE @@COL@@ = '{project_id}' """
@@ -489,6 +508,7 @@ def __build_sql_confusion_matrix_classification(
 
 
 def is_rats_tokenization_still_running(project_id: str) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT rtt.type, rtt.state
     FROM record_tokenization_task rtt
@@ -628,6 +648,7 @@ def __build_sql_project_stats(
 
 
 def get_project_size(project_id: str) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     return general.execute_all(__get_project_size_sql(project_id))
 
 

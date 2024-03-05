@@ -8,6 +8,8 @@ from .. import models, EmbeddingTensor, Embedding
 from ..session import session
 from .. import enums
 
+from ..util import prevent_sql_injection
+
 
 def get(project_id: str, embedding_id: str) -> Embedding:
     return (
@@ -74,6 +76,8 @@ def get_embedding_id_and_type(project_id: str, embedding_name: str) -> Any:
 def get_filter_attribute_type_dict(
     project_id: str, embedding_id: str
 ) -> Dict[str, str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
     query = f""" 
     SELECT 
         jsonb_object_agg(NAME,
@@ -146,6 +150,7 @@ def get_waiting_embeddings(project_id: str) -> List[Embedding]:
 
 
 def get_tensor_data_ordered_query(embedding_id: str) -> str:
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
     return f"""
     SELECT et.data
     FROM embedding_tensor et
@@ -155,6 +160,7 @@ def get_tensor_data_ordered_query(embedding_id: str) -> str:
 
 
 def get_tensors_by_project_id(project_id: str) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
         SELECT
             et.embedding_id,
@@ -238,6 +244,18 @@ def get_attributes_for_qdrant(
     record_ids: Optional[List[str]] = None,
     attributes_to_include: Optional[Dict[str, str]] = None,
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    if record_ids:
+        record_ids = [
+            prevent_sql_injection(id, isinstance(id, str)) for id in record_ids
+        ]
+    if attributes_to_include:
+        attributes_to_include = {
+            prevent_sql_injection(key, isinstance(key, str)): prevent_sql_injection(
+                value, isinstance(value, str)
+            )
+            for key, value in attributes_to_include.items()
+        }
     payload_selector = __build_payload_selector(attributes_to_include)
     query = f"""
     SELECT
@@ -258,6 +276,19 @@ def get_tensors_and_attributes_for_qdrant(
     record_ids: Optional[List[str]] = None,
     only_tensor_ids: bool = False,
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
+    if record_ids:
+        record_ids = [
+            prevent_sql_injection(id, isinstance(id, str)) for id in record_ids
+        ]
+    if attributes_to_include:
+        attributes_to_include = {
+            prevent_sql_injection(key, isinstance(key, str)): prevent_sql_injection(
+                value, isinstance(value, str)
+            )
+            for key, value in attributes_to_include.items()
+        }
     payload_selector = __build_payload_selector(attributes_to_include)
     query = f"""
     SELECT
@@ -278,6 +309,10 @@ def get_tensors_and_attributes_for_qdrant(
 def get_match_record_ids_to_qdrant_ids(
     project_id: str, embedding_id: str, ids: List[str], limit: int
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
+    ids = [prevent_sql_injection(id, isinstance(id, str)) for id in ids]
+    limit = prevent_sql_injection(limit, isinstance(limit, int))
     # "normal" attributes are stored in qdrant with the record id, embedding lists with the tensor id
     if not has_sub_key(project_id, embedding_id):
         return ids
@@ -295,6 +330,8 @@ def get_match_record_ids_to_qdrant_ids(
 def get_qdrant_limit_factor(
     project_id: str, embedding_id: str, default: int = 1
 ) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
     query = f"""
     SELECT CEIL(AVG(max_key))::INTEGER
     FROM (
@@ -313,8 +350,11 @@ def get_manually_labeled_tensors_by_embedding_id(
     embedding_id: str,
     limit: Optional[int] = None,
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
     add_limit = ""
     if limit:
+        limit = prevent_sql_injection(limit, isinstance(limit, int))
         add_limit = f"""
         ORDER BY random()
         LIMIT {limit}
@@ -338,6 +378,8 @@ def has_sub_key(
     project_id: str,
     embedding_id: str,
 ) -> bool:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
     query = f"""
     SELECT sub_key
     FROM embedding_tensor et
@@ -355,7 +397,10 @@ def get_not_manually_labeled_tensors_by_embedding_id(
     embedding_id: str,
     limit: Optional[int] = None,
 ) -> List[Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
     if limit:
+        limit = prevent_sql_injection(limit, isinstance(limit, int))
         add_limit = f"""
         ORDER BY random()
         LIMIT {limit}
@@ -603,6 +648,13 @@ def delete_by_record_ids_and_sub_keys(
     if len(to_del) > 100:
         # since chunk_list isn't available here, we raise an error
         raise ValueError("Too many tuples to delete at once. Please chunk beforehand.")
+
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
+    query_adds = [
+        (prevent_sql_injection(r), prevent_sql_injection(s)) for r, s in to_del
+    ]
+
     query_adds = [
         f"(et.record_id = '{record_id}' AND et.sub_key = {sub_key})"
         for record_id, sub_key in to_del
