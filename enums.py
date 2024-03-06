@@ -498,7 +498,8 @@ class StrategyStepType(Enum):
     LLM = "LLM"
     SELECTION = "SELECTION"
     QUERY_REPHRASING = "QUERY_REPHRASING"
-    WEBSEARCH = "WEBSEARCH"
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # WEBSEARCH = "WEBSEARCH"
     TRUNCATE_CONTEXT = "TRUNCATE_CONTEXT"
     HEADER = "HEADER"
 
@@ -520,7 +521,8 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.LLM: "Run a LLM",
     StrategyStepType.SELECTION: "Select data",
     StrategyStepType.QUERY_REPHRASING: "Rephrase query",
-    StrategyStepType.WEBSEARCH: "Search the web",
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # StrategyStepType.WEBSEARCH: "Search the web",
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
     StrategyStepType.HEADER: "Writing header",
 }
@@ -533,7 +535,8 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.SELECTION: "When you want to select data",
     StrategyStepType.QUERY_REPHRASING: "When you want to rephrase a query",
-    StrategyStepType.WEBSEARCH: "When you want to search the web",
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # StrategyStepType.WEBSEARCH: "When you want to search the web",
     StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
     StrategyStepType.HEADER: "When you want to write a header",
 }
@@ -546,7 +549,8 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.LLM: "Running LLM",
     StrategyStepType.SELECTION: "Selecting data",
     StrategyStepType.QUERY_REPHRASING: "Rephrasing query",
-    StrategyStepType.WEBSEARCH: "Searching the web",
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # StrategyStepType.WEBSEARCH: "Searching the web",
     StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
     StrategyStepType.HEADER: "Headline generation",
 }
@@ -615,14 +619,14 @@ class EmitType(Enum):
     SELECTION = "SELECTION"
     QUERY_REPHRASING = "QUERY_REPHRASING"
 
+
 # note this is only for websocket interaction between exec env and gateway
 # none of these can/is allowed to interact with the database or anything other than the websocket!
 # means if you want a live update and set it as answer this needs to be done in the exec env code record_dict change
 class AllowedExecEnvMessageTypes(Enum):
-    CHUNK = "CHUNK" # sends a chunk to the ui - same as llm step type
-    SET_UI_MESSAGE = "SET_UI_MESSAGE" # replaces answer in the ui
-    CLOSE = "CLOSE" # closes the websocket - shouldn't be sent by hand!
-
+    CHUNK = "CHUNK"  # sends a chunk to the ui - same as llm step type
+    SET_UI_MESSAGE = "SET_UI_MESSAGE"  # replaces answer in the ui
+    CLOSE = "CLOSE"  # closes the websocket - shouldn't be sent by hand!
 
 
 def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> Any:
