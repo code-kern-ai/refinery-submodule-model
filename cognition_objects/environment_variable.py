@@ -174,6 +174,7 @@ def update(
     name: Optional[str] = None,
     description: Optional[str] = None,
     value: Optional[str] = None,
+    is_secret: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionEnvironmentVariable:
     environment_variable: CognitionEnvironmentVariable = get(
@@ -186,6 +187,8 @@ def update(
         environment_variable.description = description
     if value is not None:
         environment_variable.value = value
+    if is_secret is not None:
+        environment_variable.is_secret = is_secret
     general.flush_or_commit(with_commit)
     return environment_variable
 
