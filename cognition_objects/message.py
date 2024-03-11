@@ -193,3 +193,16 @@ def delete(project_id: str, message_id: str, with_commit: bool = True) -> None:
         CognitionMessage.id == message_id,
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def get_messages_per_conversation_query(project_id: str) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    return f"""
+    SELECT 
+        conversation_id,
+        COUNT(*) messages
+    FROM cognition.message as m
+    WHERE project_id = '{project_id}'
+    GROUP BY conversation_id
+    ORDER BY conversation_id
+    """
