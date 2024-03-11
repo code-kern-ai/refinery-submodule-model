@@ -56,8 +56,8 @@ def get_overview_list(
     query = f"""
     SELECT x.id::TEXT conversation_id, array_agg(message_data ORDER BY z.created_at asc) message_data
     FROM (
-        SELECT id, project_id,created_at, error IS NOT NULL has_error
-        FROM cognition.conversation C
+        SELECT id, project_id, created_at, error IS NOT NULL has_error
+        FROM cognition.conversation c
         WHERE c.project_id = '{project_id}' {basic_where_add}
         ORDER BY c.created_at {order_key}
         {pagination_add}
