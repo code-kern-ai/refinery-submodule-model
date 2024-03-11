@@ -78,16 +78,12 @@ def get_message_feedback_overview_query(
 ) -> str:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
-    if isinstance(start_date, str) and start_date is not None:
-        start_date = int(start_date) / 3600000
-    if isinstance(to_date, str) and to_date is not None:
-        to_date = int(to_date) / 3600000
 
     if start_date is not None:
         start_date = prevent_sql_injection(start_date, isinstance(start_date, int))
         if to_date is not None:
             to_date = prevent_sql_injection(to_date, isinstance(to_date, int))
-            where_add = f"AND mo.created_at BETWEEN NOW() - INTERVAL '{start_date} HOURS' AND NOW() - INTERVAL '{to_date} HOURS'"
+            where_add = f"AND mo.created_at BETWEEN TO_TIMESTAMP({start_date} / 1000.0) AND TO_TIMESTAMP({to_date} / 1000.0)"
         else:
             where_add = f"AND mo.created_at BETWEEN NOW() - INTERVAL '{start_date} HOURS' AND NOW()"
     return f"""
