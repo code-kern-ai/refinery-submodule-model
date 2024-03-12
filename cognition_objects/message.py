@@ -208,3 +208,19 @@ def get_messages_per_conversation_query(project_id: str) -> str:
     GROUP BY conversation_id, c."header" 
     ORDER BY conversation_id, c."header"
     """
+
+
+def get_response_time_messages_query(project_id: str) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    return f"""
+    select round(sum(x) * 1000 / 500) * 500 / 1000 AS time_seconds, COUNT(*)
+    from (
+        select m.id, sum(pl.time_elapsed)
+    from cognition.message m
+        inner join cognition.conversation c on c.id = m.conversation_id and c.project_id = m.project_id
+        inner join cognition.pipeline_logs pl ON m.id = pl.message_id 
+    WHERE m.project_id = '{project_id}'
+    group by m.id
+    ) x
+    group by time_seconds
+    """
