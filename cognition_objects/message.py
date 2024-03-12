@@ -72,18 +72,20 @@ def get_by_strategy_id(project_id: str, strategy_id: str) -> CognitionMessage:
 
 
 def get_message_feedback_overview_query(
-    project_id: str, last_x_hours: Optional[int] = None
+    project_id: str, last_x_hours: Optional[int] = None, only_with_feedback: bool = True
 ) -> str:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
+    if only_with_feedback:
+        where_add += "AND (mo.feedback_value IS NOT NULL OR y.has_error)"
     if last_x_hours is not None:
         last_x_hours = prevent_sql_injection(
             last_x_hours, isinstance(last_x_hours, int)
         )
-        where_add = f"AND mo.created_at BETWEEN NOW() - INTERVAL '{last_x_hours} HOURS' AND NOW()"
+        where_add += f"AND (mo.created_at BETWEEN NOW() - INTERVAL '{last_x_hours} HOURS' AND NOW())"
     return f"""
     SELECT
-        COALESCE(feedback_value,'ERROR_IN_NEWEST_LOG') feedback_value_or_error, 
+        COALESCE(feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END) feedback_value_or_error, 
         feedback_message, 
         feedback_category,
         question, 
@@ -125,7 +127,6 @@ def get_message_feedback_overview_query(
         LIMIT 1
     )y ON TRUE
     WHERE mo.project_id = '{project_id}'
-    AND (mo.feedback_value IS NOT NULL OR y.has_error)
     {where_add}
     ORDER BY mo.created_at DESC"""
 
