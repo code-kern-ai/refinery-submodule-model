@@ -200,9 +200,11 @@ def get_messages_per_conversation_query(project_id: str) -> str:
     return f"""
     SELECT 
         conversation_id,
-        COUNT(*) messages
+        COUNT(*) messages,
+        question
     FROM cognition.message as m
     WHERE project_id = '{project_id}'
-    GROUP BY conversation_id
-    ORDER BY conversation_id
+    GROUP BY conversation_id, question
+    ORDER BY conversation_id, question
+
     """
