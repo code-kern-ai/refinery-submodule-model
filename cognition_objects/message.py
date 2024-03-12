@@ -84,6 +84,8 @@ def get_message_feedback_overview_query(
         if to_date is not None:
             to_date = prevent_sql_injection(to_date, isinstance(to_date, int))
             where_add = f"AND mo.created_at BETWEEN TO_TIMESTAMP({start_date} / 1000.0) AND TO_TIMESTAMP({to_date} / 1000.0)"
+        else:
+            where_add = f"AND mo.created_at >= TO_TIMESTAMP({start_date} / 1000.0)"
     return f"""
     SELECT
         COALESCE(feedback_value,'ERROR_IN_NEWEST_LOG') feedback_value_or_error, 
