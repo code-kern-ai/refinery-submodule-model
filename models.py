@@ -13,6 +13,7 @@ from .enums import (
     AttributeState,
     AdminMessageLevel,
     CognitionProjectState,
+    StrategyComplexity,
 )
 from sqlalchemy import (
     JSON,
@@ -1136,7 +1137,9 @@ class CognitionStrategy(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
-    complexity = Column(String)  # of type enums.StrategyComplexity.*.value
+    complexity = Column(
+        String, default=StrategyComplexity.SIMPLE.value
+    )  # of type enums.StrategyComplexity.*.value
 
 
 class CognitionStrategyStep(Base):

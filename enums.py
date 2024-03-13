@@ -619,6 +619,11 @@ class ConsumptionLogState(Enum):
     ERROR = "ERROR"
 
 
+class CognitionConfigKey(Enum):
+    STRATEGY_COMPLEXITY_THRESHOLD = "STRATEGY_COMPLEXITY_THRESHOLD"
+    STRATEGY_STEP_WEIGHTS = "STRATEGY_STEP_WEIGHTS"
+
+
 # note this is only for websocket interaction between exec env and gateway
 # none of these can/is allowed to interact with the database or anything other than the websocket!
 # means if you want a live update and set it as answer this needs to be done in the exec env code record_dict change
