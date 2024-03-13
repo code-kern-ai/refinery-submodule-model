@@ -230,18 +230,18 @@ def get_conversations_messages_count_query(project_id: str) -> str:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     return f"""
     SELECT 
-        COUNT(*) numConversations,
-        numMessages,
+        COUNT(*) num_conversations,
+        num_messages,
         COUNT(*) / (SELECT COUNT(*) FROM cognition.conversation WHERE project_id = '{project_id}')::FLOAT * 100 percentage
     FROM (
         SELECT 
             conversation_id,
-            COUNT(*) numMessages
+            COUNT(*) num_messages
         FROM cognition.message as m
             inner join cognition.conversation c on c.id = m.conversation_id and c.project_id = m.project_id 
         WHERE m.project_id = '{project_id}'
         GROUP BY conversation_id
     ) x
-    GROUP BY numMessages
-    ORDER BY numMessages
+    GROUP BY num_messages
+    ORDER BY num_messages
     """
