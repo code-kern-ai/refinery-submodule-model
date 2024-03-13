@@ -12,6 +12,7 @@ from .enums import (
     UserRoles,
     AttributeState,
     AdminMessageLevel,
+    CognitionProjectState,
 )
 from sqlalchemy import (
     JSON,
@@ -1105,7 +1106,9 @@ class CognitionProject(Base):
     description = Column(String)
     color = Column(String)
     operator_routing_source_code = Column(String)
-    state = Column(String)  # of type enums.CognitionProjectState.*.value
+    state = Column(
+        String, default=CognitionProjectState.CREATED.value
+    )  # of type enums.CognitionProjectState.*.value
     refinery_synchronization_interval_option = Column(String)
     interface_type = Column(String)
     execute_query_enrichment_if_source_code = Column(String)
