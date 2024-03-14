@@ -538,7 +538,7 @@ STEP_WHEN_TO_USE = {
     # INFO: Websearch strategy deactivated until compliance investigation is finished
     # StrategyStepType.WEBSEARCH: "When you want to search the web",
     StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
-    StrategyStepType.HEADER: "When you want to write a header",
+    StrategyStepType.HEADER: "When you want to set a header based on the conversation",
 }
 
 STEP_PROGRESS_TEXTS = {
