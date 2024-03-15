@@ -245,3 +245,17 @@ def get_conversations_messages_count_query(project_id: str) -> str:
     GROUP BY num_messages
     ORDER BY num_messages
     """
+
+
+def get_feedback_distribution_query(project_id: str) -> str:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    return f"""
+    SELECT 
+        feedback_value,
+        COUNT(*) feedbacks,
+        COUNT(*) / (SELECT COUNT(*) FROM cognition.message WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL)::FLOAT * 100 percentage
+    FROM cognition.message as m
+    WHERE m.project_id = '{project_id}' AND m.feedback_value IS NOT NULL
+    GROUP BY feedback_value
+    ORDER BY feedback_value
+    """
