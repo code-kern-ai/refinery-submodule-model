@@ -642,8 +642,7 @@ def __build_sql_project_stats(
             WHERE rla.source_type = '{enums.LabelSource.INFORMATION_SOURCE.value}'
             GROUP BY rla.source_id
         )y
-    )y)x 
-    
+    )y)x    
     """
 
 
@@ -732,3 +731,32 @@ def __get_project_size_sql(project_id: str) -> str:
         ) x
         ORDER BY order_
     """
+
+
+def get_project_by_project_id_sql(project_id: str) -> Dict[str, Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+
+    query = f"""
+    SELECT row_to_json(y)
+    FROM (
+        SELECT 
+            id,
+            NAME,
+            description,
+            NULL AS project_type,
+            tokenizer,
+            CASE 
+                WHEN status = 'IN_DELETION' THEN -1
+                ELSE r_count
+            END num_data_scale_uploaded
+        FROM project p,
+        (
+            SELECT COUNT(*) r_count FROM record WHERE project_id = '{project_id}' 
+        )x
+        WHERE p.id = '{project_id}' )y
+    """
+    value = general.execute_first(query)
+    if value:
+        return value[0]
+    else:
+        return None
