@@ -13,10 +13,13 @@ from ..models import (
     LabelingTask,
     LabelingTaskLabel,
     Project,
+    User,
     RecordLabelAssociation,
     Record,
 )
 from ..util import prevent_sql_injection
+from controller.auth import kratos
+from submodules.model.util import sql_alchemy_to_dict, pack_as_graphql
 
 QUEUE_PROJECT_NAME = "@@HIDDEN_QUEUE_PROJECT@@"
 
@@ -40,6 +43,31 @@ def get_all(organization_id: str) -> List[Project]:
     return (
         session.query(Project).filter(Project.organization_id == organization_id).all()
     )
+
+
+def get_all_by_user(user_id: str) -> List[Project]:
+    organization_id = (
+        session.query(User).filter(User.id == user_id).first().organization_id
+    )
+
+    projects = (
+        session.query(Project).filter(Project.organization_id == organization_id).all()
+    )
+
+    project_dicts = sql_alchemy_to_dict(projects)
+
+    for project in project_dicts:
+        user_id = project["created_by"]
+        mail = kratos.resolve_user_mail_by_id(user_id)
+        names = kratos.resolve_user_name_by_id(user_id)
+        last_name = names.get("last", "")
+        first_name = names.get("first", "")
+        project["user"] = {
+            "mail": mail,
+            "first_name": first_name,
+            "last_name": last_name,
+        }
+    return project_dicts
 
 
 def get_all_all() -> List[Project]:

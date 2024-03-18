@@ -97,6 +97,19 @@ def sql_alchemy_to_dict(sql_alchemy_object: Any, for_frontend: bool = False):
     return result
 
 
+def pack_as_graphql(result, graphql_method_name: str):
+
+    def convert_value(value):
+        if isinstance(value, list):
+            return {"edges": [{"node": convert_value(item)} for item in value]}
+        elif isinstance(value, dict):
+            return {key: convert_value(val) for key, val in value.items()}
+        else:
+            return value
+
+    return {"data": {graphql_method_name: convert_value(result)}}
+
+
 def __sql_alchemy_to_dict(sql_alchemy_object: Any):
     if isinstance(sql_alchemy_object, list):
         # list is for all() queries
