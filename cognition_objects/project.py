@@ -147,6 +147,7 @@ def update(
     operator_routing_source_code: Optional[str] = None,
     refinery_synchronization_interval_option: Optional[str] = None,
     execute_query_enrichment_if_source_code: Optional[str] = None,
+    state: Optional[enums.CognitionProjectState] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -170,6 +171,8 @@ def update(
         project.execute_query_enrichment_if_source_code = (
             execute_query_enrichment_if_source_code
         )
+    if state is not None:
+        project.state = state.value
     general.flush_or_commit(with_commit)
     return project
 
