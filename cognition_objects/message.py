@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from datetime import datetime
 from ..business_objects import general
 from ..session import session
@@ -259,3 +259,85 @@ def get_feedback_distribution_query(project_id: str) -> str:
     GROUP BY feedback_value
     ORDER BY feedback_value
     """
+
+
+ALLOWED_INTERVALS = {
+    "h": "hours",
+    "d": "days",
+    "w": "weeks",
+    "m": "months",
+    "y": "years",
+}
+
+
+def __parse_interval(interval: str) -> str:
+    split = interval.split(" ")
+    if len(split) != 2:
+        raise ValueError("Invalid interval format")
+    amount = int(split[0])
+    unit = split[1]
+    if unit not in ALLOWED_INTERVALS and unit not in ALLOWED_INTERVALS.values():
+        raise ValueError("Invalid interval format")
+    return f"{amount} {ALLOWED_INTERVALS.get(unit, unit)}"
+
+
+def get_feedback_overview_days(
+    project_id: str, interval: str, overwrite_group_size: Optional[str] = None
+) -> List[Dict[str, Union[str, int]]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    interval = prevent_sql_injection(interval, isinstance(interval, str))
+    interval = __parse_interval(interval)
+
+    group_size = "day"
+    if overwrite_group_size:
+        group_size = prevent_sql_injection(
+            overwrite_group_size, isinstance(overwrite_group_size, str)
+        )
+        if (
+            group_size not in ALLOWED_INTERVALS
+            and group_size not in ALLOWED_INTERVALS.values()
+        ):
+            raise ValueError("Invalid interval format")
+        group_size = ALLOWED_INTERVALS.get(group_size, group_size)
+
+    query = f"""
+    WITH base_select AS (
+        SELECT
+            date_trunc('{group_size}', created_at) time_group,
+            feedback_value,
+            COUNT(*) c
+        FROM cognition.message M
+        WHERE project_id = '{project_id}'
+        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '{interval}'
+        AND feedback_value IS NOT NULL
+        GROUP BY 1,2
+    )
+    SELECT array_agg(jsonb_build_object('date', time_group) || vals)
+    FROM (
+        SELECT
+            time_group::TEXT, jsonb_object_agg(vote, C) vals
+        FROM (
+            SELECT
+                COALESCE(bs.time_group,f.time_group) time_group,
+                COALESCE(bs.feedback_value,f.gr) vote,
+                COALESCE(bs.c,f.c) c
+            FROM base_select bs
+            RIGHT JOIN (
+                SELECT time_group, gr, c
+                FROM (
+                    SELECT DISTINCT time_group
+                    FROM base_select ) g,
+                (
+                    SELECT 'positive' gr, 0 C
+                    UNION ALL SELECT 'negative', 0
+                    UNION ALL SELECT 'neutral', 0
+                )y
+            )f
+                ON bs.time_group = f.time_group AND bs.feedback_value = f.gr
+        ) x
+        GROUP BY 1
+    )x """
+    value = general.execute_first(query)
+    if value and value[0]:
+        return value[0]
+    return []
