@@ -281,7 +281,7 @@ def __parse_interval(interval: str) -> str:
     return f"{amount} {ALLOWED_INTERVALS.get(unit, unit)}"
 
 
-def get_feedback_overview_days(
+def get_feedback_line_chart_data(
     project_id: str, interval: str, overwrite_group_size: Optional[str] = None
 ) -> List[Dict[str, Union[str, int]]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
@@ -312,29 +312,11 @@ def get_feedback_overview_days(
         AND feedback_value IS NOT NULL
         GROUP BY 1,2
     )
-    SELECT array_agg(jsonb_build_object('date', time_group) || vals)
+    SELECT jsonb_object_agg(time_group, vals)
     FROM (
         SELECT
-            time_group::TEXT, jsonb_object_agg(vote, C) vals
-        FROM (
-            SELECT
-                COALESCE(bs.time_group,f.time_group) time_group,
-                COALESCE(bs.feedback_value,f.gr) vote,
-                COALESCE(bs.c,f.c) c
-            FROM base_select bs
-            RIGHT JOIN (
-                SELECT time_group, gr, c
-                FROM (
-                    SELECT DISTINCT time_group
-                    FROM base_select ) g,
-                (
-                    SELECT 'positive' gr, 0 C
-                    UNION ALL SELECT 'negative', 0
-                    UNION ALL SELECT 'neutral', 0
-                )y
-            )f
-                ON bs.time_group = f.time_group AND bs.feedback_value = f.gr
-        ) x
+            time_group::TEXT, jsonb_object_agg(feedback_value, c) vals
+        FROM base_select bs
         GROUP BY 1
     )x """
     value = general.execute_first(query)
