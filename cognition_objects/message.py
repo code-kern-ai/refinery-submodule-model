@@ -75,10 +75,13 @@ def get_message_feedback_overview_query(
     project_id: str,
     start_date: Optional[int] = None,
     to_date: Optional[int] = None,
+    only_with_feedback: bool = True,
 ) -> str:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
 
+    if only_with_feedback:
+        where_add += "AND (mo.feedback_value IS NOT NULL OR y.has_error)"
     if start_date is not None:
         start_date = prevent_sql_injection(start_date, isinstance(start_date, int))
         if to_date is not None:
@@ -88,7 +91,7 @@ def get_message_feedback_overview_query(
             where_add = f"AND mo.created_at >= TO_TIMESTAMP({start_date} / 1000.0)"
     return f"""
     SELECT
-        COALESCE(feedback_value,'ERROR_IN_NEWEST_LOG') feedback_value_or_error, 
+        COALESCE(feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END) feedback_value_or_error, 
         feedback_message, 
         feedback_category,
         question, 
@@ -130,7 +133,6 @@ def get_message_feedback_overview_query(
         LIMIT 1
     )y ON TRUE
     WHERE mo.project_id = '{project_id}'
-    AND (mo.feedback_value IS NOT NULL OR y.has_error)
     {where_add}
     ORDER BY mo.created_at DESC"""
 
