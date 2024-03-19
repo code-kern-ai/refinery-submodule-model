@@ -13,11 +13,10 @@ from ..models import (
     LabelingTask,
     LabelingTaskLabel,
     Project,
-    User,
     RecordLabelAssociation,
     Record,
 )
-from ..util import prevent_sql_injection
+from ..util import prevent_sql_injection, sql_alchemy_to_dict
 
 QUEUE_PROJECT_NAME = "@@HIDDEN_QUEUE_PROJECT@@"
 
@@ -43,16 +42,14 @@ def get_all(organization_id: str) -> List[Project]:
     )
 
 
-def get_all_by_user(user_id: str) -> List[Project]:
-    organization_id = (
-        session.query(User).filter(User.id == user_id).first().organization_id
-    )
-
+def get_all_by_user_organization_id(organization_id: str) -> List[Project]:
     projects = (
         session.query(Project).filter(Project.organization_id == organization_id).all()
     )
 
-    return projects
+    project_dicts = sql_alchemy_to_dict(projects)
+
+    return project_dicts
 
 
 def get_all_all() -> List[Project]:
