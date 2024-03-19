@@ -19,6 +19,7 @@ from sqlalchemy import (
     JSON,
     Boolean,
     Column,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -1306,6 +1307,25 @@ class CognitionConsumptionLog(Base):
     complexity = Column(String)  # of type enums.StrategyComplexity.*.value
     state = Column(String)  # of type enums.ConsumptionLogState.*.value
     project_state = Column(String)  # of type enums.CognitionProjectState.*.value
+
+
+class CognitionConsumptionSummary(Base):
+    __tablename__ = Tablenames.CONSUMPTION_SUMMARY.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    date = Column(Date, default=sql.func.now(), index=True)
+    project_name = Column(String)
+    consumption_summary = Column(JSON)
 
 
 class CognitionEnvironmentVariable(Base):
