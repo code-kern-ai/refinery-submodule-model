@@ -601,6 +601,7 @@ def __build_sql_project_stats(
     slice_id: Optional[str] = None,
 ) -> str:
     labeling_task_filter = ""
+    labeling_task_filter_is = ""
     if labeling_task_id:
         labeling_task_filter_is = f"AND _is.labeling_task_id = '{labeling_task_id}'"
         labeling_task_filter = f"""
