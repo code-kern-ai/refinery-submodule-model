@@ -1312,7 +1312,13 @@ class CognitionConsumptionLog(Base):
 
 class CognitionConsumptionSummary(Base):
     __tablename__ = Tablenames.CONSUMPTION_SUMMARY.value
-    __table_args__ = {"schema": "cognition"}
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "project_id", "date", "complexity", name="unique_summary"
+        ),
+        {"schema": "cognition"},
+    )
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(
         UUID(as_uuid=True),
@@ -1328,9 +1334,6 @@ class CognitionConsumptionSummary(Base):
     project_name = Column(String)
     complexity = Column(String)  # of type enums.StrategyComplexity.*.value
     count = Column(Integer)
-    UniqueConstraint(
-        "organization_id", "project_id", "date", "complexity", name="unique_summary"
-    )
 
 
 class CognitionEnvironmentVariable(Base):
