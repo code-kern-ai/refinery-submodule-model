@@ -76,7 +76,7 @@ def get_message_feedback_overview_query(
     start_date: Optional[int] = None,
     to_date: Optional[int] = None,
     only_with_feedback: bool = True,
-) -> str:
+) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
 
@@ -89,8 +89,9 @@ def get_message_feedback_overview_query(
             where_add = f"AND mo.created_at BETWEEN TO_TIMESTAMP({start_date} / 1000.0) AND TO_TIMESTAMP({to_date} / 1000.0)"
         else:
             where_add = f"AND mo.created_at >= TO_TIMESTAMP({start_date} / 1000.0)"
-    return f"""
-    SELECT
+
+    query = f"""
+        SELECT
         COALESCE(feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END) feedback_value_or_error, 
         feedback_message, 
         feedback_category,
@@ -134,7 +135,9 @@ def get_message_feedback_overview_query(
     )y ON TRUE
     WHERE mo.project_id = '{project_id}'
     {where_add}
-    ORDER BY mo.created_at DESC"""
+    ORDER BY mo.created_at DESC
+    """
+    return general.execute(query)
 
 
 def create(
@@ -197,10 +200,10 @@ def delete(project_id: str, message_id: str, with_commit: bool = True) -> None:
     general.flush_or_commit(with_commit)
 
 
-def get_messages_per_conversation_query(project_id: str) -> str:
+def get_messages_per_conversation_query(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    return f"""
-    SELECT 
+    query = f"""
+        SELECT 
         conversation_id,
         COUNT(*) messages,
         c."header"
@@ -210,12 +213,14 @@ def get_messages_per_conversation_query(project_id: str) -> str:
     GROUP BY conversation_id, c."header" 
     ORDER BY conversation_id, c."header"
     """
+    return general.execute(query)
 
 
-def get_response_time_messages_query(project_id: str) -> str:
+def get_response_time_messages_query(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    return f"""
-    select round(sum(x) * 1000 / 500) * 500 / 1000 AS time_seconds, COUNT(*)
+
+    query = f"""
+        select round(sum(x) * 1000 / 500) * 500 / 1000 AS time_seconds, COUNT(*)
     from (
         select m.id, sum(pl.time_elapsed)
     from cognition.message m
@@ -225,13 +230,15 @@ def get_response_time_messages_query(project_id: str) -> str:
     group by m.id
     ) x
     group by time_seconds
+    order by time_seconds
     """
+    return general.execute(query)
 
 
-def get_conversations_messages_count_query(project_id: str) -> str:
+def get_conversations_messages_count_query(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    return f"""
-    SELECT 
+    query = f"""
+        SELECT 
         COUNT(*) num_conversations,
         num_messages,
         COUNT(*) / (SELECT COUNT(*) FROM cognition.conversation WHERE project_id = '{project_id}')::FLOAT * 100 percentage
@@ -247,11 +254,12 @@ def get_conversations_messages_count_query(project_id: str) -> str:
     GROUP BY num_messages
     ORDER BY num_messages
     """
+    return general.execute(query)
 
 
-def get_feedback_distribution_query(project_id: str) -> str:
+def get_feedback_distribution_query(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    return f"""
+    query = f"""
     SELECT 
         feedback_value,
         COUNT(*) feedbacks,
@@ -261,6 +269,7 @@ def get_feedback_distribution_query(project_id: str) -> str:
     GROUP BY feedback_value
     ORDER BY feedback_value
     """
+    return general.execute(query)
 
 
 ALLOWED_INTERVALS = {
