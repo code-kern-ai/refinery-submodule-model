@@ -1325,7 +1325,8 @@ class CognitionConsumptionSummary(Base):
     )
     date = Column(Date, default=sql.func.now(), index=True)
     project_name = Column(String)
-    consumption_summary = Column(JSON)
+    complexity = Column(String)  # of type enums.StrategyComplexity.*.value
+    count = Column(Integer)
 
 
 class CognitionEnvironmentVariable(Base):
