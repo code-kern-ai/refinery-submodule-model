@@ -91,7 +91,7 @@ def get_message_feedback_overview_query(
             where_add = f"AND mo.created_at >= TO_TIMESTAMP({start_date} / 1000.0)"
 
     query = f"""
-        SELECT
+    SELECT
         COALESCE(feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END) feedback_value_or_error, 
         feedback_message, 
         feedback_category,
@@ -203,15 +203,15 @@ def delete(project_id: str, message_id: str, with_commit: bool = True) -> None:
 def get_messages_per_conversation_query(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
-        SELECT 
+    SELECT 
         conversation_id,
-        COUNT(*) messages,
-        c."header"
+        c."header",
+        COUNT(*) messages
     FROM cognition.message as m
-        inner join cognition.conversation c on c.id = m.conversation_id and c.project_id = m.project_id 
+        INNER JOIN cognition.conversation c ON c.id = m.conversation_id AND c.project_id = m.project_id 
     WHERE m.project_id = '{project_id}'
-    GROUP BY conversation_id, c."header" 
-    ORDER BY conversation_id, c."header"
+    GROUP BY 1,2
+    ORDER BY 1,2
     """
     return general.execute(query)
 
@@ -220,17 +220,18 @@ def get_response_time_messages_query(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
 
     query = f"""
-        select round(sum(x) * 1000 / 500) * 500 / 1000 AS time_seconds, COUNT(*)
-    from (
-        select m.id, sum(pl.time_elapsed)
-    from cognition.message m
-        inner join cognition.conversation c on c.id = m.conversation_id and c.project_id = m.project_id
-        inner join cognition.pipeline_logs pl ON m.id = pl.message_id 
+    -- round in ,5 steps
+    SELECT ROUND(SUM(x) * 2) /2  AS time_seconds, COUNT(*)
+    FROM (
+        SELECT m.id, SUM(pl.time_elapsed)
+    FROM cognition.message m
+        INNER JOIN cognition.conversation c ON c.id = m.conversation_id AND c.project_id = m.project_id
+        INNER JOIN cognition.pipeline_logs pl ON m.id = pl.message_id 
     WHERE m.project_id = '{project_id}'
-    group by m.id
+    GROUP BY m.id
     ) x
-    group by time_seconds
-    order by time_seconds
+    GROUP BY time_seconds
+    ORDER BY time_seconds
     """
     return general.execute(query)
 
@@ -238,21 +239,22 @@ def get_response_time_messages_query(project_id: str) -> List[Dict[str, Any]]:
 def get_conversations_messages_count_query(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
-        SELECT 
-        COUNT(*) num_conversations,
+    SELECT 
         num_messages,
-        COUNT(*) / (SELECT COUNT(*) FROM cognition.conversation WHERE project_id = '{project_id}')::FLOAT * 100 percentage
+        num_conversations,
+        num_conversations / conv_count.c * 100 percentage
     FROM (
-        SELECT 
-            conversation_id,
-            COUNT(*) num_messages
+        SELECT COUNT(*) num_conversations, num_messages
+        FROM (
+        SELECT conversation_id, COUNT(*) num_messages
         FROM cognition.message as m
-            inner join cognition.conversation c on c.id = m.conversation_id and c.project_id = m.project_id 
         WHERE m.project_id = '{project_id}'
         GROUP BY conversation_id
-    ) x
-    GROUP BY num_messages
-    ORDER BY num_messages
+        ) x
+        GROUP BY num_messages 
+    )x,
+    (SELECT COUNT(*)::FLOAT c FROM cognition.conversation WHERE project_id = '{project_id}') conv_count
+    ORDER BY 1
     """
     return general.execute(query)
 
@@ -260,14 +262,19 @@ def get_conversations_messages_count_query(project_id: str) -> List[Dict[str, An
 def get_feedback_distribution_query(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
-    SELECT 
-        feedback_value,
-        COUNT(*) feedbacks,
-        COUNT(*) / (SELECT COUNT(*) FROM cognition.message WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL)::FLOAT * 100 percentage
-    FROM cognition.message as m
-    WHERE m.project_id = '{project_id}' AND m.feedback_value IS NOT NULL
-    GROUP BY feedback_value
-    ORDER BY feedback_value
+    SELECT feedback_value,
+        feedbacks,
+        feedbacks / percentage_count.c * 100 percentage
+    FROM (
+        SELECT COUNT(*) feedbacks, feedback_value
+        FROM (
+            SELECT feedback_value
+            FROM cognition.message
+            WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL
+        )x
+        GROUP BY feedback_value
+    )x,
+    (SELECT COUNT(*)::FLOAT c FROM cognition.message WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL) percentage_count
     """
     return general.execute(query)
 
