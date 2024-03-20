@@ -27,6 +27,7 @@ from sqlalchemy import (
     LargeBinary,
     String,
     sql,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -1320,13 +1321,16 @@ class CognitionConsumptionSummary(Base):
     )
     project_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id"),
         index=True,
     )
     date = Column(Date, default=sql.func.now(), index=True)
     project_name = Column(String)
     complexity = Column(String)  # of type enums.StrategyComplexity.*.value
     count = Column(Integer)
+    UniqueConstraint(
+        "organization_id", "project_id", "date", "complexity", name="unique_summary"
+    )
 
 
 class CognitionEnvironmentVariable(Base):
