@@ -137,7 +137,7 @@ def get_message_feedback_overview_query(
     {where_add}
     ORDER BY mo.created_at DESC
     """
-    return general.execute(query)
+    return general.execute_all(query)
 
 
 def create(
@@ -213,7 +213,7 @@ def get_messages_per_conversation_query(project_id: str) -> List[Dict[str, Any]]
     GROUP BY 1,2
     ORDER BY 1,2
     """
-    return general.execute(query)
+    return general.execute_all(query)
 
 
 def get_response_time_messages_query(project_id: str) -> List[Dict[str, Any]]:
@@ -233,7 +233,7 @@ def get_response_time_messages_query(project_id: str) -> List[Dict[str, Any]]:
     GROUP BY time_seconds
     ORDER BY time_seconds
     """
-    return general.execute(query)
+    return general.execute_all(query)
 
 
 def get_conversations_messages_count_query(project_id: str) -> List[Dict[str, Any]]:
@@ -256,27 +256,28 @@ def get_conversations_messages_count_query(project_id: str) -> List[Dict[str, An
     (SELECT COUNT(*)::FLOAT c FROM cognition.conversation WHERE project_id = '{project_id}') conv_count
     ORDER BY 1
     """
-    return general.execute(query)
+    return general.execute_all(query)
 
 
 def get_feedback_distribution_query(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
-    SELECT feedback_value,
+    SELECT 
+    	feedback_value,
         feedbacks,
         feedbacks / percentage_count.c * 100 percentage
-    FROM (
-        SELECT COUNT(*) feedbacks, feedback_value
         FROM (
-            SELECT feedback_value
-            FROM cognition.message
-            WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL
-        )x
-        GROUP BY feedback_value
+            SELECT COUNT(*) feedbacks, feedback_value
+            FROM (
+                SELECT feedback_value
+                FROM cognition.message
+                WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL
+    )x
+    GROUP BY feedback_value
     )x,
     (SELECT COUNT(*)::FLOAT c FROM cognition.message WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL) percentage_count
     """
-    return general.execute(query)
+    return general.execute_all(query)
 
 
 ALLOWED_INTERVALS = {
