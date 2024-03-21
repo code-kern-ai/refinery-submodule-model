@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, Any, Union, List, Dict
+from typing import Tuple, Any, Union, List, Dict, Optional, Iterable
 from pydantic import BaseModel
 import collections
 from re import sub, match, compile
@@ -90,8 +90,14 @@ def collect_engine_variables() -> Tuple[int, int, bool, bool]:
 
 # Row object is with a common SELECT query
 # otherwise it's e.g. a Class Object (instance of Base)
-def sql_alchemy_to_dict(sql_alchemy_object: Any, for_frontend: bool = False):
-    result = __sql_alchemy_to_dict(sql_alchemy_object)
+# whitelist works for both row objects and class objects
+# afaik only class objects "benefit" from the reduced amount of data selected as the row object selects beforehand, best to build the select directly
+def sql_alchemy_to_dict(
+    sql_alchemy_object: Any,
+    for_frontend: bool = False,
+    column_whitelist: Optional[Iterable[str]] = None,
+):
+    result = __sql_alchemy_to_dict(sql_alchemy_object, column_whitelist)
     if for_frontend:
         return to_frontend_obj(result)
     return result
@@ -110,7 +116,9 @@ def pack_as_graphql(result, graphql_method_name: str):
     return {"data": {graphql_method_name: convert_value(result)}}
 
 
-def __sql_alchemy_to_dict(sql_alchemy_object: Any):
+def __sql_alchemy_to_dict(
+    sql_alchemy_object: Any, column_whitelist: Optional[Iterable[str]] = None
+):
     if isinstance(sql_alchemy_object, list):
         # list is for all() queries
         return [__sql_alchemy_to_dict(x) for x in sql_alchemy_object]
@@ -118,11 +126,16 @@ def __sql_alchemy_to_dict(sql_alchemy_object: Any):
     elif isinstance(sql_alchemy_object, Row):
         # basic SELECT .. FROM query)
         # _mapping is a RowMapping object that is not serializable but dict like
-        return dict(sql_alchemy_object._mapping)
+        return {
+            k: v
+            for k, v in dict(sql_alchemy_object._mapping).items()
+            if not column_whitelist or k in column_whitelist
+        }
     elif isinstance(sql_alchemy_object, Base):
         return {
             c.name: getattr(sql_alchemy_object, c.name)
             for c in sql_alchemy_object.__table__.columns
+            if not column_whitelist or c.name in column_whitelist
         }
     else:
         return sql_alchemy_object
