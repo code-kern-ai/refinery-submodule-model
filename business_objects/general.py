@@ -132,6 +132,7 @@ def construct_select_columns(
     table_schema: Optional[str] = None,
     prefix: Optional[str] = None,
     exclude_columns: Optional[Union[str, List[str]]] = None,
+    include_columns: Optional[Union[str, List[str]]] = None,
     indent: int = 1,
 ) -> str:
     table_enum: Tablenames = try_parse_enum_value(table, Tablenames)
@@ -145,13 +146,22 @@ def construct_select_columns(
         prefix += "."
 
     column_exclusion = ""
-    if exclude_columns:
-        if isinstance(exclude_columns, str):
-            column_exclusion = f"AND c.column_name != '{exclude_columns}'"
-        else:
-            column_exclusion = (
-                "AND c.column_name NOT IN ('" + "','".join(exclude_columns) + "')"
-            )
+    column_inclusion = ""
+    if exclude_columns or include_columns:
+        if exclude_columns:
+            if isinstance(exclude_columns, str):
+                column_exclusion = f"AND c.column_name != '{exclude_columns}'"
+            else:
+                column_exclusion = (
+                    "AND c.column_name NOT IN ('" + "','".join(exclude_columns) + "')"
+                )
+        if include_columns:
+            if isinstance(include_columns, str):
+                column_inclusion = f"AND c.column_name = '{include_columns}'"
+            else:
+                column_inclusion = (
+                    "AND c.column_name IN ('" + "','".join(include_columns) + "')"
+                )
     else:
         return prefix + "*"
 
@@ -161,6 +171,7 @@ def construct_select_columns(
     WHERE table_name = '{table_enum.value}'
     AND c.table_schema = '{table_schema}'
     {column_exclusion}
+    {column_inclusion}
     ORDER BY ordinal_position
     """
 
