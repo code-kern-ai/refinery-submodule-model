@@ -25,6 +25,64 @@ def get(project_id: str) -> Project:
     return session.query(Project).filter(Project.id == project_id).first()
 
 
+def get_with_labling_tasks(project_id: str) -> Project:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    query = __build_sql_labeling_tasks_by_project(project_id)
+    return {
+        "project_id": project_id,
+        "labeling_tasks": [r[0] for r in general.execute_all(query)],
+    }
+
+
+def __build_sql_labeling_tasks_by_project(project_id: str) -> str:
+    return f"""
+    SELECT
+        json_build_object(
+            'id', labeling_task.id,
+            'name', labeling_task.name,
+            'task_target', labeling_task.task_target,
+            'task_type', labeling_task.task_type,
+            'attribute', json_build_object(
+                'id', attribute.id,
+                'name', attribute.name,
+                'relative_position', attribute.relative_position,
+                'data_type', attribute.data_type
+            ),
+            'labels', json_agg(
+                json_build_object(
+                    'id', labeling_task_label.id,
+                    'name', labeling_task_label.name,
+                    'color', labeling_task_label.color,
+                    'hotkey', labeling_task_label.hotkey
+                )
+            ),
+            'information_sources', json_agg(
+                json_build_object(
+                    'id', information_source.id,
+                    'type', information_source.type,
+                    'returnType', information_source.return_type,
+                    'name', information_source.name,
+                    'description', information_source.description
+                )
+            )
+        ) AS labeling_task
+    FROM
+        project
+    JOIN
+        labeling_task ON project.id = labeling_task.project_id
+    JOIN
+        attribute ON labeling_task.attribute_id = attribute.id
+    LEFT JOIN
+        labeling_task_label ON labeling_task.id = labeling_task_label.labeling_task_id
+    LEFT JOIN
+        information_source ON labeling_task.id = information_source.labeling_task_id
+    WHERE
+        project.id = '{project_id}'::UUID
+    GROUP BY
+        project.id, labeling_task.id, attribute.id, labeling_task_label.id, information_source.id;
+        """
+
+
 def get_with_organization_id(organization_id: str, project_id: str) -> Project:
     return (
         session.query(Project)
