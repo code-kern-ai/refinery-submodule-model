@@ -179,3 +179,31 @@ def construct_select_columns(
     join_on_me = ",\n"
     join_on_me += INDENT * indent
     return join_on_me.join(columns)
+
+
+# aimed to create a simple SELECT x,y,z FROM table WHERE condition
+def simple_selection_builder(
+    table: str,
+    table_schema: Optional[str] = None,
+    exclude_columns: Optional[Union[str, List[str]]] = None,
+    include_columns: Optional[Union[str, List[str]]] = None,
+    where_condition: Optional[str] = None,
+    order_by: Optional[str] = None,
+) -> str:
+    table_enum: Tablenames = try_parse_enum_value(table, Tablenames)
+
+    if table_schema is None:
+        table_schema = "public"
+    where = ""
+    if where_condition:
+        where = f"WHERE {where_condition}"
+    order_by_s = ""
+    if order_by:
+        order_by_s = f"ORDER BY {order_by}"
+    return f"""
+    SELECT 
+    {construct_select_columns(table, table_schema,None, exclude_columns, include_columns)}
+    FROM {table_schema}.{table_enum.value}
+    {where}
+    {order_by_s}
+    """
