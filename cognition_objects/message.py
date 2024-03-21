@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 from datetime import datetime
 from ..business_objects import general
 from ..session import session
@@ -71,7 +71,7 @@ def get_by_strategy_id(project_id: str, strategy_id: str) -> CognitionMessage:
     )
 
 
-def get_message_feedback_overview_query(
+def get_message_feedback_overview(
     project_id: str,
     start_date: Optional[int] = None,
     to_date: Optional[int] = None,
@@ -94,7 +94,7 @@ def get_message_feedback_overview_query(
     SELECT
         COALESCE(feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END) feedback_value_or_error, 
         feedback_message, 
-        feedback_category,
+        CASE WHEN feedback_value='negative' THEN feedback_category ELSE NULL END feedback_category,
         question, 
         answer,
         x.full_conversation_text,
@@ -200,23 +200,7 @@ def delete(project_id: str, message_id: str, with_commit: bool = True) -> None:
     general.flush_or_commit(with_commit)
 
 
-def get_messages_per_conversation_query(project_id: str) -> List[Dict[str, Any]]:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    query = f"""
-    SELECT 
-        conversation_id,
-        c."header",
-        COUNT(*) messages
-    FROM cognition.message as m
-        INNER JOIN cognition.conversation c ON c.id = m.conversation_id AND c.project_id = m.project_id 
-    WHERE m.project_id = '{project_id}'
-    GROUP BY 1,2
-    ORDER BY 1,2
-    """
-    return general.execute_all(query)
-
-
-def get_response_time_messages_query(project_id: str) -> List[Dict[str, Any]]:
+def get_response_time_messages(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
 
     query = f"""
@@ -224,11 +208,13 @@ def get_response_time_messages_query(project_id: str) -> List[Dict[str, Any]]:
     SELECT ROUND(SUM(x) * 2) /2  AS time_seconds, COUNT(*)
     FROM (
         SELECT m.id, SUM(pl.time_elapsed)
-    FROM cognition.message m
-        INNER JOIN cognition.conversation c ON c.id = m.conversation_id AND c.project_id = m.project_id
-        INNER JOIN cognition.pipeline_logs pl ON m.id = pl.message_id 
-    WHERE m.project_id = '{project_id}'
-    GROUP BY m.id
+        FROM cognition.message m
+        INNER JOIN cognition.conversation c 
+            ON c.id = m.conversation_id AND c.project_id = m.project_id
+        INNER JOIN cognition.pipeline_logs pl 
+            ON m.id = pl.message_id 
+        WHERE m.project_id = '{project_id}'
+        GROUP BY m.id
     ) x
     GROUP BY time_seconds
     ORDER BY time_seconds
@@ -236,7 +222,7 @@ def get_response_time_messages_query(project_id: str) -> List[Dict[str, Any]]:
     return general.execute_all(query)
 
 
-def get_conversations_messages_count_query(project_id: str) -> List[Dict[str, Any]]:
+def get_conversations_messages_count(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT 
@@ -246,10 +232,10 @@ def get_conversations_messages_count_query(project_id: str) -> List[Dict[str, An
     FROM (
         SELECT COUNT(*) num_conversations, num_messages
         FROM (
-        SELECT conversation_id, COUNT(*) num_messages
-        FROM cognition.message as m
-        WHERE m.project_id = '{project_id}'
-        GROUP BY conversation_id
+            SELECT conversation_id, COUNT(*) num_messages
+            FROM cognition.message as m
+            WHERE m.project_id = '{project_id}'
+            GROUP BY conversation_id
         ) x
         GROUP BY num_messages 
     )x,
@@ -259,7 +245,7 @@ def get_conversations_messages_count_query(project_id: str) -> List[Dict[str, An
     return general.execute_all(query)
 
 
-def get_feedback_distribution_query(project_id: str) -> List[Dict[str, Any]]:
+def get_feedback_distribution(project_id: str) -> List[Tuple[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
     SELECT 
