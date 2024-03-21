@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, Tuple
 from datetime import datetime
 from ..business_objects import general
 from ..session import session
@@ -71,23 +71,30 @@ def get_by_strategy_id(project_id: str, strategy_id: str) -> CognitionMessage:
     )
 
 
-def get_message_feedback_overview_query(
-    project_id: str, last_x_hours: Optional[int] = None, only_with_feedback: bool = True
-) -> str:
+def get_message_feedback_overview(
+    project_id: str,
+    start_date: Optional[int] = None,
+    to_date: Optional[int] = None,
+    only_with_feedback: bool = True,
+) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
+
     if only_with_feedback:
         where_add += "AND (mo.feedback_value IS NOT NULL OR y.has_error)"
-    if last_x_hours is not None:
-        last_x_hours = prevent_sql_injection(
-            last_x_hours, isinstance(last_x_hours, int)
-        )
-        where_add += f"AND (mo.created_at BETWEEN NOW() - INTERVAL '{last_x_hours} HOURS' AND NOW())"
-    return f"""
+    if start_date is not None:
+        start_date = prevent_sql_injection(start_date, isinstance(start_date, int))
+        if to_date is not None:
+            to_date = prevent_sql_injection(to_date, isinstance(to_date, int))
+            where_add = f"AND mo.created_at BETWEEN TO_TIMESTAMP({start_date} / 1000.0) AND TO_TIMESTAMP({to_date} / 1000.0)"
+        else:
+            where_add = f"AND mo.created_at >= TO_TIMESTAMP({start_date} / 1000.0)"
+
+    query = f"""
     SELECT
         COALESCE(feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END) feedback_value_or_error, 
         feedback_message, 
-        feedback_category,
+        CASE WHEN feedback_value='negative' THEN feedback_category ELSE NULL END feedback_category,
         question, 
         answer,
         x.full_conversation_text,
@@ -128,7 +135,9 @@ def get_message_feedback_overview_query(
     )y ON TRUE
     WHERE mo.project_id = '{project_id}'
     {where_add}
-    ORDER BY mo.created_at DESC"""
+    ORDER BY mo.created_at DESC
+    """
+    return general.execute_all(query)
 
 
 def create(
@@ -189,3 +198,133 @@ def delete(project_id: str, message_id: str, with_commit: bool = True) -> None:
         CognitionMessage.id == message_id,
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def get_response_time_messages(project_id: str) -> List[Dict[str, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+
+    query = f"""
+    -- round in ,5 steps
+    SELECT ROUND(SUM(x) * 2) /2  AS time_seconds, COUNT(*)
+    FROM (
+        SELECT m.id, SUM(pl.time_elapsed)
+        FROM cognition.message m
+        INNER JOIN cognition.conversation c 
+            ON c.id = m.conversation_id AND c.project_id = m.project_id
+        INNER JOIN cognition.pipeline_logs pl 
+            ON m.id = pl.message_id 
+        WHERE m.project_id = '{project_id}'
+        GROUP BY m.id
+    ) x
+    GROUP BY time_seconds
+    ORDER BY time_seconds
+    """
+    return general.execute_all(query)
+
+
+def get_conversations_messages_count(project_id: str) -> List[Dict[str, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    query = f"""
+    SELECT 
+        num_messages,
+        num_conversations,
+        num_conversations / conv_count.c * 100 percentage
+    FROM (
+        SELECT COUNT(*) num_conversations, num_messages
+        FROM (
+            SELECT conversation_id, COUNT(*) num_messages
+            FROM cognition.message as m
+            WHERE m.project_id = '{project_id}'
+            GROUP BY conversation_id
+        ) x
+        GROUP BY num_messages 
+    )x,
+    (SELECT COUNT(*)::FLOAT c FROM cognition.conversation WHERE project_id = '{project_id}') conv_count
+    ORDER BY 1
+    """
+    return general.execute_all(query)
+
+
+def get_feedback_distribution(project_id: str) -> List[Tuple[str, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    query = f"""
+    SELECT 
+    	feedback_value,
+        feedbacks,
+        feedbacks / percentage_count.c * 100 percentage
+        FROM (
+            SELECT COUNT(*) feedbacks, feedback_value
+            FROM (
+                SELECT feedback_value
+                FROM cognition.message
+                WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL
+    )x
+    GROUP BY feedback_value
+    )x,
+    (SELECT COUNT(*)::FLOAT c FROM cognition.message WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL) percentage_count
+    """
+    return general.execute_all(query)
+
+
+ALLOWED_INTERVALS = {
+    "h": "hours",
+    "d": "days",
+    "w": "weeks",
+    "m": "months",
+    "y": "years",
+}
+
+
+def __parse_interval(interval: str) -> str:
+    split = interval.split(" ")
+    if len(split) != 2:
+        raise ValueError("Invalid interval format")
+    amount = int(split[0])
+    unit = split[1]
+    if unit not in ALLOWED_INTERVALS and unit not in ALLOWED_INTERVALS.values():
+        raise ValueError("Invalid interval format")
+    return f"{amount} {ALLOWED_INTERVALS.get(unit, unit)}"
+
+
+def get_feedback_line_chart_data(
+    project_id: str, interval: str, overwrite_group_size: Optional[str] = None
+) -> List[Dict[str, Union[str, int]]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    interval = prevent_sql_injection(interval, isinstance(interval, str))
+    interval = __parse_interval(interval)
+
+    group_size = "day"
+    if overwrite_group_size:
+        group_size = prevent_sql_injection(
+            overwrite_group_size, isinstance(overwrite_group_size, str)
+        )
+        if (
+            group_size not in ALLOWED_INTERVALS
+            and group_size not in ALLOWED_INTERVALS.values()
+        ):
+            raise ValueError("Invalid interval format")
+        group_size = ALLOWED_INTERVALS.get(group_size, group_size)
+
+    query = f"""
+    WITH base_select AS (
+        SELECT
+            date_trunc('{group_size}', created_at) time_group,
+            feedback_value,
+            COUNT(*) c
+        FROM cognition.message M
+        WHERE project_id = '{project_id}'
+        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '{interval}'
+        AND feedback_value IS NOT NULL
+        GROUP BY 1,2
+    )
+    SELECT jsonb_object_agg(time_group, vals)
+    FROM (
+        SELECT
+            time_group::TEXT, jsonb_object_agg(feedback_value, c) vals
+        FROM base_select bs
+        GROUP BY 1
+    )x """
+    value = general.execute_first(query)
+    if value and value[0]:
+        return value[0]
+    return []
