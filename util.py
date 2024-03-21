@@ -121,7 +121,7 @@ def __sql_alchemy_to_dict(
 ):
     if isinstance(sql_alchemy_object, list):
         # list is for all() queries
-        return [__sql_alchemy_to_dict(x) for x in sql_alchemy_object]
+        return [__sql_alchemy_to_dict(x, column_whitelist) for x in sql_alchemy_object]
 
     elif isinstance(sql_alchemy_object, Row):
         # basic SELECT .. FROM query)
