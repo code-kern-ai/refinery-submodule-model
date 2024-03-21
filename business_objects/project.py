@@ -37,56 +37,63 @@ def get_with_labling_tasks(project_id: str) -> Project:
 def __build_sql_labeling_tasks_by_project(project_id: str) -> str:
     return f"""
     SELECT
-    json_build_object(
-        'id', labeling_task.id,
-        'name', labeling_task.name,
-        'task_target', labeling_task.task_target,
-        'task_type', labeling_task.task_type,
-        'attribute', json_build_object(
-            'id', attribute.id,
-            'name', attribute.name,
-            'relative_position', attribute.relative_position,
-            'data_type', attribute.data_type
-        ),
-        'labels', COALESCE(labeling_task_labels.labels, json_build_array()),
-        'information_sources', COALESCE(information_sources.sources, json_build_array())
-    ) AS labeling_task
-FROM
-    project
-left JOIN
-    labeling_task ON project.id = labeling_task.project_id
-LEFT JOIN
-    attribute ON labeling_task.attribute_id = attribute.id
-LEFT JOIN
-    (SELECT
-         labeling_task_id,
-         json_agg(json_build_object(
-             'id', id,
-             'name', name,
-             'color', color,
-             'hotkey', hotkey
-         )) AS labels
-     FROM
-         labeling_task_label
-     GROUP BY
-         labeling_task_id) AS labeling_task_labels ON labeling_task.id = labeling_task_labels.labeling_task_id
-left JOIN
-    (SELECT
-         labeling_task_id,
-         json_agg(json_build_object(
-             'id', id,
-             'type', type,
-             'returnType', return_type,
-             'name', name,
-             'description', description
-         )) AS sources
-     FROM
-         information_source
-     GROUP BY
-         labeling_task_id) AS information_sources ON labeling_task.id = information_sources.labeling_task_id
-WHERE
-    project.id = '{project_id}'::UUID;
-        """
+        json_build_object(
+            'id', labeling_task.id,
+            'name', labeling_task.name,
+            'task_target', labeling_task.task_target,
+            'task_type', labeling_task.task_type,
+            'attribute', 
+            CASE
+                WHEN attribute.id IS NULL THEN NULL
+                ELSE json_build_object(
+                    'id', attribute.id,
+                    'name', attribute.name,
+                    'relative_position', attribute.relative_position,
+                    'data_type', attribute.data_type)
+            END,
+            'labels', COALESCE(labeling_task_labels.labels, json_build_array()),
+            'information_sources', COALESCE(information_sources.sources, json_build_array())
+        ) AS labeling_task
+    FROM
+        project
+    LEFT JOIN
+        labeling_task
+            ON project.id = labeling_task.project_id
+    LEFT JOIN
+        attribute
+            ON labeling_task.attribute_id = attribute.id
+    LEFT JOIN
+        (SELECT
+            labeling_task_id,
+            json_agg(json_build_object(
+                'id', id,
+                'name', name,
+                'color', color,
+                'hotkey', hotkey
+            )) AS labels
+        FROM
+            labeling_task_label
+        GROUP BY
+            labeling_task_id) AS labeling_task_labels
+                ON labeling_task.id = labeling_task_labels.labeling_task_id
+    LEFT JOIN
+        (SELECT
+            labeling_task_id,
+            json_agg(json_build_object(
+                'id', id,
+                'type', type,
+                'returnType', return_type,
+                'name', name,
+                'description', description
+            )) AS sources
+        FROM
+            information_source
+        GROUP BY
+            labeling_task_id) AS information_sources
+                ON labeling_task.id = information_sources.labeling_task_id
+    WHERE
+        project.id = '{project_id}'::UUID;
+            """
 
 
 def get_with_organization_id(organization_id: str, project_id: str) -> Project:
