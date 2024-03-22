@@ -3,6 +3,8 @@ from datetime import date
 from ..enums import StrategyComplexity
 from . import project
 from ..business_objects import general
+from typing import Optional
+from ..util import prevent_sql_injection
 
 
 def log_consumption(
@@ -23,3 +25,29 @@ def log_consumption(
     """
     general.execute(query)
     general.flush_or_commit(with_commit)
+
+
+def get_consumption_summary(
+    org_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    as_query: bool = False,
+):
+    where_add = ""
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+
+    if start_date and end_date:
+        start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
+        end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
+        where_add += f"AND date BETWEEN '{start_date}' AND '{end_date}'"
+
+    query = f"""
+    SELECT date_part('year', date) AS year, date_part('month', date) AS month, complexity, SUM(count) as count
+    FROM cognition.consumption_summary
+    WHERE organization_id = '{org_id}' {where_add}
+    GROUP BY date_part('year', date), date_part('month', date), complexity
+    ORDER BY date_part('year', date), date_part('month', date), complexity
+    """
+    if as_query:
+        return query
+    return general.execute(query)

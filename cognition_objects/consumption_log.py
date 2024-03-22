@@ -1,6 +1,8 @@
 from ..models import CognitionConsumptionLog
 from ..business_objects import general
 from .. import enums
+from ..util import prevent_sql_injection
+from typing import Optional
 
 
 def create(
@@ -28,3 +30,43 @@ def create(
     )
     general.add(consumption_log, with_commit=with_commit)
     return consumption_log
+
+
+def get_details(
+    organization_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    order_desc: bool = True,
+    as_query: bool = False,
+) -> list:
+    where_add = ""
+
+    organization_id = prevent_sql_injection(
+        organization_id, isinstance(organization_id, str)
+    )
+
+    if start_date and end_date:
+        start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
+        end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
+        where_add += f"AND cl.created_at BETWEEN '{start_date}' AND '{end_date}'"
+
+    order_key = "DESC" if order_desc else "ASC"
+
+    query = f"""
+    SELECT p.project_name AS project, s.strategy_name AS strategy, cl.created_at, cl.complexity, cl.state, cl.project_state
+    FROM cognition.consumption_log cl
+    LEFT JOIN (
+        SELECT p.id, p.name AS project_name
+        FROM cognition.project p ) p
+    ON p.id = cl.project_id
+    LEFT JOIN (
+        SELECT s.id, s.name AS strategy_name
+        FROM cognition.strategy s
+    ) s
+    ON s.id = cl.strategy_id
+    WHERE cl.organization_id = '{organization_id}' {where_add}
+    ORDER BY cl.created_at {order_key}
+    """
+    if as_query:
+        return query
+    return general.execute_all(query)
