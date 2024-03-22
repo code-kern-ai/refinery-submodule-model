@@ -609,15 +609,15 @@ def get_source_statistics(
 
 def get_heuristic_id_with_payload(project_id: str, heuristic_id: str):
     query = f"""
-        SELECT heuristic.id, heuristic.name, heuristic."type", heuristic.description,heuristic.is_selected, heuristic.source_code,heuristic.return_type, heuristic.labeling_task_id, 
-            CASE WHEN isp.id IS NOT NULL 
-                THEN json_build_object('id',isp.id, 'created_at', isp.created_at, 'finished_at', isp.finished_at, 'state',isp.state,'iteration',isp.iteration,'progress',isp.progress)
-                ELSE NULL
-            END AS last_payload
-        FROM information_source heuristic 
-        LEFT JOIN information_source_payload isp 
-            ON isp.source_id = heuristic.id
-        WHERE heuristic.project_id = '{project_id}' AND heuristic.ID = '{heuristic_id}'
+    SELECT heuristic.id, heuristic.name, heuristic."type", heuristic.description,heuristic.is_selected, heuristic.source_code,heuristic.return_type, heuristic.labeling_task_id, 
+        CASE WHEN isp.id IS NOT NULL 
+            THEN json_build_object('id',isp.id, 'created_at', isp.created_at, 'finished_at', isp.finished_at, 'state',isp.state,'iteration',isp.iteration,'progress',isp.progress)
+            ELSE NULL
+        END AS last_payload
+    FROM information_source heuristic 
+    LEFT JOIN information_source_payload isp 
+        ON isp.source_id = heuristic.id
+    WHERE heuristic.project_id = '{project_id}' AND heuristic.ID = '{heuristic_id}'
     """
 
     return general.execute_first(query)
