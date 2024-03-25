@@ -55,7 +55,7 @@ def get_details(
     order_key = "DESC" if order_desc else "ASC"
 
     query = f"""
-    SELECT cl.project_name AS project, COALESCE(s.name, 'deleted') AS strategy, cl.created_at, cl.complexity, cl.state, cl.project_state
+    SELECT COALESCE(p.name, cl.project_name) AS project, COALESCE(s.name, 'deleted') AS strategy, cl.created_at, cl.complexity, cl.state, cl.project_state
     FROM cognition.consumption_log cl
     LEFT JOIN cognition.project p
         ON p.id = cl.project_id
