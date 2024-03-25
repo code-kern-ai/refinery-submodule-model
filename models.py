@@ -1315,7 +1315,11 @@ class CognitionConsumptionSummary(Base):
     __tablename__ = Tablenames.CONSUMPTION_SUMMARY.value
     __table_args__ = (
         UniqueConstraint(
-            "organization_id", "project_id", "date", "complexity", name="unique_summary"
+            "organization_id",
+            "project_id",
+            "creation_date",
+            "complexity",
+            name="unique_summary",
         ),
         {"schema": "cognition"},
     )
