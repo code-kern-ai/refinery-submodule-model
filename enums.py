@@ -499,6 +499,11 @@ class StrategyStepType(Enum):
     PYTHON = "PYTHON"
     LLM = "LLM"
     SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # WEBSEARCH = "WEBSEARCH"
+    TRUNCATE_CONTEXT = "TRUNCATE_CONTEXT"
+    HEADER = "HEADER"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -517,6 +522,11 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.PYTHON: "Custom python function",
     StrategyStepType.LLM: "Run a LLM",
     StrategyStepType.SELECTION: "Select data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrase query",
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # StrategyStepType.WEBSEARCH: "Search the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
+    StrategyStepType.HEADER: "Writing header",
 }
 
 STEP_WHEN_TO_USE = {
@@ -526,6 +536,11 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.LLM: "When you want to run a LLM",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.SELECTION: "When you want to select data",
+    StrategyStepType.QUERY_REPHRASING: "When you want to rephrase a query",
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # StrategyStepType.WEBSEARCH: "When you want to search the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
+    StrategyStepType.HEADER: "When you want to set a header based on the conversation",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -535,6 +550,11 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.PYTHON: "Running custom python function",
     StrategyStepType.LLM: "Running LLM",
     StrategyStepType.SELECTION: "Selecting data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrasing query",
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # StrategyStepType.WEBSEARCH: "Searching the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
+    StrategyStepType.HEADER: "Headline generation",
 }
 
 
