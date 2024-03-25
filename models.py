@@ -1332,7 +1332,7 @@ class CognitionConsumptionSummary(Base):
     )
     project_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id"),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
         index=True,
     )
     creation_date = Column(Date, default=sql.func.now(), index=True)
