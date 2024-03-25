@@ -18,9 +18,9 @@ def log_consumption(
     project_name = project_entity.name
 
     query = f"""
-    INSERT INTO cognition.consumption_summary (id, organization_id, project_id, date, project_name, complexity, count)
+    INSERT INTO cognition.consumption_summary (id, organization_id, project_id, creation_date, project_name, complexity, count)
     VALUES ('{id}', '{org_id}', '{project_id}', '{date.today()}', '{project_name}', '{complexity.value}', 1)
-    ON CONFLICT (organization_id, project_id, date, complexity) DO UPDATE
+    ON CONFLICT unique_summary DO UPDATE
         SET count = consumption_summary.count + 1;
     """
     general.execute(query)
@@ -39,14 +39,14 @@ def get_consumption_summary(
     if start_date and end_date:
         start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
         end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
-        where_add += f"AND date BETWEEN '{start_date}' AND '{end_date}'"
+        where_add += f"AND creation_date BETWEEN '{start_date}' AND '{end_date}'"
 
     query = f"""
-    SELECT date_part('year', date) AS year, date_part('month', date) AS month, complexity, SUM(count) as count
+    SELECT date_part('year', creation_date) AS year, date_part('month', creation_date) AS month, complexity, SUM(count) as count
     FROM cognition.consumption_summary
     WHERE organization_id = '{org_id}' {where_add}
-    GROUP BY date_part('year', date), date_part('month', date), complexity
-    ORDER BY date_part('year', date), date_part('month', date), complexity
+    GROUP BY 1, 2, 3
+    ORDER BY 1, 2, 3
     """
     if as_query:
         return query

@@ -1307,6 +1307,7 @@ class CognitionConsumptionLog(Base):
     created_at = Column(DateTime, default=sql.func.now())
     complexity = Column(String)  # of type enums.StrategyComplexity.*.value
     state = Column(String)  # of type enums.ConsumptionLogState.*.value
+    project_name = Column(String)
     project_state = Column(String)  # of type enums.CognitionProjectState.*.value
 
 
@@ -1330,7 +1331,7 @@ class CognitionConsumptionSummary(Base):
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id"),
         index=True,
     )
-    date = Column(Date, default=sql.func.now(), index=True)
+    creation_date = Column(Date, default=sql.func.now(), index=True)
     project_name = Column(String)
     complexity = Column(String)  # of type enums.StrategyComplexity.*.value
     count = Column(Integer)
