@@ -20,7 +20,7 @@ def log_consumption(
     query = f"""
     INSERT INTO cognition.consumption_summary (id, organization_id, project_id, creation_date, project_name, complexity, count)
     VALUES ('{id}', '{org_id}', '{project_id}', '{date.today()}', '{project_name}', '{complexity.value}', 1)
-    ON CONFLICT unique_summary DO UPDATE
+    ON CONFLICT ON CONSTRAINT unique_summary DO UPDATE
         SET count = consumption_summary.count + 1;
     """
     general.execute(query)
