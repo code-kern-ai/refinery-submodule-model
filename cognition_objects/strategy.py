@@ -37,6 +37,14 @@ def get_all_by_project_id(project_id: str) -> List[CognitionStrategy]:
     )
 
 
+def get_strategies_without_complexity() -> List[CognitionStrategy]:
+    return (
+        session.query(CognitionStrategy)
+        .filter(CognitionStrategy.complexity == None)
+        .all()
+    )
+
+
 def create(
     project_id: str,
     user_id: str,
