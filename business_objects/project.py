@@ -117,10 +117,7 @@ def get_all_by_user_organization_id(organization_id: str) -> List[Project]:
     projects = (
         session.query(Project).filter(Project.organization_id == organization_id).all()
     )
-
-    project_dicts = sql_alchemy_to_dict(projects)
-
-    return project_dicts
+    return projects
 
 
 def get_all_all() -> List[Project]:
