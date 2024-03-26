@@ -150,6 +150,15 @@ def to_frontend_obj(value: Union[List, Dict]):
         return __to_json_serializable(value)
 
 
+def to_frontend_obj_raw(value: Union[List, Dict]):
+    if isinstance(value, dict):
+        return {k: to_frontend_obj_raw(v) for k, v in value.items()}
+    elif is_list_like(value):
+        return [to_frontend_obj_raw(x) for x in value]
+    else:
+        return __to_json_serializable(value)
+
+
 def __to_json_serializable(x: Any):
     if isinstance(x, datetime):
         return x.isoformat()
