@@ -328,3 +328,14 @@ def remove(
         general.flush_or_commit(with_commit)
     else:
         raise ValueError("Payload does not belong to source")
+
+
+def get_payload_with_heuristic_type(project_id: str, payload_id: str):
+    query = f"""
+    SELECT isp.id,isp.created_at,isp.state,isp.logs,isp.iteration, json_build_object('type', is2."type") as information_source
+    FROM information_source_payload isp 
+    LEFT JOIN information_source is2 
+        ON is2.id = isp.source_id 
+    WHERE isp.project_id = '{project_id}' AND isp.id = '{payload_id}'
+    """
+    return general.execute_first(query)
