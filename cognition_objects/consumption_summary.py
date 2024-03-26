@@ -27,6 +27,21 @@ def log_consumption(
     general.flush_or_commit(with_commit)
 
 
+def update_project_name(
+    project_id: str, project_name: str, with_commit: bool = True
+) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    project_name = prevent_sql_injection(project_name, isinstance(project_name, str))
+    query = f"""
+    UPDATE cognition.consumption_summary
+    SET project_name = '{project_name}'
+    WHERE project_id = '{project_id}'
+    """
+    general.execute(query)
+    if with_commit:
+        general.commit()
+
+
 def get_consumption_summary(
     org_id: str,
     start_date: Optional[str] = None,

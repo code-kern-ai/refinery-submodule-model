@@ -34,6 +34,21 @@ def create(
     return consumption_log
 
 
+def update_project_name(
+    project_id: str, project_name: str, with_commit: bool = True
+) -> None:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    project_name = prevent_sql_injection(project_name, isinstance(project_name, str))
+    query = f"""
+    UPDATE cognition.consumption_log
+    SET project_name = '{project_name}'
+    WHERE project_id = '{project_id}'
+    """
+    general.execute(query)
+    if with_commit:
+        general.commit()
+
+
 def get_details(
     organization_id: str,
     start_date: Optional[str] = None,

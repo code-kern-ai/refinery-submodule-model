@@ -1,5 +1,6 @@
 from typing import List, Optional
 from ..business_objects import general, team_resource, user
+from ..cognition_objects import consumption_log, consumption_summary
 from ..session import session
 from ..models import CognitionProject, TeamMember, TeamResource
 from .. import enums
@@ -153,6 +154,8 @@ def update(
     project: CognitionProject = get(project_id)
     if name is not None:
         project.name = name
+        consumption_summary.update_project_name(project_id, name, with_commit=False)
+        consumption_log.update_project_name(project_id, name, with_commit=False)
     if description is not None:
         project.description = description
     if customer_color_primary is not None:
