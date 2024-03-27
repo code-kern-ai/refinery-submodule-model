@@ -38,8 +38,7 @@ def update_project_name(
     WHERE project_id = '{project_id}'
     """
     general.execute(query)
-    if with_commit:
-        general.commit()
+    general.flush_or_commit(with_commit)
 
 
 def get_consumption_summary(
