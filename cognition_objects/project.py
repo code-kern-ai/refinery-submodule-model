@@ -1,5 +1,6 @@
 from typing import List, Optional
 from ..business_objects import general, team_resource, user
+from ..cognition_objects import consumption_log, consumption_summary
 from ..session import session
 from ..models import CognitionProject, TeamMember, TeamResource
 from .. import enums
@@ -147,11 +148,14 @@ def update(
     operator_routing_source_code: Optional[str] = None,
     refinery_synchronization_interval_option: Optional[str] = None,
     execute_query_enrichment_if_source_code: Optional[str] = None,
+    state: Optional[enums.CognitionProjectState] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
     if name is not None:
         project.name = name
+        consumption_summary.update_project_name(project_id, name, with_commit=False)
+        consumption_log.update_project_name(project_id, name, with_commit=False)
     if description is not None:
         project.description = description
     if customer_color_primary is not None:
@@ -170,6 +174,8 @@ def update(
         project.execute_query_enrichment_if_source_code = (
             execute_query_enrichment_if_source_code
         )
+    if state is not None:
+        project.state = state.value
     general.flush_or_commit(with_commit)
     return project
 

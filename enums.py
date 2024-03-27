@@ -134,6 +134,8 @@ class Tablenames(Enum):
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
     WEBSOCKET_ACCESS = "websocket_access"
+    CONSUMPTION_LOG = "consumption_log"
+    CONSUMPTION_SUMMARY = "consumption_summary"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -618,6 +620,29 @@ class EmitType(Enum):
     FOLLOW_UPS = "FOLLOW_UPS"
     SELECTION = "SELECTION"
     QUERY_REPHRASING = "QUERY_REPHRASING"
+
+
+class CognitionProjectState(Enum):
+    CREATED = "CREATED"
+    WIZARD_RUNNING = "WIZARD_RUNNING"
+    DEVELOPMENT = "DEVELOPMENT"
+    PRODUCTION = "PRODUCTION"
+
+
+class StrategyComplexity(Enum):
+    SIMPLE = "SIMPLE"
+    REGULAR = "REGULAR"
+    COMPLEX = "COMPLEX"
+
+
+class ConsumptionLogState(Enum):
+    SUCCESS = "SUCCESS"
+    ERROR = "ERROR"
+
+
+class CognitionConfigKey(Enum):
+    STRATEGY_COMPLEXITY_THRESHOLD = "STRATEGY_COMPLEXITY_THRESHOLD"
+    STRATEGY_STEP_WEIGHTS = "STRATEGY_STEP_WEIGHTS"
 
 
 # note this is only for websocket interaction between exec env and gateway
