@@ -15,6 +15,12 @@ def get(project_id: str) -> CognitionProject:
     )
 
 
+def get_org_id(project_id: str) -> str:
+    if p := get(project_id):
+        return str(p.organization_id)
+    raise ValueError(f"Project with id {project_id} not found")
+
+
 def get_by_user(project_id: str, user_id: str) -> CognitionProject:
     user_item = user.get(user_id)
     if user_item.role == enums.UserRoles.ENGINEER.value:

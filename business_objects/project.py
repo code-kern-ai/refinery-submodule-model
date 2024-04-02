@@ -25,6 +25,12 @@ def get(project_id: str) -> Project:
     return session.query(Project).filter(Project.id == project_id).first()
 
 
+def get_org_id(project_id: str) -> str:
+    if p := get(project_id):
+        return str(p.organization_id)
+    raise ValueError(f"Project with id {project_id} not found")
+
+
 def get_with_organization_id(organization_id: str, project_id: str) -> Project:
     return (
         session.query(Project)
