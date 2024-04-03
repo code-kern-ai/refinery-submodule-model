@@ -1120,6 +1120,8 @@ class CognitionProject(Base):
     customer_color_primary_only_accent = Column(Boolean, default=False)
     customer_color_secondary = Column(String, default="#9333ea")
 
+    allow_file_upload = Column(Boolean, default=False)
+
 
 class CognitionStrategy(Base):
     __tablename__ = Tablenames.STRATEGY.value
@@ -1191,6 +1193,7 @@ class CognitionConversation(Base):
     scope_dict = Column(JSON)
     header = Column(String)
     error = Column(String)
+    has_tmp_files = Column(Boolean, default=False)
 
 
 class CognitionMessage(Base):
