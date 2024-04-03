@@ -155,6 +155,7 @@ def update(
     refinery_synchronization_interval_option: Optional[str] = None,
     execute_query_enrichment_if_source_code: Optional[str] = None,
     state: Optional[enums.CognitionProjectState] = None,
+    allow_file_upload: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -182,6 +183,8 @@ def update(
         )
     if state is not None:
         project.state = state.value
+    if allow_file_upload is not None:
+        project.allow_file_upload = allow_file_upload
     general.flush_or_commit(with_commit)
     return project
 
