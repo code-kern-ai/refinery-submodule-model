@@ -505,7 +505,8 @@ class StrategyStepType(Enum):
     # WEBSEARCH = "WEBSEARCH" # done in exec env to ensure security
     TRUNCATE_CONTEXT = "TRUNCATE_CONTEXT"
     HEADER = "HEADER"
-    # TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL" # done in exec env to prevent installing sklearn in gateway
+    # INFO: done in exec env to prevent installing sklearn in gateway
+    TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -529,6 +530,7 @@ STEP_DESCRIPTIONS = {
     # StrategyStepType.WEBSEARCH: "Search the web",
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
     StrategyStepType.HEADER: "Writing header",
+    StrategyStepType.TMP_DOC_RETRIEVAL: "Temporary document retrieval",
 }
 
 STEP_WHEN_TO_USE = {
@@ -543,6 +545,7 @@ STEP_WHEN_TO_USE = {
     # StrategyStepType.WEBSEARCH: "When you want to search the web",
     StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
     StrategyStepType.HEADER: "When you want to set a header based on the conversation",
+    StrategyStepType.TMP_DOC_RETRIEVAL: "When you want to retrieve results from conversation specific documents",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -557,6 +560,7 @@ STEP_PROGRESS_TEXTS = {
     # StrategyStepType.WEBSEARCH: "Searching the web",
     StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
     StrategyStepType.HEADER: "Headline generation",
+    StrategyStepType.TMP_DOC_RETRIEVAL: "Retrieving facts from conversation specific documents",
 }
 
 
