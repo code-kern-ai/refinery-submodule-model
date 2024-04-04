@@ -1121,6 +1121,7 @@ class CognitionProject(Base):
     customer_color_secondary = Column(String, default="#9333ea")
 
     allow_file_upload = Column(Boolean, default=False)
+    max_file_size_mb = Column(Float, default=3.)
 
 
 class CognitionStrategy(Base):

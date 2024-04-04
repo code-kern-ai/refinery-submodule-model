@@ -156,6 +156,7 @@ def update(
     execute_query_enrichment_if_source_code: Optional[str] = None,
     state: Optional[enums.CognitionProjectState] = None,
     allow_file_upload: Optional[bool] = None,
+    max_file_size_mb: Optional[float] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -185,6 +186,8 @@ def update(
         project.state = state.value
     if allow_file_upload is not None:
         project.allow_file_upload = allow_file_upload
+    if max_file_size_mb is not None:
+        project.max_file_size_mb = max_file_size_mb
     general.flush_or_commit(with_commit)
     return project
 

@@ -502,9 +502,10 @@ class StrategyStepType(Enum):
     SELECTION = "SELECTION"
     QUERY_REPHRASING = "QUERY_REPHRASING"
     # INFO: Websearch strategy deactivated until compliance investigation is finished
-    # WEBSEARCH = "WEBSEARCH"
+    # WEBSEARCH = "WEBSEARCH" # done in exec env to ensure security
     TRUNCATE_CONTEXT = "TRUNCATE_CONTEXT"
     HEADER = "HEADER"
+    # TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL" # done in exec env to prevent installing sklearn in gateway
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
