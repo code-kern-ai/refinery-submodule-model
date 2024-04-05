@@ -500,6 +500,7 @@ class StrategyStepType(Enum):
     PYTHON = "PYTHON"
     LLM = "LLM"
     SELECTION = "SELECTION"
+    # now more like a common llm node but changing the enum value would break the existing data
     QUERY_REPHRASING = "QUERY_REPHRASING"
     # INFO: Websearch strategy deactivated until compliance investigation is finished
     # WEBSEARCH = "WEBSEARCH" # done in exec env to ensure security
@@ -523,9 +524,9 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.RELEVANCE: "Classify retrieved facts",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Custom python function",
-    StrategyStepType.LLM: "Run a LLM",
+    StrategyStepType.LLM: "Answer with LLM",
     StrategyStepType.SELECTION: "Select data",
-    StrategyStepType.QUERY_REPHRASING: "Rephrase query",
+    StrategyStepType.QUERY_REPHRASING: "Transform with LLM",
     # INFO: Websearch strategy deactivated until compliance investigation is finished
     # StrategyStepType.WEBSEARCH: "Search the web",
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
@@ -537,10 +538,10 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.RETRIEVAL: "When you want to retrieve facts from a database",
     StrategyStepType.RELEVANCE: "When you want to classify retrieved facts",
     StrategyStepType.PYTHON: "When you want to run a custom python function",
-    StrategyStepType.LLM: "When you want to run a LLM",
+    StrategyStepType.LLM: "When you want to give an actual answer to the question",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.SELECTION: "When you want to select data",
-    StrategyStepType.QUERY_REPHRASING: "When you want to rephrase a query",
+    StrategyStepType.QUERY_REPHRASING: "When you want to manipulate or extend your attributes with a LLM",
     # INFO: Websearch strategy deactivated until compliance investigation is finished
     # StrategyStepType.WEBSEARCH: "When you want to search the web",
     StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
