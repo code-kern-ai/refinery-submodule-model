@@ -1,10 +1,11 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from ..business_objects import general, team_resource, user
 from ..cognition_objects import consumption_log, consumption_summary
 from ..session import session
 from ..models import CognitionProject, TeamMember, TeamResource
 from .. import enums
 from datetime import datetime
+from ..util import prevent_sql_injection
 
 
 def get(project_id: str) -> CognitionProject:
@@ -72,6 +73,44 @@ def get_all_by_user(org_id: str, user_id: str) -> List[CognitionProject]:
         .order_by(CognitionProject.created_at.asc())
         .all()
     )
+
+
+# returns a dict with ENGINEERING_TEAM as key for all users that are not annotators
+def get_project_users_overview(
+    organization_id: str, project_id: Optional[str] = None
+) -> Dict[str, int]:
+    organization_id = prevent_sql_injection(
+        organization_id, isinstance(organization_id, str)
+    )
+
+    p_where = ""
+    if project_id:
+        project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+        p_where = f"AND tr.resource_id = '{project_id}'"
+    # count is distinct to ensure the same user in two different teams (which both have access to the same project) is only counted once
+    query = f"""
+    SELECT jsonb_object_agg(ind,c)
+    FROM (
+        SELECT COALESCE(t.project_id::TEXT,'ENGINEERING_TEAM') ind, u.role, count(DISTINCT u.id) c
+        FROM public.user u
+        LEFT JOIN (
+            SELECT 
+                tr.resource_id project_id,
+                tm.user_id
+            FROM team t
+            LEFT JOIN team_member tm
+                ON t.id = tm.team_id
+            LEFT JOIN team_resource tr
+                ON t.id = tr.team_id AND tr.resource_type = '{enums.TeamResourceType.COGNITION_PROJECT.value}'
+            WHERE t.organization_id = '{organization_id}' {p_where}
+        ) t
+            ON u.id = t.user_id
+        WHERE u.organization_id = '{organization_id}' AND NOT (t.project_id IS NULL AND u.role = 'ANNOTATOR')
+        GROUP BY 1,2 )x """
+    values = general.execute_first(query)
+    if values and values[0]:
+        return values[0]
+    return {}
 
 
 def get_all_for_synchronization_option(
