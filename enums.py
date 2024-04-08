@@ -490,6 +490,8 @@ class SampleProjectType(Enum):
     AG_NEWS = "AG News"
     CONVERSATIONAL_AI_INITIAL = "Conversational AI - initial"
     CONVERSATIONAL_AI = "Conversational AI"
+    GLOBAL_GUARD_INSURANCE_INITIAL = "Global Guard - initial"
+    GLOBAL_GUARD_INSURANCE = "Global Guard Insurance"
 
 
 class StrategyStepType(Enum):
