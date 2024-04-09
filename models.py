@@ -1112,6 +1112,7 @@ class CognitionProject(Base):
     state = Column(
         String, default=CognitionProjectState.CREATED.value
     )  # of type enums.CognitionProjectState.*.value
+    facts_grouping_attribute = Column(String)
     refinery_synchronization_interval_option = Column(String)
     interface_type = Column(String)
     execute_query_enrichment_if_source_code = Column(String)

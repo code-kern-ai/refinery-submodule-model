@@ -116,6 +116,24 @@ def get_text_attributes(
     return {att.name: str(att.id) for att in text_attributes}
 
 
+def get_category_attributes(
+    project_id: str,
+    state_filter: List[str] = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
+    ],
+) -> Dict[str, str]:
+    query = session.query(Attribute).filter(
+        Attribute.project_id == project_id,
+        Attribute.data_type == DataTypes.CATEGORY.value,
+    )
+    if state_filter:
+        query = query.filter(Attribute.state.in_(state_filter))
+    category_attributes = query.order_by(Attribute.relative_position.asc()).all()
+    return {att.name: str(att.id) for att in category_attributes}
+
+
 def get_non_text_attributes(
     project_id: str,
     state_filter: List[str] = [
