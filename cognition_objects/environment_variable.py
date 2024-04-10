@@ -7,6 +7,7 @@ from ..models import (
     CognitionEnvironmentVariable,
     CognitionMarkdownFile,
     CognitionMarkdownDataset,
+    CognitionProject,
 )
 from ..util import prevent_sql_injection
 from sqlalchemy import or_
@@ -72,6 +73,22 @@ def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]
         .order_by(CognitionEnvironmentVariable.created_at.asc())
         .all()
     )
+
+
+def get_value_by_cognition_tmp_doc_env_id(cognition_project_id: str) -> str:
+    v = (
+        session.query(CognitionEnvironmentVariable.value)
+        .join(
+            CognitionProject,
+            CognitionProject.open_ai_env_var_id == CognitionEnvironmentVariable.id,
+        )
+        .filter(
+            CognitionProject.id == cognition_project_id,
+        )
+        .first()
+    )
+    if v:
+        return str(v[0])
 
 
 def get_all_by_org_id(org_id: str) -> List[CognitionEnvironmentVariable]:
