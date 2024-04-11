@@ -103,17 +103,25 @@ def sql_alchemy_to_dict(
     return result
 
 
-def pack_as_graphql(result, graphql_method_name: str):
+def pack_as_graphql(result, graphql_method_name: str, max_lvl: Optional[int] = None):
 
-    def convert_value(value):
+    def convert_value(value, max_lvl: int):
         if isinstance(value, list):
-            return {"edges": [{"node": convert_value(item)} for item in value]}
+            return {
+                "edges": [
+                    {"node": convert_value(item, max_lvl - 1) if max_lvl > 0 else item}
+                    for item in value
+                ]
+            }
         elif isinstance(value, dict):
-            return {key: convert_value(val) for key, val in value.items()}
+            return {
+                key: convert_value(val, max_lvl - 1) if max_lvl > 0 else val
+                for key, val in value.items()
+            }
         else:
             return value
 
-    return {"data": {graphql_method_name: convert_value(result)}}
+    return {"data": {graphql_method_name: convert_value(result, max_lvl)}}
 
 
 def __sql_alchemy_to_dict(
