@@ -75,7 +75,7 @@ def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]
     )
 
 
-def get_value_by_cognition_tmp_doc_env_id(cognition_project_id: str) -> str:
+def get_cognition_project_env_var_value(cognition_project_id: str) -> str:
     v = (
         session.query(CognitionEnvironmentVariable.value)
         .join(
