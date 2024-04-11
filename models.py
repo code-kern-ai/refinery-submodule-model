@@ -12,11 +12,14 @@ from .enums import (
     UserRoles,
     AttributeState,
     AdminMessageLevel,
+    CognitionProjectState,
+    StrategyComplexity,
 )
 from sqlalchemy import (
     JSON,
     Boolean,
     Column,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -24,6 +27,7 @@ from sqlalchemy import (
     LargeBinary,
     String,
     sql,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -1105,7 +1109,9 @@ class CognitionProject(Base):
     description = Column(String)
     color = Column(String)
     operator_routing_source_code = Column(String)
-    wizard_running = Column(Boolean, default=False)
+    state = Column(
+        String, default=CognitionProjectState.CREATED.value
+    )  # of type enums.CognitionProjectState.*.value
     refinery_synchronization_interval_option = Column(String)
     interface_type = Column(String)
     execute_query_enrichment_if_source_code = Column(String)
@@ -1133,6 +1139,9 @@ class CognitionStrategy(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
+    complexity = Column(
+        String, default=StrategyComplexity.SIMPLE.value
+    )  # of type enums.StrategyComplexity.*.value
 
 
 class CognitionStrategyStep(Base):
@@ -1257,6 +1266,79 @@ class CognitionPipelineLogs(Base):
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
     skipped_step = Column(Boolean, default=False)
+
+
+class CognitionConsumptionLog(Base):
+    __tablename__ = Tablenames.CONSUMPTION_LOG.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    strategy_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="SET NULL"
+        ),
+        index=True,
+    )
+    message_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MESSAGE.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    complexity = Column(String)  # of type enums.StrategyComplexity.*.value
+    state = Column(String)  # of type enums.ConsumptionLogState.*.value
+    project_name = Column(String)
+    project_state = Column(String)  # of type enums.CognitionProjectState.*.value
+
+
+class CognitionConsumptionSummary(Base):
+    __tablename__ = Tablenames.CONSUMPTION_SUMMARY.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "project_id",
+            "creation_date",
+            "complexity",
+            name="unique_summary",
+        ),
+        {"schema": "cognition"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    creation_date = Column(Date, default=sql.func.now(), index=True)
+    project_name = Column(String)
+    complexity = Column(String)  # of type enums.StrategyComplexity.*.value
+    count = Column(Integer)
 
 
 class CognitionEnvironmentVariable(Base):

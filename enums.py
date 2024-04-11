@@ -134,6 +134,8 @@ class Tablenames(Enum):
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
     WEBSOCKET_ACCESS = "websocket_access"
+    CONSUMPTION_LOG = "consumption_log"
+    CONSUMPTION_SUMMARY = "consumption_summary"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -497,6 +499,11 @@ class StrategyStepType(Enum):
     PYTHON = "PYTHON"
     LLM = "LLM"
     SELECTION = "SELECTION"
+    QUERY_REPHRASING = "QUERY_REPHRASING"
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # WEBSEARCH = "WEBSEARCH"
+    TRUNCATE_CONTEXT = "TRUNCATE_CONTEXT"
+    HEADER = "HEADER"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -515,6 +522,11 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.PYTHON: "Custom python function",
     StrategyStepType.LLM: "Run a LLM",
     StrategyStepType.SELECTION: "Select data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrase query",
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # StrategyStepType.WEBSEARCH: "Search the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
+    StrategyStepType.HEADER: "Writing header",
 }
 
 STEP_WHEN_TO_USE = {
@@ -524,6 +536,11 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.LLM: "When you want to run a LLM",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.SELECTION: "When you want to select data",
+    StrategyStepType.QUERY_REPHRASING: "When you want to rephrase a query",
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # StrategyStepType.WEBSEARCH: "When you want to search the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
+    StrategyStepType.HEADER: "When you want to set a header based on the conversation",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -533,6 +550,11 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.PYTHON: "Running custom python function",
     StrategyStepType.LLM: "Running LLM",
     StrategyStepType.SELECTION: "Selecting data",
+    StrategyStepType.QUERY_REPHRASING: "Rephrasing query",
+    # INFO: Websearch strategy deactivated until compliance investigation is finished
+    # StrategyStepType.WEBSEARCH: "Searching the web",
+    StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
+    StrategyStepType.HEADER: "Headline generation",
 }
 
 
@@ -599,14 +621,37 @@ class EmitType(Enum):
     SELECTION = "SELECTION"
     QUERY_REPHRASING = "QUERY_REPHRASING"
 
+
+class CognitionProjectState(Enum):
+    CREATED = "CREATED"
+    WIZARD_RUNNING = "WIZARD_RUNNING"
+    DEVELOPMENT = "DEVELOPMENT"
+    PRODUCTION = "PRODUCTION"
+
+
+class StrategyComplexity(Enum):
+    SIMPLE = "SIMPLE"
+    REGULAR = "REGULAR"
+    COMPLEX = "COMPLEX"
+
+
+class ConsumptionLogState(Enum):
+    SUCCESS = "SUCCESS"
+    ERROR = "ERROR"
+
+
+class CognitionConfigKey(Enum):
+    STRATEGY_COMPLEXITY_THRESHOLD = "STRATEGY_COMPLEXITY_THRESHOLD"
+    STRATEGY_STEP_WEIGHTS = "STRATEGY_STEP_WEIGHTS"
+
+
 # note this is only for websocket interaction between exec env and gateway
 # none of these can/is allowed to interact with the database or anything other than the websocket!
 # means if you want a live update and set it as answer this needs to be done in the exec env code record_dict change
 class AllowedExecEnvMessageTypes(Enum):
-    CHUNK = "CHUNK" # sends a chunk to the ui - same as llm step type
-    SET_UI_MESSAGE = "SET_UI_MESSAGE" # replaces answer in the ui
-    CLOSE = "CLOSE" # closes the websocket - shouldn't be sent by hand!
-
+    CHUNK = "CHUNK"  # sends a chunk to the ui - same as llm step type
+    SET_UI_MESSAGE = "SET_UI_MESSAGE"  # replaces answer in the ui
+    CLOSE = "CLOSE"  # closes the websocket - shouldn't be sent by hand!
 
 
 def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> Any:
