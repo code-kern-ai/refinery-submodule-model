@@ -105,7 +105,10 @@ def update(
     if position is not None:
         strategy_step.position = position
     if config is not None:
-        strategy_step.config = config
+        if not strategy_step.config:
+            strategy_step.config = {}
+        for key in config:
+            strategy_step.config[key] = config[key]
         flag_modified(strategy_step, "config")
     if progress_text is not None:
         strategy_step.progress_text = progress_text

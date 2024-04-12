@@ -131,6 +131,7 @@ def get_all_paginated_by_project_id(
 def create(
     project_id: str,
     user_id: str,
+    has_tmp_files: bool = False,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionConversation:
@@ -138,6 +139,7 @@ def create(
         project_id=project_id,
         created_by=user_id,
         created_at=created_at,
+        has_tmp_files=has_tmp_files,
         scope_dict={},
     )
     general.add(conversation, with_commit)

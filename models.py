@@ -1121,6 +1121,17 @@ class CognitionProject(Base):
     customer_color_primary_only_accent = Column(Boolean, default=False)
     customer_color_secondary = Column(String, default="#9333ea")
 
+    allow_file_upload = Column(Boolean, default=False)
+    max_file_size_mb = Column(Float, default=3.0)
+    # tmp/beta value as in the future not only openai makes sense here
+    open_ai_env_var_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.ENVIRONMENT_VARIABLE.value}.id", ondelete="SET NULL"
+        ),
+        index=True,
+    )
+
 
 class CognitionStrategy(Base):
     __tablename__ = Tablenames.STRATEGY.value
@@ -1192,6 +1203,8 @@ class CognitionConversation(Base):
     scope_dict = Column(JSON)
     header = Column(String)
     error = Column(String)
+    has_tmp_files = Column(Boolean, default=False)
+    archived = Column(Boolean, default=False)
 
 
 class CognitionMessage(Base):
@@ -1205,7 +1218,7 @@ class CognitionMessage(Base):
     )
     strategy_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="SET NULL"),
         index=True,
     )
     conversation_id = Column(
