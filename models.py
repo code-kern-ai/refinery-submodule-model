@@ -1217,7 +1217,7 @@ class CognitionMessage(Base):
     )
     strategy_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="SET NULL"),
         index=True,
     )
     conversation_id = Column(
