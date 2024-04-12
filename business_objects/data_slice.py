@@ -17,7 +17,6 @@ def get(
     )
     if only_static:
         query = query.filter(DataSlice.static == True)
-
     return query.first()
 
 
