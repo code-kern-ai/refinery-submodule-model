@@ -13,6 +13,13 @@ from submodules.model import enums
 from ..util import prevent_sql_injection
 
 
+DEFAULT_ATTRIBUTE_STATES_USEABLE = [
+    AttributeState.UPLOADED.value,
+    AttributeState.USABLE.value,
+    AttributeState.AUTOMATICALLY_CREATED.value,
+]
+
+
 def get(project_id: str, attribute_id: str) -> Attribute:
     return (
         session.query(Attribute)
@@ -73,12 +80,10 @@ def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attrib
 
 def get_all(
     project_id: Optional[str] = None,
-    state_filter: List[str] = [
-        AttributeState.UPLOADED.value,
-        AttributeState.USABLE.value,
-        AttributeState.AUTOMATICALLY_CREATED.value,
-    ],
+    state_filter: List[str] = None,
 ) -> List[Attribute]:
+    if state_filter is None:
+        state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     query = session.query(Attribute)
     if project_id:
         query = query.filter(Attribute.project_id == project_id)
@@ -89,24 +94,20 @@ def get_all(
 
 def get_attribute_ids(
     project_id: str,
-    state_filter: List[str] = [
-        AttributeState.UPLOADED.value,
-        AttributeState.USABLE.value,
-        AttributeState.AUTOMATICALLY_CREATED.value,
-    ],
+    state_filter: List[str] = None,
 ) -> Dict[str, str]:
+    if state_filter is None:
+        state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     attributes: List[Attribute] = get_all(project_id, state_filter)
     return {attribute.name: attribute.id for attribute in attributes}
 
 
 def get_text_attributes(
     project_id: str,
-    state_filter: List[str] = [
-        AttributeState.UPLOADED.value,
-        AttributeState.USABLE.value,
-        AttributeState.AUTOMATICALLY_CREATED.value,
-    ],
+    state_filter: List[str] = None,
 ) -> Dict[str, str]:
+    if state_filter is None:
+        state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     query = session.query(Attribute).filter(
         Attribute.project_id == project_id, Attribute.data_type == DataTypes.TEXT.value
     )
@@ -116,14 +117,28 @@ def get_text_attributes(
     return {att.name: str(att.id) for att in text_attributes}
 
 
+def get_category_attributes(
+    project_id: str,
+    state_filter: List[str] = None,
+) -> Dict[str, str]:
+    if not state_filter:
+        state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
+    query = session.query(Attribute).filter(
+        Attribute.project_id == project_id,
+        Attribute.data_type == DataTypes.CATEGORY.value,
+    )
+    if state_filter:
+        query = query.filter(Attribute.state.in_(state_filter))
+    category_attributes = query.order_by(Attribute.relative_position.asc()).all()
+    return {att.name: str(att.id) for att in category_attributes}
+
+
 def get_non_text_attributes(
     project_id: str,
-    state_filter: List[str] = [
-        AttributeState.UPLOADED.value,
-        AttributeState.USABLE.value,
-        AttributeState.AUTOMATICALLY_CREATED.value,
-    ],
+    state_filter: List[str] = None,
 ) -> Dict[str, str]:
+    if not state_filter:
+        state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     query = session.query(Attribute).filter(
         Attribute.project_id == project_id, Attribute.data_type != DataTypes.TEXT.value
     )
@@ -136,12 +151,10 @@ def get_non_text_attributes(
 def get_all_ordered(
     project_id: str,
     order_asc: bool,
-    state_filter: List[str] = [
-        AttributeState.UPLOADED.value,
-        AttributeState.USABLE.value,
-        AttributeState.AUTOMATICALLY_CREATED.value,
-    ],
+    state_filter: Optional[List[str]] = None,
 ) -> List[Attribute]:
+    if state_filter is None:
+        state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     query = session.query(Attribute).filter(Attribute.project_id == project_id)
     if state_filter:
         query = query.filter(Attribute.state.in_(state_filter))
@@ -155,11 +168,7 @@ def get_all_ordered(
 def get_first_useable(
     project_id: str, data_type: Optional[enums.DataTypes] = None
 ) -> Attribute:
-    state_filter = [
-        AttributeState.UPLOADED.value,
-        AttributeState.USABLE.value,
-        AttributeState.AUTOMATICALLY_CREATED.value,
-    ]
+    state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     query = session.query(Attribute).filter(
         Attribute.project_id == project_id,
         Attribute.state.in_(state_filter),
