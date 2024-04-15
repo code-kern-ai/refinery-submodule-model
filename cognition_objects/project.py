@@ -194,6 +194,7 @@ def update(
     refinery_synchronization_interval_option: Optional[str] = None,
     execute_query_enrichment_if_source_code: Optional[str] = None,
     state: Optional[enums.CognitionProjectState] = None,
+    facts_grouping_attribute: Optional[str] = None,
     allow_file_upload: Optional[bool] = None,
     max_file_size_mb: Optional[float] = None,
     open_ai_env_var_id: Optional[str] = None,
@@ -224,6 +225,8 @@ def update(
         )
     if state is not None:
         project.state = state.value
+    if facts_grouping_attribute is not None:
+        project.facts_grouping_attribute = facts_grouping_attribute
     if allow_file_upload is not None:
         project.allow_file_upload = allow_file_upload
     if max_file_size_mb is not None:
