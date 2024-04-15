@@ -25,6 +25,104 @@ def get(project_id: str) -> Project:
     return session.query(Project).filter(Project.id == project_id).first()
 
 
+def get_with_labling_tasks_info_attributes(project_id: str) -> Project:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    labeling_task_query = __build_sql_labeling_tasks_by_project(project_id)
+    information_sources_query = __build_sql_information_sources_by_project(project_id)
+    attributes_query = __build_sql_attributes_by_project(project_id)
+    data_slice_query = __build_sql_data_slices_by_project(project_id)
+
+    return {
+        "project_id": project_id,
+        "labeling_tasks": general.execute_first(labeling_task_query)[0],
+        "information_sources": general.execute_first(information_sources_query)[0],
+        "attributes": general.execute_first(attributes_query)[0],
+        "data_slices": general.execute_first(data_slice_query)[0],
+    }
+
+
+def __build_sql_labeling_tasks_by_project(project_id: str) -> str:
+    return f"""
+    SELECT
+        json_agg(json_build_object(
+            'id', labeling_task.id,
+            'name', labeling_task.name,
+            
+            'attribute', 
+            CASE
+                WHEN attribute.id IS NULL THEN NULL
+                ELSE json_build_object(
+                    'relative_position', attribute.relative_position
+                    )
+            END
+        )) AS labeling_task
+    FROM
+        project
+    LEFT JOIN
+        labeling_task
+            ON project.id = labeling_task.project_id
+    LEFT JOIN
+        attribute
+            ON labeling_task.attribute_id = attribute.id
+    WHERE
+        project.id = '{project_id}'::UUID;
+            """
+
+
+def __build_sql_information_sources_by_project(project_id: str) -> str:
+    return f"""
+    SELECT
+         json_agg(json_build_object(
+            'id', information_source.id,
+            'name', information_source.name
+        )) AS information_sources
+    FROM
+        project
+    LEFT JOIN
+        information_source
+            ON project.id = information_source.project_id
+    WHERE
+        project.id = '{project_id}'::UUID;
+            """
+
+
+def __build_sql_attributes_by_project(project_id: str) -> str:
+    return f"""
+    SELECT
+         json_agg(json_build_object(
+            'id', attribute.id,
+            'name', attribute.name,
+            'state', attribute.state
+        )) AS attributes
+    FROM
+        project
+    LEFT JOIN
+        attribute
+            ON project.id = attribute.project_id
+    WHERE
+        project.id = '{project_id}'::UUID;
+            """
+
+
+def __build_sql_data_slices_by_project(project_id: str) -> str:
+    return f"""
+    SELECT
+         json_agg(json_build_object(
+            'id', data_slice.id,
+            'name', data_slice.name,
+            'slice_type', data_slice.slice_type,
+            'created_at', data_slice.created_at
+        )) AS data_slices
+    FROM
+        project
+    LEFT JOIN
+        data_slice
+            ON project.id = data_slice.project_id
+    WHERE
+        project.id = '{project_id}'::UUID;
+            """
+
+
 def get_org_id(project_id: str) -> str:
     if p := get(project_id):
         return str(p.organization_id)
@@ -46,6 +144,13 @@ def get_all(organization_id: str) -> List[Project]:
     return (
         session.query(Project).filter(Project.organization_id == organization_id).all()
     )
+
+
+def get_all_by_user_organization_id(organization_id: str) -> List[Project]:
+    projects = (
+        session.query(Project).filter(Project.organization_id == organization_id).all()
+    )
+    return projects
 
 
 def get_all_all() -> List[Project]:
@@ -594,6 +699,7 @@ def __build_sql_project_stats(
     slice_id: Optional[str] = None,
 ) -> str:
     labeling_task_filter = ""
+    labeling_task_filter_is = ""
     if labeling_task_id:
         labeling_task_filter_is = f"AND _is.labeling_task_id = '{labeling_task_id}'"
         labeling_task_filter = f"""
@@ -648,8 +754,7 @@ def __build_sql_project_stats(
             WHERE rla.source_type = '{enums.LabelSource.INFORMATION_SOURCE.value}'
             GROUP BY rla.source_id
         )y
-    )y)x 
-    
+    )y)x    
     """
 
 
@@ -738,3 +843,32 @@ def __get_project_size_sql(project_id: str) -> str:
         ) x
         ORDER BY order_
     """
+
+
+def get_project_by_project_id_sql(project_id: str) -> Dict[str, Any]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+
+    query = f"""
+    SELECT row_to_json(y)
+    FROM (
+        SELECT 
+            id,
+            NAME,
+            description,
+            NULL AS project_type,
+            tokenizer,
+            CASE 
+                WHEN status = 'IN_DELETION' THEN -1
+                ELSE r_count
+            END num_data_scale_uploaded
+        FROM project p,
+        (
+            SELECT COUNT(*) r_count FROM record WHERE project_id = '{project_id}' 
+        )x
+        WHERE p.id = '{project_id}' )y
+    """
+    value = general.execute_first(query)
+    if value:
+        return value[0]
+    else:
+        return None

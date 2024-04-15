@@ -819,7 +819,7 @@ def check_label_duplication_classification(
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     record_id = prevent_sql_injection(record_id, isinstance(record_id, str))
     user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
-    label_ids = [prevent_sql_injection(li) for li in label_ids]
+    label_ids = [prevent_sql_injection(li, isinstance(li, str)) for li in label_ids]
     label_id_str = "'" + "', '".join(label_ids) + "'"
     # sleep a bit to ensure requests went through
     time.sleep(0.5)

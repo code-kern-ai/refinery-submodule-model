@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, Any, Union, List, Dict
+from typing import Tuple, Any, Union, List, Dict, Optional, Iterable
 from pydantic import BaseModel
 import collections
 from re import sub, match, compile
@@ -90,26 +90,71 @@ def collect_engine_variables() -> Tuple[int, int, bool, bool]:
 
 # Row object is with a common SELECT query
 # otherwise it's e.g. a Class Object (instance of Base)
-def sql_alchemy_to_dict(sql_alchemy_object: Any, for_frontend: bool = False):
-    result = __sql_alchemy_to_dict(sql_alchemy_object)
+# whitelist works for both row objects and class objects
+# afaik only class objects "benefit" from the reduced amount of data selected as the row object selects beforehand, best to build the select directly
+def sql_alchemy_to_dict(
+    sql_alchemy_object: Any,
+    for_frontend: bool = False,
+    column_whitelist: Optional[Iterable[str]] = None,
+):
+    result = __sql_alchemy_to_dict(sql_alchemy_object, column_whitelist)
     if for_frontend:
         return to_frontend_obj(result)
     return result
 
 
-def __sql_alchemy_to_dict(sql_alchemy_object: Any):
+def pack_as_graphql(result, graphql_method_name: str, max_lvl: Optional[int] = None):
+
+    def convert_value(value, max_lvl: int):
+        new_lvl = max_lvl - 1 if max_lvl is not None else None
+        if isinstance(value, list):
+            return {
+                "edges": [
+                    {
+                        "node": (
+                            convert_value(item, new_lvl)
+                            if max_lvl is None or max_lvl > 0
+                            else item
+                        )
+                    }
+                    for item in value
+                ]
+            }
+        elif isinstance(value, dict):
+            return {
+                key: (
+                    convert_value(val, new_lvl)
+                    if max_lvl is None or max_lvl > 0
+                    else val
+                )
+                for key, val in value.items()
+            }
+        else:
+            return value
+
+    return {"data": {graphql_method_name: convert_value(result, max_lvl)}}
+
+
+def __sql_alchemy_to_dict(
+    sql_alchemy_object: Any, column_whitelist: Optional[Iterable[str]] = None
+):
     if isinstance(sql_alchemy_object, list):
         # list is for all() queries
-        return [__sql_alchemy_to_dict(x) for x in sql_alchemy_object]
+        return [__sql_alchemy_to_dict(x, column_whitelist) for x in sql_alchemy_object]
 
     elif isinstance(sql_alchemy_object, Row):
         # basic SELECT .. FROM query)
         # _mapping is a RowMapping object that is not serializable but dict like
-        return dict(sql_alchemy_object._mapping)
+        return {
+            k: v
+            for k, v in dict(sql_alchemy_object._mapping).items()
+            if not column_whitelist or k in column_whitelist
+        }
     elif isinstance(sql_alchemy_object, Base):
         return {
             c.name: getattr(sql_alchemy_object, c.name)
             for c in sql_alchemy_object.__table__.columns
+            if not column_whitelist or c.name in column_whitelist
         }
     else:
         return sql_alchemy_object
@@ -120,6 +165,15 @@ def to_frontend_obj(value: Union[List, Dict]):
         return {__to_camel_case(k): to_frontend_obj(v) for k, v in value.items()}
     elif is_list_like(value):
         return [to_frontend_obj(x) for x in value]
+    else:
+        return __to_json_serializable(value)
+
+
+def to_frontend_obj_raw(value: Union[List, Dict]):
+    if isinstance(value, dict):
+        return {k: to_frontend_obj_raw(v) for k, v in value.items()}
+    elif is_list_like(value):
+        return [to_frontend_obj_raw(x) for x in value]
     else:
         return __to_json_serializable(value)
 
