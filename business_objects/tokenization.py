@@ -9,6 +9,7 @@ from ..models import RecordAttributeTokenStatistics, RecordTokenized, Record
 from ..session import session
 
 from ..util import prevent_sql_injection
+from . import task_queue as task_queue_db_bo
 
 
 def get_records_tokenized(
@@ -219,7 +220,7 @@ def delete_tokenization_tasks(project_id: str, with_commit: bool = False) -> Non
     general.flush_or_commit(with_commit)
 
 
-def is_doc_bin_creation_running(project_id: str) -> bool:
+def is_doc_bin_creation_running_or_queued(project_id: str) -> bool:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
         SELECT id
@@ -229,7 +230,20 @@ def is_doc_bin_creation_running(project_id: str) -> bool:
         AND state IN ('{enums.TokenizerTask.STATE_IN_PROGRESS.value}', '{enums.TokenizerTask.STATE_CREATED.value}')
         LIMIT 1
     """
-    return general.execute_first(query) is not None
+    if general.execute_first(query) is not None:
+        return True
+
+    if (
+        len(
+            task_queue_db_bo.get_all_waiting_by_type(
+                project_id, enums.TaskType.TOKENIZATION
+            )
+        )
+        > 0
+    ):
+        return True
+
+    return False
 
 
 def is_doc_bin_creation_running_for_attribute(
