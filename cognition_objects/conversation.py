@@ -20,6 +20,18 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
     )
 
 
+def get_scoped(project_id: str, conversation_id: str, user_id) -> CognitionConversation:
+    return (
+        session.query(CognitionConversation)
+        .filter(
+            CognitionConversation.project_id == project_id,
+            CognitionConversation.id == conversation_id,
+            CognitionConversation.created_by == user_id,
+        )
+        .first()
+    )
+
+
 def get_count(project_id: str) -> int:
     return (
         session.query(CognitionConversation)
