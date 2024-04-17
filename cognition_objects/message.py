@@ -76,7 +76,8 @@ def get_message_feedback_overview(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     only_with_feedback: bool = True,
-) -> List[Dict[str, Any]]:
+    as_query: bool = False,
+) -> Union[str, List[Dict[str, Any]]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
 
@@ -141,6 +142,8 @@ def get_message_feedback_overview(
     {where_add}
     ORDER BY mo.created_at DESC
     """
+    if as_query:
+        return query
     return general.execute_all(query)
 
 
