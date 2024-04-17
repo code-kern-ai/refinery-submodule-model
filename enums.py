@@ -565,6 +565,10 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.TMP_DOC_RETRIEVAL: "Retrieving facts from conversation specific documents",
 }
 
+STEP_ERRORS = {
+    StrategyStepType.HEADER.value: "Header must come after an LLM node.",
+}
+
 
 class PipelineStep(Enum):
     INCOMING_QUESTION = "INCOMING_QUESTION"
