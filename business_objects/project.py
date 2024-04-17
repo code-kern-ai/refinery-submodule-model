@@ -427,6 +427,7 @@ def delete_by_id(project_id: str, with_commit: bool = False) -> None:
         FROM pg_depend d
         INNER JOIN pg_constraint c on c.oid = objid
         INNER JOIN relations on d.refobjid = relations.conrelid and d.deptype = 'n'
+        WHERE relations.deep < 20
         )        
         
     SELECT rel.*,col.column_name
