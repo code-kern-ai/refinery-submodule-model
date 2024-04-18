@@ -495,7 +495,8 @@ class SampleProjectType(Enum):
 
 class StrategyStepType(Enum):
     RETRIEVAL = "RETRIEVAL"
-    RELEVANCE = "RELEVANCE"
+    # unused option that was never fully implemented
+    # RELEVANCE = "RELEVANCE"
     NONE = "NONE"
     PYTHON = "PYTHON"
     LLM = "LLM"
@@ -521,7 +522,7 @@ class StrategyStepType(Enum):
 
 STEP_DESCRIPTIONS = {
     StrategyStepType.RETRIEVAL: "Fetch facts from a DB",
-    StrategyStepType.RELEVANCE: "Classify retrieved facts",
+    # StrategyStepType.RELEVANCE: "Classify retrieved facts",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Custom python function",
     StrategyStepType.LLM: "Answer with LLM",
@@ -536,7 +537,7 @@ STEP_DESCRIPTIONS = {
 
 STEP_WHEN_TO_USE = {
     StrategyStepType.RETRIEVAL: "When you want to retrieve facts from a database",
-    StrategyStepType.RELEVANCE: "When you want to classify retrieved facts",
+    # StrategyStepType.RELEVANCE: "When you want to classify retrieved facts",
     StrategyStepType.PYTHON: "When you want to run a custom python function",
     StrategyStepType.LLM: "When you want to give an actual answer to the question",
     StrategyStepType.NONE: "Dummy step",
@@ -551,7 +552,7 @@ STEP_WHEN_TO_USE = {
 
 STEP_PROGRESS_TEXTS = {
     StrategyStepType.RETRIEVAL: "Retrieving facts",
-    StrategyStepType.RELEVANCE: "Classifying facts",
+    # StrategyStepType.RELEVANCE: "Classifying facts",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Running custom python function",
     StrategyStepType.LLM: "Running LLM",
@@ -562,6 +563,10 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
     StrategyStepType.HEADER: "Headline generation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Retrieving facts from conversation specific documents",
+}
+
+STEP_ERRORS = {
+    StrategyStepType.HEADER.value: "Header must come after field answer is set in the record_dict.",
 }
 
 

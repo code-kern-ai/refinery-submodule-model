@@ -73,22 +73,27 @@ def get_by_strategy_id(project_id: str, strategy_id: str) -> CognitionMessage:
 
 def get_message_feedback_overview(
     project_id: str,
-    start_date: Optional[int] = None,
-    to_date: Optional[int] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     only_with_feedback: bool = True,
-) -> List[Dict[str, Any]]:
+    as_query: bool = False,
+) -> Union[str, List[Dict[str, Any]]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
 
     if only_with_feedback:
         where_add += "AND (mo.feedback_value IS NOT NULL OR y.has_error)"
-    if start_date is not None:
-        start_date = prevent_sql_injection(start_date, isinstance(start_date, int))
-        if to_date is not None:
-            to_date = prevent_sql_injection(to_date, isinstance(to_date, int))
-            where_add = f"AND mo.created_at BETWEEN TO_TIMESTAMP({start_date} / 1000.0) AND TO_TIMESTAMP({to_date} / 1000.0)"
-        else:
-            where_add = f"AND mo.created_at >= TO_TIMESTAMP({start_date} / 1000.0)"
+
+    if start_date and end_date:
+        start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
+        end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
+        where_add += f"AND mo.created_at BETWEEN '{start_date}' AND '{end_date}'"
+    elif start_date:
+        start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
+        where_add += f"AND mo.created_at >= '{start_date}'"
+    elif end_date:
+        end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
+        where_add += f"AND mo.created_at <= '{end_date}'"
 
     query = f"""
     SELECT
@@ -137,6 +142,8 @@ def get_message_feedback_overview(
     {where_add}
     ORDER BY mo.created_at DESC
     """
+    if as_query:
+        return query
     return general.execute_all(query)
 
 
@@ -245,11 +252,26 @@ def get_conversations_messages_count(project_id: str) -> List[Dict[str, Any]]:
     return general.execute_all(query)
 
 
-def get_feedback_distribution(project_id: str) -> List[Tuple[str, Any]]:
+def get_feedback_distribution(
+    project_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None
+) -> List[Tuple[str, Any]]:
+    where_add = ""
+
+    if start_date and end_date:
+        start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
+        end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
+        where_add += f"AND created_at BETWEEN '{start_date}' AND '{end_date}'"
+    elif start_date:
+        start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
+        where_add += f"AND created_at >= '{start_date}'"
+    elif end_date:
+        end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
+        where_add += f"AND created_at <= '{end_date}'"
+
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
-    SELECT 
-    	feedback_value,
+    SELECT
+        feedback_value,
         feedbacks,
         feedbacks / percentage_count.c * 100 percentage
         FROM (
@@ -257,11 +279,11 @@ def get_feedback_distribution(project_id: str) -> List[Tuple[str, Any]]:
             FROM (
                 SELECT feedback_value
                 FROM cognition.message
-                WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL
+                WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL {where_add}
     )x
     GROUP BY feedback_value
     )x,
-    (SELECT COUNT(*)::FLOAT c FROM cognition.message WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL) percentage_count
+    (SELECT COUNT(*)::FLOAT c FROM cognition.message WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL {where_add} ) percentage_count
     """
     return general.execute_all(query)
 

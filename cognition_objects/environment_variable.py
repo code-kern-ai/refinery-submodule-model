@@ -108,7 +108,7 @@ def get_all_in_org(
     # collects everything (org and none or specific) from an org and ensures value is hidden
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     base_select_columns = general.construct_select_columns(
-        "environment_variable", "cognition", "ev", ["value", "organization_id"], 3
+        "environment_variable", "cognition", "ev", ["value", "organization_id"], None, 3
     )
 
     project_filter = ""

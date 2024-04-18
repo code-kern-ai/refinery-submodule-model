@@ -105,7 +105,9 @@ def get_project_users_overview(
             WHERE t.organization_id = '{organization_id}' {p_where}
         ) t
             ON u.id = t.user_id
-        WHERE u.organization_id = '{organization_id}' AND NOT (t.project_id IS NULL AND u.role = 'ANNOTATOR')
+        WHERE u.organization_id = '{organization_id}'
+        AND NOT (t.project_id IS NULL AND u.role = '{enums.UserRoles.ANNOTATOR.value}')
+        AND NOT u.role = '{enums.UserRoles.EXPERT.value}'
         GROUP BY 1,2 )x """
     values = general.execute_first(query)
     if values and values[0]:
