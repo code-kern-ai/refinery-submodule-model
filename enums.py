@@ -566,7 +566,7 @@ STEP_PROGRESS_TEXTS = {
 }
 
 STEP_ERRORS = {
-    StrategyStepType.HEADER.value: "Header must come after an LLM node.",
+    StrategyStepType.HEADER.value: "Header must come after field answer is set in the record_dict.",
 }
 
 
