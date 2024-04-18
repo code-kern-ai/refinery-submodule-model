@@ -596,6 +596,8 @@ def check_is_active(project_id: str, statistics_id: str) -> bool:
 def get_source_statistics(
     project_id: str, heuristic_id: str
 ) -> List[InformationSourceStatistics]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    heuristic_id = prevent_sql_injection(heuristic_id, isinstance(heuristic_id, str))
 
     query = f"""
         SELECT iss.id, iss.true_positives, iss.false_negatives, iss.false_positives, iss.record_coverage, iss.total_hits, iss.source_conflicts,json_build_object('name', ltl.name, 'color', ltl.color,'id', ltl.id) AS labeling_task_label
@@ -608,6 +610,9 @@ def get_source_statistics(
 
 
 def get_heuristic_id_with_most_recent_payload(project_id: str, heuristic_id: str):
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    heuristic_id = prevent_sql_injection(heuristic_id, isinstance(heuristic_id, str))
+
     base_columns = general.construct_select_columns("information_source", "public", "h")
     query = f"""
     SELECT {base_columns}, row_to_json(isp) last_payload        
