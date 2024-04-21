@@ -136,6 +136,7 @@ class Tablenames(Enum):
     WEBSOCKET_ACCESS = "websocket_access"
     CONSUMPTION_LOG = "consumption_log"
     CONSUMPTION_SUMMARY = "consumption_summary"
+    SPREADSHEET_SCHEMA = "spreadsheet_schema"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
