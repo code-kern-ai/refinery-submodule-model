@@ -825,7 +825,10 @@ def __get_order_by(project_id: str, first_x: int = 3) -> str:
         if order != "":
             order += ", "
         tmp = f"data->>'{x.name}'"
-        if x.data_type == "INTEGER":
+
+        r_id = attribute.get_running_id_name(project_id)
+        if x.data_type == "INTEGER" and x.name == r_id:
+            # only running_id gets cast as other aren't sure to be integers (e.g. empty fields)
             tmp = f"({tmp})::INTEGER"
         order += tmp
 
