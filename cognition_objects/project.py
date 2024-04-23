@@ -130,6 +130,48 @@ def get_all_for_synchronization_option(
     )
 
 
+def get_all_refinery_projects_for_type(
+    org_id: str, project_type: str
+) -> List[Dict[str, str]]:
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+
+    column_condition = ""
+    if project_type == "REFERENCE":
+        column_condition = "WHERE ARRAY['reference'] <@ has_columns"
+    elif project_type == "QUESTION":
+        column_condition = "WHERE ARRAY['question','answer_prev_1','question_prev_1','answer_prev_2','question_prev_2','answer_prev_3','question_prev_3'] <@ has_columns"
+    elif project_type == "RELEVANCE":
+        column_condition = "WHERE ARRAY['question','reference'] <@ has_columns"
+    else:
+        raise ValueError(f"Unknown project type {project_type}")
+
+    query = f"""
+    SELECT array_agg(row_to_json(z))
+    FROM (
+        SELECT p.id::TEXT "projectId", p.name
+        FROM project p
+        INNER JOIN (
+            SELECT project_id
+            FROM (
+                SELECT project_id, array_agg(a.NAME::TEXT) has_columns
+                FROM attribute a
+                INNER JOIN project p
+                    ON a.project_id = p.id AND p.organization_id = '{org_id}'
+                GROUP BY a.project_id
+            )x
+            {column_condition}
+        )y
+        ON y.project_id = p.id
+        WHERE p.organization_id = '{org_id}'
+        UNION ALL SELECT '_none', 'None'
+    )z """
+
+    values = general.execute_first(query)
+    if values and values[0]:
+        return values[0]
+    return []
+
+
 EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE = """from typing import Dict, Any, Tuple
 
 def check_execute(
@@ -200,6 +242,9 @@ def update(
     allow_file_upload: Optional[bool] = None,
     max_file_size_mb: Optional[float] = None,
     open_ai_env_var_id: Optional[str] = None,
+    refinery_references_project_id: Optional[str] = None,
+    refinery_question_project_id: Optional[str] = None,
+    refinery_relevance_project_id: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -235,6 +280,21 @@ def update(
         project.max_file_size_mb = max_file_size_mb
     if open_ai_env_var_id is not None:
         project.open_ai_env_var_id = open_ai_env_var_id
+    if refinery_references_project_id is not None:
+        if refinery_references_project_id == "_none":
+            project.refinery_references_project_id = None
+        else:
+            project.refinery_references_project_id = refinery_references_project_id
+    if refinery_question_project_id is not None:
+        if refinery_question_project_id == "_none":
+            project.refinery_question_project_id = None
+        else:
+            project.refinery_question_project_id = refinery_question_project_id
+    if refinery_relevance_project_id is not None:
+        if refinery_relevance_project_id == "_none":
+            project.refinery_relevance_project_id = None
+        else:
+            project.refinery_relevance_project_id = refinery_relevance_project_id
     general.flush_or_commit(with_commit)
     return project
 
