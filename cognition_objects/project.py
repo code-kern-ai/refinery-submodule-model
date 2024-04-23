@@ -135,7 +135,7 @@ EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE = """from typing import Dict, Any, Tuple
 def check_execute(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
 ) -> bool:
-    return True
+    return False
 
 """
 
