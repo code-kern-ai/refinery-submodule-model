@@ -1514,6 +1514,26 @@ class CognitionRefinerySynchronizationTask(Base):
     logs = Column(ARRAY(String))
     num_records_created = Column(Integer)
 
+class CognitionAction(Base):
+    __tablename__ = Tablenames.ACTION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    description = Column(String)
+    questions = Column(ARRAY(String))
+    on_enter_send_message = Column(Boolean, default=False)
+
 
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
