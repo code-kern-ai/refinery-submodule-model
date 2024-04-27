@@ -46,12 +46,14 @@ def create(
     return action
 
 
-def delete_all_by_project_id(
+def delete_by_ids(
     project_id: str,
+    ids: List[str],
     with_commit: bool = True,
 ) -> None:
     session.query(CognitionAction).filter(
         CognitionAction.project_id == project_id,
+        CognitionAction.id.in_(ids),
     ).delete()
 
     general.flush_or_commit(with_commit)
