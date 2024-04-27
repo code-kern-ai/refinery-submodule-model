@@ -18,6 +18,18 @@ def get_all_by_project_id(
         .all()
     )
 
+def get(
+    project_id: str,
+    action_id: str,
+) -> CognitionAction:
+    return (
+        session.query(CognitionAction)
+        .filter(
+            CognitionAction.project_id == project_id,
+            CognitionAction.id == action_id,
+        )
+        .first()
+    )
 
 
 def create(

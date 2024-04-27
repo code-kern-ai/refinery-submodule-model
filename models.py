@@ -1205,6 +1205,11 @@ class CognitionConversation(Base):
     error = Column(String)
     has_tmp_files = Column(Boolean, default=False)
     archived = Column(Boolean, default=False)
+    action_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.ACTION.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
 
 
 class CognitionMessage(Base):

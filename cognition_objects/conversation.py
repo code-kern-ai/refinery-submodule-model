@@ -144,6 +144,7 @@ def create(
     project_id: str,
     user_id: str,
     has_tmp_files: bool = False,
+    action_id: Optional[str] = None,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionConversation:
@@ -152,6 +153,7 @@ def create(
         created_by=user_id,
         created_at=created_at,
         has_tmp_files=has_tmp_files,
+        action_id=action_id,
         scope_dict={},
     )
     general.add(conversation, with_commit)
