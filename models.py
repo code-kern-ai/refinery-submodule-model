@@ -1534,6 +1534,7 @@ class CognitionSpreadsheetSchema(Base):
     data_type = Column(String)
     is_input = Column(Boolean, default=False)
     is_hidden = Column(Boolean, default=False)
+    width = Column(Integer, default=500)
 
 
 class GlobalWebsocketAccess(Base):
