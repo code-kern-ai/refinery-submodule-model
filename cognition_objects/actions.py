@@ -58,6 +58,30 @@ def create(
     return action
 
 
+def update(
+    project_id: str,
+    action_id: str,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    questions: Optional[Dict[str, Any]] = None,
+    on_enter_send_message: Optional[bool] = None,
+    with_commit: bool = True,
+) -> CognitionAction:
+    action = get(project_id, action_id)
+
+    if name is not None:
+        action.name = name
+    if description is not None:
+        action.description = description
+    if questions is not None:
+        action.questions = questions
+    if on_enter_send_message is not None:
+        action.on_enter_send_message = on_enter_send_message
+
+    general.add(action, with_commit)
+    return action
+
+
 def delete_by_ids(
     project_id: str,
     ids: List[str],
