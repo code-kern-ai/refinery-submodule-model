@@ -7,17 +7,17 @@ from ..util import prevent_sql_injection
 
 
 def get_all_by_conversation_id(
-    project_id: str, conversation_id: str
+    project_id: str, conversation_id: str, action_id: Optional[str] = None
 ) -> List[CognitionMessage]:
-    return (
-        session.query(CognitionMessage)
-        .filter(
-            CognitionMessage.project_id == project_id,
-            CognitionMessage.conversation_id == conversation_id,
-        )
-        .order_by(CognitionMessage.created_at.asc())
-        .all()
+    
+    query = session.query(CognitionMessage).filter(
+        CognitionMessage.project_id == project_id,
+        CognitionMessage.conversation_id == conversation_id,
     )
+    if action_id:
+        query = query.filter(CognitionMessage.action_id == action_id)
+
+    return query.order_by(CognitionMessage.created_at.asc()).all()
 
 
 def get_last_by_conversation_id(
