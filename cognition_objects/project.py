@@ -194,8 +194,10 @@ def create(
     refinery_relevances_project_id: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
+    routing_source_code: Optional[str] = None,
 ) -> CognitionProject:
-    operator_routing_source_code = """from typing import Dict, Any, Tuple
+    if routing_source_code is None:
+        routing_source_code = """from typing import Dict, Any, Tuple
 
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
@@ -219,7 +221,7 @@ def routing(
         refinery_references_project_id=refinery_references_project_id,
         refinery_question_project_id=refinery_queries_project_id,
         refinery_relevance_project_id=refinery_relevances_project_id,
-        operator_routing_source_code=operator_routing_source_code,
+        operator_routing_source_code=routing_source_code,
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
         execute_query_enrichment_if_source_code=EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE,
     )
