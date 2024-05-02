@@ -332,6 +332,7 @@ def remove(
 
 def get_payload_with_heuristic_type(project_id: str, payload_id: str):
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    payload_id = prevent_sql_injection(payload_id, isinstance(payload_id, str))
     query = f"""
     SELECT isp.id,isp.created_at,isp.state,isp.logs,isp.iteration, json_build_object('type', is2."type") as information_source
     FROM information_source_payload isp 
