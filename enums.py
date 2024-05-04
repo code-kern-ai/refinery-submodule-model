@@ -662,6 +662,7 @@ class ConsumptionLogState(Enum):
 class CognitionConfigKey(Enum):
     STRATEGY_COMPLEXITY_THRESHOLD = "STRATEGY_COMPLEXITY_THRESHOLD"
     STRATEGY_STEP_WEIGHTS = "STRATEGY_STEP_WEIGHTS"
+    STRATEGY_STEP_TIERS = "STRATEGY_STEP_TIERS"
 
 
 # note this is only for websocket interaction between exec env and gateway
