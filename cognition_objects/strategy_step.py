@@ -44,6 +44,17 @@ def get_first_llm_step_from_project(project_id: str) -> CognitionStrategyStep:
         .first()
     )
 
+def get_first_basic_rag_step_from_project(project_id: str) -> CognitionStrategyStep:
+    # only viable directly after project creation since this returns the first (and only) step
+    return (
+        session.query(CognitionStrategyStep)
+        .filter(
+            CognitionStrategyStep.project_id == project_id,
+            CognitionStrategyStep.step_type == StrategyStepType.BASIC_RAG.value,
+        )
+        .first()
+    )
+
 
 EXECUTE_IF_SOURCE_CODE = """from typing import Dict, Any, Tuple
 
