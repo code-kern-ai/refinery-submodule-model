@@ -249,6 +249,7 @@ def update(
     refinery_references_project_id: Optional[str] = None,
     refinery_question_project_id: Optional[str] = None,
     refinery_relevance_project_id: Optional[str] = None,
+    tier: Optional[int] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -299,6 +300,8 @@ def update(
             project.refinery_relevance_project_id = None
         else:
             project.refinery_relevance_project_id = refinery_relevance_project_id
+    if tier is not None:
+        project.tier = tier
     general.flush_or_commit(with_commit)
     return project
 
