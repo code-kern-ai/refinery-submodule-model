@@ -512,6 +512,8 @@ class StrategyStepType(Enum):
     # INFO: done in exec env to prevent installing sklearn in gateway
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
 
+    BASIC_RAG = "BASIC_RAG"
+
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
 
@@ -535,6 +537,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
     StrategyStepType.HEADER: "Writing header",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Temporary document retrieval",
+    StrategyStepType.BASIC_RAG: "Basic RAG",
 }
 
 STEP_WHEN_TO_USE = {
@@ -550,6 +553,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
     StrategyStepType.HEADER: "When you want to set a header based on the conversation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "When you want to retrieve results from conversation specific documents",
+    StrategyStepType.BASIC_RAG: "When you want to use a basic RAG model",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -565,6 +569,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
     StrategyStepType.HEADER: "Headline generation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Retrieving facts from conversation specific documents",
+    StrategyStepType.BASIC_RAG: "Running RAG model",
 }
 
 STEP_ERRORS = {
