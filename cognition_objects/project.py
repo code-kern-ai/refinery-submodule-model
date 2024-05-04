@@ -192,6 +192,7 @@ def create(
     refinery_references_project_id: str,
     refinery_queries_project_id: str,
     refinery_relevances_project_id: str,
+    tier: int,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     routing_source_code: Optional[str] = None,
@@ -224,6 +225,7 @@ def routing(
         operator_routing_source_code=routing_source_code,
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
         execute_query_enrichment_if_source_code=EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE,
+        tier=tier,
     )
     general.add(project, with_commit)
     return project

@@ -1132,6 +1132,8 @@ class CognitionProject(Base):
         index=True,
     )
 
+    tier = Column(Integer, default=1)
+
 
 class CognitionStrategy(Base):
     __tablename__ = Tablenames.STRATEGY.value
