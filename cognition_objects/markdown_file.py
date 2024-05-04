@@ -50,6 +50,22 @@ def get_all_for_dataset_id(
     return query.all()
 
 
+def get_all_for_dataset_id_by_ids(
+    org_id: str,
+    dataset_id: str,
+    md_file_ids: List[str],
+) -> List[CognitionMarkdownFile]:
+    return (
+        session.query(CognitionMarkdownFile)
+        .filter(
+            CognitionMarkdownFile.organization_id == org_id,
+            CognitionMarkdownFile.dataset_id == dataset_id,
+            CognitionMarkdownFile.id.in_(md_file_ids),
+        )
+        .all()
+    )
+
+
 def __get_enriched_query(
     org_id: str,
     md_file_id: Optional[str] = None,
