@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, Dict, Union
+from typing import List, Optional, Any, Dict, Union, Set
 from sqlalchemy.sql import func
 from sqlalchemy import cast, Integer
 from sqlalchemy.sql.functions import coalesce
@@ -155,6 +155,10 @@ def get_all_by_user_organization_id(organization_id: str) -> List[Project]:
 
 def get_all_all() -> List[Project]:
     return session.query(Project).all()
+
+
+def get_all_all_ids() -> Set[str]:
+    return {str(p.id) for p in session.query(Project.id).all()}
 
 
 def get_blank_tokenizer_from_project(project_id: str) -> str:
