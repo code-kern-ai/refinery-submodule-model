@@ -100,9 +100,9 @@ def get_message_feedback_overview(
         COALESCE(feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END) feedback_value_or_error, 
         feedback_message, 
         CASE WHEN feedback_value='negative' THEN feedback_category ELSE NULL END feedback_category,
-        question, 
-        answer,
-        x.full_conversation_text,
+        REGEXP_REPLACE(question, \'[\\000-\\010]|[\\013-\\014]|[\\016-\\037]\',\'\',\'\') question,
+        REGEXP_REPLACE(answer, \'[\\000-\\010]|[\\013-\\014]|[\\016-\\037]\',\'\',\'\') answer,
+        REGEXP_REPLACE(x.full_conversation_text, \'[\\000-\\010]|[\\013-\\014]|[\\016-\\037]\',\'\',\'\') full_conversation_text,
         json_build_object(
             'message_id',mo.id,
             'conversation_id',mo.conversation_id,
@@ -142,6 +142,7 @@ def get_message_feedback_overview(
     {where_add}
     ORDER BY mo.created_at DESC
     """
+    print(query, flush=True)
     if as_query:
         return query
     return general.execute_all(query)
