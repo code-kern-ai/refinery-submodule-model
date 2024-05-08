@@ -66,7 +66,10 @@ def create(
     progress_text: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
+    execute_if_source_code: Optional[str] = None,
 ) -> CognitionStrategyStep:
+    if not execute_if_source_code:
+        execute_if_source_code = EXECUTE_IF_SOURCE_CODE
     strategy: CognitionStrategyStep = CognitionStrategyStep(
         project_id=project_id,
         strategy_id=strategy_id,
@@ -78,7 +81,7 @@ def create(
         position=position,
         config=config,
         progress_text=progress_text,
-        execute_if_source_code=EXECUTE_IF_SOURCE_CODE,
+        execute_if_source_code=execute_if_source_code,
     )
     general.add(strategy, with_commit)
 
