@@ -138,12 +138,10 @@ class Tablenames(Enum):
     CONSUMPTION_SUMMARY = "consumption_summary"
 
     def snake_case_to_pascal_case(self):
-        # the type name of a table is needed to create backrefs
-        # in order to call them via GraphQL; type names are written in PascalCase
+        # the type name (written in PascalCase) of a table is needed to create backrefs
         return "".join([word.title() for word in self.value.split("_")])
 
     def snake_case_to_camel_case(self):
-        # GraphQL needs camel case for resolving
         return "".join(
             [
                 word.title() if idx > 0 else word.lower()
