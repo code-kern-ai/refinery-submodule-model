@@ -119,8 +119,7 @@ def __build_sql_data_slices_by_project(project_id: str) -> str:
         data_slice
             ON project.id = data_slice.project_id
     WHERE
-        project.id = '{project_id}'::UUID;
-            """
+        project.id = '{project_id}'::UUID; """
 
 
 def get_org_id(project_id: str) -> str:
