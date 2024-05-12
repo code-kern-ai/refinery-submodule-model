@@ -46,6 +46,19 @@ def get_nodes_for_action(
         .all()
     )
 
+def get_node_by_id(
+    project_id: str,
+    node_id: str,
+) -> CognitionQuestionNode:
+    return (
+        session.query(CognitionQuestionNode)
+        .filter(
+            CognitionQuestionNode.id == node_id,
+            CognitionQuestionNode.project_id == project_id,
+        )
+        .first()
+    )
+
 def get_edges_for_action(
     project_id: str,
     action_id: str,
@@ -59,6 +72,69 @@ def get_edges_for_action(
         .order_by(CognitionQuestionEdge.created_at.asc())
         .all()
     )
+
+def get_edges_leading_to_nodes(
+    project_id: str,
+    action_id: str,
+    node_ids: List[str],
+) -> List[CognitionQuestionEdge]:
+    return (
+        session.query(CognitionQuestionEdge)
+        .filter(
+            CognitionQuestionEdge.action_id == action_id,
+            CognitionQuestionEdge.project_id == project_id,
+            CognitionQuestionEdge.to_node_id.in_(node_ids),
+        )
+        .order_by(CognitionQuestionEdge.created_at.asc())
+        .all()
+    )
+
+def get_root_node_of_action(
+    project_id: str,
+    action_id: str,
+) -> CognitionQuestionNode:
+    return (
+        session.query(CognitionQuestionNode)
+        .filter(
+            CognitionQuestionNode.action_id == action_id,
+            CognitionQuestionNode.project_id == project_id,
+            CognitionQuestionNode.root == True,
+        )
+        .first()
+    )
+
+def get_children_of_node(
+    project_id: str,
+    action_id: str,
+    node_id: str,
+) -> List[CognitionQuestionNode]:
+    # Fetch the IDs of nodes that are children of the specified node_id
+    child_node_ids = (
+        session.query(CognitionQuestionEdge.to_node_id)
+        .filter(
+            CognitionQuestionEdge.action_id == action_id,
+            CognitionQuestionEdge.project_id == project_id,
+            CognitionQuestionEdge.from_node_id == node_id,
+        )
+        .all()
+    )
+    # Convert list of tuples to list of ids
+    child_node_ids = [id[0] for id in child_node_ids]
+
+    # Fetch the node entities for these child IDs
+    if child_node_ids:
+        return (
+            session.query(CognitionQuestionNode)
+            .filter(
+                CognitionQuestionNode.id.in_(child_node_ids),
+                CognitionQuestionNode.action_id == action_id,
+                CognitionQuestionNode.project_id == project_id,
+            )
+            .order_by(CognitionQuestionNode.created_at.asc())
+            .all()
+        )
+    else:
+        return []
 
 def create(
     project_id: str,
