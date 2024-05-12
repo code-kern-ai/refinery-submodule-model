@@ -1559,6 +1559,7 @@ class CognitionQuestionNode(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     question = Column(String)
+    root = Column(Boolean)
     position_x = Column(Integer)
     position_y = Column(Integer)
 

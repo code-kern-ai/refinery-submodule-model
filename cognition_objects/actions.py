@@ -94,6 +94,7 @@ def add_nodes_and_edges(action, project_entity, user_id, nodes, edges, with_comm
             question=node.question,
             position_x=node.positionX,
             position_y=node.positionY,
+            root=node.root,
             project_id=project_entity.id,
             created_by=user_id,
         )
