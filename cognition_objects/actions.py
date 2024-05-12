@@ -4,7 +4,7 @@ from ..cognition_objects import project
 from ..session import session
 from ..models import CognitionAction, CognitionQuestionNode, CognitionQuestionEdge
 from datetime import datetime
-
+from sqlalchemy import or_
 
 def get_all_by_project_id(
     project_id: str,
@@ -105,6 +105,8 @@ def add_nodes_and_edges(action, project_entity, user_id, nodes, edges, with_comm
         id_mapping_list[node_arg.id] = node_entity.id
     edges_entity_list = []
     for edge in edges:
+        if edge.from_node_id not in id_mapping_list or edge.to_node_id not in id_mapping_list:
+            continue # Skip edges that have nodes that were not created
         edge_entity = CognitionQuestionEdge(
             action_id=action.id,
             from_node_id=id_mapping_list[edge.from_node_id],
@@ -173,6 +175,22 @@ def delete_nodes_of_action(
     ).delete()
     general.flush_or_commit(with_commit)
 
+def delete_node(   
+    project_id: str,
+    action_id: str,
+    node_id: str,
+    with_commit: bool = True,
+) -> None:
+    
+    delete_edges_of_node(project_id, action_id, node_id, with_commit)
+
+    session.query(CognitionQuestionNode).filter(
+        CognitionQuestionNode.id == node_id,
+        CognitionQuestionNode.action_id == action_id,
+        CognitionQuestionNode.project_id == project_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
+
 def delete_edges_of_action(
     project_id: str,
     action_id: str,
@@ -183,3 +201,30 @@ def delete_edges_of_action(
         CognitionQuestionEdge.project_id == project_id,
     ).delete()
     general.flush_or_commit(with_commit)
+
+def delete_edges_of_node(
+    project_id: str,
+    action_id: str,
+    node_id: str,
+    with_commit: bool = True,
+) -> None:
+    session.query(CognitionQuestionEdge).filter(
+        CognitionQuestionEdge.action_id == action_id,
+        CognitionQuestionEdge.project_id == project_id,
+        or_(CognitionQuestionEdge.from_node_id == node_id, CognitionQuestionEdge.to_node_id == node_id),
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+def delete_edge(
+    project_id: str,
+    action_id: str,
+    edge_id: str,
+    with_commit: bool = True,
+) -> None:
+    session.query(CognitionQuestionEdge).filter(
+        CognitionQuestionEdge.id == edge_id,
+        CognitionQuestionEdge.action_id == action_id,
+        CognitionQuestionEdge.project_id == project_id,
+    ).delete()
+    general.flush_or_commit(with_commit
+)
