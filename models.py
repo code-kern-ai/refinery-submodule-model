@@ -1536,8 +1536,63 @@ class CognitionAction(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
-    questions = Column(ARRAY(String))
-    on_enter_send_message = Column(Boolean, default=False)
+
+class CognitionQuestionNode(Base):
+    __tablename__ = Tablenames.QUESTION_NODE.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    action_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.ACTION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    question = Column(String)
+    position_x = Column(Integer)
+    position_y = Column(Integer)
+
+class CognitionQuestionEdge(Base):
+    __tablename__ = Tablenames.QUESTION_EDGE.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    action_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.ACTION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    from_node_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.QUESTION_NODE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    to_node_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.QUESTION_NODE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    condition = Column(String)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
 
 
 class GlobalWebsocketAccess(Base):

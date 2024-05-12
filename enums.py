@@ -137,6 +137,8 @@ class Tablenames(Enum):
     CONSUMPTION_LOG = "consumption_log"
     CONSUMPTION_SUMMARY = "consumption_summary"
     ACTION = "action"
+    QUESTION_NODE = "question_node"
+    QUESTION_EDGE = "question_edge"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
