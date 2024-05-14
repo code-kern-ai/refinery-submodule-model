@@ -14,6 +14,7 @@ from .enums import (
     AdminMessageLevel,
     CognitionProjectState,
     StrategyComplexity,
+    AdminLogLevel,
 )
 from sqlalchemy import (
     JSON,
@@ -150,6 +151,9 @@ class Organization(Base):
     max_rows = Column(Integer, default=50000)
     max_cols = Column(Integer, default=25)
     max_char_count = Column(Integer, default=100000)
+
+    # designed as opt out to ensure "forgotten" doesn't result in issues
+    log_admin_requests = Column(String, default=AdminLogLevel.NO_GET.value)
 
 
 class User(Base):
