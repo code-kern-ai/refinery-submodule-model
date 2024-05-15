@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, Dict, Union
+from typing import List, Optional, Any, Dict, Union, Set
 from sqlalchemy.sql import func
 from sqlalchemy import cast, Integer
 from sqlalchemy.sql.functions import coalesce
@@ -119,8 +119,7 @@ def __build_sql_data_slices_by_project(project_id: str) -> str:
         data_slice
             ON project.id = data_slice.project_id
     WHERE
-        project.id = '{project_id}'::UUID;
-            """
+        project.id = '{project_id}'::UUID; """
 
 
 def get_org_id(project_id: str) -> str:
@@ -155,6 +154,10 @@ def get_all_by_user_organization_id(organization_id: str) -> List[Project]:
 
 def get_all_all() -> List[Project]:
     return session.query(Project).all()
+
+
+def get_all_all_ids() -> Set[str]:
+    return {str(p.id) for p in session.query(Project.id).all()}
 
 
 def get_blank_tokenizer_from_project(project_id: str) -> str:
