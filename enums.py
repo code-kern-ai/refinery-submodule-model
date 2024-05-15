@@ -676,3 +676,19 @@ def try_parse_enum_value(string: str, enumType: Enum, raise_me: bool = True) -> 
             raise ValueError(f"Invalid value {string} for enum {enumType}")
         return
     return parsed
+
+
+# this is only a method check.
+# Some endpoints were implemented as POST requests to allow a body even though they are not creating anything
+# Example comment/all-comments. For these i added a dependency extend_state_get_like with sets a state variable to use as indicator
+class AdminLogLevel(Enum):
+    DONT_LOG = "DONT_LOG"  # nothing is logged
+    NO_GET = "NO_GET"  # everything but method GET is logged
+    ALL = "ALL"  # everything is logged
+
+    def log_me(self, method: str) -> bool:
+        if self == AdminLogLevel.DONT_LOG:
+            return False
+        if self == AdminLogLevel.NO_GET and method == "GET":
+            return False
+        return True

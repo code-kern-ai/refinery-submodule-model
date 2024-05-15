@@ -93,6 +93,15 @@ def __get_organization_overview_stats_query(organization_id: str):
     """
 
 
+def log_admin_requests(org_id: str) -> str:  # enum AdminLogLevel
+    if not org_id:
+        # e.g. not assigned to an organization = not logged
+        return None
+    if o := get(org_id):
+        return o.log_admin_requests
+    return None
+
+
 def create(
     name: str,
     started_at: Optional[datetime] = None,
