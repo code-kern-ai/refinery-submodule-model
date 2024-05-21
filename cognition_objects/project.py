@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from ..business_objects import general, team_resource, user
 from ..cognition_objects import consumption_log, consumption_summary
 from ..session import session
@@ -6,6 +6,7 @@ from ..models import CognitionProject, TeamMember, TeamResource
 from .. import enums
 from datetime import datetime
 from ..util import prevent_sql_injection
+from sqlalchemy.orm.attributes import flag_modified
 
 
 def get(project_id: str) -> CognitionProject:
@@ -94,7 +95,7 @@ def get_project_users_overview(
         SELECT COALESCE(t.project_id::TEXT,'ENGINEERING_TEAM') ind, u.role, count(DISTINCT u.id) c
         FROM public.user u
         LEFT JOIN (
-            SELECT 
+            SELECT
                 tr.resource_id project_id,
                 tm.user_id
             FROM team t
@@ -181,6 +182,24 @@ def check_execute(
 
 """
 
+ROUTING_SOURCE_CODE_DEFAULT = """from typing import Dict, Any, Tuple
+
+def routing(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> Tuple[str, Dict[str, Any]]:
+    if True: # add a condition here to differentiate when to use what strategy
+        record_dict['routing'] = 'Common RAG'
+    else:
+        record_dict['routing'] = 'Low-code strategy'
+    return record_dict, scope_dict
+
+"""
+
+DEFAULT_MACRO_CONFIG = {
+    "enable": False,
+    "show": enums.AdminMacrosDisplay.DONT_SHOW.value,
+}
+
 
 def create(
     name: str,
@@ -195,21 +214,12 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     routing_source_code: Optional[str] = None,
+    macro_config: Optional[Dict[str, Any]] = None,
 ) -> CognitionProject:
     if routing_source_code is None:
-        routing_source_code = """from typing import Dict, Any, Tuple
-
-def routing(
-    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
-) -> Tuple[str, Dict[str, Any]]:
-    if True: # add a condition here to differentiate when to use what strategy
-        record_dict['routing'] = 'Common RAG'
-    else:
-        record_dict['routing'] = 'Low-code strategy'
-    return record_dict, scope_dict
-
-"""
-
+        routing_source_code = ROUTING_SOURCE_CODE_DEFAULT
+    if macro_config is None:
+        macro_config = DEFAULT_MACRO_CONFIG
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
@@ -224,6 +234,7 @@ def routing(
         operator_routing_source_code=routing_source_code,
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
         execute_query_enrichment_if_source_code=EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE,
+        macro_config=macro_config,
     )
     general.add(project, with_commit)
     return project
@@ -247,6 +258,7 @@ def update(
     refinery_references_project_id: Optional[str] = None,
     refinery_question_project_id: Optional[str] = None,
     refinery_relevance_project_id: Optional[str] = None,
+    macro_config: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -297,6 +309,16 @@ def update(
             project.refinery_relevance_project_id = None
         else:
             project.refinery_relevance_project_id = refinery_relevance_project_id
+    if macro_config is not None:
+        new_values = project.macro_config
+        if new_values is None:
+            new_values = DEFAULT_MACRO_CONFIG
+        for key in macro_config:
+            new_values[key] = macro_config[key]
+
+        project.macro_config = new_values
+        print(new_values, flush=True)
+        flag_modified(project, "macro_config")
     general.flush_or_commit(with_commit)
     return project
 

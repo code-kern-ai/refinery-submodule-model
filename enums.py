@@ -709,3 +709,11 @@ class MacroType(Enum):
 class MacroNodeContentType(Enum):
     # add a new question to the conversation
     CONVERSATION_QUESTION = "CONVERSATION_QUESTION"
+
+
+class AdminMacrosDisplay(Enum):
+    # add a new question to the conversation
+    DONT_SHOW = "DONT_SHOW"
+    FOR_ADMINS = "FOR_ADMINS"
+    FOR_ENGINEERS = "FOR_ENGINEERS"
+    FOR_ALL = "FOR_ALL"
