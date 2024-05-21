@@ -1135,6 +1135,8 @@ class CognitionProject(Base):
         ),
         index=True,
     )
+    # holds e.g. show, admin macro setting etc.
+    macro_config = Column(JSON)
 
 
 class CognitionStrategy(Base):
@@ -1538,6 +1540,9 @@ class CognitionMacro(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
+
+    # used for grouping in ui or exclusion from display, can be any text
+    group_key = Column(String)
 
 
 class CognitionMacroNode(Base):
