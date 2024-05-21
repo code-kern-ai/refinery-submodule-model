@@ -1630,6 +1630,7 @@ class CognitionMacroExecution(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+    state = Column(String)  # e.g. CREATED, FINISHED, FAILED
     # additional data for the execution, e.g. file name
     meta_info = Column(JSON)
 
