@@ -1519,6 +1519,134 @@ class CognitionRefinerySynchronizationTask(Base):
     num_records_created = Column(Integer)
 
 
+class CognitionMacro(Base):
+    __tablename__ = Tablenames.MACRO.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    macro_type = Column(String)  # enums.MacroType
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,  # ADMIN MACROS dont have a project_id
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    description = Column(String)
+
+
+class CognitionMacroNode(Base):
+    __tablename__ = Tablenames.MACRO_NODE.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    macro_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    is_root = Column(Boolean)  # to easily filter outside of config
+    config = Column(JSON)
+    # example config:
+    # {
+    #     "name": "dummy",
+    #     "content": {"type": enums.MacroNodeContentType, "question": "hello"},
+    #     "position": {"x": 0, "y": 0},
+    # }
+
+
+class CognitionMacroEdge(Base):
+    __tablename__ = Tablenames.MACRO_EDGE.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    macro_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    from_node_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO_NODE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    to_node_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO_NODE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    config = Column(JSON)
+    # example config:
+    # {"type": "LLM_CONDITION", "input": "document is invoice", "system_prompt": <default | default_keep | custom> }
+
+
+class CognitionMacroExecution(Base):
+    __tablename__ = Tablenames.MACRO_EXECUTION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    macro_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    # additional data for the execution, e.g. file name
+    meta_info = Column(JSON)
+
+
+class CognitionMacroExecutionLink(Base):
+    __tablename__ = Tablenames.MACRO_EXECUTION_LINK.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    execution_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.MACRO_EXECUTION.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    action = Column(String)  # CREATE, UPDATE, DELETE
+    other_id_target = Column(String)  # enums.Tablenames, currently only conversation
+    other_id = Column(UUID(as_uuid=True), index=True)
+
+
+# =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
     # to ensure stateless communication, the configuration is stored in the database
