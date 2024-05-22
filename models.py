@@ -1538,11 +1538,13 @@ class CognitionMacro(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    name = Column(String)
-    description = Column(String)
-
+    state = Column(String)  # enums.MacroState
+    scope = Column(String)  # enums.MacroScope
     # used for grouping in ui or exclusion from display, can be any text
     group_key = Column(String)
+
+    name = Column(String)
+    description = Column(String)
 
 
 class CognitionMacroNode(Base):

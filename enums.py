@@ -711,8 +711,18 @@ class MacroNodeContentType(Enum):
     CONVERSATION_QUESTION = "CONVERSATION_QUESTION"
 
 
+class MacroScope(Enum):
+    ADMIN = "ADMIN"
+    ORGANIZATION = "ORGANIZATION"
+    PROJECT = "PROJECT"
+
+
+class MacroState(Enum):
+    DEVELOPMENT = "DEVELOPMENT"
+    PRODUCTION = "PRODUCTION"
+
+
 class AdminMacrosDisplay(Enum):
-    # add a new question to the conversation
     DONT_SHOW = "DONT_SHOW"
     FOR_ADMINS = "FOR_ADMINS"
     FOR_ENGINEERS = "FOR_ENGINEERS"
