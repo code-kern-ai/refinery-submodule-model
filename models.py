@@ -1526,6 +1526,13 @@ class CognitionMacro(Base):
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     macro_type = Column(String)  # enums.MacroType
+    scope = Column(String, index=True)  # enums.MacroScope
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,  # ADMIN MACROS dont have a org_id
+    )
     project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
@@ -1539,7 +1546,6 @@ class CognitionMacro(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     state = Column(String)  # enums.MacroState
-    scope = Column(String)  # enums.MacroScope
     # used for grouping in ui or exclusion from display, can be any text
     group_key = Column(String)
 
