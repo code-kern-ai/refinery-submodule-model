@@ -1578,8 +1578,10 @@ class CognitionMacroNode(Base):
     # example config:
     # {
     #     "name": "dummy",
-    #     "content": {"type": enums.MacroNodeContentType, "question": "hello"},
+    #     "content_type": enums.MacroNodeContentType.QUESTION,
+    #     "content": { "question": "hello"},
     #     "position": {"x": 0, "y": 0},
+    #     "root": true,
     # }
 
 
@@ -1615,7 +1617,10 @@ class CognitionMacroEdge(Base):
     created_at = Column(DateTime, default=sql.func.now())
     config = Column(JSON)
     # example config:
-    # {"type": "LLM_CONDITION", "input": "document is invoice", "system_prompt": <default | default_keep | custom> }
+    # {
+    #  "condition_type": "LLM_CONDITION",
+    #  "condition":{ "input": "document is invoice", "system_prompt": <default | default_keep | custom> },
+    # }
 
 
 class CognitionMacroExecution(Base):
