@@ -711,6 +711,12 @@ class MacroNodeContentType(Enum):
     CONVERSATION_QUESTION = "CONVERSATION_QUESTION"
 
 
+# currently only one option, but could be extended in the future
+class MacroEdgeConditionType(Enum):
+    # all edges from a given node are collected and an llm decides which to chose based on the name of the edge
+    LLM_SELECTION = "LLM_SELECTION"
+
+
 class MacroScope(Enum):
     ADMIN = "ADMIN"
     ORGANIZATION = "ORGANIZATION"

@@ -1537,7 +1537,7 @@ class CognitionMacro(Base):
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
-        nullable=True,  # ADMIN MACROS dont have a project_id
+        nullable=True,  # ADMIN or ORGANIZATION MACROS dont have a project_id
     )
     created_by = Column(
         UUID(as_uuid=True),
@@ -1546,9 +1546,6 @@ class CognitionMacro(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     state = Column(String)  # enums.MacroState
-    # used for grouping in ui or exclusion from display, can be any text
-    group_key = Column(String)
-
     name = Column(String)
     description = Column(String)
 
@@ -1578,10 +1575,9 @@ class CognitionMacroNode(Base):
     # example config:
     # {
     #     "name": "dummy",
-    #     "content_type": enums.MacroNodeContentType.QUESTION,
+    #     "content_type": enums.MacroNodeContentType.CONVERSATION_QUESTION,
     #     "content": { "question": "hello"},
     #     "position": {"x": 0, "y": 0},
-    #     "root": true,
     # }
 
 
@@ -1618,8 +1614,8 @@ class CognitionMacroEdge(Base):
     config = Column(JSON)
     # example config:
     # {
-    #  "condition_type": "LLM_CONDITION",
-    #  "condition":{ "input": "document is invoice", "system_prompt": <default | default_keep | custom> },
+    #  "condition_type": enums.MacroEdgeConditionType.LLM_SELECTION
+    #  "condition":{ "option": "document is invoice" },
     # }
 
 
