@@ -103,7 +103,7 @@ def sql_alchemy_to_dict(
     return result
 
 
-def pack_as_graphql(result, graphql_method_name: str, max_lvl: Optional[int] = None):
+def pack_edges_node(result, name: str, max_lvl: Optional[int] = None):
 
     def convert_value(value, max_lvl: int):
         new_lvl = max_lvl - 1 if max_lvl is not None else None
@@ -132,7 +132,7 @@ def pack_as_graphql(result, graphql_method_name: str, max_lvl: Optional[int] = N
         else:
             return value
 
-    return {"data": {graphql_method_name: convert_value(result, max_lvl)}}
+    return {"data": {name: convert_value(result, max_lvl)}}
 
 
 def __sql_alchemy_to_dict(
