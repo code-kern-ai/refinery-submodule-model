@@ -103,3 +103,9 @@ def __remove_old_user_activity_entries(
     WHERE ua.id = helper.id; """
     general.execute(query)
     general.flush_or_commit(with_commit)
+
+
+def delete_user_activity(user_id: str, with_commit: bool = False) -> None:
+    query = f"DELETE FROM user_activity WHERE created_by = '{user_id}'"
+    general.execute(query)
+    general.flush_or_commit(with_commit)
