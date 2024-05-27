@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Tuple, Dict, Any, Iterable
 from datetime import datetime
 
 from ..business_objects import general
@@ -21,6 +21,8 @@ from ..enums import (
 )
 from ..util import prevent_sql_injection
 from . import project
+from sqlalchemy import or_, and_
+from sqlalchemy.orm.attributes import flag_modified
 
 
 def get(id: str) -> CognitionMacro:
@@ -31,6 +33,30 @@ def get(id: str) -> CognitionMacro:
         )
         .first()
     )
+
+
+def get_with_nodes_and_edges(macro_id: str) -> Dict[str, Any]:
+    macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
+    query = f"""
+    SELECT row_to_json(x)
+    FROM (
+        SELECT M.*, me.edges, mn.nodes
+        FROM cognition.macro M,
+        (
+            SELECT array_agg(row_to_json(me.*)) edges
+            FROM cognition.macro_edge me
+            WHERE me.macro_id = '{macro_id}'
+        ) me,
+        (
+            SELECT array_agg(row_to_json(mn.*)) nodes
+            FROM cognition.macro_node mn
+            WHERE mn.macro_id = '{macro_id}'
+        ) mn
+        WHERE m.id = '{macro_id}' )x """
+    result = general.execute_first(query)
+    if result and result[0]:
+        return result[0]
+    return None
 
 
 def get_overview_for_all_for_me(
@@ -48,7 +74,12 @@ def get_overview_for_all_for_me(
 def __get_admin_macros_for_me(
     user: User, is_admin: bool, project: CognitionProject
 ) -> List[CognitionMacro]:
-    if not project.macro_config or not (show := project.macro_config.get("show")):
+
+    if (
+        not project
+        or not project.macro_config
+        or not (show := project.macro_config.get("show"))
+    ):
         return []
 
     if (
@@ -159,3 +190,129 @@ def create_edge(
     general.add(edge, with_commit)
 
     return edge
+
+
+def delete_macros(
+    org_id: str,
+    ids: Iterable[str],
+    is_admin: bool,
+    user: User,
+    with_commit: bool = True,
+    # returns the ids that couldn't be deleted
+) -> List[str]:
+    #
+    query = session.query(CognitionMacro).filter(
+        CognitionMacro.id.in_(ids),
+        or_(
+            CognitionMacro.organization_id == org_id,
+            and_(
+                CognitionMacro.scope == MacroScope.ADMIN.value,
+                CognitionMacro.organization_id.is_(None),
+            ),
+        ),
+    )
+    # filter_org =
+    if user.role != UserRoles.ENGINEER.value:
+        # can only delete their own macros
+        query = query.filter(CognitionMacro.created_by == user.id)
+    if not is_admin:
+        # can't delete admin macros
+        query = query.filter(CognitionMacro.scope != MacroScope.ADMIN.value)
+    query.delete()
+    general.flush_or_commit(with_commit)
+
+    objs = session.query(CognitionMacro.id).filter(CognitionMacro.id.in_(ids)).all()
+    return [str(obj.id) for obj in objs]
+
+
+# creates, updates, deletes nodes based on the updated_nodes list
+def match_nodes(
+    macro_id: str, update_nodes: List[Dict[str, Any]], with_commit: bool = False
+) -> None:
+
+    current: List[CognitionMacroNode] = (
+        session.query(CognitionMacroNode)
+        .filter(
+            CognitionMacroNode.macro_id == macro_id,
+        )
+        .all()
+    )
+
+    # dict to get values
+    wanted = {n["id"]: n for n in update_nodes}
+    # set for faster lookup
+    found = {str(n.id) for n in current}
+    # lists for faster generation
+    to_delete = [id for id in found if id not in wanted]
+    to_update = [n for n in current if str(n.id) in wanted]
+    to_create = [n for n in update_nodes if n["id"] not in found]
+
+    session.query(CognitionMacroNode).filter(
+        CognitionMacroNode.id.in_(to_delete),
+    ).delete(synchronize_session=False)
+
+    for node in to_update:
+        update_values = wanted.get(str(node.id))
+        if not update_values:
+            raise ValueError(f"Node with id {node.id} not found in update_nodes")
+        node.is_root = update_values["is_root"]
+        node.config = update_values["config"]
+        flag_modified(node, "config")
+
+    for node in to_create:
+        create_node(
+            macro_id=macro_id,
+            created_by=node["created_by"],
+            is_root=node["is_root"],
+            config=node["config"],
+            id=node["id"],
+            with_commit=False,
+        )
+
+    general.flush_or_commit(with_commit)
+
+
+# creates, updates, deletes edges based on the update_edges list
+def match_edges(
+    macro_id: str, update_edges: List[Dict[str, Any]], with_commit: bool = False
+) -> None:
+    current: List[CognitionMacroEdge] = (
+        session.query(CognitionMacroEdge)
+        .filter(
+            CognitionMacroEdge.macro_id == macro_id,
+        )
+        .all()
+    )
+    # dict to get values
+    wanted = {e["id"]: e for e in update_edges}
+    # set for faster lookup
+    found = {str(e.id) for e in current}
+    # lists for faster generation
+    to_delete = [id for id in found if id not in wanted]
+    to_update = [e for e in current if e.id in wanted]
+    to_create = [e for e in update_edges if e["id"] not in found]
+    for edge in to_update:
+        update_values = wanted.get(str(edge.id))
+        if not update_values:
+            raise ValueError(f"Edge with id {edge.id} not found in update_edges")
+        edge.from_node_id = update_values["from_node_id"]
+        edge.to_node_id = update_values["to_node_id"]
+        edge.config = update_values["config"]
+        flag_modified(edge, "config")
+
+    for edge in to_create:
+        create_edge(
+            macro_id=macro_id,
+            from_node_id=edge["from_node_id"],
+            to_node_id=edge["to_node_id"],
+            created_by=edge["created_by"],
+            config=edge["config"],
+            id=edge["id"],
+            with_commit=False,
+        )
+
+    session.query(CognitionMacroEdge).filter(
+        CognitionMacroEdge.id.in_(to_delete),
+    ).delete(synchronize_session=False)
+
+    general.flush_or_commit(with_commit)
