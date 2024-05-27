@@ -1640,6 +1640,7 @@ class CognitionMacroExecutionLink(Base):
         ),
         index=True,
     )
+
     action = Column(String)  # CREATE, UPDATE, DELETE
     other_id_target = Column(String)  # enums.Tablenames, currently only conversation
     other_id = Column(UUID(as_uuid=True), index=True)
