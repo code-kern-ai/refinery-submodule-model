@@ -1628,6 +1628,13 @@ class CognitionMacroExecution(Base):
     # additional data for the execution, e.g. file name
     meta_info = Column(JSON)
 
+    # used for comparison groups. N files => 1 execution group
+    # "who was started together"
+    execution_group_id = Column(
+        UUID(as_uuid=True),
+        index=True,
+    )
+
 
 class CognitionMacroExecutionLink(Base):
     __tablename__ = Tablenames.MACRO_EXECUTION_LINK.value
