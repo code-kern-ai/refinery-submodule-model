@@ -1625,15 +1625,12 @@ class CognitionMacroExecution(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     state = Column(String)  # e.g. CREATED, FINISHED, FAILED
-    # additional data for the execution, e.g. file name
-    meta_info = Column(JSON)
 
     # used for comparison groups. N files => 1 execution group
     # "who was started together"
-    execution_group_id = Column(
-        UUID(as_uuid=True),
-        index=True,
-    )
+    execution_group_id = Column(UUID(as_uuid=True), index=True, default=uuid.uuid4)
+    # additional data for the execution, e.g. file name
+    meta_info = Column(JSON)
 
 
 class CognitionMacroExecutionLink(Base):

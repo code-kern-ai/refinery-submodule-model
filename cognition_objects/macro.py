@@ -60,19 +60,24 @@ def get_with_nodes_and_edges(macro_id: str) -> Dict[str, Any]:
 
 
 def get_overview_for_all_for_me(
-    user: User, is_admin: bool, project_id: Optional[str] = None
+    user: User,
+    is_admin: bool,
+    project_id: Optional[str] = None,
+    only_production: bool = False,
 ) -> List[CognitionMacro]:
     project_item = project.get(project_id) if project_id else None
     final_list = []
-    final_list = __get_admin_macros_for_me(user, is_admin, project_item)
-    final_list.extend(__get_org_macros_for_me(user))
+    final_list = __get_admin_macros_for_me(
+        user, is_admin, project_item, only_production
+    )
+    final_list.extend(__get_org_macros_for_me(user, only_production))
     if project_id:
-        final_list.extend(__get_project_macros_for_me(project_item))
+        final_list.extend(__get_project_macros_for_me(project_item, only_production))
     return final_list
 
 
 def __get_admin_macros_for_me(
-    user: User, is_admin: bool, project: CognitionProject
+    user: User, is_admin: bool, project: CognitionProject, only_production: bool
 ) -> List[CognitionMacro]:
 
     if (
@@ -91,34 +96,39 @@ def __get_admin_macros_for_me(
         )
     ):
         return []
-    return (
-        session.query(CognitionMacro)
-        .filter(CognitionMacro.scope == MacroScope.ADMIN.value)
-        .all()
+    query = session.query(CognitionMacro).filter(
+        CognitionMacro.scope == MacroScope.ADMIN.value
     )
 
+    if only_production:
+        query = query.filter(CognitionMacro.state == MacroState.PRODUCTION.value)
 
-def __get_org_macros_for_me(user: User) -> List[CognitionMacro]:
-    return (
-        session.query(CognitionMacro)
-        .filter(
-            CognitionMacro.scope == MacroScope.ORGANIZATION.value,
-            CognitionMacro.organization_id == user.organization_id,
-        )
-        .all()
+    return query.all()
+
+
+def __get_org_macros_for_me(user: User, only_production: bool) -> List[CognitionMacro]:
+    query = session.query(CognitionMacro).filter(
+        CognitionMacro.scope == MacroScope.ORGANIZATION.value,
+        CognitionMacro.organization_id == user.organization_id,
     )
+    if only_production:
+        query = query.filter(CognitionMacro.state == MacroState.PRODUCTION.value)
+
+    return query.all()
 
 
-def __get_project_macros_for_me(project: CognitionProject) -> List[CognitionMacro]:
-    return (
-        session.query(CognitionMacro)
-        .filter(
-            CognitionMacro.scope == MacroScope.PROJECT.value,
-            CognitionMacro.organization_id == project.organization_id,
-            CognitionMacro.project_id == project.id,
-        )
-        .all()
+def __get_project_macros_for_me(
+    project: CognitionProject, only_production: bool
+) -> List[CognitionMacro]:
+    query = session.query(CognitionMacro).filter(
+        CognitionMacro.scope == MacroScope.PROJECT.value,
+        CognitionMacro.organization_id == project.organization_id,
+        CognitionMacro.project_id == project.id,
     )
+    if only_production:
+        query = query.filter(CognitionMacro.state == MacroState.PRODUCTION.value)
+
+    return query.all()
 
 
 def create_macro(
