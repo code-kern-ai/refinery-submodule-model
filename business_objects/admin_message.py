@@ -26,6 +26,7 @@ def create(
     text: str,
     level: str,
     archive_date: int,
+    scheduled_date: int,
     created_by: str,
     with_commit: bool = False,
 ) -> AdminMessage:
@@ -33,6 +34,7 @@ def create(
         text=text,
         level=level,
         archive_date=archive_date,
+        scheduled_date=scheduled_date,
         created_by=created_by,
     )
     general.add(message, with_commit)
