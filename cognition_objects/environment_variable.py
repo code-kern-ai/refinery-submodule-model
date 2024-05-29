@@ -102,12 +102,14 @@ def get_all_by_org_id(org_id: str) -> List[CognitionEnvironmentVariable]:
     )
 
 
-def get_by_org_env_id(org_id: str, env_id: str) -> List[CognitionEnvironmentVariable]:
+def get_all_by_org_env_id(
+    org_id: str, env_id: str
+) -> List[CognitionEnvironmentVariable]:
     return (
         session.query(CognitionEnvironmentVariable)
         .filter(CognitionEnvironmentVariable.organization_id == org_id)
         .filter(CognitionEnvironmentVariable.id == env_id)
-        .first()
+        .all()
     )
 
 
