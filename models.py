@@ -1058,6 +1058,7 @@ class AdminMessage(Base):
         index=True,
     )
     archived_reason = Column(String)
+    scheduled_date = Column(DateTime)
 
 
 class TaskQueue(Base):
