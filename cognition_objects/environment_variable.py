@@ -80,7 +80,7 @@ def get_cognition_project_env_var_value(cognition_project_id: str) -> str:
         session.query(CognitionEnvironmentVariable.value)
         .join(
             CognitionProject,
-            CognitionProject.open_ai_env_var_id == CognitionEnvironmentVariable.id,
+            CognitionProject.env_var_id == CognitionEnvironmentVariable.id,
         )
         .filter(
             CognitionProject.id == cognition_project_id,
