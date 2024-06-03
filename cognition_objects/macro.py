@@ -78,6 +78,26 @@ def get_overview_for_all_for_me(
     return final_list
 
 
+def get_all_macro_executions(
+    macro_id: str,
+    execution_group_id: str,
+    state: Optional[Union[MacroExecutionState, List[MacroExecutionState]]] = None,
+) -> List[CognitionMacroExecution]:
+
+    query = session.query(CognitionMacroExecution).filter(
+        CognitionMacroExecution.macro_id == macro_id,
+        CognitionMacroExecution.execution_group_id == execution_group_id,
+    )
+    if state:
+        if is_list_like(state):
+            query = query.filter(
+                CognitionMacroExecution.state.in_([s.value for s in state])
+            )
+        else:
+            query = query.filter(CognitionMacroExecution.state == state.value)
+    return query.all()
+
+
 def get_macro_execution(
     execution_id: str,
     execution_group_id: str,
@@ -98,13 +118,16 @@ def get_macro_execution(
     return query.first()
 
 
-def macro_execution_group_finished(macro_id: str, execution_group_id: str) -> bool:
+def macro_execution_finished(
+    macro_id: str, execution_id: str, execution_group_id: str
+) -> bool:
     return (
         session.query(CognitionMacroExecution)
         .filter(
+            CognitionMacroExecution.id == execution_id,
             CognitionMacroExecution.macro_id == macro_id,
             CognitionMacroExecution.execution_group_id == execution_group_id,
-            CognitionMacroExecution.state._in(
+            CognitionMacroExecution.state.in_(
                 [MacroExecutionState.CREATED.value, MacroExecutionState.RUNNING.value]
             ),
         )
