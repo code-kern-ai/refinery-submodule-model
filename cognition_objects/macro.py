@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Dict, Any, Iterable
+from typing import List, Optional, Tuple, Dict, Any, Iterable, Union
 from datetime import datetime
 
 from ..business_objects import general
@@ -21,7 +21,7 @@ from ..enums import (
     MacroState,
     MacroExecutionState,
 )
-from ..util import prevent_sql_injection
+from ..util import prevent_sql_injection, is_list_like
 from . import project
 from sqlalchemy import or_, and_
 from sqlalchemy.orm.attributes import flag_modified
@@ -76,6 +76,41 @@ def get_overview_for_all_for_me(
     if project_id:
         final_list.extend(__get_project_macros_for_me(project_item, only_production))
     return final_list
+
+
+def get_macro_execution(
+    execution_id: str,
+    execution_group_id: str,
+    state: Optional[Union[MacroExecutionState, List[MacroExecutionState]]] = None,
+) -> CognitionMacroExecution:
+
+    query = session.query(CognitionMacroExecution).filter(
+        CognitionMacroExecution.id == execution_id,
+        CognitionMacroExecution.execution_group_id == execution_group_id,
+    )
+    if state:
+        if is_list_like(state):
+            query = query.filter(
+                CognitionMacroExecution.state.in_([s.value for s in state])
+            )
+        else:
+            query = query.filter(CognitionMacroExecution.state == state.value)
+    return query.first()
+
+
+def macro_execution_group_finished(macro_id: str, execution_group_id: str) -> bool:
+    return (
+        session.query(CognitionMacroExecution)
+        .filter(
+            CognitionMacroExecution.macro_id == macro_id,
+            CognitionMacroExecution.execution_group_id == execution_group_id,
+            CognitionMacroExecution.state._in(
+                [MacroExecutionState.CREATED.value, MacroExecutionState.RUNNING.value]
+            ),
+        )
+        .first()
+        is None
+    )
 
 
 def __get_admin_macros_for_me(

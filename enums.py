@@ -465,6 +465,7 @@ class TaskType(Enum):
     PARSE_COGNITION_TMP_FILE = "PARSE_COGNITION_TMP_FILE"
     TASK_QUEUE = "task_queue"
     TASK_QUEUE_ACTION = "task_queue_action"
+    RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
 
 
 class TaskQueueAction(Enum):
