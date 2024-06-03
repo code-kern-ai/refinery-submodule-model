@@ -726,6 +726,13 @@ class MacroState(Enum):
     PRODUCTION = "PRODUCTION"
 
 
+class MacroExecutionState(Enum):
+    CREATED = "CREATED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
 class AdminMacrosDisplay(Enum):
     DONT_SHOW = "DONT_SHOW"
     FOR_ADMINS = "FOR_ADMINS"

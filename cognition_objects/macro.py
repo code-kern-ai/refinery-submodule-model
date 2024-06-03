@@ -9,6 +9,7 @@ from ..models import (
     CognitionMacro,
     User,
     CognitionProject,
+    CognitionMacroExecution,
 )
 from ..enums import (
     Tablenames,
@@ -18,6 +19,7 @@ from ..enums import (
     MacroScope,
     MacroType,
     MacroState,
+    MacroExecutionState,
 )
 from ..util import prevent_sql_injection
 from . import project
@@ -326,3 +328,24 @@ def match_edges(
     ).delete(synchronize_session=False)
 
     general.flush_or_commit(with_commit)
+
+
+def create_macro_execution(
+    macro_id: str,
+    created_by: str,
+    state: MacroExecutionState,  # CREATED, FINISHED, FAILED
+    execution_group_id: str,
+    meta_info: Dict[str, Any],
+    with_commit: bool = False,
+) -> CognitionMacroExecution:
+    mac = CognitionMacroExecution(
+        macro_id=macro_id,
+        created_by=created_by,
+        state=state.value,
+        execution_group_id=execution_group_id,
+        meta_info=meta_info,
+    )
+
+    general.add(mac, with_commit)
+
+    return mac
