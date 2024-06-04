@@ -734,6 +734,12 @@ class MacroExecutionState(Enum):
     FAILED = "FAILED"
 
 
+class MacroExecutionLinkAction(Enum):
+    CREATE = "CREATE"
+    DELETE = "DELETE"
+    UPDATE = "UPDATE"
+
+
 class AdminMacrosDisplay(Enum):
     DONT_SHOW = "DONT_SHOW"
     FOR_ADMINS = "FOR_ADMINS"

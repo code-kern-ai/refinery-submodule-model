@@ -1644,9 +1644,15 @@ class CognitionMacroExecutionLink(Base):
         ),
         index=True,
     )
+    execution_node_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO_NODE.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,  # e.g. for a conversation itself (hull, not the messages)
+    )
 
     action = Column(String)  # CREATE, UPDATE, DELETE
-    other_id_target = Column(String)  # enums.Tablenames, currently only conversation
+    other_id_target = Column(String)  # enums.Tablenames, currently conversation/message
     other_id = Column(UUID(as_uuid=True), index=True)
 
 

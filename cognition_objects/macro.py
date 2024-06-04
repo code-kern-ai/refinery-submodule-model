@@ -1,6 +1,4 @@
-from typing import List, Optional, Tuple, Dict, Any, Iterable, Union
-from datetime import datetime
-
+from typing import List, Optional, Dict, Any, Iterable, Union
 from ..business_objects import general
 from ..session import session
 from ..models import (
@@ -10,16 +8,17 @@ from ..models import (
     User,
     CognitionProject,
     CognitionMacroExecution,
+    CognitionMacroExecutionLink,
 )
 from ..enums import (
-    Tablenames,
-    MarkdownFileCategoryOrigin,
     AdminMacrosDisplay,
     UserRoles,
     MacroScope,
     MacroType,
     MacroState,
     MacroExecutionState,
+    MacroExecutionLinkAction,
+    Tablenames,
 )
 from ..util import prevent_sql_injection, is_list_like
 from . import project
@@ -189,6 +188,69 @@ def __get_project_macros_for_me(
         query = query.filter(CognitionMacro.state == MacroState.PRODUCTION.value)
 
     return query.all()
+
+
+def get_macro_executions_grouped(
+    macro_id: str,
+    only_org_id: Optional[str] = None,
+    only_prj_id: Optional[str] = None,
+    only_mine: bool = True,
+):
+    # note that the filter for org & proj is done via the conversation for other types this probably needs to be extended
+    macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
+
+    macro_item = get(macro_id)
+    if (
+        not macro_item
+        or macro_item.macro_type != MacroType.DOCUMENT_MESSAGE_QUEUE.value
+    ):
+        raise ValueError(f"Macro with id {macro_id} not found or wrong type")
+
+    where_add = ""
+    if only_mine:
+        where_add += f"AND me.created_by = '{macro_item.created_by}'"
+
+    if only_org_id:
+        only_org_id = prevent_sql_injection(only_org_id, isinstance(only_org_id, str))
+        where_add += f" AND p.organization_id = '{only_org_id}'"
+    if only_prj_id:
+        only_prj_id = prevent_sql_injection(only_prj_id, isinstance(only_prj_id, str))
+        where_add += f" AND p.id = '{only_prj_id}'"
+
+    query = f"""
+    SELECT row_to_json(x)
+    FROM (
+        SELECT
+            COALESCE(con.org_name,'deleted conversation') org_name,
+            COALESCE(con.project_name,'deleted conversation') project_name,
+            me.execution_group_id,
+            MIN(me.created_at),
+            array_agg(
+                jsonb_build_object(
+                    'deleted',con.id IS NULL,
+                    'conversation_id', mel.other_id::TEXT,
+                    'execution_id', me.id::TEXT,
+                    'created_by', me.created_by)
+                ) info
+        FROM cognition.macro_execution me
+        INNER JOIN cognition.macro_execution_link mel
+            ON me.id = mel.execution_id AND mel.other_id_target = '{Tablenames.CONVERSATION.value}'
+        INNER JOIN (
+            SELECT
+                con.id, p.name project_name, o.name org_name
+            FROM cognition.conversation con
+            LEFT JOIN cognition.project p
+                ON con.project_id = p.id
+            LEFT JOIN organization o
+                ON p.organization_id = o.id
+        ) con
+            ON mel.other_id = con.id
+        WHERE me.macro_id = '{macro_id}' {where_add}
+        GROUP BY 1,2,3 )x """
+
+    result = general.execute_first(query)
+    if result and result[0]:
+        return result[0]
 
 
 def create_macro(
@@ -404,6 +466,27 @@ def create_macro_execution(
         meta_info=meta_info,
     )
 
+    general.add(mac, with_commit)
+
+    return mac
+
+
+def create_macro_execution_link(
+    execution_id: str,
+    action: MacroExecutionLinkAction,  # CREATED, FINISHED, FAILED
+    other_id_target: Tablenames,
+    other_id: str,
+    with_commit: bool = True,
+) -> CognitionMacroExecutionLink:
+    if other_id_target.value != Tablenames.CONVERSATION.value:
+        raise ValueError("Only conversation is currently supported as other_id_target")
+
+    mac = CognitionMacroExecutionLink(
+        execution_id=execution_id,
+        action=action.value,
+        other_id_target=other_id_target.value,
+        other_id=other_id,
+    )
     general.add(mac, with_commit)
 
     return mac
