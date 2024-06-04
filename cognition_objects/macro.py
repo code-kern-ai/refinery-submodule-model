@@ -471,6 +471,9 @@ def create_macro_execution(
     return mac
 
 
+ALLOWED = {Tablenames.CONVERSATION.value, Tablenames.MESSAGE.value}
+
+
 def create_macro_execution_link(
     execution_id: str,
     action: MacroExecutionLinkAction,  # CREATED, FINISHED, FAILED
@@ -478,7 +481,7 @@ def create_macro_execution_link(
     other_id: str,
     with_commit: bool = True,
 ) -> CognitionMacroExecutionLink:
-    if other_id_target.value != Tablenames.CONVERSATION.value:
+    if other_id_target.value not in ALLOWED:
         raise ValueError("Only conversation is currently supported as other_id_target")
 
     mac = CognitionMacroExecutionLink(
