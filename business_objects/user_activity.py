@@ -4,6 +4,7 @@ from typing import List, Any
 from submodules.model import models
 
 from submodules.model.business_objects import user
+from submodules.model.util import prevent_sql_injection
 
 from .. import UserActivity
 from ..business_objects import general
@@ -106,6 +107,7 @@ def __remove_old_user_activity_entries(
 
 
 def delete_user_activity(user_id: str, with_commit: bool = False) -> None:
+    user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
     query = f"DELETE FROM user_activity WHERE created_by = '{user_id}'"
     general.execute(query)
     general.flush_or_commit(with_commit)
