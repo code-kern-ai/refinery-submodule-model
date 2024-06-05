@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Iterable
 from ..business_objects import general, team_resource, user
 from ..cognition_objects import consumption_log, consumption_summary
 from ..session import session
@@ -55,6 +55,15 @@ def get_all(org_id: str, order_by_name: bool = False) -> List[CognitionProject]:
 
 def get_all_all() -> List[CognitionProject]:
     return session.query(CognitionProject).all()
+
+
+def get_lookup_by_ids(ids: Iterable[str]) -> Dict[str, CognitionProject]:
+    return {
+        str(e.id): e
+        for e in session.query(CognitionProject)
+        .filter(CognitionProject.id.in_(ids))
+        .all()
+    }
 
 
 def get_all_by_user(org_id: str, user_id: str) -> List[CognitionProject]:

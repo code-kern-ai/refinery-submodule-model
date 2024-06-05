@@ -190,67 +190,67 @@ def __get_project_macros_for_me(
     return query.all()
 
 
-def get_macro_executions_grouped(
-    macro_id: str,
-    only_org_id: Optional[str] = None,
-    only_prj_id: Optional[str] = None,
-    only_mine: bool = True,
-):
-    # note that the filter for org & proj is done via the conversation for other types this probably needs to be extended
-    macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
+# def get_macro_executions_grouped(
+#     macro_id: str,
+#     only_org_id: Optional[str] = None,
+#     only_prj_id: Optional[str] = None,
+#     only_mine: bool = True,
+# ):
+#     # note that the filter for org & proj is done via the conversation for other types this probably needs to be extended
+#     macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
 
-    macro_item = get(macro_id)
-    if (
-        not macro_item
-        or macro_item.macro_type != MacroType.DOCUMENT_MESSAGE_QUEUE.value
-    ):
-        raise ValueError(f"Macro with id {macro_id} not found or wrong type")
+#     macro_item = get(macro_id)
+#     if (
+#         not macro_item
+#         or macro_item.macro_type != MacroType.DOCUMENT_MESSAGE_QUEUE.value
+#     ):
+#         raise ValueError(f"Macro with id {macro_id} not found or wrong type")
 
-    where_add = ""
-    if only_mine:
-        where_add += f"AND me.created_by = '{macro_item.created_by}'"
+#     where_add = ""
+#     if only_mine:
+#         where_add += f"AND me.created_by = '{macro_item.created_by}'"
 
-    if only_org_id:
-        only_org_id = prevent_sql_injection(only_org_id, isinstance(only_org_id, str))
-        where_add += f" AND p.organization_id = '{only_org_id}'"
-    if only_prj_id:
-        only_prj_id = prevent_sql_injection(only_prj_id, isinstance(only_prj_id, str))
-        where_add += f" AND p.id = '{only_prj_id}'"
+#     if only_org_id:
+#         only_org_id = prevent_sql_injection(only_org_id, isinstance(only_org_id, str))
+#         where_add += f" AND p.organization_id = '{only_org_id}'"
+#     if only_prj_id:
+#         only_prj_id = prevent_sql_injection(only_prj_id, isinstance(only_prj_id, str))
+#         where_add += f" AND p.id = '{only_prj_id}'"
 
-    query = f"""
-    SELECT row_to_json(x)
-    FROM (
-        SELECT
-            COALESCE(con.org_name,'deleted conversation') org_name,
-            COALESCE(con.project_name,'deleted conversation') project_name,
-            me.execution_group_id,
-            MIN(me.created_at),
-            array_agg(
-                jsonb_build_object(
-                    'deleted',con.id IS NULL,
-                    'conversation_id', mel.other_id::TEXT,
-                    'execution_id', me.id::TEXT,
-                    'created_by', me.created_by)
-                ) info
-        FROM cognition.macro_execution me
-        INNER JOIN cognition.macro_execution_link mel
-            ON me.id = mel.execution_id AND mel.other_id_target = '{Tablenames.CONVERSATION.value}'
-        INNER JOIN (
-            SELECT
-                con.id, p.name project_name, o.name org_name
-            FROM cognition.conversation con
-            LEFT JOIN cognition.project p
-                ON con.project_id = p.id
-            LEFT JOIN organization o
-                ON p.organization_id = o.id
-        ) con
-            ON mel.other_id = con.id
-        WHERE me.macro_id = '{macro_id}' {where_add}
-        GROUP BY 1,2,3 )x """
+#     query = f"""
+#     SELECT array_agg(row_to_json(x))
+#     FROM (
+#         SELECT
+#             COALESCE(con.org_name,'deleted conversation') org_name,
+#             COALESCE(con.project_name,'deleted conversation') project_name,
+#             me.execution_group_id,
+#             MIN(me.created_at),
+#             array_agg(
+#                 jsonb_build_object(
+#                     'deleted',con.id IS NULL,
+#                     'conversation_id', mel.other_id::TEXT,
+#                     'execution_id', me.id::TEXT,
+#                     'created_by', me.created_by)
+#                 ) info
+#         FROM cognition.macro_execution me
+#         INNER JOIN cognition.macro_execution_link mel
+#             ON me.id = mel.execution_id AND mel.other_id_target = '{Tablenames.CONVERSATION.value}'
+#         INNER JOIN (
+#             SELECT
+#                 con.id, p.name project_name, o.name org_name
+#             FROM cognition.conversation con
+#             LEFT JOIN cognition.project p
+#                 ON con.project_id = p.id
+#             LEFT JOIN organization o
+#                 ON p.organization_id = o.id
+#         ) con
+#             ON mel.other_id = con.id
+#         WHERE me.macro_id = '{macro_id}' {where_add}
+#         GROUP BY 1,2,3 )x """
 
-    result = general.execute_first(query)
-    if result and result[0]:
-        return result[0]
+#     result = general.execute_first(query)
+#     if result and result[0]:
+#         return result[0]
 
 
 def create_macro(
@@ -479,6 +479,7 @@ def create_macro_execution_link(
     action: MacroExecutionLinkAction,  # CREATED, FINISHED, FAILED
     other_id_target: Tablenames,
     other_id: str,
+    execution_node_id: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionMacroExecutionLink:
     if other_id_target.value not in ALLOWED:
@@ -489,7 +490,96 @@ def create_macro_execution_link(
         action=action.value,
         other_id_target=other_id_target.value,
         other_id=other_id,
+        execution_node_id=execution_node_id,
     )
     general.add(mac, with_commit)
 
     return mac
+
+
+def get_all_executions_by_group_id(
+    macro_id: str, group_id: str
+) -> List[CognitionMacroExecution]:
+    return (
+        session.query(CognitionMacroExecution)
+        .filter(
+            CognitionMacroExecution.macro_id == macro_id,
+            CognitionMacroExecution.execution_group_id == group_id,
+        )
+        .all()
+    )
+
+
+def get_macro_execution_overview_for_document_message_queue(
+    macro_id: str,
+    only_org_id: Optional[str] = None,
+    only_prj_id: Optional[str] = None,
+    only_user_id: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+
+    macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
+
+    macro_item = get(macro_id)
+    if (
+        not macro_item
+        or macro_item.macro_type != MacroType.DOCUMENT_MESSAGE_QUEUE.value
+    ):
+        raise ValueError(f"Macro with id {macro_id} not found or wrong type")
+
+    where_add = ""
+    if only_user_id:
+        where_add += f"AND me.created_by = '{only_user_id}'"
+
+    if only_org_id:
+        only_org_id = prevent_sql_injection(only_org_id, isinstance(only_org_id, str))
+        where_add += f" AND p.organization_id = '{only_org_id}'"
+    if only_prj_id:
+        only_prj_id = prevent_sql_injection(only_prj_id, isinstance(only_prj_id, str))
+        where_add += f" AND p.id = '{only_prj_id}'"
+
+    query = f"""    
+    SELECT array_agg(to_jsonb(x) || to_jsonb(y))
+    FROM (
+        SELECT
+            me.macro_id,
+            me.meta_info->>'project_id' project_id,
+            --p.organization_id,
+            --p.id project_id,
+            me.execution_group_id group_id,
+            --min(m.name) macro_name,
+            --MIN(m.macro_type) macro_type,
+            array_agg(
+                jsonb_build_object(
+                    'state',me.state)
+                || me.meta_info::jsonb) executions
+        FROM cognition.macro M
+        INNER JOIN cognition.macro_execution me
+            ON m.id = me.macro_id
+        -- direct join via jsonfield doesn't work with sql alchemy so we use a different select for the names
+        --INNER JOIN project p
+        --    ON (me.meta_info->>'project_id')::UUID = p.id
+
+        WHERE m.id = '{macro_id}'
+            AND m.macro_type = '{MacroType.DOCUMENT_MESSAGE_QUEUE.value}'
+        {where_add}
+        GROUP BY 1,2,3
+    )x
+    INNER JOIN LATERAL (
+        -- min on uuid doesn't work so we use a lateral join to collect additional values
+        SELECT meOne.created_by::TEXT, meOne.created_at group_start
+        FROM cognition.macro_execution meOne
+        WHERE meOne.execution_group_id = x.group_id AND meOne.macro_id = x.macro_id
+        LIMIT 1
+    ) y
+        ON TRUE """
+    result = general.execute_first(query)
+    if result and result[0]:
+        project_ids = {e["project_id"] for e in result[0]}
+        project_lookup = project.get_lookup_by_ids(project_ids)
+        if len(project_lookup) != len(project_ids):
+            raise ValueError("Some projects not found")
+        for e in result[0]:
+            e["project_name"] = project_lookup[e["project_id"]].name
+            e["organization_id"] = str(project_lookup[e["project_id"]].organization_id)
+        return result[0]
+    return []
