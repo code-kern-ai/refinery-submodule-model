@@ -1614,6 +1614,11 @@ class CognitionMacroExecution(Base):
     __tablename__ = Tablenames.MACRO_EXECUTION.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     macro_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.MACRO.value}.id", ondelete="CASCADE"),
@@ -1638,6 +1643,12 @@ class CognitionMacroExecutionLink(Base):
     __tablename__ = Tablenames.MACRO_EXECUTION_LINK.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,  # ADMIN MACROS dont have a org_id
+    )
     execution_id = Column(
         UUID(as_uuid=True),
         ForeignKey(

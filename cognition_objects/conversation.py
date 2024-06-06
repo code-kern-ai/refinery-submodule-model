@@ -140,6 +140,33 @@ def get_all_paginated_by_project_id(
     return total_count, num_pages, paginated_result
 
 
+def has_error(project_id: str, conversation_id: str) -> bool:
+    conversation_item = get(project_id, conversation_id)
+    if conversation_item is None:
+        return False
+    if conversation_item.error is not None:
+        return True
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    conversation_id = prevent_sql_injection(
+        conversation_id, isinstance(conversation_id, str)
+    )
+    query = f"""
+    SELECT DISTINCT pl.has_error
+    FROM cognition.conversation C
+    INNER JOIN cognition.message M
+        ON c.project_id = m.project_id AND c.id = m.conversation_id
+    INNER JOIN cognition.pipeline_logs pl
+        ON m.project_id = pl.project_id AND m.id = pl.message_id
+    WHERE c.id = '{conversation_id}' AND c.project_id = '{project_id}'
+    ORDER BY 1 DESC -- true first
+    LIMIT 1 """
+
+    result = general.execute_first(query)
+    if result and result[0] == True:
+        return True
+    return False
+
+
 def create(
     project_id: str,
     user_id: str,

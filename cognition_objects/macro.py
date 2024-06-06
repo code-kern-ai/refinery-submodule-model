@@ -190,69 +190,6 @@ def __get_project_macros_for_me(
     return query.all()
 
 
-# def get_macro_executions_grouped(
-#     macro_id: str,
-#     only_org_id: Optional[str] = None,
-#     only_prj_id: Optional[str] = None,
-#     only_mine: bool = True,
-# ):
-#     # note that the filter for org & proj is done via the conversation for other types this probably needs to be extended
-#     macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
-
-#     macro_item = get(macro_id)
-#     if (
-#         not macro_item
-#         or macro_item.macro_type != MacroType.DOCUMENT_MESSAGE_QUEUE.value
-#     ):
-#         raise ValueError(f"Macro with id {macro_id} not found or wrong type")
-
-#     where_add = ""
-#     if only_mine:
-#         where_add += f"AND me.created_by = '{macro_item.created_by}'"
-
-#     if only_org_id:
-#         only_org_id = prevent_sql_injection(only_org_id, isinstance(only_org_id, str))
-#         where_add += f" AND p.organization_id = '{only_org_id}'"
-#     if only_prj_id:
-#         only_prj_id = prevent_sql_injection(only_prj_id, isinstance(only_prj_id, str))
-#         where_add += f" AND p.id = '{only_prj_id}'"
-
-#     query = f"""
-#     SELECT array_agg(row_to_json(x))
-#     FROM (
-#         SELECT
-#             COALESCE(con.org_name,'deleted conversation') org_name,
-#             COALESCE(con.project_name,'deleted conversation') project_name,
-#             me.execution_group_id,
-#             MIN(me.created_at),
-#             array_agg(
-#                 jsonb_build_object(
-#                     'deleted',con.id IS NULL,
-#                     'conversation_id', mel.other_id::TEXT,
-#                     'execution_id', me.id::TEXT,
-#                     'created_by', me.created_by)
-#                 ) info
-#         FROM cognition.macro_execution me
-#         INNER JOIN cognition.macro_execution_link mel
-#             ON me.id = mel.execution_id AND mel.other_id_target = '{Tablenames.CONVERSATION.value}'
-#         INNER JOIN (
-#             SELECT
-#                 con.id, p.name project_name, o.name org_name
-#             FROM cognition.conversation con
-#             LEFT JOIN cognition.project p
-#                 ON con.project_id = p.id
-#             LEFT JOIN organization o
-#                 ON p.organization_id = o.id
-#         ) con
-#             ON mel.other_id = con.id
-#         WHERE me.macro_id = '{macro_id}' {where_add}
-#         GROUP BY 1,2,3 )x """
-
-#     result = general.execute_first(query)
-#     if result and result[0]:
-#         return result[0]
-
-
 def create_macro(
     macro_type: MacroType,
     scope: MacroScope,
@@ -451,6 +388,7 @@ def match_edges(
 
 
 def create_macro_execution(
+    organization_id: str,
     macro_id: str,
     created_by: str,
     state: MacroExecutionState,  # CREATED, FINISHED, FAILED
@@ -459,6 +397,7 @@ def create_macro_execution(
     with_commit: bool = False,
 ) -> CognitionMacroExecution:
     mac = CognitionMacroExecution(
+        organization_id=organization_id,
         macro_id=macro_id,
         created_by=created_by,
         state=state.value,
@@ -471,10 +410,11 @@ def create_macro_execution(
     return mac
 
 
-ALLOWED = {Tablenames.CONVERSATION.value, Tablenames.MESSAGE.value}
+ALLOWED_OTHER_ID_TARGETS = {Tablenames.CONVERSATION.value, Tablenames.MESSAGE.value}
 
 
 def create_macro_execution_link(
+    organization_id: str,
     execution_id: str,
     action: MacroExecutionLinkAction,  # CREATED, FINISHED, FAILED
     other_id_target: Tablenames,
@@ -482,10 +422,11 @@ def create_macro_execution_link(
     execution_node_id: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionMacroExecutionLink:
-    if other_id_target.value not in ALLOWED:
+    if other_id_target.value not in ALLOWED_OTHER_ID_TARGETS:
         raise ValueError("Only conversation is currently supported as other_id_target")
 
     mac = CognitionMacroExecutionLink(
+        organization_id=organization_id,
         execution_id=execution_id,
         action=action.value,
         other_id_target=other_id_target.value,
@@ -537,7 +478,7 @@ def get_macro_execution_overview_for_document_message_queue(
         only_prj_id = prevent_sql_injection(only_prj_id, isinstance(only_prj_id, str))
         where_add += f" AND p.id = '{only_prj_id}'"
 
-    query = f"""    
+    query = f"""
     SELECT array_agg(to_jsonb(x) || to_jsonb(y))
     FROM (
         SELECT
@@ -550,7 +491,8 @@ def get_macro_execution_overview_for_document_message_queue(
             --MIN(m.macro_type) macro_type,
             array_agg(
                 jsonb_build_object(
-                    'state',me.state)
+                    'state',me.state,
+                    'executionId',me.id)
                 || me.meta_info::jsonb) executions
         FROM cognition.macro M
         INNER JOIN cognition.macro_execution me
@@ -583,3 +525,100 @@ def get_macro_execution_overview_for_document_message_queue(
             e["organization_id"] = str(project_lookup[e["project_id"]].organization_id)
         return result[0]
     return []
+
+
+def get_macro_execution_data_for_document_message_queue(
+    macro_id: str, group_ids: List[str], only_org_id: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    if len(group_ids) == 0:
+        return []
+    macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
+    group_ids = [prevent_sql_injection(g, isinstance(g, str)) for g in group_ids]
+    group_ids_str = "'" + "','".join(group_ids) + "'"
+
+    where_add = ""
+    if only_org_id:
+        only_org_id = prevent_sql_injection(only_org_id, isinstance(only_org_id, str))
+        where_add += f" AND me.organization_id = '{only_org_id}'"
+
+    query = f"""
+    SELECT array_agg(row_to_json(x))
+    FROM(
+    SELECT
+        me.id,
+        me.created_by,
+        me.state,
+        me.execution_group_id,
+        me.meta_info::jsonb || jsonb_build_object('conversationCreated', c.created_at) meta_info,
+        message_data.message_data
+    FROM cognition.macro_execution me
+    INNER JOIN cognition.macro_execution_link mel_c
+        ON me.organization_id = mel_c.organization_id AND me.id = mel_c.execution_id AND mel_c.other_id_target = '{Tablenames.CONVERSATION.value}'
+    INNER JOIN cognition.conversation C
+        ON c.id = mel_c.other_id
+    INNER JOIN (
+        SELECT i.execution_id, array_agg(to_jsonb(i) ORDER BY i.rn) message_data
+        FROM (
+            SELECT
+                mel_m.execution_id,
+                mel_m.execution_node_id,
+                M.created_at message_creation,
+                m.question,
+                m.facts,
+                m.answer,
+                y.has_error,
+                ROW_NUMBER () OVER(PARTITION BY m.conversation_id ORDER BY m.created_at ASC) rn
+            FROM cognition.macro_execution_link mel_m
+            INNER JOIN cognition.message M
+                ON mel_m.other_id = m.id
+            LEFT JOIN LATERAL (
+                -- most recent log for message
+                SELECT pl.has_error
+                FROM cognition.pipeline_logs pl
+                WHERE m.project_id = pl.project_id
+                    AND m.id = pl.message_id
+                ORDER BY pl.created_at DESC
+                LIMIT 1
+            ) y
+            ON TRUE
+            WHERE mel_m.other_id_target = '{Tablenames.MESSAGE.value}'
+        ) i
+        GROUP BY 1
+    ) message_data
+        ON message_data.execution_id = me.id
+
+    WHERE me.macro_id = '{macro_id}'
+        AND me.execution_group_id IN ({group_ids_str})
+    {where_add} )x"""
+
+    result = general.execute_first(query)
+    if result and result[0]:
+
+        project_ids = {e["meta_info"]["project_id"] for e in result[0]}
+        project_lookup = project.get_lookup_by_ids(project_ids)
+        if len(project_lookup) != len(project_ids):
+            raise ValueError("Some projects not found")
+        for e in result[0]:
+            e["meta_info"]["project_name"] = project_lookup[
+                e["meta_info"]["project_id"]
+            ].name
+            del e["meta_info"]["project_id"]
+        return result[0]
+    return []
+
+
+def delete_by_exec_groups(
+    macro_id: str,
+    group_ids: List[str],
+    org_id: Optional[str] = None,
+    with_commit: bool = True,
+):
+    query = session.query(CognitionMacroExecution).filter(
+        CognitionMacroExecution.macro_id == macro_id,
+        CognitionMacroExecution.execution_group_id.in_(group_ids),
+    )
+    if org_id:
+        query = query.filter(CognitionMacroExecution.organization_id == org_id)
+    query.delete(synchronize_session=False)
+    general.flush_or_commit(with_commit)
+    return True
