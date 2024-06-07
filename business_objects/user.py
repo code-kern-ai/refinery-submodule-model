@@ -135,3 +135,8 @@ def __create_migration_organization():
     VALUES ({general.generate_UUID_sql_string()},'migration');
     """
     general.execute(query)
+
+
+def delete(user_id: str, with_commit: bool = False) -> None:
+    session.query(User).filter(User.id == user_id).delete()
+    general.flush_or_commit(with_commit)
