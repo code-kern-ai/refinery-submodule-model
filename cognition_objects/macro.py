@@ -473,10 +473,10 @@ def get_macro_execution_overview_for_document_message_queue(
 
     if only_org_id:
         only_org_id = prevent_sql_injection(only_org_id, isinstance(only_org_id, str))
-        where_add += f" AND p.organization_id = '{only_org_id}'"
+        where_add += f" AND me.organization_id = '{only_org_id}'"
     if only_prj_id:
         only_prj_id = prevent_sql_injection(only_prj_id, isinstance(only_prj_id, str))
-        where_add += f" AND p.id = '{only_prj_id}'"
+        where_add += f" AND (me.meta_info->>'project_id') = '{only_prj_id}'"
 
     query = f"""
     SELECT array_agg(to_jsonb(x) || to_jsonb(y))
@@ -532,6 +532,13 @@ def get_macro_execution_data_for_document_message_queue(
 ) -> List[Dict[str, Any]]:
     if len(group_ids) == 0:
         return []
+
+    macro_item = get(macro_id)
+    if (
+        not macro_item
+        or macro_item.macro_type != MacroType.DOCUMENT_MESSAGE_QUEUE.value
+    ):
+        raise ValueError(f"Macro with id {macro_id} not found or wrong type")
     macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
     group_ids = [prevent_sql_injection(g, isinstance(g, str)) for g in group_ids]
     group_ids_str = "'" + "','".join(group_ids) + "'"
