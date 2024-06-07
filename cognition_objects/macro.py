@@ -546,6 +546,7 @@ def get_macro_execution_data_for_document_message_queue(
     FROM(
     SELECT
         me.id,
+        c.id conversation_id,
         me.created_by,
         me.state,
         me.execution_group_id,
@@ -602,6 +603,10 @@ def get_macro_execution_data_for_document_message_queue(
             e["meta_info"]["project_name"] = project_lookup[
                 e["meta_info"]["project_id"]
             ].name
+            e["project_id"] = e["meta_info"]["project_id"]
+            e["facts_grouping_attribute"] = project_lookup[
+                e["meta_info"]["project_id"]
+            ].facts_grouping_attribute
             del e["meta_info"]["project_id"]
         return result[0]
     return []
