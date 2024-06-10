@@ -152,6 +152,7 @@ def __get_admin_macros_for_me(
         or (
             show == AdminMacrosDisplay.FOR_ENGINEERS.value
             and user.role != UserRoles.ENGINEER.value
+            and not is_admin
         )
     ):
         return []

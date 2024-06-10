@@ -326,7 +326,6 @@ def update(
             new_values[key] = macro_config[key]
 
         project.macro_config = new_values
-        print(new_values, flush=True)
         flag_modified(project, "macro_config")
     general.flush_or_commit(with_commit)
     return project
