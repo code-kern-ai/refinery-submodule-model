@@ -1245,6 +1245,7 @@ class CognitionMessage(Base):
     created_at = Column(DateTime, default=sql.func.now())
     question = Column(String)
     facts = Column(ARRAY(JSON))
+    relations = Column(ARRAY(JSON))
     selection_widget = Column(ARRAY(JSON))
     answer = Column(String)
 
