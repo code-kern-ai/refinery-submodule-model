@@ -7,6 +7,7 @@ from .. import enums
 from datetime import datetime
 from ..util import prevent_sql_injection
 from sqlalchemy.orm.attributes import flag_modified
+from copy import deepcopy
 
 
 def get(project_id: str) -> CognitionProject:
@@ -321,7 +322,7 @@ def update(
     if macro_config is not None:
         new_values = project.macro_config
         if new_values is None:
-            new_values = DEFAULT_MACRO_CONFIG
+            new_values = deepcopy(DEFAULT_MACRO_CONFIG)
         for key in macro_config:
             new_values[key] = macro_config[key]
 
