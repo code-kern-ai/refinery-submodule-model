@@ -123,7 +123,7 @@ class CommentData(Base):
     is_private = Column(Boolean, default=False)
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
@@ -300,7 +300,7 @@ class LabelingAccessLink(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     is_locked = Column(Boolean, default=False)
@@ -397,7 +397,7 @@ class UploadTask(Base):
     )
     user_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     state = Column(String, default=UploadStates.CREATED.value)
@@ -423,7 +423,7 @@ class Agreement(Base):
     )
     user_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     # no foreign key since its a multi field
@@ -452,7 +452,7 @@ class Project(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
 
@@ -566,7 +566,7 @@ class LabelingTaskLabel(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     name = Column(String)
@@ -594,7 +594,7 @@ class DataSlice(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     project_id = Column(
@@ -732,7 +732,7 @@ class RecordLabelAssociation(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     # gold_star are created labels for conflict resolution
@@ -798,7 +798,7 @@ class Embedding(Base):
     )
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     attribute_id = Column(
@@ -875,7 +875,7 @@ class InformationSource(Base):  # renamed from LabelFunction
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
 
@@ -1048,13 +1048,13 @@ class AdminMessage(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     archive_date = Column(DateTime)
     archived_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     archived_reason = Column(String)
@@ -1076,7 +1076,11 @@ class TaskQueue(Base):
     priority = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
     created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(UUID(as_uuid=True), ForeignKey(f"{Tablenames.USER.value}.id"))
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
 
 
 # --- COGNITION TABLES
