@@ -297,7 +297,10 @@ def delete_macros(
 
 # creates, updates, deletes nodes based on the updated_nodes list
 def match_nodes(
-    macro_id: str, update_nodes: List[Dict[str, Any]], with_commit: bool = False
+    user_id: str,
+    macro_id: str,
+    update_nodes: List[Dict[str, Any]],
+    with_commit: bool = False,
 ) -> None:
 
     current: List[CognitionMacroNode] = (
@@ -332,7 +335,7 @@ def match_nodes(
     for node in to_create:
         create_node(
             macro_id=macro_id,
-            created_by=node["created_by"],
+            created_by=node.get("created_by", user_id),
             is_root=node["is_root"],
             config=node["config"],
             id=node["id"],
@@ -344,7 +347,10 @@ def match_nodes(
 
 # creates, updates, deletes edges based on the update_edges list
 def match_edges(
-    macro_id: str, update_edges: List[Dict[str, Any]], with_commit: bool = False
+    user_id: str,
+    macro_id: str,
+    update_edges: List[Dict[str, Any]],
+    with_commit: bool = False,
 ) -> None:
     current: List[CognitionMacroEdge] = (
         session.query(CognitionMacroEdge)
@@ -375,7 +381,7 @@ def match_edges(
             macro_id=macro_id,
             from_node_id=edge["from_node_id"],
             to_node_id=edge["to_node_id"],
-            created_by=edge["created_by"],
+            created_by=edge.get("created_by", user_id),
             config=edge["config"],
             id=edge["id"],
             with_commit=False,
