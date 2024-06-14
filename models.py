@@ -123,7 +123,7 @@ class CommentData(Base):
     is_private = Column(Boolean, default=False)
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
@@ -300,7 +300,7 @@ class LabelingAccessLink(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     is_locked = Column(Boolean, default=False)
@@ -397,7 +397,7 @@ class UploadTask(Base):
     )
     user_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     state = Column(String, default=UploadStates.CREATED.value)
@@ -423,7 +423,7 @@ class Agreement(Base):
     )
     user_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     # no foreign key since its a multi field
@@ -452,7 +452,7 @@ class Project(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
 
@@ -566,7 +566,7 @@ class LabelingTaskLabel(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     name = Column(String)
@@ -594,7 +594,7 @@ class DataSlice(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     project_id = Column(
@@ -732,7 +732,7 @@ class RecordLabelAssociation(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     # gold_star are created labels for conflict resolution
@@ -798,7 +798,7 @@ class Embedding(Base):
     )
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     attribute_id = Column(
@@ -875,7 +875,7 @@ class InformationSource(Base):  # renamed from LabelFunction
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
 
@@ -1048,13 +1048,13 @@ class AdminMessage(Base):
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     archive_date = Column(DateTime)
     archived_by = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id"),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
     archived_reason = Column(String)
@@ -1076,7 +1076,11 @@ class TaskQueue(Base):
     priority = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
     created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(UUID(as_uuid=True), ForeignKey(f"{Tablenames.USER.value}.id"))
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
 
 
 # --- COGNITION TABLES
@@ -1135,6 +1139,8 @@ class CognitionProject(Base):
         ),
         index=True,
     )
+    # holds e.g. show, admin macro setting etc.
+    macro_config = Column(JSON)
 
 
 class CognitionStrategy(Base):
@@ -1519,6 +1525,153 @@ class CognitionRefinerySynchronizationTask(Base):
     num_records_created = Column(Integer)
 
 
+class CognitionMacro(Base):
+    __tablename__ = Tablenames.MACRO.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    macro_type = Column(String)  # enums.MacroType
+    scope = Column(String, index=True)  # enums.MacroScope
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,  # ADMIN MACROS dont have a org_id
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,  # ADMIN or ORGANIZATION MACROS dont have a project_id
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    state = Column(String)  # enums.MacroState
+    name = Column(String)
+    description = Column(String)
+
+
+class CognitionMacroNode(Base):
+    __tablename__ = Tablenames.MACRO_NODE.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    macro_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    is_root = Column(Boolean)  # to easily filter outside of config
+    config = Column(JSON)
+    # example config:
+    # {
+    #     "name": "dummy",
+    #     "content_type": enums.MacroNodeContentType.CONVERSATION_QUESTION,
+    #     "content": { "question": "hello"},
+    #     "position": {"x": 0, "y": 0},
+    # }
+
+
+class CognitionMacroEdge(Base):
+    __tablename__ = Tablenames.MACRO_EDGE.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    macro_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    from_node_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO_NODE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    to_node_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO_NODE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    config = Column(JSON)
+    # example config:
+    # {
+    #  "condition_type": enums.MacroEdgeConditionType.LLM_SELECTION
+    #  "condition":{ "option": "document is invoice" },
+    # }
+
+
+class CognitionMacroExecution(Base):
+    __tablename__ = Tablenames.MACRO_EXECUTION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    macro_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    state = Column(String)  # MacroExecutionState
+
+    # used for comparison groups. N files => 1 execution group
+    # "who was started together"
+    execution_group_id = Column(UUID(as_uuid=True), index=True, default=uuid.uuid4)
+    # additional data for the execution, e.g. file name or project id if applicable
+    meta_info = Column(JSON)
+
+
+class CognitionMacroExecutionLink(Base):
+    __tablename__ = Tablenames.MACRO_EXECUTION_LINK.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,  # ADMIN MACROS dont have a org_id
+    )
+    execution_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.MACRO_EXECUTION.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    execution_node_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.MACRO_NODE.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,  # e.g. for a conversation itself (hull, not the messages)
+    )
+
+    action = Column(String)  # CREATE, UPDATE, DELETE
+    other_id_target = Column(String)  # enums.Tablenames, currently conversation/message
+    other_id = Column(UUID(as_uuid=True), index=True)
+
+
+# =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
     # to ensure stateless communication, the configuration is stored in the database

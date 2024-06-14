@@ -136,6 +136,11 @@ class Tablenames(Enum):
     WEBSOCKET_ACCESS = "websocket_access"
     CONSUMPTION_LOG = "consumption_log"
     CONSUMPTION_SUMMARY = "consumption_summary"
+    MACRO = "macro"  # general definition
+    MACRO_NODE = "macro_node"  # step/action of a macro
+    MACRO_EDGE = "macro_edge"  # connection between steps of a macro
+    MACRO_EXECUTION = "macro_execution"  # links macro id to an execution id
+    MACRO_EXECUTION_LINK = "macro_execution_link"  # execution to a conversation id
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -460,6 +465,7 @@ class TaskType(Enum):
     PARSE_COGNITION_TMP_FILE = "PARSE_COGNITION_TMP_FILE"
     TASK_QUEUE = "task_queue"
     TASK_QUEUE_ACTION = "task_queue_action"
+    RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
 
 
 class TaskQueueAction(Enum):
@@ -690,3 +696,52 @@ class AdminLogLevel(Enum):
         if self == AdminLogLevel.NO_GET and method == "GET":
             return False
         return True
+
+
+# currently only one option, but could be extended in the future
+class MacroType(Enum):
+    # macro is meant to be run on a (or n) documents
+    DOCUMENT_MESSAGE_QUEUE = "DOCUMENT_MESSAGE_QUEUE"
+
+
+# currently only one option, but could be extended in the future
+class MacroNodeContentType(Enum):
+    # add a new question to the conversation
+    CONVERSATION_QUESTION = "CONVERSATION_QUESTION"
+
+
+# currently only one option, but could be extended in the future
+class MacroEdgeConditionType(Enum):
+    # all edges from a given node are collected and an llm decides which to chose based on the name of the edge
+    LLM_SELECTION = "LLM_SELECTION"
+
+
+class MacroScope(Enum):
+    ADMIN = "ADMIN"
+    ORGANIZATION = "ORGANIZATION"
+    PROJECT = "PROJECT"
+
+
+class MacroState(Enum):
+    DEVELOPMENT = "DEVELOPMENT"
+    PRODUCTION = "PRODUCTION"
+
+
+class MacroExecutionState(Enum):
+    CREATED = "CREATED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class MacroExecutionLinkAction(Enum):
+    CREATE = "CREATE"
+    DELETE = "DELETE"
+    UPDATE = "UPDATE"
+
+
+class AdminMacrosDisplay(Enum):
+    DONT_SHOW = "DONT_SHOW"
+    FOR_ADMINS = "FOR_ADMINS"
+    FOR_ENGINEERS = "FOR_ENGINEERS"
+    FOR_ALL = "FOR_ALL"

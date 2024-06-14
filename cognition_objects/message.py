@@ -142,7 +142,6 @@ def get_message_feedback_overview(
     {where_add}
     ORDER BY mo.created_at DESC
     """
-    print(query, flush=True)
     if as_query:
         return query
     return general.execute_all(query)
