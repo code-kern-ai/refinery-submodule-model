@@ -1139,6 +1139,7 @@ class CognitionProject(Base):
         ),
         index=True,
     )
+    llm_config = Column(JSON)
     # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
 
