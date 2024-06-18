@@ -269,6 +269,7 @@ def update(
     refinery_question_project_id: Optional[str] = None,
     refinery_relevance_project_id: Optional[str] = None,
     macro_config: Optional[Dict[str, Any]] = None,
+    llm_config: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -328,6 +329,9 @@ def update(
 
         project.macro_config = new_values
         flag_modified(project, "macro_config")
+    if llm_config is not None:
+        project.llm_config = llm_config
+        flag_modified(project, "llm_config")
     general.flush_or_commit(with_commit)
     return project
 
