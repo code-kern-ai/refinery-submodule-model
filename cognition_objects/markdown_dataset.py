@@ -126,6 +126,7 @@ def create(
     environment_variable_id: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
+    llm_config: Optional[Dict[str, Any]] = None,
 ) -> CognitionMarkdownDataset:
     new_dataset = CognitionMarkdownDataset(
         organization_id=org_id,
@@ -137,6 +138,7 @@ def create(
         description=description,
         tokenizer=tokenizer,
         created_at=created_at,
+        llm_config=llm_config,
     )
 
     general.add(new_dataset, with_commit)
