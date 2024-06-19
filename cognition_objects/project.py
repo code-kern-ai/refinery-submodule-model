@@ -331,7 +331,6 @@ def update(
         flag_modified(project, "macro_config")
     if llm_config is not None:
         project.llm_config = llm_config
-        flag_modified(project, "llm_config")
     general.flush_or_commit(with_commit)
     return project
 
