@@ -11,6 +11,8 @@ from ..models import (
 )
 from ..util import prevent_sql_injection
 from sqlalchemy import or_
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql.expression import cast
 
 
 def get(project_id: str, environment_variable_id: str) -> CognitionEnvironmentVariable:
@@ -76,12 +78,10 @@ def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]
 
 
 def get_cognition_project_env_var_value(cognition_project_id: str) -> str:
+    env_var_id = cast(CognitionProject.llm_config.op("->>")("envVarId"), UUID)
     v = (
         session.query(CognitionEnvironmentVariable.value)
-        .join(
-            CognitionProject,
-            CognitionProject.env_var_id == CognitionEnvironmentVariable.id,
-        )
+        .join(CognitionProject, env_var_id == CognitionEnvironmentVariable.id)
         .filter(
             CognitionProject.id == cognition_project_id,
         )
