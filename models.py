@@ -1132,13 +1132,6 @@ class CognitionProject(Base):
 
     allow_file_upload = Column(Boolean, default=False)
     max_file_size_mb = Column(Float, default=3.0)
-    env_var_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.ENVIRONMENT_VARIABLE.value}.id", ondelete="SET NULL"
-        ),
-        index=True,
-    )
     llm_config = Column(JSON)
     # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
@@ -1426,13 +1419,6 @@ class CognitionMarkdownDataset(Base):
     refinery_project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    environment_variable_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.ENVIRONMENT_VARIABLE.value}.id", ondelete="SET NULL"
-        ),
         index=True,
     )
     created_by = Column(

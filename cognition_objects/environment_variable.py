@@ -48,6 +48,20 @@ def get_by_name(
     )
 
 
+def get_by_name_and_org_id(
+    org_id: str,
+    name: str,
+) -> CognitionEnvironmentVariable:
+
+    return (
+        session.query(CognitionEnvironmentVariable)
+        .filter(CognitionEnvironmentVariable.organization_id == org_id)
+        .filter(CognitionEnvironmentVariable.project_id == None)
+        .filter(CognitionEnvironmentVariable.name == name)
+        .first()
+    )
+
+
 def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
     return (
         session.query(CognitionEnvironmentVariable)

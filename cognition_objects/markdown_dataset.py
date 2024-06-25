@@ -123,7 +123,6 @@ def create(
     description: str,
     tokenizer: str,
     refinery_project_id: str,
-    environment_variable_id: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     llm_config: Optional[Dict[str, Any]] = None,
@@ -131,7 +130,6 @@ def create(
     new_dataset = CognitionMarkdownDataset(
         organization_id=org_id,
         refinery_project_id=refinery_project_id,
-        environment_variable_id=environment_variable_id,
         created_by=created_by,
         category_origin=category_origin,
         name=name,
