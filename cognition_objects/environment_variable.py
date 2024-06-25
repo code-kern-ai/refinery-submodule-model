@@ -63,12 +63,12 @@ def get_by_name_and_org_id(
 
 
 def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
+    env_var_id = cast(CognitionMarkdownDataset.llm_config.op("->>")("envVarId"), UUID)
     return (
         session.query(CognitionEnvironmentVariable)
         .join(
             CognitionMarkdownDataset,
-            CognitionMarkdownDataset.environment_variable_id
-            == CognitionEnvironmentVariable.id,
+            env_var_id == CognitionEnvironmentVariable.id,
         )
         .join(
             CognitionMarkdownFile,
