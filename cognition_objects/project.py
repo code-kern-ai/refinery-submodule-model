@@ -327,7 +327,14 @@ def update(
         project.macro_config = new_values
         flag_modified(project, "macro_config")
     if llm_config is not None:
-        project.llm_config = llm_config
+        new_values = project.llm_config
+        if new_values is None:
+            new_values = {}
+        for key in llm_config:
+            new_values[key] = llm_config[key]
+
+        project.llm_config = new_values
+        flag_modified(project, "llm_config")
     general.flush_or_commit(with_commit)
     return project
 
