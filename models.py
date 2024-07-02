@@ -1691,3 +1691,34 @@ class GlobalWebsocketAccess(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
+
+
+class CustomerButton(Base):
+    # table to configuration customer buttons
+
+    __tablename__ = Tablenames.CUSTOMER_BUTTON.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+        # not part of p-key since a customer could have multiple
+    )
+    type = Column(String)  # enums.CustomerButtonType
+    location = Column(String)  # enums.CustomerButtonLocation
+    visible = Column(Boolean, default=False)  # for easy disable
+    config = Column(JSON)  # changes based on type
+    # e.g. for DATA_MAPPER
+    # {
+    #     "url":"<endpoint_url>", # including access key for e.g. external mapper
+    #     "icon":"<icon_name>",
+    #     "tooltip":"Map results to HDI D&O Excel"
+    # }
+
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
