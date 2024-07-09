@@ -1291,6 +1291,7 @@ class CognitionPipelineLogs(Base):
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
     skipped_step = Column(Boolean, default=False)
+    iteration_number = Column(Integer)
 
 
 class CognitionConsumptionLog(Base):
