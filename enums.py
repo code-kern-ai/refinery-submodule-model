@@ -142,6 +142,10 @@ class Tablenames(Enum):
     MACRO_EXECUTION = "macro_execution"  # links macro id to an execution id
     MACRO_EXECUTION_LINK = "macro_execution_link"  # execution to a conversation id
     ORGANIZATION_QUESTIONS = "organization_questions"
+    BUSINESS_MODELS = "business_models"
+    DATA_CONCEPTS = "data_concepts"
+    RULES = "rules"
+    RESOURCE = "resource"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -753,3 +757,13 @@ class QuestionType(Enum):
     INPUT_CHECKBOX = "INPUT_CHECKBOX"
     TEXTAREA = "TEXTAREA"
     DROPDOWN = "DROPDOWN"
+
+
+class RuleType(Enum):
+    GLOBAL_CONTEXT = "GLOBAL_CONTEXT"
+    RESOURCE_CONTEXT = "RESOURCE_CONTEXT"
+    RESOURCE_RELATION = "RESOURCE_RELATION"
+
+
+class ResourceType(Enum):
+    PDF = "PDF"
