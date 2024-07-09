@@ -1705,10 +1705,27 @@ class DataManagerBusinessModels(Base):
     name = Column(String)
     description = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
+    llm_config = Column(JSON)
+
+
+class DataManagerBusinessModelQuestions(Base):
+    __tablename__ = Tablenames.BUSINESS_MODEL_QUESTIONS.value
+    __table_args__ = {"schema": "data_manager"}
+    business_model_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"data_manager.{Tablenames.BUSINESS_MODELS.value}.id"),
+        index=True,
+        primary_key=True,
+    )
+    question_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"data_manager.{Tablenames.ORGANIZATION_QUESTIONS.value}.id"),
+        index=True,
+        primary_key=True,
+    )
 
 
 class DataManagerOrganizationQuestions(Base):
-
     __tablename__ = Tablenames.ORGANIZATION_QUESTIONS.value
     __table_args__ = {"schema": "data_manager"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

@@ -143,6 +143,7 @@ class Tablenames(Enum):
     MACRO_EXECUTION_LINK = "macro_execution_link"  # execution to a conversation id
     ORGANIZATION_QUESTIONS = "organization_questions"
     BUSINESS_MODELS = "business_models"
+    BUSINESS_MODEL_QUESTIONS = "business_model_questions"
     DATA_CONCEPTS = "data_concepts"
     RULES = "rules"
     RESOURCE = "resource"
