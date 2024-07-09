@@ -1691,3 +1691,21 @@ class GlobalWebsocketAccess(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
+class DataManagerOrganizationQuestions(Base):
+    # =========================== Data manager tables ===========================
+    # table to store prepared websocket configuration.
+    # to ensure stateless communication, the configuration is stored in the database
+    # an entry doesn't mean it will be used but can be used
+    # example code runner that prepares the access but the custom code doesn't have to use it
+    # entries should be cleared on startup
+
+    __tablename__ = Tablenames.ORGANIZATION_QUESTIONS.value
+    __table_args__ = {"schema": "data_manager"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    type = Column(String)  # of type enums.QuestionType.*.value
+    config = Column(JSON)
