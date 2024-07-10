@@ -26,3 +26,12 @@ def get_all(org_id: str) -> List[DataManagerOrganizationQuestions]:
         .filter(DataManagerOrganizationQuestions.organization_id == org_id)
         .all()
     )
+
+
+def delete_many(org_id: str, question_ids: List[str], with_commit: bool = True) -> None:
+    session.query(DataManagerOrganizationQuestions).filter(
+        DataManagerOrganizationQuestions.organization_id == org_id,
+        DataManagerOrganizationQuestions.id.in_(question_ids),
+    ).delete(synchronize_session=False)
+
+    general.flush_or_commit(with_commit)
