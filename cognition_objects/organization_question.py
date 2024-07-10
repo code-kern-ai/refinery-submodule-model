@@ -35,3 +35,29 @@ def delete_many(org_id: str, question_ids: List[str], with_commit: bool = True) 
     ).delete(synchronize_session=False)
 
     general.flush_or_commit(with_commit)
+
+
+def get_by_id(org_id: str, question_id: str) -> DataManagerOrganizationQuestions:
+    return (
+        session.query(DataManagerOrganizationQuestions)
+        .filter(
+            DataManagerOrganizationQuestions.organization_id == org_id,
+            DataManagerOrganizationQuestions.id == question_id,
+        )
+        .one()
+    )
+
+
+def update(
+    org_id: str,
+    question_id: str,
+    type: str,
+    config: Dict[str, Any],
+    with_commit: bool = True,
+) -> DataManagerOrganizationQuestions:
+    question = get_by_id(org_id, question_id)
+    question.type = type
+    question.config = config
+
+    general.flush_or_commit(with_commit)
+    return question
