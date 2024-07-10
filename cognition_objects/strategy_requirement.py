@@ -18,15 +18,18 @@ def get(project_id: str, strategy_requirement_id: str) -> CognitionStrategyRequi
         .first()
     )
 
-def get_all_by_strategy(project_id: str, strategy_id: str) -> List[CognitionStrategyRequirement]:
-    return (
-        session.query(CognitionStrategyRequirement)
-        .filter(
-            CognitionStrategyRequirement.project_id == project_id,
-            CognitionStrategyRequirement.strategy_id == strategy_id,
-        )
-        .all()
-    )
+def get_all_by_strategy(project_id: str, strategy_id: str, filter_input: bool = False, filter_output: bool = False) -> List[CognitionStrategyRequirement]:
+    query = session.query(CognitionStrategyRequirement).filter(
+                CognitionStrategyRequirement.project_id == project_id,
+                CognitionStrategyRequirement.strategy_id == strategy_id,
+            )
+    
+    if filter_input:
+        query = query.filter(CognitionStrategyRequirement.is_input == True)
+    if filter_output:
+        query = query.filter(CognitionStrategyRequirement.is_input == False)
+    
+    return query.all()
 
 def get_all_mapping_options_of_requirement(project_id: str, strategy_requirement_id: str) -> List[CognitionStrategyRequirementMappingOption]:
     return (
