@@ -41,6 +41,7 @@ def create(
     strategy_id: str,
     field: str,
     description: str,
+    is_input: bool,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionStrategyRequirement:
@@ -51,6 +52,7 @@ def create(
         strategy_id=strategy_id,
         field=field,
         description=description,
+        is_input=is_input,
     )
     general.add(strategy, with_commit)
 
@@ -59,7 +61,7 @@ def create(
 def create_many(project_id: str, user_id: str, strategy_id: str, requirements: List[StrategyRequirementCreation], with_commit: bool = True, created_at: Optional[datetime] = None) -> List[CognitionStrategyRequirement]:
     strategy_requirements: List[CognitionStrategyRequirement] = []
     for requirement in requirements:
-        strategy_requirement = create(project_id, user_id, strategy_id, requirement.field, requirement.description, with_commit, created_at)
+        strategy_requirement = create(project_id, user_id, strategy_id, requirement.field, requirement.description, requirement.isInput, with_commit, created_at)
         strategy_requirements.append(strategy_requirement)
         create_mapping_options(project_id, user_id, strategy_requirement.id, [option.value for option in requirement.mappingOptions], with_commit, created_at)
 

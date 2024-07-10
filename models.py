@@ -1188,6 +1188,7 @@ class CognitionStrategyRequirement(Base):
     created_at = Column(DateTime, default=sql.func.now())
     field = Column(String)
     description = Column(String)
+    is_input = Column(Boolean, default=False)
 
 class CognitionStrategyRequirementMappingOption(Base):
     __tablename__ = Tablenames.STRATEGY_REQUIREMENT_MAPPING_OPTION.value
