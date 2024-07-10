@@ -65,3 +65,17 @@ def get_all(org_id: str) -> List[DataManagerBusinessModels]:
         .filter(DataManagerBusinessModels.organization_id == org_id)
         .all()
     )
+
+
+def get_questions_for_business_model(
+    org_id: str, business_model_id: str
+) -> List[DataManagerBusinessModelQuestions]:
+
+    query = f"""
+    SELECT * 
+    FROM data_manager.business_model_questions bmq 
+        JOIN data_manager.organization_questions oq on oq.id = bmq.question_id 
+    WHERE bmq.business_model_id = '{business_model_id}' and oq.organization_id = '{org_id}'
+    """
+
+    return general.execute_all(query)
