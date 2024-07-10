@@ -1,5 +1,7 @@
 from typing import List, Dict, Any
+
 from ..business_objects import general
+from ..session import session
 
 from ..models import (
     DataManagerBusinessModels,
@@ -55,3 +57,11 @@ def create_data_concept(
     )
     general.add(dc, with_commit)
     return dc
+
+
+def get_all(org_id: str) -> List[DataManagerBusinessModels]:
+    return (
+        session.query(DataManagerBusinessModels)
+        .filter(DataManagerBusinessModels.organization_id == org_id)
+        .all()
+    )
