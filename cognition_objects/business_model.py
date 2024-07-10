@@ -59,6 +59,14 @@ def create_data_concept(
     return dc
 
 
+def get_data_concepts_by_ids(business_model_id: str) -> List[DataManagerDataConcepts]:
+    return (
+        session.query(DataManagerDataConcepts)
+        .filter(DataManagerDataConcepts.business_model_id == business_model_id)
+        .all()
+    )
+
+
 def get_all(org_id: str) -> List[DataManagerBusinessModels]:
     return (
         session.query(DataManagerBusinessModels)
