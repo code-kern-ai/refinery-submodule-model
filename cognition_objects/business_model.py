@@ -21,7 +21,7 @@ def create_business_model(
 ) -> Dict[str, Any]:
 
     bm = DataManagerBusinessModels(
-        org_id=org_id,
+        organization_id=org_id,
         name=name,
         description=description,
         llm_config=llm_config,
