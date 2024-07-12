@@ -517,6 +517,7 @@ class StrategyStepType(Enum):
     HEADER = "HEADER"
     # INFO: done in exec env to prevent installing sklearn in gateway
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
+    CALL_OTHER_AGENT = "CALL_OTHER_AGENT"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -541,6 +542,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
     StrategyStepType.HEADER: "Writing header",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Temporary document retrieval",
+    StrategyStepType.CALL_OTHER_AGENT: "Call another agent",
 }
 
 STEP_WHEN_TO_USE = {
@@ -556,6 +558,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
     StrategyStepType.HEADER: "When you want to set a header based on the conversation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "When you want to retrieve results from conversation specific documents",
+    StrategyStepType.CALL_OTHER_AGENT: "When you want to call another agent",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -571,6 +574,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
     StrategyStepType.HEADER: "Headline generation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Retrieving facts from conversation specific documents",
+    StrategyStepType.CALL_OTHER_AGENT: "Calling another agent",
 }
 
 STEP_ERRORS = {
