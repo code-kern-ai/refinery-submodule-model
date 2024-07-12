@@ -29,7 +29,6 @@ def create_business_model(
 
     general.add(bm, False)
 
-    # TODO: created but not returned
     questions = []
     for q_id in question_ids:
         q = DataManagerBusinessModelQuestions(business_model_id=bm.id, question_id=q_id)
@@ -39,6 +38,19 @@ def create_business_model(
 
     bm_dict = {**sql_alchemy_to_dict(bm), "questions": sql_alchemy_to_dict(questions)}
     return bm_dict
+
+
+def get_business_model_by_id(
+    org_id: str, business_model_id: str
+) -> DataManagerBusinessModels:
+    return (
+        session.query(DataManagerBusinessModels)
+        .filter(
+            DataManagerBusinessModels.organization_id == org_id,
+            DataManagerBusinessModels.id == business_model_id,
+        )
+        .first()
+    )
 
 
 def create_data_concept(
@@ -59,10 +71,12 @@ def create_data_concept(
     return dc
 
 
-def get_data_concepts_by_ids(business_model_id: str) -> List[DataManagerDataConcepts]:
+def get_data_concepts_by_ids(
+    data_concept_ids: List[str],
+) -> List[DataManagerDataConcepts]:
     return (
         session.query(DataManagerDataConcepts)
-        .filter(DataManagerDataConcepts.business_model_id == business_model_id)
+        .filter(DataManagerDataConcepts.id.in_(data_concept_ids))
         .all()
     )
 
@@ -87,3 +101,20 @@ def get_questions_for_business_model(
     """
 
     return general.execute_all(query)
+
+
+def get_data_concepts_by_user(
+    user_id: str, business_model_id: str
+) -> List[DataManagerBusinessModelQuestions]:
+
+    return (
+        session.query(DataManagerDataConcepts)
+        .join(
+            DataManagerBusinessModelQuestions,
+            DataManagerBusinessModelQuestions.question_id
+            == DataManagerDataConcepts.question_id,
+        )
+        .filter(DataManagerDataConcepts.business_model_id == business_model_id)
+        .filter(DataManagerDataConcepts.created_by == user_id)
+        .all()
+    )
