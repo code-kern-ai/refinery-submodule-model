@@ -1713,13 +1713,18 @@ class DataManagerBusinessModelQuestions(Base):
     __table_args__ = {"schema": "data_manager"}
     business_model_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"data_manager.{Tablenames.BUSINESS_MODELS.value}.id"),
+        ForeignKey(
+            f"data_manager.{Tablenames.BUSINESS_MODELS.value}.id", ondelete="CASCADE"
+        ),
         index=True,
         primary_key=True,
     )
     question_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"data_manager.{Tablenames.ORGANIZATION_QUESTIONS.value}.id"),
+        ForeignKey(
+            f"data_manager.{Tablenames.ORGANIZATION_QUESTIONS.value}.id",
+            ondelete="CASCADE",
+        ),
         index=True,
         primary_key=True,
     )

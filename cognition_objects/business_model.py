@@ -29,7 +29,6 @@ def create_business_model(
 
     general.add(bm, False)
 
-    # TODO: created but not returned
     questions = []
     for q_id in question_ids:
         q = DataManagerBusinessModelQuestions(business_model_id=bm.id, question_id=q_id)
@@ -39,6 +38,19 @@ def create_business_model(
 
     bm_dict = {**sql_alchemy_to_dict(bm), "questions": sql_alchemy_to_dict(questions)}
     return bm_dict
+
+
+def get_business_model_by_id(
+    org_id: str, business_model_id: str
+) -> DataManagerBusinessModels:
+    return (
+        session.query(DataManagerBusinessModels)
+        .filter(
+            DataManagerBusinessModels.organization_id == org_id,
+            DataManagerBusinessModels.id == business_model_id,
+        )
+        .first()
+    )
 
 
 def create_data_concept(
