@@ -63,7 +63,12 @@ def get_by_name_and_org_id(
 
 
 def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
-    env_var_id = cast(CognitionMarkdownDataset.llm_config.op("->>")("envVarId"), UUID)
+    env_var_id = cast(
+        CognitionMarkdownDataset.llm_config.op("->")("transformation").op("->>")(
+            "envVarId"
+        ),
+        UUID,
+    )
     return (
         session.query(CognitionEnvironmentVariable)
         .join(
@@ -83,7 +88,12 @@ def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
 
 def get_dataset_env_var_value(dataset_id: str, org_id) -> CognitionEnvironmentVariable:
 
-    env_var_id = cast(CognitionMarkdownDataset.llm_config.op("->>")("envVarId"), UUID)
+    env_var_id = cast(
+        CognitionMarkdownDataset.llm_config.op("->")("transformation").op("->>")(
+            "envVarId"
+        ),
+        UUID,
+    )
     return (
         session.query(CognitionEnvironmentVariable)
         .join(
@@ -103,7 +113,10 @@ def get_dataset_azure_models_env_var_value(
 ) -> CognitionEnvironmentVariable:
 
     env_var_id = cast(
-        CognitionMarkdownDataset.llm_config.op("->>")("azureDiEnvVarId"), UUID
+        CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(
+            "azureDiEnvVarId"
+        ),
+        UUID,
     )
     return (
         session.query(CognitionEnvironmentVariable)
@@ -131,7 +144,10 @@ def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]
 
 def get_cognition_project_env_var_value(cognition_project_id: str) -> str:
 
-    env_var_id = cast(CognitionProject.llm_config.op("->>")("envVarId"), UUID)
+    env_var_id = cast(
+        CognitionProject.llm_config.op("->")("transformation").op("->>")("envVarId"),
+        UUID,
+    )
     v = (
         session.query(CognitionEnvironmentVariable.value)
         .join(CognitionProject, env_var_id == CognitionEnvironmentVariable.id)
@@ -145,7 +161,10 @@ def get_cognition_project_env_var_value(cognition_project_id: str) -> str:
 
 
 def get_cognition_project_azure_models_env_var_value(cognition_project_id: str) -> str:
-    env_var_id = cast(CognitionProject.llm_config.op("->>")("azureDiEnvVarId"), UUID)
+    env_var_id = cast(
+        CognitionProject.llm_config.op("->")("extraction").op("->>")("azureDiEnvVarId"),
+        UUID,
+    )
     v = (
         session.query(CognitionEnvironmentVariable.value)
         .join(CognitionProject, env_var_id == CognitionEnvironmentVariable.id)
