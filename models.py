@@ -1711,7 +1711,7 @@ class CustomerButton(Base):
     config = Column(JSON)  # changes based on type
     # e.g. for DATA_MAPPER
     # {
-    #     "url":"<endpoint_url>", # including access key for e.g. external mapper
+    #     "url":"http://localhost:9060/hdi/map-to-collect-data?key=abc123", # including access key for e.g. external mapper
     #     "icon":"<icon_name>",
     #     "tooltip":"Map results to HDI D&O Excel"
     # }

@@ -18,21 +18,32 @@ def get(id: str) -> CustomerButton:
 
 
 def get_all(filter_visible: Optional[bool] = None) -> List[CustomerButton]:
-    if not filter_visible:
-        return session.query(CustomerButton).all()
 
-    return (
-        session.query(CustomerButton)
-        .filter(CustomerButton.visible == filter_visible)
-        .all()
-    )
+    where_add = ""
+
+    if filter_visible is not None:
+        where_add = f"WHERE cb.visible = {filter_visible}"
+
+    query = f"""
+        SELECT cb.*, o.name
+        FROM global.customer_button cb
+        INNER JOIN public.organization o
+            ON cb.organization_id = o.id
+        {where_add}
+    """
+    return general.execute_all(query)
 
 
 def get_by_org_id(
     org_id: str, filter_visible: Optional[bool] = None
 ) -> List[CustomerButton]:
-    query = session.query(CustomerButton).filter(
-        CustomerButton.org_id == org_id,
+    # org name only relevant for admin dashboard, this is for org specific so no need to join
+    query = (
+        session.query(CustomerButton)
+        .filter(
+            CustomerButton.org_id == org_id,
+        )
+        .join()
     )
     if not filter_visible:
         return query.all()
