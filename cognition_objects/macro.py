@@ -458,7 +458,7 @@ def get_all_executions_by_group_id(
     )
 
 
-def get_macro_execution_overview_for_document_or_folder_message_queue(
+def get_macro_execution_overview_message_queue(
     macro_id: str,
     only_org_id: Optional[str] = None,
     only_prj_id: Optional[str] = None,
@@ -532,7 +532,7 @@ def get_macro_execution_overview_for_document_or_folder_message_queue(
     return []
 
 
-def get_macro_execution_data_for_document_or_folder_message_queue(
+def get_macro_execution_data_for_message_queue(
     macro_id: str, group_ids: List[str], only_org_id: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     if len(group_ids) == 0:
