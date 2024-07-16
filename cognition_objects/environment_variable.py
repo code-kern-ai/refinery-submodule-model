@@ -89,7 +89,7 @@ def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
 def get_dataset_env_var_value(dataset_id: str, org_id) -> CognitionEnvironmentVariable:
 
     env_var_id = cast(
-        CognitionMarkdownDataset.llm_config.op("->")("transformation").op("->>")(
+        CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(
             "envVarId"
         ),
         UUID,
