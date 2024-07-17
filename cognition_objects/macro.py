@@ -41,7 +41,7 @@ def get_with_nodes_and_edges(macro_id: str) -> Dict[str, Any]:
     query = f"""
     SELECT row_to_json(x)
     FROM (
-        SELECT M.*, me.edges, mn.nodes
+        SELECT M.*,  COALESCE(me.edges, '{{}}'::json[]) AS edges, COALESCE(mn.nodes, '{{}}'::json[]) AS nodes
         FROM cognition.macro M,
         (
             SELECT array_agg(row_to_json(me.*)) edges
@@ -458,7 +458,7 @@ def get_all_executions_by_group_id(
     )
 
 
-def get_macro_execution_overview_for_document_message_queue(
+def get_macro_execution_overview_message_queue(
     macro_id: str,
     only_org_id: Optional[str] = None,
     only_prj_id: Optional[str] = None,
@@ -466,12 +466,11 @@ def get_macro_execution_overview_for_document_message_queue(
 ) -> List[Dict[str, Any]]:
 
     macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
-
     macro_item = get(macro_id)
-    if (
-        not macro_item
-        or macro_item.macro_type != MacroType.DOCUMENT_MESSAGE_QUEUE.value
-    ):
+    if not macro_item or macro_item.macro_type not in [
+        MacroType.DOCUMENT_MESSAGE_QUEUE.value,
+        MacroType.FOLDER_MESSAGE_QUEUE.value,
+    ]:
         raise ValueError(f"Macro with id {macro_id} not found or wrong type")
 
     where_add = ""
@@ -484,7 +483,6 @@ def get_macro_execution_overview_for_document_message_queue(
     if only_prj_id:
         only_prj_id = prevent_sql_injection(only_prj_id, isinstance(only_prj_id, str))
         where_add += f" AND (me.meta_info->>'project_id') = '{only_prj_id}'"
-
     query = f"""
     SELECT array_agg(to_jsonb(x) || to_jsonb(y))
     FROM (
@@ -509,7 +507,7 @@ def get_macro_execution_overview_for_document_message_queue(
         --    ON (me.meta_info->>'project_id')::UUID = p.id
 
         WHERE m.id = '{macro_id}'
-            AND m.macro_type = '{MacroType.DOCUMENT_MESSAGE_QUEUE.value}'
+            AND (m.macro_type = '{MacroType.DOCUMENT_MESSAGE_QUEUE.value}' OR m.macro_type = '{MacroType.FOLDER_MESSAGE_QUEUE.value}')
         {where_add}
         GROUP BY 1,2,3
     )x
@@ -534,17 +532,18 @@ def get_macro_execution_overview_for_document_message_queue(
     return []
 
 
-def get_macro_execution_data_for_document_message_queue(
+def get_macro_execution_data_for_message_queue(
     macro_id: str, group_ids: List[str], only_org_id: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     if len(group_ids) == 0:
         return []
 
     macro_item = get(macro_id)
-    if (
-        not macro_item
-        or macro_item.macro_type != MacroType.DOCUMENT_MESSAGE_QUEUE.value
-    ):
+    if not macro_item or macro_item.macro_type not in [
+        MacroType.DOCUMENT_MESSAGE_QUEUE.value,
+        MacroType.FOLDER_MESSAGE_QUEUE.value,
+    ]:
+
         raise ValueError(f"Macro with id {macro_id} not found or wrong type")
     macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
     group_ids = [prevent_sql_injection(g, isinstance(g, str)) for g in group_ids]
