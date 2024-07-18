@@ -331,18 +331,6 @@ def update(
         if new_values is None:
             new_values = {}
         for key in llm_config:
-            if (
-                key == "llmIdentifier"
-                and new_values.get(key) == enums.OpenAIClientType.OPEN_AI.value
-            ):
-                for k in ["model"]:
-                    new_values.pop(k, None)
-            elif (
-                key == "llmIdentifier"
-                and new_values.get(key) == enums.OpenAIClientType.AZURE.value
-            ):
-                for k in ["engine", "apiBase", "apiVersion"]:
-                    new_values.pop(k, None)
             new_values[key] = llm_config[key]
 
         project.llm_config = new_values
