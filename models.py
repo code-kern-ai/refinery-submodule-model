@@ -1135,6 +1135,7 @@ class CognitionProject(Base):
     llm_config = Column(JSON)
     # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
+    tokenizer = Column(String)
 
 
 class CognitionStrategy(Base):
