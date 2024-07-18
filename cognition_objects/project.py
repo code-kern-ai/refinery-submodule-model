@@ -221,6 +221,7 @@ def create(
     refinery_references_project_id: str,
     refinery_queries_project_id: str,
     refinery_relevances_project_id: str,
+    tokenizer: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     routing_source_code: Optional[str] = None,
@@ -245,6 +246,7 @@ def create(
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
         execute_query_enrichment_if_source_code=EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE,
         macro_config=macro_config,
+        tokenizer=tokenizer,
     )
     general.add(project, with_commit)
     return project
@@ -269,6 +271,7 @@ def update(
     refinery_relevance_project_id: Optional[str] = None,
     macro_config: Optional[Dict[str, Any]] = None,
     llm_config: Optional[Dict[str, Any]] = None,
+    tokenizer: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -335,6 +338,8 @@ def update(
 
         project.llm_config = new_values
         flag_modified(project, "llm_config")
+    if tokenizer is not None:
+        project.tokenizer = tokenizer
     general.flush_or_commit(with_commit)
     return project
 
