@@ -334,7 +334,13 @@ def update(
         if new_values is None:
             new_values = {}
         for key in llm_config:
-            new_values[key] = llm_config[key]
+            if isinstance(llm_config[key], dict):
+                if key not in new_values:
+                    new_values[key] = {}
+                for sub_key in llm_config[key]:
+                    new_values[key][sub_key] = llm_config[key][sub_key]
+            else:
+                new_values[key] = llm_config[key]
 
         project.llm_config = new_values
         flag_modified(project, "llm_config")
