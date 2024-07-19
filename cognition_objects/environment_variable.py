@@ -160,9 +160,11 @@ def get_cognition_project_env_var_value(cognition_project_id: str) -> str:
         return str(v[0])
 
 
-def get_cognition_project_azure_models_env_var_value(cognition_project_id: str) -> str:
+def get_cognition_project_extraction_env_var_value(
+    cognition_project_id: str, envVar: str
+) -> str:
     env_var_id = cast(
-        CognitionProject.llm_config.op("->")("extraction").op("->>")("azureDiEnvVarId"),
+        CognitionProject.llm_config.op("->")("extraction").op("->>")(envVar),
         UUID,
     )
     v = (
