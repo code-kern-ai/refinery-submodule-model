@@ -160,7 +160,7 @@ def get_cognition_project_env_var_value(cognition_project_id: str) -> str:
         )
         .first()
     )
-    if v:
+    if v and v[0]:
         return str(v[0])
 
 
@@ -179,7 +179,7 @@ def get_cognition_project_extraction_env_var_value(
         )
         .first()
     )
-    if v:
+    if v and v[0]:
         return str(v[0])
 
 

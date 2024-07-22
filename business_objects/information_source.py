@@ -175,7 +175,7 @@ def get_first_crowd_is_for_annotator(project_id: str, annotator_id: str) -> str:
     AND _is.source_code::JSON ->>'annotator_id' = '{annotator_id}'
     """
     v = general.execute_first(query)
-    if v:
+    if v and v[0]:
         return v[0]
 
 
