@@ -1134,14 +1134,6 @@ class CognitionProject(Base):
     max_file_size_mb = Column(Float, default=3.0)
     llm_config = Column(JSON)
     max_folder_size_mb = Column(Float, default=20.0)
-    # tmp/beta value as in the future not only openai makes sense here
-    open_ai_env_var_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.ENVIRONMENT_VARIABLE.value}.id", ondelete="SET NULL"
-        ),
-        index=True,
-    )
     # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
     tokenizer = Column(String)

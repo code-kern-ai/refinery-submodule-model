@@ -267,7 +267,6 @@ def update(
     allow_file_upload: Optional[bool] = None,
     max_file_size_mb: Optional[float] = None,
     max_folder_size_mb: Optional[float] = None,
-    open_ai_env_var_id: Optional[str] = None,
     refinery_references_project_id: Optional[str] = None,
     refinery_question_project_id: Optional[str] = None,
     refinery_relevance_project_id: Optional[str] = None,
@@ -309,8 +308,6 @@ def update(
         project.max_file_size_mb = max_file_size_mb
     if max_folder_size_mb is not None:
         project.max_folder_size_mb = max_folder_size_mb
-    if open_ai_env_var_id is not None:
-        project.open_ai_env_var_id = open_ai_env_var_id
     if refinery_references_project_id is not None:
         if refinery_references_project_id == "_none":
             project.refinery_references_project_id = None
