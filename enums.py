@@ -707,6 +707,7 @@ class AdminLogLevel(Enum):
 class MacroType(Enum):
     # macro is meant to be run on a (or n) documents
     DOCUMENT_MESSAGE_QUEUE = "DOCUMENT_MESSAGE_QUEUE"
+    FOLDER_MESSAGE_QUEUE = "FOLDER_MESSAGE_QUEUE"
 
 
 # currently only one option, but could be extended in the future
