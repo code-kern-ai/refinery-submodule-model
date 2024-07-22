@@ -10,7 +10,7 @@ from ..models import (
     CognitionProject,
 )
 from ..util import prevent_sql_injection
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.expression import cast
 
@@ -55,9 +55,13 @@ def get_by_name_and_org_id(
 
     return (
         session.query(CognitionEnvironmentVariable)
-        .filter(CognitionEnvironmentVariable.organization_id == org_id)
-        .filter(CognitionEnvironmentVariable.project_id == None)
-        .filter(CognitionEnvironmentVariable.name == name)
+        .filter(
+            and_(
+                CognitionEnvironmentVariable.organization_id == org_id,
+                CognitionEnvironmentVariable.project_id == None,
+                CognitionEnvironmentVariable.name == name,
+            )
+        )
         .first()
     )
 
