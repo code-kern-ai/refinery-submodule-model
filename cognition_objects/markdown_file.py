@@ -202,7 +202,6 @@ def create_md_llm_log(
     created_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
     with_commit: bool = True,
-    delayed_commit: bool = False,
 ) -> None:
     md_llm_log = CognitionMarkdownLLMLogs(
         markdown_file_id=markdown_file_id,
@@ -213,7 +212,7 @@ def create_md_llm_log(
         finished_at=finished_at,
         model_used=model_used,
     )
-    if delayed_commit:
+    if not with_commit:
         return md_llm_log
     else:
         general.add(md_llm_log, with_commit)
