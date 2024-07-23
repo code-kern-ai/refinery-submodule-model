@@ -55,12 +55,10 @@ def get_by_name_and_org_id(
 
     return (
         session.query(CognitionEnvironmentVariable)
-        .filter(
-            and_(
+        .filter(            
                 CognitionEnvironmentVariable.organization_id == org_id,
                 CognitionEnvironmentVariable.project_id == None,
-                CognitionEnvironmentVariable.name == name,
-            )
+                CognitionEnvironmentVariable.name == name,            
         )
         .first()
     )
