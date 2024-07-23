@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 from datetime import datetime
 from ..business_objects import general
 from . import project as cognition_project
@@ -90,15 +90,14 @@ def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
     )
 
 
-def get_dataset_env_var_value(dataset_id: str, org_id) -> CognitionEnvironmentVariable:
-
+def get_dataset_env_var_value(dataset_id: str, org_id) -> Union[str, None]:
     env_var_id = cast(
         CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(
             "envVarId"
         ),
         UUID,
     )
-    return (
+    v = (
         session.query(CognitionEnvironmentVariable)
         .join(
             CognitionMarkdownDataset,
@@ -111,18 +110,18 @@ def get_dataset_env_var_value(dataset_id: str, org_id) -> CognitionEnvironmentVa
         .first()
     )
 
+    if v:
+        return v.value
 
-def get_dataset_azure_models_env_var_value(
-    dataset_id: str, org_id
-) -> CognitionEnvironmentVariable:
 
+def get_dataset_azure_models_env_var_value(dataset_id: str, org_id) -> Union[str, None]:
     env_var_id = cast(
         CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(
             "azureDiEnvVarId"
         ),
         UUID,
     )
-    return (
+    v = (
         session.query(CognitionEnvironmentVariable)
         .join(
             CognitionMarkdownDataset,
@@ -134,6 +133,9 @@ def get_dataset_azure_models_env_var_value(
         )
         .first()
     )
+
+    if v:
+        return v.value
 
 
 def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]:
