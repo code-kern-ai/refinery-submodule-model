@@ -336,6 +336,8 @@ def update(
         new_values = project.llm_config
         if new_values is None:
             new_values = {}
+
+        # if level 3+ depth is needed, we will need to extend below using deepcopy
         for key in llm_config:
             if isinstance(llm_config[key], dict):
                 if key not in new_values:
