@@ -144,6 +144,7 @@ def create(
     category_origin: str,
     content: Optional[str] = None,
     error: Optional[str] = None,
+    meta_data: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionMarkdownFile:
@@ -157,6 +158,7 @@ def create(
         error=error,
         category_origin=category_origin,
         state=enums.CognitionMarkdownFileState.QUEUE.value,
+        meta_data=meta_data,
     )
     general.add(markdown_file, with_commit)
 
@@ -172,6 +174,7 @@ def update(
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
     error: Optional[str] = None,
+    meta_data: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = get(org_id, markdown_file_id)
@@ -187,6 +190,8 @@ def update(
         markdown_file.finished_at = finished_at
     if error is not None:
         markdown_file.error = error
+    if meta_data is not None:
+        markdown_file.meta_data = meta_data
 
     general.flush_or_commit(with_commit)
 
