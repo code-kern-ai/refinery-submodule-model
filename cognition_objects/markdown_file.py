@@ -212,11 +212,9 @@ def create_md_llm_log(
         finished_at=finished_at,
         model_used=model_used,
     )
-    if not with_commit:
-        return md_llm_log
-    else:
-        general.add(md_llm_log, with_commit)
-        return None
+    general.add(md_llm_log, with_commit)
+
+    return md_llm_log
 
 
 def delete(org_id: str, md_file_id: str, with_commit: bool = True) -> None:
