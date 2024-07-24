@@ -1468,6 +1468,7 @@ class CognitionMarkdownFile(Base):
     error = Column(String)
     state = Column(String)
     is_reviewed = Column(Boolean, default=False)
+    meta_data = Column(JSON)
 
 
 class CognitionMarkdownLLMLogs(Base):
