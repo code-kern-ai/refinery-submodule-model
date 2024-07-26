@@ -365,8 +365,9 @@ def match_edges(
     found = {str(e.id) for e in current}
     # lists for faster generation
     to_delete = [id for id in found if id not in wanted]
-    to_update = [e for e in current if e.id in wanted]
+    to_update = [e for e in current if str(e.id) in wanted]
     to_create = [e for e in update_edges if e["id"] not in found]
+
     for edge in to_update:
         update_values = wanted.get(str(edge.id))
         if not update_values:
