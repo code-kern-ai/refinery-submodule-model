@@ -624,6 +624,7 @@ class OpenAIClientType(Enum):
 
 class CognitionMarkdownFileState(Enum):
     QUEUE = "QUEUE"
+    EXTRACTING = "EXTRACTING"
     TOKENIZING = "TOKENIZING"
     SPLITTING = "SPLITTING"
     TRANSFORMING = "TRANSFORMING"
