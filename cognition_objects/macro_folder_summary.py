@@ -17,8 +17,9 @@ def log_macro_execution_summary(
     INSERT INTO cognition.macro_execution_summary (id, organization_id, creation_month, macro_type, execution_count, processed_files_count)
     VALUES ('{id}', '{org_id}', date_trunc('month', '{date.today()}'::timestamp), '{macro_type}', 1, {processed_files_number})
     ON CONFLICT ON CONSTRAINT unique_macro_summary DO UPDATE
-        SET count = macro_execution_summary.count + 1;
-        SET processed_files_count = macro_execution_summary.processed_files_count + {processed_files_number};
+        SET
+            execution_count = macro_execution_summary.execution_count + 1,
+            processed_files_count = macro_execution_summary.processed_files_count + {processed_files_number};
     """
     general.execute(query)
     general.flush_or_commit(with_commit)
