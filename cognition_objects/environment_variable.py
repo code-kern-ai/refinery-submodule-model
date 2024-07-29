@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 from datetime import datetime
 from ..business_objects import general
 from . import project as cognition_project
@@ -10,7 +10,9 @@ from ..models import (
     CognitionProject,
 )
 from ..util import prevent_sql_injection
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql.expression import cast
 
 
 def get(project_id: str, environment_variable_id: str) -> CognitionEnvironmentVariable:
@@ -46,13 +48,34 @@ def get_by_name(
     )
 
 
+def get_by_name_and_org_id(
+    org_id: str,
+    name: str,
+) -> CognitionEnvironmentVariable:
+
+    return (
+        session.query(CognitionEnvironmentVariable)
+        .filter(            
+                CognitionEnvironmentVariable.organization_id == org_id,
+                CognitionEnvironmentVariable.project_id == None,
+                CognitionEnvironmentVariable.name == name,            
+        )
+        .first()
+    )
+
+
 def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
+    env_var_id = cast(
+        CognitionMarkdownDataset.llm_config.op("->")("transformation").op("->>")(
+            "envVarId"
+        ),
+        UUID,
+    )
     return (
         session.query(CognitionEnvironmentVariable)
         .join(
             CognitionMarkdownDataset,
-            CognitionMarkdownDataset.environment_variable_id
-            == CognitionEnvironmentVariable.id,
+            env_var_id == CognitionEnvironmentVariable.id,
         )
         .join(
             CognitionMarkdownFile,
@@ -63,6 +86,54 @@ def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
         )
         .first()
     )
+
+
+def get_dataset_env_var_value(dataset_id: str, org_id) -> Union[str, None]:
+    env_var_id = cast(
+        CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(
+            "envVarId"
+        ),
+        UUID,
+    )
+    v = (
+        session.query(CognitionEnvironmentVariable)
+        .join(
+            CognitionMarkdownDataset,
+            env_var_id == CognitionEnvironmentVariable.id,
+        )
+        .filter(CognitionEnvironmentVariable.organization_id == org_id)
+        .filter(
+            CognitionMarkdownDataset.id == dataset_id,
+        )
+        .first()
+    )
+
+    if v:
+        return v.value
+
+
+def get_dataset_azure_models_env_var_value(dataset_id: str, org_id) -> Union[str, None]:
+    env_var_id = cast(
+        CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(
+            "azureDiEnvVarId"
+        ),
+        UUID,
+    )
+    v = (
+        session.query(CognitionEnvironmentVariable)
+        .join(
+            CognitionMarkdownDataset,
+            env_var_id == CognitionEnvironmentVariable.id,
+        )
+        .filter(CognitionEnvironmentVariable.organization_id == org_id)
+        .filter(
+            CognitionMarkdownDataset.id == dataset_id,
+        )
+        .first()
+    )
+
+    if v:
+        return v.value
 
 
 def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]:
@@ -76,18 +147,39 @@ def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]
 
 
 def get_cognition_project_env_var_value(cognition_project_id: str) -> str:
+
+    env_var_id = cast(
+        CognitionProject.llm_config.op("->")("transformation").op("->>")("envVarId"),
+        UUID,
+    )
     v = (
         session.query(CognitionEnvironmentVariable.value)
-        .join(
-            CognitionProject,
-            CognitionProject.open_ai_env_var_id == CognitionEnvironmentVariable.id,
-        )
+        .join(CognitionProject, env_var_id == CognitionEnvironmentVariable.id)
         .filter(
             CognitionProject.id == cognition_project_id,
         )
         .first()
     )
-    if v:
+    if v and v[0]:
+        return str(v[0])
+
+
+def get_cognition_project_extraction_env_var_value(
+    cognition_project_id: str, envVar: str
+) -> str:
+    env_var_id = cast(
+        CognitionProject.llm_config.op("->")("extraction").op("->>")(envVar),
+        UUID,
+    )
+    v = (
+        session.query(CognitionEnvironmentVariable.value)
+        .join(CognitionProject, env_var_id == CognitionEnvironmentVariable.id)
+        .filter(
+            CognitionProject.id == cognition_project_id,
+        )
+        .first()
+    )
+    if v and v[0]:
         return str(v[0])
 
 
@@ -98,6 +190,17 @@ def get_all_by_org_id(org_id: str) -> List[CognitionEnvironmentVariable]:
         .filter(CognitionEnvironmentVariable.organization_id == org_id)
         .filter(CognitionEnvironmentVariable.project_id == None)
         .order_by(CognitionEnvironmentVariable.created_at.asc())
+        .all()
+    )
+
+
+def get_all_by_org_env_id(
+    org_id: str, env_id: str
+) -> List[CognitionEnvironmentVariable]:
+    return (
+        session.query(CognitionEnvironmentVariable)
+        .filter(CognitionEnvironmentVariable.organization_id == org_id)
+        .filter(CognitionEnvironmentVariable.id == env_id)
         .all()
     )
 
