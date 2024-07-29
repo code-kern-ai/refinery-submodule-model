@@ -1680,7 +1680,7 @@ class CognitionMacroExecutionSummary(Base):
             "organization_id",
             "creation_month",
             "macro_type",
-            name="unique_summary",
+            name="unique_macro_summary",
         ),
         {"schema": "cognition"},
     )
@@ -1695,7 +1695,8 @@ class CognitionMacroExecutionSummary(Base):
         Date, default=sql.func.date_trunc("month", sql.func.now()), index=True
     )
     macro_type = Column(String)  # of type enums.MacroType
-    count = Column(Integer)
+    execution_count = Column(Integer)
+    processed_files_count = Column(Integer)
 
 
 # =========================== Global tables ===========================
