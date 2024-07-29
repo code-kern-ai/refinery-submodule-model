@@ -1,10 +1,6 @@
 import uuid
 from datetime import date
-from ..enums import StrategyComplexity
-from . import project
 from ..business_objects import general
-from typing import Optional
-from ..util import prevent_sql_injection
 from submodules.model.cognition_objects import (
     macro as macro_db_co,
 )
