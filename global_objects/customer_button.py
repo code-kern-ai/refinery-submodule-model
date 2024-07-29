@@ -35,19 +35,21 @@ def get_all(filter_visible: Optional[bool] = None) -> List[CustomerButton]:
 
 
 def get_by_org_id(
-    org_id: str, filter_visible: Optional[bool] = None
+    org_id: str,
+    filter_visible: Optional[bool] = None,
+    filter_location: Optional[enums.CustomerButtonLocation] = None,
 ) -> List[CustomerButton]:
     # org name only relevant for admin dashboard, this is for org specific so no need to join
-    query = (
-        session.query(CustomerButton)
-        .filter(
-            CustomerButton.org_id == org_id,
-        )
-        .join()
+    query = session.query(CustomerButton).filter(
+        CustomerButton.organization_id == org_id,
     )
-    if not filter_visible:
-        return query.all()
-    return query.filter(CustomerButton.visible == filter_visible).all()
+
+    if filter_visible is not None:
+        query = query.filter(CustomerButton.visible == filter_visible)
+    if filter_location is not None:
+        query = query.filter(CustomerButton.location == filter_location.value)
+
+    return query.all()
 
 
 def create(
