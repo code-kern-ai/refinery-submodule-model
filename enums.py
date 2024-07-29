@@ -617,8 +617,14 @@ class LLMProvider(Enum):
     AZURE = "Azure"
 
 
+class OpenAIClientType(Enum):
+    OPEN_AI = "OPEN_AI"
+    AZURE = "AZURE"
+
+
 class CognitionMarkdownFileState(Enum):
     QUEUE = "QUEUE"
+    EXTRACTING = "EXTRACTING"
     TOKENIZING = "TOKENIZING"
     SPLITTING = "SPLITTING"
     TRANSFORMING = "TRANSFORMING"
