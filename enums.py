@@ -141,6 +141,9 @@ class Tablenames(Enum):
     MACRO_EDGE = "macro_edge"  # connection between steps of a macro
     MACRO_EXECUTION = "macro_execution"  # links macro id to an execution id
     MACRO_EXECUTION_LINK = "macro_execution_link"  # execution to a conversation id
+    MACRO_EXECUTION_SUMMARY = (
+        "macro_execution_summary"  # summary of macro folder executions
+    )
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs

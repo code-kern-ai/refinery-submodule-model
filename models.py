@@ -1673,6 +1673,28 @@ class CognitionMacroExecutionLink(Base):
     other_id = Column(UUID(as_uuid=True), index=True)
 
 
+class CognitionMacroExecutionSummary(Base):
+    __tablename__ = Tablenames.MACRO_EXECUTION_SUMMARY.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "creation_month",
+            "macro_type",
+            name="unique_summary",
+        ),
+        {"schema": "cognition"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    creation_month = Column(Date, default=sql.func.date_trunc("month", sql.func.now()), index=True)
+    count = Column(Integer)
+
+
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
