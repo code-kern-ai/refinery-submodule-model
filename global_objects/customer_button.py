@@ -94,9 +94,8 @@ def update(
         flag_modified(button, "config")
     if user_id:
         button.created_by = user_id
-    if visible:
+    if visible is not None:
         button.visible = visible
-
     general.flush_or_commit(with_commit)
     return button
 
