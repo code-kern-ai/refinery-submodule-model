@@ -1691,7 +1691,10 @@ class CognitionMacroExecutionSummary(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    creation_month = Column(Date, default=sql.func.date_trunc("month", sql.func.now()), index=True)
+    creation_month = Column(
+        Date, default=sql.func.date_trunc("month", sql.func.now()), index=True
+    )
+    macro_type = Column(String)  # of type enums.MacroType
     count = Column(Integer)
 
 
