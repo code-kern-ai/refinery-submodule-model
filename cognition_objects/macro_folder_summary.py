@@ -1,9 +1,6 @@
 import uuid
 from datetime import date
 from ..business_objects import general
-from submodules.model.cognition_objects import (
-    macro as macro_db_co,
-)
 
 
 def log_macro_execution_summary(
