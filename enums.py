@@ -756,14 +756,15 @@ class AdminMacrosDisplay(Enum):
 
 
 class CustomerButtonType(Enum):
-    DATA_MAPPER = "DATA_MAPPER"  # sends data to the data mapper, needs to ensure the request has the key included!
 
+    DATA_MAPPER = "DATA_MAPPER"
+    # sends data to the data mapper, needs to ensure the request has the key included!
+
+    # ______________________________
     # extended on demand over time
 
 
 class CustomerButtonLocation(Enum):
-    COGNITION_MACRO_RESULTS_TABLE = (
-        "COGNITION_MACRO_RESULTS_TABLE"  # url /macros/<macro_id>
-    )
+    COGNITION_MACRO_RESULTS_TABLE = "COGNITION_MACRO_RESULTS_TABLE"  # url /macros/<macro_id> # only visible if meta data display is active
 
     # extended on demand over time
