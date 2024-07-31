@@ -100,3 +100,15 @@ def delete_all_by_message_id(
     ).delete()
 
     general.flush_or_commit(with_commit)
+
+
+def get_all_by_messages_ids(project_id: str, message_ids: List[str]):
+    return (
+        session.query(CognitionPipelineLogs)
+        .filter(
+            CognitionPipelineLogs.project_id == project_id,
+            CognitionPipelineLogs.message_id.in_(message_ids),
+        )
+        .order_by(CognitionPipelineLogs.created_at.asc())
+        .all()
+    )
