@@ -141,6 +141,12 @@ class Tablenames(Enum):
     MACRO_EDGE = "macro_edge"  # connection between steps of a macro
     MACRO_EXECUTION = "macro_execution"  # links macro id to an execution id
     MACRO_EXECUTION_LINK = "macro_execution_link"  # execution to a conversation id
+    ORGANIZATION_QUESTIONS = "organization_questions"
+    BUSINESS_MODELS = "business_models"
+    BUSINESS_MODEL_QUESTIONS = "business_model_questions"
+    DATA_CONCEPTS = "data_concepts"
+    RULES = "rules"
+    RESOURCE = "resource"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -516,6 +522,9 @@ class StrategyStepType(Enum):
     # INFO: done in exec env to prevent installing sklearn in gateway
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
 
+    # INFO: needs a good business model to work properly
+    BUSINESS_MODEL_CONSUMPTION = "BUSINESS_MODEL_CONSUMPTION"
+
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
 
@@ -539,6 +548,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
     StrategyStepType.HEADER: "Writing header",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Temporary document retrieval",
+    StrategyStepType.BUSINESS_MODEL_CONSUMPTION: "Business model consumption",
 }
 
 STEP_WHEN_TO_USE = {
@@ -554,6 +564,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
     StrategyStepType.HEADER: "When you want to set a header based on the conversation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "When you want to retrieve results from conversation specific documents",
+    StrategyStepType.BUSINESS_MODEL_CONSUMPTION: "When you want to understand what business resources are relevant",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -569,6 +580,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
     StrategyStepType.HEADER: "Headline generation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Retrieving facts from conversation specific documents",
+    StrategyStepType.BUSINESS_MODEL_CONSUMPTION: "Analyzing relevant resources",
 }
 
 STEP_ERRORS = {
@@ -752,3 +764,20 @@ class AdminMacrosDisplay(Enum):
     FOR_ADMINS = "FOR_ADMINS"
     FOR_ENGINEERS = "FOR_ENGINEERS"
     FOR_ALL = "FOR_ALL"
+
+
+class QuestionType(Enum):
+    INPUT_TEXT = "INPUT_TEXT"
+    INPUT_CHECKBOX = "INPUT_CHECKBOX"
+    TEXTAREA = "TEXTAREA"
+    DROPDOWN = "DROPDOWN"
+
+
+class RuleType(Enum):
+    GLOBAL_CONTEXT = "GLOBAL_CONTEXT"
+    RESOURCE_CONTEXT = "RESOURCE_CONTEXT"
+    RESOURCE_RELATION = "RESOURCE_RELATION"
+
+
+class ResourceType(Enum):
+    PDF = "PDF"
