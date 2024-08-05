@@ -1066,9 +1066,9 @@ class TaskQueue(Base):
     # only meant as persistent layer, queue itself accesses cache
     __tablename__ = Tablenames.TASK_QUEUE.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
+    organization_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
     )
     task_type = Column(String)  # enum.TaskType e.g. EMBEDDING
     task_info = Column(JSON)

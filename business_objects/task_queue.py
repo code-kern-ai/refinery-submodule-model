@@ -23,7 +23,7 @@ def get_all_waiting_by_type(
     return (
         session.query(TaskQueue)
         .filter(
-            TaskQueue.project_id == project_id,
+            TaskQueue.task_info.project_id == project_id,
             TaskQueue.task_type == task_type.value,
             TaskQueue.is_active == False,
         )
@@ -74,7 +74,7 @@ def get_by_tokenization(project_id: str) -> TaskQueue:
 
 
 def add(
-    project_id: str,
+    org_id: str,
     task_type: enums.TaskType,
     created_by: str,
     task_info: Union[List[Dict[str, str]], Dict[str, str]],
@@ -82,7 +82,7 @@ def add(
     with_commit: bool = False,
 ) -> TaskQueue:
     tbl_entry = TaskQueue(
-        project_id=project_id,
+        organization_id=org_id,
         task_type=task_type.value,
         created_by=created_by,
         task_info=task_info,
@@ -121,9 +121,9 @@ def update_task_info(
     general.flush_or_commit(with_commit)
 
 
-def remove_task_from_queue(project_id: str, task_id: str, with_commit: bool = False):
+def remove_task_from_queue(org_id: str, task_id: str, with_commit: bool = False):
     session.query(TaskQueue).filter(
         TaskQueue.id == task_id,
-        TaskQueue.project_id == project_id,
+        TaskQueue.organization_id == org_id,
     ).delete()
     general.flush_or_commit(with_commit)
