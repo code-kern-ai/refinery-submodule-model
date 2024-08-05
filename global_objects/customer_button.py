@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Any
 from ..business_objects import general
 from ..session import session
 from ..models import CustomerButton
+from ..util import prevent_sql_injection
 from .. import enums
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -22,6 +23,9 @@ def get_all(filter_visible: Optional[bool] = None) -> List[CustomerButton]:
     where_add = ""
 
     if filter_visible is not None:
+        filter_visible = prevent_sql_injection(
+            filter_visible, isinstance(filter_visible, bool)
+        )
         where_add = f"WHERE cb.visible = {filter_visible}"
 
     query = f"""
@@ -90,7 +94,7 @@ def update(
     if type:
         button.type = type.value
     if location:
-        button
+        button.location = location.value
     if config:
         button.config = config
         flag_modified(button, "config")
