@@ -258,9 +258,9 @@ def get_overview_data(
             LIMIT 1
         )isp ON TRUE
         LEFT JOIN (
-            SELECT project_id, task_info ->> 'information_source_id' is_id, 'QUEUED' state
+            SELECT task_info ->> 'project_id' AS project_id, task_info ->> 'information_source_id' is_id, 'QUEUED' state
             FROM task_queue tq
-            WHERE NOT tq.is_active AND tq.project_id = '{project_id}' AND tq.task_type = '{enums.TaskType.INFORMATION_SOURCE.value}'
+            WHERE NOT tq.is_active AND project_id = '{project_id}' AND tq.task_type = '{enums.TaskType.INFORMATION_SOURCE.value}'
         ) queue
             ON queue.project_id = _is.project_id AND _is.id::TEXT = queue.is_id
         LEFT JOIN (
