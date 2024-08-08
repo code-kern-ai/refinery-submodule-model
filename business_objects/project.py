@@ -122,6 +122,20 @@ def __build_sql_data_slices_by_project(project_id: str) -> str:
         project.id = '{project_id}'::UUID; """
 
 
+def get_dropdown_list_project_list(org_id: str) -> List[Dict[str, str]]:
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+    query = f"""
+    SELECT array_agg(jsonb_build_object('value', p.id,'name',p.NAME))
+    FROM public.project p
+    WHERE p.organization_id = '{org_id}'
+    """
+    values = general.execute_first(query)
+
+    if values and values[0]:
+        return values[0]
+    return []
+
+
 def get_org_id(project_id: str) -> str:
     if p := get(project_id):
         return str(p.organization_id)

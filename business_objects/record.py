@@ -451,6 +451,21 @@ def get_record_data_for_id_group(
     return {row[0]: row[1] for row in data} if data else None
 
 
+def get_full_record_data_for_id_group(
+    project_id: str, record_ids: List[str]
+) -> Dict[str, str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    record_ids = [prevent_sql_injection(r, isinstance(r, str)) for r in record_ids]
+    record_where = " id IN ('" + "','".join(record_ids) + "')"
+    query = f"""
+    SELECT id::TEXT, data::JSON
+    FROM record
+    WHERE project_id = '{project_id}' AND {record_where}
+    """
+    data = general.execute_all(query)
+    return {row[0]: row[1] for row in data} if data else None
+
+
 def get_attribute_data(
     project_id: str, attribute_name: str
 ) -> Tuple[List[str], List[str]]:

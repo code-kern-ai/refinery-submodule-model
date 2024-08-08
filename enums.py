@@ -516,6 +516,8 @@ class StrategyStepType(Enum):
     HEADER = "HEADER"
     # INFO: done in exec env to prevent installing sklearn in gateway
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
+    # INFO: will replace retrieval in the future, direct access to neural search without gates
+    NEURAL_SEARCH = "NEURAL_SEARCH"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -529,6 +531,7 @@ class StrategyStepType(Enum):
 
 STEP_DESCRIPTIONS = {
     StrategyStepType.RETRIEVAL: "Fetch facts from a DB",
+    StrategyStepType.NEURAL_SEARCH: "Fetch facts from an embedding",
     # StrategyStepType.RELEVANCE: "Classify retrieved facts",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Custom python function",
@@ -544,6 +547,7 @@ STEP_DESCRIPTIONS = {
 
 STEP_WHEN_TO_USE = {
     StrategyStepType.RETRIEVAL: "When you want to retrieve facts from a database",
+    StrategyStepType.NEURAL_SEARCH: "When you want to fetch facts based on an embedding",
     # StrategyStepType.RELEVANCE: "When you want to classify retrieved facts",
     StrategyStepType.PYTHON: "When you want to run a custom python function",
     StrategyStepType.LLM: "When you want to give an actual answer to the question",
@@ -559,6 +563,7 @@ STEP_WHEN_TO_USE = {
 
 STEP_PROGRESS_TEXTS = {
     StrategyStepType.RETRIEVAL: "Retrieving facts",
+    StrategyStepType.NEURAL_SEARCH: "Retrieving facts",
     # StrategyStepType.RELEVANCE: "Classifying facts",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Running custom python function",
