@@ -454,6 +454,8 @@ def get_record_data_for_id_group(
 def get_full_record_data_for_id_group(
     project_id: str, record_ids: List[str]
 ) -> Dict[str, str]:
+    if len(record_ids) == 0:
+        return []
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     record_ids = [prevent_sql_injection(r, isinstance(r, str)) for r in record_ids]
     record_where = " id IN ('" + "','".join(record_ids) + "')"
