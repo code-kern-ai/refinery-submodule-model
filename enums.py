@@ -141,6 +141,7 @@ class Tablenames(Enum):
     MACRO_EDGE = "macro_edge"  # connection between steps of a macro
     MACRO_EXECUTION = "macro_execution"  # links macro id to an execution id
     MACRO_EXECUTION_LINK = "macro_execution_link"  # execution to a conversation id
+    CUSTOMER_BUTTON = "customer_button"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -752,3 +753,18 @@ class AdminMacrosDisplay(Enum):
     FOR_ADMINS = "FOR_ADMINS"
     FOR_ENGINEERS = "FOR_ENGINEERS"
     FOR_ALL = "FOR_ALL"
+
+
+class CustomerButtonType(Enum):
+
+    DATA_MAPPER = "DATA_MAPPER"
+    # sends data to the data mapper, needs to ensure the request has the key included!
+
+    # ______________________________
+    # extended on demand over time
+
+
+class CustomerButtonLocation(Enum):
+    COGNITION_MACRO_RESULTS_TABLE = "COGNITION_MACRO_RESULTS_TABLE"  # url /macros/<macro_id> # only visible if meta data display is active
+
+    # extended on demand over time
