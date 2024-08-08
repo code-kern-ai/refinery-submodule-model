@@ -3,10 +3,13 @@ from sqlalchemy import text
 
 from . import general
 from .. import enums
-from ..models import TaskQueue
+from ..models import TaskQueue, Project
 from ..session import session
 
 from ..util import prevent_sql_injection
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql.expression import cast
+from datetime import datetime, timedelta
 
 
 def get(task_id: str) -> Optional[TaskQueue]:
@@ -15,6 +18,27 @@ def get(task_id: str) -> Optional[TaskQueue]:
 
 def get_all_tasks() -> List[TaskQueue]:
     return session.query(TaskQueue).order_by(TaskQueue.created_at.asc()).all()
+
+
+def get_orphan_tasks() -> List[TaskQueue]:
+    task_project_id = cast(TaskQueue.task_info.op("->>")("project_id"), UUID)
+    return (
+        session.query(TaskQueue)
+        .outerjoin(
+            Project,
+            task_project_id == Project.id,
+        )
+        .filter(task_project_id != None, Project.id == None)
+        .all()
+    )
+
+
+def get_likely_failed_tasks(days: int = 1) -> List[TaskQueue]:
+    return (
+        session.query(TaskQueue)
+        .filter(TaskQueue.created_at < datetime.now() - timedelta(days=days))
+        .all()
+    )
 
 
 def get_all_waiting_by_type(
