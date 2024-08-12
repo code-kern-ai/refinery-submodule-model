@@ -39,6 +39,16 @@ def get_organization_id(project_id: str, user_id: str) -> str:
     return None
 
 
+def get_org_id_to_name_map() -> Dict[str, str]:
+    query = """
+    SELECT jsonb_object_agg(id::TEXT,NAME)
+    FROM organization """
+    values = general.execute_first(query)
+    if values and values[0]:
+        return values[0]
+    return {}
+
+
 def get_organization_overview_stats(
     organization_id: str,
 ) -> List[Dict[str, Union[str, int]]]:
