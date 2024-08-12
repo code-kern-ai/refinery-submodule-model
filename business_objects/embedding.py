@@ -149,6 +149,19 @@ def get_waiting_embeddings(project_id: str) -> List[Embedding]:
     )
 
 
+def get_finished_embeddings_dropdown_list(project_id: str) -> List[Dict[str, str]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    query = f"""
+    SELECT array_agg(jsonb_build_object('value', e.id,'name',e.NAME))
+    FROM embedding e
+    WHERE e.project_id = '{project_id}' AND e.state = '{enums.EmbeddingState.FINISHED.value}' AND e.type = '{enums.EmbeddingType.ON_ATTRIBUTE.value}' """
+    values = general.execute_first(query)
+
+    if values and values[0]:
+        return values[0]
+    return []
+
+
 def get_tensor_data_ordered_query(embedding_id: str) -> str:
     embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
     return f"""
@@ -325,6 +338,74 @@ def get_match_record_ids_to_qdrant_ids(
     LIMIT {limit}
     """
     return [r[0] for r in general.execute_all(query)]
+
+
+def get_match_record_ids_to_qdrant_ids_with_max_score(
+    project_id: str, embedding_id: str, qdrant_results: List[Any], limit: int
+) -> List[Any]:
+    ## Currently an open question how to handle multiple entries per record
+    ## We are using the min score (distance) though this probably isn't optimal for a final solution
+    ## e.g. how to interpret a record with 3 semi relevant entries all with distance ~40 vs 1 with 35, 1 with 10 or 1 with 0.0001
+    ## with min it's 3x 40 is less relevant than e.g. 1x 0.0001. Imo very reasonable to prioritize a very likely relevant over the 3 maybe relevant.
+    ## For higher scores however maybe not? as a record with 3x 40 is potentially more relevant than 1x 35
+
+    if len(qdrant_results) == 0:
+        return []
+
+    # "normal" attributes are stored in qdrant with the record id, embedding lists with the tensor id, no need to query
+    if not has_sub_key(project_id, embedding_id):
+        return [{"id": entry.id, "score": entry.score} for entry in qdrant_results]
+
+    CHUNK_SIZE = 100
+    if len(qdrant_results) > CHUNK_SIZE:
+        results = []
+        for i in range(0, len(qdrant_results), CHUNK_SIZE):
+            chunk = qdrant_results[i : i + CHUNK_SIZE]
+            if r := get_match_record_ids_to_qdrant_ids_with_max_score(
+                project_id, embedding_id, chunk, limit
+            ):
+                results.extend(r)
+        return results
+
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
+
+    if len(qdrant_results) == 0:
+        return []
+
+    query = f"""
+    {__generate_with_table_union_query(qdrant_results)}
+
+    SELECT et.record_id::TEXT id, MAX(s.score) score
+    FROM  embedding_tensor et
+    INNER JOIN scores s
+        ON et.id = s.id
+    WHERE et.project_id = '{project_id}' AND et.embedding_id = '{embedding_id}'
+    GROUP BY et.record_id
+    ORDER BY 2 ASC
+    LIMIT {limit}
+    """
+
+    return [{"id": r[0], "score": r[1]} for r in general.execute_all(query)]
+
+
+def __generate_with_table_union_query(qdrant_results: List[Any]) -> str:
+
+    if len(qdrant_results) == 0:
+        union_query = None
+    else:
+        union_query = "UNION ALL " + " UNION ALL".join(
+            [f"\nSELECT '{entry.id}', {entry.score}" for entry in qdrant_results]
+        )
+
+    return f"""
+    WITH scores AS (
+        SELECT id::UUID, score::FLOAT
+        FROM (
+            SELECT NULL id, NULL score
+            {union_query}
+        ) x
+    ) """
 
 
 def get_qdrant_limit_factor(
