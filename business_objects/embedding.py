@@ -606,8 +606,9 @@ def __update_embedding_state(
     project_id: str, embedding_id: str, state: str, with_commit=False
 ) -> None:
     embedding_item = get(project_id, embedding_id)
-    embedding_item.state = state
-    general.flush_or_commit(with_commit)
+    if embedding_item:
+        embedding_item.state = state
+        general.flush_or_commit(with_commit)
 
 
 def delete(project_id: str, embedding_id: str, with_commit: bool = False) -> None:
