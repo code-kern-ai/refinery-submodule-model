@@ -175,7 +175,7 @@ def get_first_crowd_is_for_annotator(project_id: str, annotator_id: str) -> str:
     AND _is.source_code::JSON ->>'annotator_id' = '{annotator_id}'
     """
     v = general.execute_first(query)
-    if v:
+    if v and v[0]:
         return v[0]
 
 
@@ -258,9 +258,9 @@ def get_overview_data(
             LIMIT 1
         )isp ON TRUE
         LEFT JOIN (
-            SELECT project_id, task_info ->> 'information_source_id' is_id, 'QUEUED' state
-            FROM task_queue tq
-            WHERE NOT tq.is_active AND tq.project_id = '{project_id}' AND tq.task_type = '{enums.TaskType.INFORMATION_SOURCE.value}'
+            SELECT (task_info ->> 'project_id')::uuid AS project_id, task_info ->> 'information_source_id' is_id, 'QUEUED' state
+            FROM global.task_queue tq
+            WHERE NOT tq.is_active AND (task_info ->> 'project_id') = '{project_id}' AND tq.task_type = '{enums.TaskType.INFORMATION_SOURCE.value}'
         ) queue
             ON queue.project_id = _is.project_id AND _is.id::TEXT = queue.is_id
         LEFT JOIN (

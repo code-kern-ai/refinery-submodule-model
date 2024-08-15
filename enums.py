@@ -143,6 +143,10 @@ class Tablenames(Enum):
     MACRO_EXECUTION_LINK = "macro_execution_link"  # execution to a conversation id
     STRATEGY_REQUIREMENT = "strategy_requirement"
     STRATEGY_REQUIREMENT_MAPPING_OPTION = "strategy_requirement_mapping_option"
+    MACRO_EXECUTION_SUMMARY = (
+        "macro_execution_summary"  # summary of macro folder executions
+    )
+    CUSTOMER_BUTTON = "customer_button"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -518,6 +522,8 @@ class StrategyStepType(Enum):
     # INFO: done in exec env to prevent installing sklearn in gateway
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
     CALL_OTHER_AGENT = "CALL_OTHER_AGENT"
+    # INFO: will replace retrieval in the future, direct access to neural search without gates
+    NEURAL_SEARCH = "NEURAL_SEARCH"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -531,6 +537,7 @@ class StrategyStepType(Enum):
 
 STEP_DESCRIPTIONS = {
     StrategyStepType.RETRIEVAL: "Fetch facts from a DB",
+    StrategyStepType.NEURAL_SEARCH: "Fetch facts from an embedding",
     # StrategyStepType.RELEVANCE: "Classify retrieved facts",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Custom python function",
@@ -547,6 +554,7 @@ STEP_DESCRIPTIONS = {
 
 STEP_WHEN_TO_USE = {
     StrategyStepType.RETRIEVAL: "When you want to retrieve facts from a database",
+    StrategyStepType.NEURAL_SEARCH: "When you want to fetch facts based on an embedding",
     # StrategyStepType.RELEVANCE: "When you want to classify retrieved facts",
     StrategyStepType.PYTHON: "When you want to run a custom python function",
     StrategyStepType.LLM: "When you want to give an actual answer to the question",
@@ -563,6 +571,7 @@ STEP_WHEN_TO_USE = {
 
 STEP_PROGRESS_TEXTS = {
     StrategyStepType.RETRIEVAL: "Retrieving facts",
+    StrategyStepType.NEURAL_SEARCH: "Retrieving facts",
     # StrategyStepType.RELEVANCE: "Classifying facts",
     StrategyStepType.NONE: "Dummy step",
     StrategyStepType.PYTHON: "Running custom python function",
@@ -625,8 +634,14 @@ class LLMProvider(Enum):
     AZURE = "Azure"
 
 
+class OpenAIClientType(Enum):
+    OPEN_AI = "OPEN_AI"
+    AZURE = "AZURE"
+
+
 class CognitionMarkdownFileState(Enum):
     QUEUE = "QUEUE"
+    EXTRACTING = "EXTRACTING"
     TOKENIZING = "TOKENIZING"
     SPLITTING = "SPLITTING"
     TRANSFORMING = "TRANSFORMING"
@@ -710,6 +725,7 @@ class AdminLogLevel(Enum):
 class MacroType(Enum):
     # macro is meant to be run on a (or n) documents
     DOCUMENT_MESSAGE_QUEUE = "DOCUMENT_MESSAGE_QUEUE"
+    FOLDER_MESSAGE_QUEUE = "FOLDER_MESSAGE_QUEUE"
 
 
 # currently only one option, but could be extended in the future
@@ -753,3 +769,18 @@ class AdminMacrosDisplay(Enum):
     FOR_ADMINS = "FOR_ADMINS"
     FOR_ENGINEERS = "FOR_ENGINEERS"
     FOR_ALL = "FOR_ALL"
+
+
+class CustomerButtonType(Enum):
+
+    DATA_MAPPER = "DATA_MAPPER"
+    # sends data to the data mapper, needs to ensure the request has the key included!
+
+    # ______________________________
+    # extended on demand over time
+
+
+class CustomerButtonLocation(Enum):
+    COGNITION_MACRO_RESULTS_TABLE = "COGNITION_MACRO_RESULTS_TABLE"  # url /macros/<macro_id> # only visible if meta data display is active
+
+    # extended on demand over time

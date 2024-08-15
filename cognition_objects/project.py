@@ -221,6 +221,7 @@ def create(
     refinery_references_project_id: str,
     refinery_queries_project_id: str,
     refinery_relevances_project_id: str,
+    tokenizer: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     routing_source_code: Optional[str] = None,
@@ -245,6 +246,7 @@ def create(
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
         execute_query_enrichment_if_source_code=EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE,
         macro_config=macro_config,
+        tokenizer=tokenizer,
     )
     general.add(project, with_commit)
     return project
@@ -264,11 +266,13 @@ def update(
     facts_grouping_attribute: Optional[str] = None,
     allow_file_upload: Optional[bool] = None,
     max_file_size_mb: Optional[float] = None,
-    open_ai_env_var_id: Optional[str] = None,
+    max_folder_size_mb: Optional[float] = None,
     refinery_references_project_id: Optional[str] = None,
     refinery_question_project_id: Optional[str] = None,
     refinery_relevance_project_id: Optional[str] = None,
     macro_config: Optional[Dict[str, Any]] = None,
+    llm_config: Optional[Dict[str, Any]] = None,
+    tokenizer: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -302,8 +306,8 @@ def update(
         project.allow_file_upload = allow_file_upload
     if max_file_size_mb is not None:
         project.max_file_size_mb = max_file_size_mb
-    if open_ai_env_var_id is not None:
-        project.open_ai_env_var_id = open_ai_env_var_id
+    if max_folder_size_mb is not None:
+        project.max_folder_size_mb = max_folder_size_mb
     if refinery_references_project_id is not None:
         if refinery_references_project_id == "_none":
             project.refinery_references_project_id = None
@@ -328,6 +332,25 @@ def update(
 
         project.macro_config = new_values
         flag_modified(project, "macro_config")
+    if llm_config is not None:
+        new_values = project.llm_config
+        if new_values is None:
+            new_values = {}
+
+        # if level 3+ depth is needed, we will need to extend below using deepcopy
+        for key in llm_config:
+            if isinstance(llm_config[key], dict):
+                if key not in new_values:
+                    new_values[key] = {}
+                for sub_key in llm_config[key]:
+                    new_values[key][sub_key] = llm_config[key][sub_key]
+            else:
+                new_values[key] = llm_config[key]
+
+        project.llm_config = new_values
+        flag_modified(project, "llm_config")
+    if tokenizer is not None:
+        project.tokenizer = tokenizer
     general.flush_or_commit(with_commit)
     return project
 

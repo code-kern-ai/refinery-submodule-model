@@ -1065,10 +1065,12 @@ class TaskQueue(Base):
     # start without indexing since the idea is to remove on calculation start
     # only meant as persistent layer, queue itself accesses cache
     __tablename__ = Tablenames.TASK_QUEUE.value
+    __table_args__ = {"schema": "global"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
+    organization_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
     )
     task_type = Column(String)  # enum.TaskType e.g. EMBEDDING
     task_info = Column(JSON)
@@ -1132,16 +1134,11 @@ class CognitionProject(Base):
 
     allow_file_upload = Column(Boolean, default=False)
     max_file_size_mb = Column(Float, default=3.0)
-    # tmp/beta value as in the future not only openai makes sense here
-    open_ai_env_var_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.ENVIRONMENT_VARIABLE.value}.id", ondelete="SET NULL"
-        ),
-        index=True,
-    )
+    llm_config = Column(JSON)
+    max_folder_size_mb = Column(Float, default=20.0)
     # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
+    tokenizer = Column(String)
 
 
 class CognitionStrategy(Base):
@@ -1474,13 +1471,6 @@ class CognitionMarkdownDataset(Base):
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
         index=True,
     )
-    environment_variable_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.ENVIRONMENT_VARIABLE.value}.id", ondelete="SET NULL"
-        ),
-        index=True,
-    )
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
@@ -1490,6 +1480,7 @@ class CognitionMarkdownDataset(Base):
     name = Column(String)
     description = Column(String)
     tokenizer = Column(String)
+    llm_config = Column(JSON)
 
     # might want to index this in the future since it's based on an enum
     category_origin = Column(String)
@@ -1525,6 +1516,7 @@ class CognitionMarkdownFile(Base):
     error = Column(String)
     state = Column(String)
     is_reviewed = Column(Boolean, default=False)
+    meta_data = Column(JSON)
 
 
 class CognitionMarkdownLLMLogs(Base):
@@ -1718,6 +1710,32 @@ class CognitionMacroExecutionLink(Base):
     other_id = Column(UUID(as_uuid=True), index=True)
 
 
+class CognitionMacroExecutionSummary(Base):
+    __tablename__ = Tablenames.MACRO_EXECUTION_SUMMARY.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "creation_month",
+            "macro_type",
+            name="unique_macro_summary",
+        ),
+        {"schema": "cognition"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    creation_month = Column(
+        Date, default=sql.func.date_trunc("month", sql.func.now()), index=True
+    )
+    macro_type = Column(String)  # of type enums.MacroType
+    execution_count = Column(Integer)
+    processed_files_count = Column(Integer)
+
+
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
@@ -1735,5 +1753,36 @@ class GlobalWebsocketAccess(Base):
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+
+class CustomerButton(Base):
+    # table to configuration customer buttons
+
+    __tablename__ = Tablenames.CUSTOMER_BUTTON.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+        # not part of p-key since a customer could have multiple
+    )
+    type = Column(String)  # enums.CustomerButtonType
+    location = Column(String)  # enums.CustomerButtonLocation
+    visible = Column(Boolean, default=False)  # for easy disable
+    config = Column(JSON)  # changes based on type
+    # e.g. for DATA_MAPPER
+    # {
+    #     "url":"http://localhost:9060/hdi/map-to-collect-data?key=abc123", # including access key for e.g. external mapper
+    #     "icon":"<icon_name>",
+    #     "tooltip":"Map results to HDI D&O Excel"
+    # }
+
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
