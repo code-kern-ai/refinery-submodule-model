@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 from . import general
 from .. import enums
-from ..models import TaskQueue, Organization, User
+from ..models import TaskQueue, Organization
 from ..util import prevent_sql_injection
 from ..session import session
 
@@ -18,10 +18,10 @@ def get_all_tasks(
             TaskQueue.created_at,
             TaskQueue.task_info,
             TaskQueue.created_by,
+            TaskQueue.is_active,
             Organization.name,
         )
         .join(Organization, TaskQueue.organization_id == Organization.id)
-        .join(User, TaskQueue.created_by == User.id)
         .limit(limit)
         .offset((page - 1) * limit)
         .all()
