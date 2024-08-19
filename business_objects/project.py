@@ -127,7 +127,7 @@ def get_dropdown_list_project_list(org_id: str) -> List[Dict[str, str]]:
     query = f"""
     SELECT array_agg(jsonb_build_object('value', p.id,'name',p.NAME))
     FROM public.project p
-    WHERE p.organization_id = '{org_id}'
+    WHERE p.organization_id = '{org_id}' AND p.status != '{enums.ProjectStatus.HIDDEN.value}'
     """
     values = general.execute_first(query)
 
