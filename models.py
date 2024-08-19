@@ -1119,7 +1119,7 @@ class CognitionProject(Base):
     name = Column(String)
     description = Column(String)
     color = Column(String)
-    operator_routing_source_code = Column(String)
+    operator_routing_config = Column(JSON)
     state = Column(
         String, default=CognitionProjectState.CREATED.value
     )  # of type enums.CognitionProjectState.*.value
@@ -1163,6 +1163,7 @@ class CognitionStrategy(Base):
         String, default=StrategyComplexity.SIMPLE.value
     )  # of type enums.StrategyComplexity.*.value
 
+
 class CognitionStrategyRequirement(Base):
     __tablename__ = Tablenames.STRATEGY_REQUIREMENT.value
     __table_args__ = {"schema": "cognition"}
@@ -1187,6 +1188,7 @@ class CognitionStrategyRequirement(Base):
     description = Column(String)
     is_input = Column(Boolean, default=False)
 
+
 class CognitionStrategyRequirementMappingOption(Base):
     __tablename__ = Tablenames.STRATEGY_REQUIREMENT_MAPPING_OPTION.value
     __table_args__ = {"schema": "cognition"}
@@ -1198,7 +1200,9 @@ class CognitionStrategyRequirementMappingOption(Base):
     )
     strategy_requirement_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.STRATEGY_REQUIREMENT.value}.id", ondelete="CASCADE"),
+        ForeignKey(
+            f"cognition.{Tablenames.STRATEGY_REQUIREMENT.value}.id", ondelete="CASCADE"
+        ),
         index=True,
     )
     created_by = Column(
@@ -1208,6 +1212,7 @@ class CognitionStrategyRequirementMappingOption(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     value = Column(String)
+
 
 class CognitionStrategyStep(Base):
     __tablename__ = Tablenames.STRATEGY_STEP.value

@@ -210,6 +210,11 @@ DEFAULT_MACRO_CONFIG = {
     "show": enums.AdminMacrosDisplay.DONT_SHOW.value,
 }
 
+DEFAULT_OPERATOR_ROUTING_CONFIG = {
+    "smartEnabled": False,
+    "sourceCode": ROUTING_SOURCE_CODE_DEFAULT,
+}
+
 
 def create(
     name: str,
@@ -224,13 +229,13 @@ def create(
     tokenizer: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
-    routing_source_code: Optional[str] = None,
+    operator_routing_config: Optional[Dict[str, Any]] = None,
     macro_config: Optional[Dict[str, Any]] = None,
 ) -> CognitionProject:
-    if routing_source_code is None:
-        routing_source_code = ROUTING_SOURCE_CODE_DEFAULT
     if macro_config is None:
         macro_config = DEFAULT_MACRO_CONFIG
+    if operator_routing_config is None:
+        operator_routing_config = DEFAULT_OPERATOR_ROUTING_CONFIG
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
@@ -242,7 +247,7 @@ def create(
         refinery_references_project_id=refinery_references_project_id,
         refinery_question_project_id=refinery_queries_project_id,
         refinery_relevance_project_id=refinery_relevances_project_id,
-        operator_routing_source_code=routing_source_code,
+        operator_routing_config=operator_routing_config,
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
         execute_query_enrichment_if_source_code=EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE,
         macro_config=macro_config,
@@ -259,7 +264,7 @@ def update(
     customer_color_primary: Optional[str] = None,
     customer_color_primary_only_accent: Optional[bool] = None,
     customer_color_secondary: Optional[str] = None,
-    operator_routing_source_code: Optional[str] = None,
+    operator_routing_config: Optional[Dict[str, Any]] = None,
     refinery_synchronization_interval_option: Optional[str] = None,
     execute_query_enrichment_if_source_code: Optional[str] = None,
     state: Optional[enums.CognitionProjectState] = None,
@@ -288,8 +293,6 @@ def update(
         project.customer_color_primary_only_accent = customer_color_primary_only_accent
     if customer_color_secondary is not None:
         project.customer_color_secondary = customer_color_secondary
-    if operator_routing_source_code is not None:
-        project.operator_routing_source_code = operator_routing_source_code
     if refinery_synchronization_interval_option is not None:
         project.refinery_synchronization_interval_option = (
             refinery_synchronization_interval_option
@@ -349,6 +352,21 @@ def update(
 
         project.llm_config = new_values
         flag_modified(project, "llm_config")
+
+    if operator_routing_config is not None:
+        new_values = project.operator_routing_config
+        if new_values is None:
+            new_values = deepcopy(DEFAULT_OPERATOR_ROUTING_CONFIG)
+        for key in operator_routing_config:
+            if isinstance(operator_routing_config[key], dict):
+                if key not in new_values:
+                    new_values[key] = {}
+                for sub_key in operator_routing_config[key]:
+                    new_values[key][sub_key] = operator_routing_config[key][sub_key]
+            new_values[key] = operator_routing_config[key]
+
+        project.operator_routing_config = new_values
+        flag_modified(project, "operator_routing_config")
     if tokenizer is not None:
         project.tokenizer = tokenizer
     general.flush_or_commit(with_commit)
