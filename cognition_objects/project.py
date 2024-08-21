@@ -192,7 +192,7 @@ def check_execute(
 
 """
 
-ROUTING_SOURCE_CODE_DEFAULT = """from typing import Dict, Any, Tuple
+ROUTING_SOURCE_CODE_DEFAULT_GUIDED = """from typing import Dict, Any, Tuple
 
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
@@ -202,7 +202,25 @@ def routing(
     else:
         record_dict['routing'] = 'Low-code strategy'
     return record_dict, scope_dict
+"""
 
+ROUTING_SOURCE_CODE_DEFAULT_BLANK = """from typing import Dict, Any, Tuple
+def routing(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> Tuple[str, Dict[str, Any]]:
+    record_dict['routing'] = 'Plain LLM'
+    return record_dict, scope_dict
+"""
+
+SMART_ROUTING_SOURCE_CODE_DEFAULT = """from typing import Dict, Any, Tuple
+
+def routing(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> Tuple[str, Dict[str, Any]]:
+    # Stopping condition for the router.
+    if "answer" in record_dict:
+        record_dict['routing'] = 'STOP'
+    return record_dict, scope_dict
 """
 
 DEFAULT_MACRO_CONFIG = {
@@ -212,7 +230,6 @@ DEFAULT_MACRO_CONFIG = {
 
 DEFAULT_OPERATOR_ROUTING_CONFIG = {
     "smartEnabled": False,
-    "sourceCode": ROUTING_SOURCE_CODE_DEFAULT,
 }
 
 
@@ -236,6 +253,11 @@ def create(
         macro_config = DEFAULT_MACRO_CONFIG
     if operator_routing_config is None:
         operator_routing_config = DEFAULT_OPERATOR_ROUTING_CONFIG
+        operator_routing_config["sourceCode"] = (
+            ROUTING_SOURCE_CODE_DEFAULT_GUIDED
+            if refinery_references_project_id
+            else ROUTING_SOURCE_CODE_DEFAULT_BLANK
+        )
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
