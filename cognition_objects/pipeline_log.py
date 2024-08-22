@@ -26,9 +26,9 @@ def get_all_by_message_id_until_step(
     pipeline_step_type: str,
     strategy_step_type: str,
     strategy_step_id: Optional[str] = None,
-    iteration_number: Optional[int] = None
+    iteration_number: Optional[int] = None,
 ) -> List[CognitionPipelineLogs]:
-    
+
     # TODO: this likely contains the error why the record_dict is not updated with further increments of steps
 
     pipeline_logs: List[CognitionPipelineLogs] = (
@@ -52,7 +52,10 @@ def get_all_by_message_id_until_step(
                 break
         else:
             # I think the error is here, because there can be multiple instances of this pipeline_step_type
-            if pipeline_log.pipeline_step_type == pipeline_step_type and pipeline_log.iteration_number == iteration_number:
+            if (
+                pipeline_log.pipeline_step_type == pipeline_step_type
+                and pipeline_log.iteration_number == iteration_number
+            ):
                 break
 
     return pipeline_logs_until_step
@@ -74,6 +77,7 @@ def get_all_by_message_id_and_pipeline_step_type(
         .all()
     )
 
+
 def create(
     message_id: str,
     project_id: str,
@@ -92,9 +96,13 @@ def create(
     count_pipeline_step_type: Optional[bool] = False,
     count_strategy_step_id: Optional[bool] = False,
 ) -> CognitionPipelineLogs:
-    
+
     if count_pipeline_step_type or count_strategy_step_id:
-        number_logs = len(get_all_by_message_id_and_pipeline_step_type(project_id, message_id, enums.PipelineStep.ROUTE_STRATEGY.value))
+        number_logs = len(
+            get_all_by_message_id_and_pipeline_step_type(
+                project_id, message_id, enums.PipelineStep.ROUTE_STRATEGY.value
+            )
+        )
         if count_pipeline_step_type:
             iteration_number = number_logs
         if count_strategy_step_id:
@@ -116,7 +124,7 @@ def create(
         record_dict_diff_previous_message=record_dict_diff_previous,
         scope_dict_diff_previous_message=scope_dict_diff_previous,
         skipped_step=skipped_step,
-        iteration_number=iteration_number
+        iteration_number=iteration_number,
     )
 
     general.add(log, with_commit)

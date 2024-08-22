@@ -228,10 +228,6 @@ DEFAULT_MACRO_CONFIG = {
     "show": enums.AdminMacrosDisplay.DONT_SHOW.value,
 }
 
-DEFAULT_OPERATOR_ROUTING_CONFIG = {
-    "smartEnabled": False,
-}
-
 
 def create(
     name: str,
@@ -252,12 +248,13 @@ def create(
     if macro_config is None:
         macro_config = DEFAULT_MACRO_CONFIG
     if operator_routing_config is None:
-        operator_routing_config = DEFAULT_OPERATOR_ROUTING_CONFIG
-        operator_routing_config["sourceCode"] = (
-            ROUTING_SOURCE_CODE_DEFAULT_GUIDED
-            if refinery_references_project_id
-            else ROUTING_SOURCE_CODE_DEFAULT_BLANK
-        )
+        operator_routing_config = {
+            "sourceCode": (
+                ROUTING_SOURCE_CODE_DEFAULT_GUIDED
+                if refinery_references_project_id
+                else ROUTING_SOURCE_CODE_DEFAULT_BLANK
+            )
+        }
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
@@ -378,7 +375,7 @@ def update(
     if operator_routing_config is not None:
         new_values = project.operator_routing_config
         if new_values is None:
-            new_values = deepcopy(DEFAULT_OPERATOR_ROUTING_CONFIG)
+            new_values = deepcopy({"sourceCode": ROUTING_SOURCE_CODE_DEFAULT_BLANK})
         for key in operator_routing_config:
             if isinstance(operator_routing_config[key], dict):
                 if key not in new_values:
