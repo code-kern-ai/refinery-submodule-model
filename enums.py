@@ -549,7 +549,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
     StrategyStepType.HEADER: "Writing header",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Temporary document retrieval",
-    StrategyStepType.CALL_OTHER_AGENT: "Call another agent",
+    StrategyStepType.CALL_OTHER_AGENT: "Retrieve results from other agents",
 }
 
 STEP_WHEN_TO_USE = {
