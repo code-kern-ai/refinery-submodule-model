@@ -42,6 +42,28 @@ def get_all_by_strategy(
     return query.all()
 
 
+def get_all_mapping_options_by_strategy(
+    project_id: str, strategy_id: str, is_input: bool = True
+) -> List[CognitionStrategyRequirementMappingOption]:
+    return (
+        session.query(
+            CognitionStrategyRequirementMappingOption.value,
+            CognitionStrategyRequirement.field,
+        )
+        .join(
+            CognitionStrategyRequirement,
+            CognitionStrategyRequirement.id
+            == CognitionStrategyRequirementMappingOption.strategy_requirement_id,
+        )
+        .filter(
+            CognitionStrategyRequirement.strategy_id == strategy_id,
+            CognitionStrategyRequirementMappingOption.project_id == project_id,
+            CognitionStrategyRequirement.is_input == is_input,
+        )
+        .all()
+    )
+
+
 def get_all_mapping_options_of_requirement(
     project_id: str, strategy_requirement_id: str
 ) -> List[CognitionStrategyRequirementMappingOption]:
