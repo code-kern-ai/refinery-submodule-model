@@ -9,7 +9,6 @@ from ..session import session
 def get_all_tasks(
     page: int = 1,
     limit: int = 100,
-    only_running: bool = True,
 ) -> List[Any]:
 
     return (
@@ -23,7 +22,7 @@ def get_all_tasks(
         )
         .join(Organization, TaskQueue.organization_id == Organization.id)
         .limit(limit)
-        .offset((page - 1) * limit)
+        .offset(max(0, (page - 1) * limit))
         .all()
     )
 
