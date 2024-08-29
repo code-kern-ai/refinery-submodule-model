@@ -7,9 +7,6 @@ from ..models import (
     CognitionStrategyRequirement,
     CognitionStrategyRequirementMappingOption,
 )
-from src.controller.strategies.model import (
-    StrategyRequirementCreation,
-)
 
 
 def get(project_id: str, strategy_requirement_id: str) -> CognitionStrategyRequirement:
@@ -100,39 +97,6 @@ def create(
     general.add(strategy, with_commit)
 
     return strategy
-
-
-def create_many(
-    project_id: str,
-    user_id: str,
-    strategy_id: str,
-    requirements: List[StrategyRequirementCreation],
-    with_commit: bool = True,
-    created_at: Optional[datetime] = None,
-) -> List[CognitionStrategyRequirement]:
-    strategy_requirements: List[CognitionStrategyRequirement] = []
-    for requirement in requirements:
-        strategy_requirement = create(
-            project_id,
-            user_id,
-            strategy_id,
-            requirement.field,
-            requirement.description,
-            requirement.isInput,
-            with_commit,
-            created_at,
-        )
-        strategy_requirements.append(strategy_requirement)
-        create_mapping_options(
-            project_id,
-            user_id,
-            strategy_requirement.id,
-            [option.value for option in requirement.mappingOptions],
-            with_commit,
-            created_at,
-        )
-
-    return strategy_requirements
 
 
 def create_mapping_options(
