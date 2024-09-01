@@ -145,6 +145,7 @@ class Tablenames(Enum):
         "macro_execution_summary"  # summary of macro folder executions
     )
     CUSTOMER_BUTTON = "customer_button"
+    DATAROOM = "dataroom"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -660,6 +661,10 @@ class CognitionProjectState(Enum):
     WIZARD_RUNNING = "WIZARD_RUNNING"
     DEVELOPMENT = "DEVELOPMENT"
     PRODUCTION = "PRODUCTION"
+
+class CognitionProjectType(Enum):
+    VANILLA = "VANILLA"
+    DATA_ROOM = "DATA_ROOM"
 
 
 class StrategyComplexity(Enum):

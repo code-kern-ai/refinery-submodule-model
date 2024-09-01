@@ -13,6 +13,7 @@ from .enums import (
     AttributeState,
     AdminMessageLevel,
     CognitionProjectState,
+    CognitionProjectType,
     StrategyComplexity,
     AdminLogLevel,
 )
@@ -1123,6 +1124,7 @@ class CognitionProject(Base):
     state = Column(
         String, default=CognitionProjectState.CREATED.value
     )  # of type enums.CognitionProjectState.*.value
+    type = Column(String, default=CognitionProjectType.VANILLA.value)
     facts_grouping_attribute = Column(String)
     refinery_synchronization_interval_option = Column(String)
     interface_type = Column(String)
@@ -1689,6 +1691,23 @@ class CognitionMacroExecutionSummary(Base):
     execution_count = Column(Integer)
     processed_files_count = Column(Integer)
 
+class CognitionDataroom(Base):
+    __tablename__ = Tablenames.DATAROOM.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
 
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
