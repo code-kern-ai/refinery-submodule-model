@@ -208,6 +208,9 @@ ROUTING_SOURCE_CODE_DEFAULT_BLANK = """from typing import Dict, Any, Tuple
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
 ) -> Tuple[str, Dict[str, Any]]:
+    if "answer" in record_dict:
+        record_dict['routing'] = 'STOP'
+        return record_dict, scope_dict
     record_dict['routing'] = 'Plain LLM'
     return record_dict, scope_dict
 """
@@ -217,7 +220,6 @@ SMART_ROUTING_SOURCE_CODE_DEFAULT = """from typing import Dict, Any, Tuple
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
 ) -> Tuple[str, Dict[str, Any]]:
-    # Stopping condition for the router.
     if "answer" in record_dict:
         record_dict['routing'] = 'STOP'
     return record_dict, scope_dict
