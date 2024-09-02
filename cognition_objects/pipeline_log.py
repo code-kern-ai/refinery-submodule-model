@@ -29,8 +29,6 @@ def get_all_by_message_id_until_step(
     iteration_number: Optional[int] = None,
 ) -> List[CognitionPipelineLogs]:
 
-    # TODO: this likely contains the error why the record_dict is not updated with further increments of steps
-
     pipeline_logs: List[CognitionPipelineLogs] = (
         session.query(CognitionPipelineLogs)
         .filter(
@@ -51,7 +49,6 @@ def get_all_by_message_id_until_step(
             ):
                 break
         else:
-            # I think the error is here, because there can be multiple instances of this pipeline_step_type
             if (
                 pipeline_log.pipeline_step_type == pipeline_step_type
                 and pipeline_log.iteration_number == iteration_number
