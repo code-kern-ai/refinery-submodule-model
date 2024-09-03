@@ -1,39 +1,30 @@
 from typing import Any, List, Optional
 from . import general
 from .. import enums
-
+from ..models import TaskQueue, Organization
 from ..util import prevent_sql_injection
+from ..session import session
 
 
 def get_all_tasks(
-    project_id: Optional[str] = None,
-    only_running: bool = True,
-    limit_per_task: int = 100,
+    page: int = 1,
+    limit: int = 100,
 ) -> List[Any]:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    query = f""" 
-    SELECT tasks.*, p.name project_name, orga.name organization_name
-    FROM (
-        ({__select_running_information_source_payloads(project_id, only_running, limit_per_task)})
-        UNION ALL
-        ({__select_running_attribute_calculation_tasks(project_id, only_running, limit_per_task)})
-        UNION ALL
-        ({__select_running_tokenization_tasks(project_id, only_running, limit_per_task)})
-        UNION ALL
-        ({__select_running_embedding_tasks(project_id, only_running, limit_per_task)})
-        UNION ALL
-        ({__select_running_weak_supervision_tasks(project_id, only_running, limit_per_task)})
-        UNION ALL
-        ({__select_running_upload_tasks(project_id, only_running, limit_per_task)})
-    ) tasks
-    INNER JOIN project p
-        ON p.id = tasks.project_id
-    INNER JOIN organization orga
-        ON orga.id = p.organization_id
-    ORDER BY tasks.started_at DESC
-    LIMIT 100
-    """
-    return general.execute_all(query)
+
+    return (
+        session.query(
+            TaskQueue.task_type,
+            TaskQueue.created_at,
+            TaskQueue.task_info,
+            TaskQueue.created_by,
+            TaskQueue.is_active,
+            Organization.name,
+        )
+        .join(Organization, TaskQueue.organization_id == Organization.id)
+        .limit(limit)
+        .offset(max(0, (page - 1) * limit))
+        .all()
+    )
 
 
 def cancel_all_running_tasks(project_id: str = None):
