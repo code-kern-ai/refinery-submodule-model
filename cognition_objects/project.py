@@ -215,6 +215,17 @@ def routing(
     return record_dict, scope_dict
 """
 
+ROUTING_LLM_CONFIG_DEFAULT_BLANK = {
+    "model": "gpt-4o-mini",
+    "temperature": 0,
+    "maxLength": 1024,
+    "stopSequences": [],
+    "topP": 1,
+    "frequencyPenalty": 0,
+    "presencePenalty": 0,
+    "llmIdentifier": "OPEN_AI",
+}
+
 SMART_ROUTING_SOURCE_CODE_DEFAULT = """from typing import Dict, Any, Tuple
 
 def routing(
@@ -255,8 +266,10 @@ def create(
                 ROUTING_SOURCE_CODE_DEFAULT_GUIDED
                 if refinery_references_project_id
                 else ROUTING_SOURCE_CODE_DEFAULT_BLANK
-            )
+            ),
+            "llmConfig": ROUTING_LLM_CONFIG_DEFAULT_BLANK,
         }
+
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
