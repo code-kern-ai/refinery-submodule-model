@@ -521,6 +521,7 @@ class StrategyStepType(Enum):
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
     # INFO: will replace retrieval in the future, direct access to neural search without gates
     NEURAL_SEARCH = "NEURAL_SEARCH"
+    WEBHOOK = "WEBHOOK"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -546,6 +547,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
     StrategyStepType.HEADER: "Writing header",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Temporary document retrieval",
+    StrategyStepType.WEBHOOK: "Webhook",
 }
 
 STEP_WHEN_TO_USE = {
@@ -562,6 +564,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
     StrategyStepType.HEADER: "When you want to set a header based on the conversation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "When you want to retrieve results from conversation specific documents",
+    StrategyStepType.WEBHOOK: "When you want to run a webhook",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -578,6 +581,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
     StrategyStepType.HEADER: "Headline generation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Retrieving facts from conversation specific documents",
+    StrategyStepType.WEBHOOK: "Running webhook",
 }
 
 STEP_ERRORS = {
