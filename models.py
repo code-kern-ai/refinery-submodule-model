@@ -1120,7 +1120,7 @@ class CognitionProject(Base):
     name = Column(String)
     description = Column(String)
     color = Column(String)
-    operator_routing_source_code = Column(String)
+    operator_routing_config = Column(JSON)
     state = Column(
         String, default=CognitionProjectState.CREATED.value
     )  # of type enums.CognitionProjectState.*.value
@@ -1164,6 +1164,56 @@ class CognitionStrategy(Base):
     complexity = Column(
         String, default=StrategyComplexity.SIMPLE.value
     )  # of type enums.StrategyComplexity.*.value
+
+
+class CognitionStrategyRequirement(Base):
+    __tablename__ = Tablenames.STRATEGY_REQUIREMENT.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    strategy_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.STRATEGY.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    field = Column(String)
+    description = Column(String)
+    is_input = Column(Boolean, default=False)
+
+
+class CognitionStrategyRequirementMappingOption(Base):
+    __tablename__ = Tablenames.STRATEGY_REQUIREMENT_MAPPING_OPTION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    strategy_requirement_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.STRATEGY_REQUIREMENT.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    value = Column(String)
 
 
 class CognitionStrategyStep(Base):
@@ -1290,6 +1340,7 @@ class CognitionPipelineLogs(Base):
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
     skipped_step = Column(Boolean, default=False)
+    iteration_number = Column(Integer)
 
 
 class CognitionConsumptionLog(Base):

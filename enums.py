@@ -141,6 +141,8 @@ class Tablenames(Enum):
     MACRO_EDGE = "macro_edge"  # connection between steps of a macro
     MACRO_EXECUTION = "macro_execution"  # links macro id to an execution id
     MACRO_EXECUTION_LINK = "macro_execution_link"  # execution to a conversation id
+    STRATEGY_REQUIREMENT = "strategy_requirement"
+    STRATEGY_REQUIREMENT_MAPPING_OPTION = "strategy_requirement_mapping_option"
     MACRO_EXECUTION_SUMMARY = (
         "macro_execution_summary"  # summary of macro folder executions
     )
@@ -523,8 +525,10 @@ class StrategyStepType(Enum):
     HEADER = "HEADER"
     # INFO: done in exec env to prevent installing sklearn in gateway
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
+    CALL_OTHER_AGENT = "CALL_OTHER_AGENT"
     # INFO: will replace retrieval in the future, direct access to neural search without gates
     NEURAL_SEARCH = "NEURAL_SEARCH"
+    WEBHOOK = "WEBHOOK"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -550,6 +554,8 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncate context",
     StrategyStepType.HEADER: "Writing header",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Temporary document retrieval",
+    StrategyStepType.CALL_OTHER_AGENT: "Retrieve results from other agents",
+    StrategyStepType.WEBHOOK: "Webhook",
 }
 
 STEP_WHEN_TO_USE = {
@@ -566,6 +572,8 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.TRUNCATE_CONTEXT: "When you want to truncate context",
     StrategyStepType.HEADER: "When you want to set a header based on the conversation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "When you want to retrieve results from conversation specific documents",
+    StrategyStepType.CALL_OTHER_AGENT: "When you want to call another agent",
+    StrategyStepType.WEBHOOK: "When you want to run a webhook",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -582,6 +590,8 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.TRUNCATE_CONTEXT: "Truncating context",
     StrategyStepType.HEADER: "Headline generation",
     StrategyStepType.TMP_DOC_RETRIEVAL: "Retrieving facts from conversation specific documents",
+    StrategyStepType.CALL_OTHER_AGENT: "Calling another agent",
+    StrategyStepType.WEBHOOK: "Running webhook",
 }
 
 STEP_ERRORS = {
@@ -595,6 +605,8 @@ class PipelineStep(Enum):
     QUESTION_ENRICHMENT = "QUESTION_ENRICHMENT"
     ROUTE_STRATEGY = "ROUTE_STRATEGY"
     STRATEGY_STEP = "STRATEGY_STEP"
+    MAPPING_BEFORE_STRATEGY = "MAPPING_BEFORE_STRATEGY"
+    MAPPING_AFTER_STRATEGY = "MAPPING_AFTER_STRATEGY"
     ASSISTANT_RESPONSE = "ASSISTANT_RESPONSE"
 
 

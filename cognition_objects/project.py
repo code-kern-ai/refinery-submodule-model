@@ -192,7 +192,7 @@ def check_execute(
 
 """
 
-ROUTING_SOURCE_CODE_DEFAULT = """from typing import Dict, Any, Tuple
+ROUTING_SOURCE_CODE_DEFAULT_GUIDED = """from typing import Dict, Any, Tuple
 
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
@@ -202,7 +202,27 @@ def routing(
     else:
         record_dict['routing'] = 'Low-code strategy'
     return record_dict, scope_dict
+"""
 
+ROUTING_SOURCE_CODE_DEFAULT_BLANK = """from typing import Dict, Any, Tuple
+def routing(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> Tuple[str, Dict[str, Any]]:
+    if "answer" in record_dict:
+        record_dict['routing'] = 'STOP'
+        return record_dict, scope_dict
+    record_dict['routing'] = 'Plain LLM'
+    return record_dict, scope_dict
+"""
+
+SMART_ROUTING_SOURCE_CODE_DEFAULT = """from typing import Dict, Any, Tuple
+
+def routing(
+    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
+) -> Tuple[str, Dict[str, Any]]:
+    if "answer" in record_dict:
+        record_dict['routing'] = 'STOP'
+    return record_dict, scope_dict
 """
 
 DEFAULT_MACRO_CONFIG = {
@@ -225,13 +245,19 @@ def create(
     project_type: enums.CognitionProjectType,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
-    routing_source_code: Optional[str] = None,
+    operator_routing_config: Optional[Dict[str, Any]] = None,
     macro_config: Optional[Dict[str, Any]] = None,
 ) -> CognitionProject:
-    if routing_source_code is None:
-        routing_source_code = ROUTING_SOURCE_CODE_DEFAULT
     if macro_config is None:
         macro_config = DEFAULT_MACRO_CONFIG
+    if operator_routing_config is None:
+        operator_routing_config = {
+            "sourceCode": (
+                ROUTING_SOURCE_CODE_DEFAULT_GUIDED
+                if refinery_references_project_id
+                else ROUTING_SOURCE_CODE_DEFAULT_BLANK
+            )
+        }
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
@@ -243,7 +269,7 @@ def create(
         refinery_references_project_id=refinery_references_project_id,
         refinery_question_project_id=refinery_queries_project_id,
         refinery_relevance_project_id=refinery_relevances_project_id,
-        operator_routing_source_code=routing_source_code,
+        operator_routing_config=operator_routing_config,
         refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
         execute_query_enrichment_if_source_code=EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE,
         macro_config=macro_config,
@@ -261,7 +287,7 @@ def update(
     customer_color_primary: Optional[str] = None,
     customer_color_primary_only_accent: Optional[bool] = None,
     customer_color_secondary: Optional[str] = None,
-    operator_routing_source_code: Optional[str] = None,
+    operator_routing_config: Optional[Dict[str, Any]] = None,
     refinery_synchronization_interval_option: Optional[str] = None,
     execute_query_enrichment_if_source_code: Optional[str] = None,
     state: Optional[enums.CognitionProjectState] = None,
@@ -290,8 +316,6 @@ def update(
         project.customer_color_primary_only_accent = customer_color_primary_only_accent
     if customer_color_secondary is not None:
         project.customer_color_secondary = customer_color_secondary
-    if operator_routing_source_code is not None:
-        project.operator_routing_source_code = operator_routing_source_code
     if refinery_synchronization_interval_option is not None:
         project.refinery_synchronization_interval_option = (
             refinery_synchronization_interval_option
@@ -351,6 +375,21 @@ def update(
 
         project.llm_config = new_values
         flag_modified(project, "llm_config")
+
+    if operator_routing_config is not None:
+        new_values = project.operator_routing_config
+        if new_values is None:
+            new_values = deepcopy({"sourceCode": ROUTING_SOURCE_CODE_DEFAULT_BLANK})
+        for key in operator_routing_config:
+            if isinstance(operator_routing_config[key], dict):
+                if key not in new_values:
+                    new_values[key] = {}
+                for sub_key in operator_routing_config[key]:
+                    new_values[key][sub_key] = operator_routing_config[key][sub_key]
+            new_values[key] = operator_routing_config[key]
+
+        project.operator_routing_config = new_values
+        flag_modified(project, "operator_routing_config")
     if tokenizer is not None:
         project.tokenizer = tokenizer
     general.flush_or_commit(with_commit)
