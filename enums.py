@@ -146,6 +146,9 @@ class Tablenames(Enum):
     )
     CUSTOMER_BUTTON = "customer_button"
     DATAROOM = "dataroom"
+    DATAROOM_FILE = "dataroom_file"
+    DATAROOM_COMMIT = "dataroom_commit"
+    DATAROOM_COMMIT_FILES = "dataroom_commit_files"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs

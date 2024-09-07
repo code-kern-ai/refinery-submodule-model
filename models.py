@@ -1709,6 +1709,57 @@ class CognitionDataroom(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
 
+class CognitionDataroomFile(Base):
+    __tablename__ = Tablenames.DATAROOM_FILE.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    dataroom_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.DATAROOM.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    type = Column(String)  # 'file' or 'folder'
+    parent_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.DATAROOM_FILE.value}.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class CognitionDataroomCommit(Base):
+    __tablename__ = Tablenames.DATAROOM_COMMIT.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    dataroom_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.DATAROOM.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    message = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+class CognitionDataroomCommitFile(Base):
+    __tablename__ = Tablenames.DATAROOM_COMMIT_FILES.value
+    __table_args__ = {"schema": "cognition"}
+    commit_id = Column(UUID(as_uuid=True), ForeignKey(f"cognition.{Tablenames.DATAROOM_COMMIT.value}.id"), primary_key=True)
+    file_id = Column(UUID(as_uuid=True), ForeignKey(f"cognition.{Tablenames.DATAROOM_FILE.value}.id"), primary_key=True)
+    created_at = Column(DateTime, default=sql.func.now())
+
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
