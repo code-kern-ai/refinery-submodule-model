@@ -29,14 +29,12 @@ def get_all_by_file(file_id: str) -> List[CognitionDataroomCommitFile]:
 def create_dataroom_commit_file(
     commit_id: str,
     file_id: str,
-    created_by: str,
     created_at: Optional[datetime] = None,
     with_commit: bool = False,
 ) -> CognitionDataroomCommitFile:
     dataroom_commit_file = CognitionDataroomCommitFile(
         commit_id=commit_id,
         file_id=file_id,
-        created_by=created_by,
         created_at=created_at,
     )
     general.add(dataroom_commit_file, with_commit)

@@ -22,7 +22,6 @@ def get_all_by_dataroom(dataroom_id: str) -> List[CognitionDataroomFile]:
 def create_dataroom_file(
     dataroom_id: str,
     name: str,
-    description: str,
     created_by: str,
     created_at: Optional[datetime] = None,
     with_commit: bool = False,
@@ -30,7 +29,6 @@ def create_dataroom_file(
     dataroom_file = CognitionDataroomFile(
         dataroom_id=dataroom_id,
         name=name,
-        description=description,
         created_by=created_by,
         created_at=created_at,
     )
