@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 from . import general
 from ..session import session
-from ..models import CognitionDataroom, CognitionDataroomFile, CognitionDataroomCommit, CognitionDataroomCommitFile
+from ..models import CognitionDataroom
 
 
 def get(dataroom_id: str) -> CognitionDataroom:
