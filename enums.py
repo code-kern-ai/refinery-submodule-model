@@ -428,17 +428,6 @@ class RecordImportMappingValues(Enum):
     UNKNOWN = "UNKNOWN"
 
 
-class TokenExpireAtValues(Enum):
-    ONE_MONTH = "ONE_MONTH"
-    THREE_MONTHS = "THREE_MONTHS"
-    NEVER = "NEVER"
-
-
-class TokenScope(Enum):
-    READ = "READ"
-    READ_WRITE = "READ_WRITE"
-
-
 class TokenizationTaskTypes(Enum):
     ATTRIBUTE = "ATTRIBUTE"
     PROJECT = "PROJECT"
