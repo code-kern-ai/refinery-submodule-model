@@ -449,12 +449,6 @@ class RecordTokenizationScope(Enum):
     ATTRIBUTE = "ATTRIBUTE"
 
 
-class GatesIntegrationStatus(Enum):
-    READY = "READY"
-    NOT_READY = "NOT_READY"
-    UPDATING = "UPDATING"
-
-
 class AdminMessageLevel(Enum):
     WARNING = "WARNING"
     INFO = "INFO"
@@ -476,7 +470,6 @@ class TaskType(Enum):
 
 class TaskQueueAction(Enum):
     CREATE_OUTLIER_SLICE = "CREATE_OUTLIER_SLICE"
-    START_GATES = "START_GATES"
     SEND_WEBSOCKET = "SEND_WEBSOCKET"
     FINISH_COGNITION_SETUP = "FINISH_COGNITION_SETUP"
     RUN_WEAK_SUPERVISION = "RUN_WEAK_SUPERVISION"
