@@ -1504,33 +1504,6 @@ class CognitionMarkdownLLMLogs(Base):
     output = Column(String)
     error = Column(String)
 
-
-class CognitionRefinerySynchronizationTask(Base):
-    __tablename__ = Tablenames.REFINERY_SYNCHRONIZATION_TASK.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    cognition_project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    refinery_project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    finished_at = Column(DateTime)
-    state = Column(String)  # e.g. CREATED, FINISHED, FAILED
-    logs = Column(ARRAY(String))
-    num_records_created = Column(Integer)
-
-
 class CognitionMacro(Base):
     __tablename__ = Tablenames.MACRO.value
     __table_args__ = {"schema": "cognition"}
