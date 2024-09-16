@@ -165,20 +165,6 @@ def get_zero_shot_is_data(project_id: str, information_source_id: str) -> Any:
     return general.execute_first(sql)
 
 
-def get_first_crowd_is_for_annotator(project_id: str, annotator_id: str) -> str:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    annotator_id = prevent_sql_injection(annotator_id, isinstance(annotator_id, str))
-    query = f"""
-    SELECT _is.id::TEXT
-    FROM information_source _is
-    WHERE _is.project_id = '{project_id}' AND _is."type" = '{enums.InformationSourceType.CROWD_LABELER.value}'
-    AND _is.source_code::JSON ->>'annotator_id' = '{annotator_id}'
-    """
-    v = general.execute_first(query)
-    if v and v[0]:
-        return v[0]
-
-
 def get_exclusion_record_ids(source_id: str) -> List[str]:
     exclusions = (
         session.query(InformationSourceStatisticsExclusion.record_id).filter(

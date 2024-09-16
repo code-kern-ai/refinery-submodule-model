@@ -38,7 +38,6 @@ class InformationSourceType(Enum):
     ACTIVE_LEARNING = "ACTIVE_LEARNING"
     PRE_COMPUTED = "PRE_COMPUTED"
     ZERO_SHOT = "ZERO_SHOT"
-    CROWD_LABELER = "CROWD_LABELER"
 
 
 class InformationSourceReturnType(Enum):
@@ -57,9 +56,6 @@ class PayloadState(Enum):
     CREATED = "CREATED"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
-
-    # for crowd labelers, there is a slightly different state flow
-    STARTED = "STARTED"
 
 
 class UserRoles(Enum):
