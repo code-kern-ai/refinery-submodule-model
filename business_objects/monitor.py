@@ -4,6 +4,10 @@ from .. import enums
 from ..models import TaskQueue, Organization
 from ..util import prevent_sql_injection
 from ..session import session
+from submodules.model.cognition_objects import (
+    macro as macro_db_bo,
+    markdown_file as markdown_file_db_bo,
+)
 
 
 def get_all_tasks(
@@ -138,6 +142,30 @@ def set_upload_task_to_failed(
     query = __extend_where_for_update(query, project_id, task_id)
     general.execute(query)
     general.flush_or_commit(with_commit)
+
+
+def set_macro_execution_task_to_failed(
+    macro_execution_id: str,
+    macro_execution_group_id: str,
+    with_commit: bool = False,
+) -> None:
+    macro_execution = macro_db_bo.get_macro_execution(
+        macro_execution_id, macro_execution_group_id
+    )
+    if macro_execution:
+        macro_execution.state = enums.MacroExecutionState.FAILED.value
+        general.flush_or_commit(with_commit)
+
+
+def set_markdown_file_task_to_failed(
+    markdown_file_id: str,
+    organization_id: str,
+    with_commit: bool = False,
+) -> None:
+    markdown_file = markdown_file_db_bo.get(markdown_file_id, organization_id)
+    if markdown_file:
+        markdown_file.state = enums.CognitionMarkdownFileState.FAILED.value
+        general.flush_or_commit(with_commit)
 
 
 def __select_running_information_source_payloads(
