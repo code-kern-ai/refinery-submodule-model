@@ -131,40 +131,6 @@ def get_payloads_by_project_id(project_id: str) -> List[Any]:
     return general.execute_all(query)
 
 
-def get_zero_shot_is_data(project_id: str, information_source_id: str) -> Any:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    information_source_id = prevent_sql_injection(
-        information_source_id, isinstance(information_source_id, str)
-    )
-    sql: str = f"""
-    SELECT base.*, a.name attribute_name
-    FROM (
-        SELECT 
-            _is.id::TEXT, 
-            _is.type is_type,
-            _is.source_code::JSON ->>'config' config,
-            (_is.source_code::JSON ->>'min_confidence')::FLOAT min_confidence,
-            (_is.source_code::JSON ->>'run_individually')::BOOLEAN run_individually,
-            lt.task_target, 
-            COALESCE(lt.attribute_id,(_is.source_code::JSON ->>'attribute_id')::UUID) attribute_id,
-            ltl.labels
-        FROM information_source _is
-        INNER JOIN labeling_task lt
-            ON _is.labeling_task_id = lt.id
-        INNER JOIN (
-            SELECT ltl.labeling_task_id,array_agg(ltl.name) labels
-            FROM labeling_task_label ltl
-            WHERE ltl.project_id = '{project_id}'
-            GROUP BY ltl.labeling_task_id 
-        ) ltl
-            ON _is.labeling_task_id = ltl.labeling_task_id
-        WHERE _is.id = '{information_source_id}' AND _is.project_id = '{project_id}' )base
-    INNER JOIN attribute a
-        ON a.id = base.attribute_id AND a.project_id = '{project_id}'
-    """
-    return general.execute_first(sql)
-
-
 def get_exclusion_record_ids(source_id: str) -> List[str]:
     exclusions = (
         session.query(InformationSourceStatisticsExclusion.record_id).filter(
