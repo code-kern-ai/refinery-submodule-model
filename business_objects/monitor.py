@@ -17,6 +17,7 @@ def get_all_tasks(
 
     return (
         session.query(
+            TaskQueue.id,
             TaskQueue.task_type,
             TaskQueue.created_at,
             TaskQueue.task_info,
@@ -162,7 +163,7 @@ def set_markdown_file_task_to_failed(
     organization_id: str,
     with_commit: bool = False,
 ) -> None:
-    markdown_file = markdown_file_db_bo.get(markdown_file_id, organization_id)
+    markdown_file = markdown_file_db_bo.get(organization_id, markdown_file_id)
     if markdown_file:
         markdown_file.state = enums.CognitionMarkdownFileState.FAILED.value
         general.flush_or_commit(with_commit)
