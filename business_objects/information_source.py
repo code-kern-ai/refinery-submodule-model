@@ -219,7 +219,6 @@ def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
             GROUP BY source_id) stats
             ON _is.id = stats.source_id
         WHERE _is.project_id = '{project_id}'
-        AND _is.type != 'MODEL_CALLBACK'
         ORDER BY "createdAt" DESC,name
         )data_select """
     values = general.execute_first(query)
@@ -489,7 +488,6 @@ def update_is_selected_for_project(
     UPDATE information_source
     SET is_selected = {str_value}
     WHERE project_id = '{project_id}'
-    AND type != 'MODEL_CALLBACK'
     {id_selection}
     """
     general.execute(query)
