@@ -175,15 +175,8 @@ def get_all_states(project_id: str, source_id: Optional[str] = None) -> Dict[str
     return {r[0]: r[1] for r in general.execute_all(query)}
 
 
-def get_overview_data(
-    project_id: str, is_model_callback: bool = False
-) -> List[Dict[str, Any]]:
+def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-
-    if is_model_callback:
-        type_selection = " = 'MODEL_CALLBACK'"
-    else:
-        type_selection = " != 'MODEL_CALLBACK'"
     query = f"""
     SELECT array_agg(row_to_json(data_select))
     FROM (
@@ -226,7 +219,7 @@ def get_overview_data(
             GROUP BY source_id) stats
             ON _is.id = stats.source_id
         WHERE _is.project_id = '{project_id}'
-        AND _is.type {type_selection}
+        AND _is.type != 'MODEL_CALLBACK'
         ORDER BY "createdAt" DESC,name
         )data_select """
     values = general.execute_first(query)
@@ -475,15 +468,10 @@ def update_is_selected_for_project(
     project_id: str,
     update_value: bool,
     with_commit: bool = False,
-    is_model_callback: bool = False,
     only_with_state: Optional[enums.PayloadState] = None,
 ) -> None:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
 
-    if is_model_callback:
-        type_selection = " = 'MODEL_CALLBACK'"
-    else:
-        type_selection = " != 'MODEL_CALLBACK'"
     if update_value:
         str_value = "TRUE"
     else:
@@ -501,7 +489,7 @@ def update_is_selected_for_project(
     UPDATE information_source
     SET is_selected = {str_value}
     WHERE project_id = '{project_id}'
-    AND type {type_selection}
+    AND type != 'MODEL_CALLBACK'
     {id_selection}
     """
     general.execute(query)
