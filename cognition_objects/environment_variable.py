@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union
+from typing import List, Optional, Dict, Union, Literal
 from datetime import datetime
 from ..business_objects import general
 from . import project as cognition_project
@@ -114,11 +114,11 @@ def get_dataset_env_var_value_transformation(
         return v.value
 
 
-def get_dataset_env_var_value_extraction(dataset_id: str, org_id) -> Union[str, None]:
+def get_dataset_env_var_value(
+    dataset_id: str, org_id: str, scope: Literal["extraction", "transformation"]
+) -> Union[str, None]:
     env_var_id = cast(
-        CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(
-            "envVarId"
-        ),
+        CognitionMarkdownDataset.llm_config.op("->")(scope).op("->>")("envVarId"),
         UUID,
     )
     v = (
