@@ -55,10 +55,10 @@ def get_by_name_and_org_id(
 
     return (
         session.query(CognitionEnvironmentVariable)
-        .filter(            
-                CognitionEnvironmentVariable.organization_id == org_id,
-                CognitionEnvironmentVariable.project_id == None,
-                CognitionEnvironmentVariable.name == name,            
+        .filter(
+            CognitionEnvironmentVariable.organization_id == org_id,
+            CognitionEnvironmentVariable.project_id == None,
+            CognitionEnvironmentVariable.name == name,
         )
         .first()
     )
@@ -88,7 +88,33 @@ def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
     )
 
 
-def get_dataset_env_var_value(dataset_id: str, org_id) -> Union[str, None]:
+def get_dataset_env_var_value_transformation(
+    dataset_id: str, org_id
+) -> Union[str, None]:
+    env_var_id = cast(
+        CognitionMarkdownDataset.llm_config.op("->")("transformation").op("->>")(
+            "envVarId"
+        ),
+        UUID,
+    )
+    v = (
+        session.query(CognitionEnvironmentVariable)
+        .join(
+            CognitionMarkdownDataset,
+            env_var_id == CognitionEnvironmentVariable.id,
+        )
+        .filter(CognitionEnvironmentVariable.organization_id == org_id)
+        .filter(
+            CognitionMarkdownDataset.id == dataset_id,
+        )
+        .first()
+    )
+
+    if v:
+        return v.value
+
+
+def get_dataset_env_var_value_extraction(dataset_id: str, org_id) -> Union[str, None]:
     env_var_id = cast(
         CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(
             "envVarId"
