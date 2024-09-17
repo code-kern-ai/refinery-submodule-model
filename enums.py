@@ -122,7 +122,6 @@ class Tablenames(Enum):
     ENVIRONMENT_VARIABLE = "environment_variable"
     PIPELINE_LOGS = "pipeline_logs"
     MARKDOWN_FILE = "markdown_file"
-    REFINERY_SYNCHRONIZATION_TASK = "refinery_synchronization_task"
     PYTHON_STEP = "python_step"
     LLM_STEP = "llm_step"
     MARKDOWN_LLM_LOGS = "markdown_llm_logs"
@@ -443,12 +442,6 @@ class RecordTokenizationScope(Enum):
     ATTRIBUTE = "ATTRIBUTE"
 
 
-class GatesIntegrationStatus(Enum):
-    READY = "READY"
-    NOT_READY = "NOT_READY"
-    UPDATING = "UPDATING"
-
-
 class AdminMessageLevel(Enum):
     WARNING = "WARNING"
     INFO = "INFO"
@@ -470,7 +463,6 @@ class TaskType(Enum):
 
 class TaskQueueAction(Enum):
     CREATE_OUTLIER_SLICE = "CREATE_OUTLIER_SLICE"
-    START_GATES = "START_GATES"
     SEND_WEBSOCKET = "SEND_WEBSOCKET"
     FINISH_COGNITION_SETUP = "FINISH_COGNITION_SETUP"
     RUN_WEAK_SUPERVISION = "RUN_WEAK_SUPERVISION"
@@ -500,9 +492,6 @@ class SampleProjectType(Enum):
 
 
 class StrategyStepType(Enum):
-    RETRIEVAL = "RETRIEVAL"
-    # unused option that was never fully implemented
-    # RELEVANCE = "RELEVANCE"
     NONE = "NONE"
     PYTHON = "PYTHON"
     LLM = "LLM"
@@ -531,7 +520,6 @@ class StrategyStepType(Enum):
 
 
 STEP_DESCRIPTIONS = {
-    StrategyStepType.RETRIEVAL: "Fetch facts from a DB",
     StrategyStepType.NEURAL_SEARCH: "Fetch facts from an embedding",
     # StrategyStepType.RELEVANCE: "Classify retrieved facts",
     StrategyStepType.NONE: "Dummy step",
@@ -549,9 +537,7 @@ STEP_DESCRIPTIONS = {
 }
 
 STEP_WHEN_TO_USE = {
-    StrategyStepType.RETRIEVAL: "When you want to retrieve facts from a database",
     StrategyStepType.NEURAL_SEARCH: "When you want to fetch facts based on an embedding",
-    # StrategyStepType.RELEVANCE: "When you want to classify retrieved facts",
     StrategyStepType.PYTHON: "When you want to run a custom python function",
     StrategyStepType.LLM: "When you want to give an actual answer to the question",
     StrategyStepType.NONE: "Dummy step",
@@ -567,7 +553,6 @@ STEP_WHEN_TO_USE = {
 }
 
 STEP_PROGRESS_TEXTS = {
-    StrategyStepType.RETRIEVAL: "Retrieving facts",
     StrategyStepType.NEURAL_SEARCH: "Retrieving facts",
     # StrategyStepType.RELEVANCE: "Classifying facts",
     StrategyStepType.NONE: "Dummy step",
@@ -592,7 +577,6 @@ STEP_ERRORS = {
 class PipelineStep(Enum):
     INCOMING_QUESTION = "INCOMING_QUESTION"
     INCOMING_QUESTION_TRY = "INCOMING_QUESTION_TRY"
-    QUESTION_ENRICHMENT = "QUESTION_ENRICHMENT"
     ROUTE_STRATEGY = "ROUTE_STRATEGY"
     STRATEGY_STEP = "STRATEGY_STEP"
     MAPPING_BEFORE_STRATEGY = "MAPPING_BEFORE_STRATEGY"

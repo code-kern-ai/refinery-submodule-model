@@ -126,84 +126,6 @@ def get_project_users_overview(
     return {}
 
 
-def get_all_for_synchronization_option(
-    org_id: str, synchronization_option: str
-) -> List[CognitionProject]:
-    return (
-        session.query(CognitionProject)
-        .filter(CognitionProject.organization_id == org_id)
-        .filter(
-            CognitionProject.refinery_synchronization_interval_option
-            == synchronization_option
-        )
-        .order_by(CognitionProject.created_at.asc())
-        .all()
-    )
-
-
-def get_all_refinery_projects_for_type(
-    org_id: str, project_type: str
-) -> List[Dict[str, str]]:
-    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
-
-    column_condition = ""
-    if project_type == "REFERENCE":
-        column_condition = "WHERE ARRAY['reference'] <@ has_columns"
-    elif project_type == "QUESTION":
-        column_condition = "WHERE ARRAY['question','answer_prev_1','question_prev_1','answer_prev_2','question_prev_2','answer_prev_3','question_prev_3'] <@ has_columns"
-    elif project_type == "RELEVANCE":
-        column_condition = "WHERE ARRAY['question','reference'] <@ has_columns"
-    else:
-        raise ValueError(f"Unknown project type {project_type}")
-
-    query = f"""
-    SELECT array_agg(row_to_json(z))
-    FROM (
-        SELECT p.id::TEXT "projectId", p.name
-        FROM project p
-        INNER JOIN (
-            SELECT project_id
-            FROM (
-                SELECT project_id, array_agg(a.NAME::TEXT) has_columns
-                FROM attribute a
-                INNER JOIN project p
-                    ON a.project_id = p.id AND p.organization_id = '{org_id}'
-                GROUP BY a.project_id
-            )x
-            {column_condition}
-        )y
-        ON y.project_id = p.id
-        WHERE p.organization_id = '{org_id}'
-        UNION ALL SELECT '_none', 'None'
-    )z """
-
-    values = general.execute_first(query)
-    if values and values[0]:
-        return values[0]
-    return []
-
-
-EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE = """from typing import Dict, Any, Tuple
-
-def check_execute(
-    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
-) -> bool:
-    return False
-
-"""
-
-ROUTING_SOURCE_CODE_DEFAULT_GUIDED = """from typing import Dict, Any, Tuple
-
-def routing(
-    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
-) -> Tuple[str, Dict[str, Any]]:
-    if True: # add a condition here to differentiate when to use what strategy
-        record_dict['routing'] = 'Common RAG'
-    else:
-        record_dict['routing'] = 'Low-code strategy'
-    return record_dict, scope_dict
-"""
-
 ROUTING_SOURCE_CODE_DEFAULT_BLANK = """from typing import Dict, Any, Tuple
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
@@ -215,15 +137,6 @@ def routing(
     return record_dict, scope_dict
 """
 
-SMART_ROUTING_SOURCE_CODE_DEFAULT = """from typing import Dict, Any, Tuple
-
-def routing(
-    record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
-) -> Tuple[str, Dict[str, Any]]:
-    if "answer" in record_dict:
-        record_dict['routing'] = 'STOP'
-    return record_dict, scope_dict
-"""
 
 DEFAULT_MACRO_CONFIG = {
     "enable": False,
@@ -238,9 +151,6 @@ def create(
     org_id: str,
     user_id: str,
     interface_type: str,
-    refinery_references_project_id: str,
-    refinery_queries_project_id: str,
-    refinery_relevances_project_id: str,
     tokenizer: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
@@ -250,13 +160,7 @@ def create(
     if macro_config is None:
         macro_config = DEFAULT_MACRO_CONFIG
     if operator_routing_config is None:
-        operator_routing_config = {
-            "sourceCode": (
-                ROUTING_SOURCE_CODE_DEFAULT_GUIDED
-                if refinery_references_project_id
-                else ROUTING_SOURCE_CODE_DEFAULT_BLANK
-            )
-        }
+        operator_routing_config = {"sourceCode": ROUTING_SOURCE_CODE_DEFAULT_BLANK}
     project: CognitionProject = CognitionProject(
         name=name,
         description=description,
@@ -265,12 +169,7 @@ def create(
         created_by=user_id,
         created_at=created_at,
         interface_type=interface_type,
-        refinery_references_project_id=refinery_references_project_id,
-        refinery_question_project_id=refinery_queries_project_id,
-        refinery_relevance_project_id=refinery_relevances_project_id,
         operator_routing_config=operator_routing_config,
-        refinery_synchronization_interval_option=enums.RefinerySynchronizationIntervalOption.NEVER.value,
-        execute_query_enrichment_if_source_code=EXECUTE_QUERY_ENRICHMENT_IF_SOURCE_CODE,
         macro_config=macro_config,
         tokenizer=tokenizer,
     )
@@ -286,16 +185,11 @@ def update(
     customer_color_primary_only_accent: Optional[bool] = None,
     customer_color_secondary: Optional[str] = None,
     operator_routing_config: Optional[Dict[str, Any]] = None,
-    refinery_synchronization_interval_option: Optional[str] = None,
-    execute_query_enrichment_if_source_code: Optional[str] = None,
     state: Optional[enums.CognitionProjectState] = None,
     facts_grouping_attribute: Optional[str] = None,
     allow_file_upload: Optional[bool] = None,
     max_file_size_mb: Optional[float] = None,
     max_folder_size_mb: Optional[float] = None,
-    refinery_references_project_id: Optional[str] = None,
-    refinery_question_project_id: Optional[str] = None,
-    refinery_relevance_project_id: Optional[str] = None,
     macro_config: Optional[Dict[str, Any]] = None,
     llm_config: Optional[Dict[str, Any]] = None,
     tokenizer: Optional[str] = None,
@@ -314,14 +208,6 @@ def update(
         project.customer_color_primary_only_accent = customer_color_primary_only_accent
     if customer_color_secondary is not None:
         project.customer_color_secondary = customer_color_secondary
-    if refinery_synchronization_interval_option is not None:
-        project.refinery_synchronization_interval_option = (
-            refinery_synchronization_interval_option
-        )
-    if execute_query_enrichment_if_source_code is not None:
-        project.execute_query_enrichment_if_source_code = (
-            execute_query_enrichment_if_source_code
-        )
     if state is not None:
         project.state = state.value
     if facts_grouping_attribute is not None:
@@ -332,21 +218,6 @@ def update(
         project.max_file_size_mb = max_file_size_mb
     if max_folder_size_mb is not None:
         project.max_folder_size_mb = max_folder_size_mb
-    if refinery_references_project_id is not None:
-        if refinery_references_project_id == "_none":
-            project.refinery_references_project_id = None
-        else:
-            project.refinery_references_project_id = refinery_references_project_id
-    if refinery_question_project_id is not None:
-        if refinery_question_project_id == "_none":
-            project.refinery_question_project_id = None
-        else:
-            project.refinery_question_project_id = refinery_question_project_id
-    if refinery_relevance_project_id is not None:
-        if refinery_relevance_project_id == "_none":
-            project.refinery_relevance_project_id = None
-        else:
-            project.refinery_relevance_project_id = refinery_relevance_project_id
     if macro_config is not None:
         new_values = project.macro_config
         if new_values is None:
