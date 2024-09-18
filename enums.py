@@ -249,7 +249,6 @@ class UploadStates(Enum):
 
 
 class UploadTypes(Enum):
-    LABEL_STUDIO = "LABEL_STUDIO"
     DEFAULT = "DEFAULT"
     WORKFLOW_STORE = "WORKFLOW_STORE"
     COGNITION = "COGNITION"
@@ -394,7 +393,6 @@ class AttributeVisibility(Enum):
 
 class RecordExportFormats(Enum):
     DEFAULT = "DEFAULT"
-    LABEL_STUDIO = "LABEL_STUDIO"
 
 
 class RecordImportFileTypes(Enum):
