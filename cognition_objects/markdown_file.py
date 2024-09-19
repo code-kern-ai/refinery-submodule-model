@@ -88,12 +88,9 @@ def __get_enriched_query(
         SELECT {mf_select}, COALESCE(mll.llm_logs, '{{}}') AS llm_logs
         FROM cognition.markdown_file mf
         LEFT JOIN (
-            SELECT llm_logs_row.markdown_file_id, array_agg(row_to_json(llm_logs_row)) AS llm_logs
-            FROM (
-                SELECT mll_inner.*
-                FROM cognition.markdown_llm_logs mll_inner
-            ) llm_logs_row
-            GROUP BY llm_logs_row.markdown_file_id
+            SELECT mll.markdown_file_id, array_agg(row_to_json(mll.*)) AS llm_logs
+            FROM cognition.markdown_llm_logs mll
+            GROUP BY 1
         ) mll ON mf.id = mll.markdown_file_id
         """
     query += f"WHERE mf.organization_id = '{org_id}' {where_add}"
