@@ -104,7 +104,7 @@ def get_all_paginated_for_dataset(
     limit = prevent_sql_injection(limit, isinstance(limit, int))
     page = prevent_sql_injection(page, isinstance(page, int))
     query_add = f"""
-    ORDER BY mf.created_by
+    ORDER BY mf.created_at DESC
     LIMIT {limit}
     OFFSET {(page - 1) * limit}
     """
