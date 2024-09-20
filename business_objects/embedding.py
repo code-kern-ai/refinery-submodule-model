@@ -687,7 +687,7 @@ def __update_embedding_state(
     project_id: str, embedding_id: str, state: str, with_commit=False
 ) -> None:
     embedding_item = get(project_id, embedding_id)
-    if embedding_item:
+    if embedding_item and not embedding_item.state == enums.EmbeddingState.FAILED.value:
         embedding_item.state = state
         general.flush_or_commit(with_commit)
 
