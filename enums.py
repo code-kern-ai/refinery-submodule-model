@@ -30,15 +30,12 @@ class LabelSource(Enum):
     # WEAK_SUPERVISION = Output of the Weak Supervision Model - ehemeals "programmatic"
     WEAK_SUPERVISION = "WEAK_SUPERVISION"
     INFORMATION_SOURCE = "INFORMATION_SOURCE"
-    MODEL_CALLBACK = "MODEL_CALLBACK"
 
 
 class InformationSourceType(Enum):
     LABELING_FUNCTION = "LABELING_FUNCTION"
     ACTIVE_LEARNING = "ACTIVE_LEARNING"
     PRE_COMPUTED = "PRE_COMPUTED"
-    ZERO_SHOT = "ZERO_SHOT"
-    CROWD_LABELER = "CROWD_LABELER"
 
 
 class InformationSourceReturnType(Enum):
@@ -57,9 +54,6 @@ class PayloadState(Enum):
     CREATED = "CREATED"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
-
-    # for crowd labelers, there is a slightly different state flow
-    STARTED = "STARTED"
 
 
 class UserRoles(Enum):
@@ -255,7 +249,6 @@ class UploadStates(Enum):
 
 
 class UploadTypes(Enum):
-    LABEL_STUDIO = "LABEL_STUDIO"
     DEFAULT = "DEFAULT"
     WORKFLOW_STORE = "WORKFLOW_STORE"
     COGNITION = "COGNITION"
@@ -400,7 +393,6 @@ class AttributeVisibility(Enum):
 
 class RecordExportFormats(Enum):
     DEFAULT = "DEFAULT"
-    LABEL_STUDIO = "LABEL_STUDIO"
 
 
 class RecordImportFileTypes(Enum):

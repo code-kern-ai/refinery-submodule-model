@@ -314,49 +314,6 @@ def get_confusion_matrix(
         return values[0]
 
 
-def get_zero_shot_project_config(project_id: str, payload_id: str) -> Any:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    payload_id = prevent_sql_injection(payload_id, isinstance(payload_id, str))
-    query = f"""
-    SELECT base.*, a.name attribute_name
-    FROM (
-        SELECT 
-            isp.source_id,
-            isp.created_by,
-            isp.source_code::JSON ->>'config' config,
-            (isp.source_code::JSON ->>'min_confidence')::FLOAT min_confidence,
-            (isp.source_code::JSON ->>'run_individually')::BOOLEAN run_individually,
-            COALESCE(lt.attribute_id,(isp.source_code::JSON ->>'attribute_id')::UUID) attribute_id,
-            ltl.label_names,
-            ltl.label_ids
-        FROM information_source_payload isp
-        INNER JOIN information_source _is
-                ON isp.project_id = _is.project_id AND isp.source_id = _is.id
-        INNER JOIN labeling_task lt
-            ON _is.labeling_task_id = lt.id
-        INNER JOIN (
-            SELECT ltl.labeling_task_id,array_agg(ltl.name ORDER BY ltl.id) label_names,array_agg(ltl.id ORDER BY ltl.id) label_ids
-                FROM labeling_task_label ltl
-                INNER JOIN (
-                    SELECT _is.labeling_task_id, TRANSLATE((isp.source_code::JSON ->>'excluded_labels'), '[]','{{}}')::UUID[] excluded_labels
-                    FROM information_source _is
-                    INNER JOIN information_source_payload isp
-                        ON _is.project_id = isp.project_id AND _is.id =isp.source_id
-                    WHERE isp.id = '{payload_id}' AND isp.project_id = '{project_id}'
-                ) isp
-                    ON ltl.labeling_task_id = isp.labeling_task_id
-                WHERE ltl.project_id = '{project_id}'
-                    AND  NOT (ltl.id = ANY (isp.excluded_labels))
-                GROUP BY ltl.labeling_task_id
-        ) ltl
-            ON _is.labeling_task_id = ltl.labeling_task_id
-        WHERE isp.id = '{payload_id}' AND isp.project_id = '{project_id}' )base
-    INNER JOIN attribute a
-        ON a.id = base.attribute_id AND a.project_id = '{project_id}'
-    """
-    return general.execute_first(query)
-
-
 def get_or_create_queue_project(
     org_id: str, user_id: str, with_commit: bool = False
 ) -> Project:
