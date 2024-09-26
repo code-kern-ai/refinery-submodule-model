@@ -29,6 +29,7 @@ from sqlalchemy import (
     String,
     sql,
     UniqueConstraint,
+    BigInteger,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -1739,6 +1740,39 @@ class CognitionMacroExecutionSummary(Base):
     macro_type = Column(String)  # of type enums.MacroType
     execution_count = Column(Integer)
     processed_files_count = Column(Integer)
+
+
+class FileReference(Base):
+    __tablename__ = Tablenames.FILE_REFERENCE.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "hash",
+            "file_size_bytes",
+            name="unique_file_reference",
+        ),
+        {"schema": "cognition"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    hash = Column(
+        String,
+        index=True,
+    )
+    minio_path = Column(String)
+    bucket = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    file_size_bytes = Column(BigInteger)
 
 
 # =========================== Global tables ===========================

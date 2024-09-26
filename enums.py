@@ -147,6 +147,7 @@ class Tablenames(Enum):
         "macro_execution_summary"  # summary of macro folder executions
     )
     CUSTOMER_BUTTON = "customer_button"
+    FILE_REFERENCE = "file_reference"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
