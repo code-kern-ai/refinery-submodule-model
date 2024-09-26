@@ -5,16 +5,83 @@ from ..session import session, engine
 from ..session import request_id_ctx_var
 from ..session import check_session_and_rollback as check_and_roll
 from ..enums import Tablenames, try_parse_enum_value
+import traceback
+import datetime
+from src.util import daemon
+from threading import Lock
+
+
+__THREAD_LOCK = Lock()
+
+session_lookup = {}
 
 
 def get_ctx_token() -> Any:
-    return request_id_ctx_var.set(str(uuid.uuid4()))
+    global session_lookup
+    session_uuid = str(uuid.uuid4())
+    session_id = request_id_ctx_var.set(session_uuid)
+
+    call_stack = "".join(traceback.format_stack()[-5:])
+    with __THREAD_LOCK:
+        session_lookup[session_uuid] = {
+            "session_id": session_uuid,
+            "stack": call_stack,
+            "created_at": datetime.datetime.now(),
+        }
+    return session_id
 
 
-def reset_ctx_token(ctx_token: Any, remove_db: Optional[bool] = False) -> None:
+def get_session_lookup(exclude_last_x_seconds: int = 5) -> Dict[str, Dict[str, Any]]:
+    # every requests creates its own session and usually there are a lot of short running session because of requests open
+    # since these usually aren't interesting we default filter for >5 seconds sessions
+    # this will still include long running sessions (e.g. longs data collection) and errors but not the short lived ones (e.g. created for the request itself)
+
+    now = datetime.datetime.now()
+    return [
+        session_data
+        for session_data in session_lookup.values()
+        if (now - session_data["created_at"]).seconds > exclude_last_x_seconds
+    ]
+
+
+def reset_ctx_token(
+    ctx_token: Any,
+    remove_db: Optional[bool] = False,
+) -> None:
     if remove_db:
         session.remove()
+    session_uuid = ctx_token.var.get()
+
     request_id_ctx_var.reset(ctx_token)
+    global session_lookup
+    with __THREAD_LOCK:
+        if session_uuid in session_lookup:
+            del session_lookup[session_uuid]
+        else:
+            print("Session not found in lookup", flush=True)
+
+
+def force_remove_and_refresh_session_by_id(session_id: str) -> bool:
+    global session_lookup
+    with __THREAD_LOCK:
+        if session_id not in session_lookup:
+            return False
+        # context vars cant be closed from a different context but we can work around it by using a thread (which creates a new context) with the same id
+        daemon.run(__close_in_context(session_id))
+        return True
+
+
+def __close_in_context(session_uuid: str):
+    # set to same id so the get function used in session.get_request_id() returns the same id
+    session_id = request_id_ctx_var.set(session_uuid)
+    # remove connected session
+    session.remove()
+    # reset context variable
+    request_id_ctx_var.reset(session_id)
+    # remove from lookup
+    global session_lookup
+    with __THREAD_LOCK:
+        del session_lookup[session_uuid]
 
 
 def add(entity: Any, with_commit: bool = False) -> None:
