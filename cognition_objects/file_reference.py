@@ -1,17 +1,6 @@
-from typing import List, Optional, Dict, Union, Literal
 from ..business_objects import general
 from ..session import session
 from ..models import FileReference
-
-content_type_to_extension = {
-    "application/pdf": ".pdf",
-    "text/x-python": ".py",
-    "text/plain": ".txt",
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "text/html": ".html",
-    "application/json": ".json",
-}
 
 
 def get(org_id: str, hash: str, file_size_bytes) -> FileReference:
