@@ -1777,6 +1777,42 @@ class FileReference(Base):
     original_file_name = Column(String)
 
 
+class FileExtraction(Base):
+    __tablename__ = Tablenames.FILE_EXTRACTION.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "file_reference_id",
+            "extraction_method",
+            name="unique_file_extraction",
+        ),
+        {"schema": "cognition"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    file_reference_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.FILE_REFERENCE.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    extraction_method = Column(String)
+    minio_path = Column(String)
+    bucket = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.

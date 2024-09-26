@@ -148,6 +148,8 @@ class Tablenames(Enum):
     )
     CUSTOMER_BUTTON = "customer_button"
     FILE_REFERENCE = "file_reference"
+    FILE_EXTRACTION = "file_extraction"
+    FILE_TRANSFORMATION = "file_transformation"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
