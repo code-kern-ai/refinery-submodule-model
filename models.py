@@ -1773,6 +1773,8 @@ class FileReference(Base):
         index=True,
     )
     file_size_bytes = Column(BigInteger)
+    content_type = Column(String)
+    original_file_name = Column(String)
 
 
 # =========================== Global tables ===========================

@@ -21,6 +21,8 @@ def create(
     hash: str,
     file_size_bytes: int,
     created_by: str,
+    content_type: str,
+    original_file_name: str,
     with_commit: bool = True,
 ) -> FileReference:
 
@@ -33,6 +35,8 @@ def create(
         bucket=org_id,
         file_size_bytes=file_size_bytes,
         created_by=created_by,
+        content_type=content_type,
+        original_file_name=original_file_name,
     )
 
     general.add(file_reference, with_commit)
