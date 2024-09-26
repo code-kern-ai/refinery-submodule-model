@@ -15,6 +15,17 @@ def get(org_id: str, hash: str, file_size_bytes) -> FileReference:
     )
 
 
+def get_by_id(org_id: str, file_reference_id: str) -> FileReference:
+    return (
+        session.query(FileReference)
+        .filter(
+            FileReference.organization_id == org_id,
+            FileReference.id == file_reference_id,
+        )
+        .first()
+    )
+
+
 def create(
     org_id: str,
     hash: str,

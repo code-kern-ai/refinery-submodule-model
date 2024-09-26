@@ -18,8 +18,9 @@ def get(org_id: str, file_reference_id: str, ext_method: str) -> FileExtraction:
 def create(
     org_id: str,
     file_reference_id: str,
-    created_by: str,
+    ext_method: str,
     minio_path: str,
+    created_by: str,
     with_commit: bool = True,
 ) -> FileExtraction:
 
@@ -27,6 +28,7 @@ def create(
         organization_id=org_id,
         file_reference_id=file_reference_id,
         minio_path=minio_path,
+        extraction_method=ext_method,
         bucket=org_id,
         created_by=created_by,
     )
