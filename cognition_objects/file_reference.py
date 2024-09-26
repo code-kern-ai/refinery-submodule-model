@@ -3,6 +3,16 @@ from ..business_objects import general
 from ..session import session
 from ..models import FileReference
 
+content_type_to_extension = {
+    "application/pdf": ".pdf",
+    "text/x-python": ".py",
+    "text/plain": ".txt",
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "text/html": ".html",
+    "application/json": ".json",
+}
+
 
 def get(org_id: str, hash: str, file_size_bytes) -> FileReference:
     return (
@@ -21,12 +31,11 @@ def create(
     hash: str,
     file_size_bytes: int,
     created_by: str,
-    content_type: str,
     original_file_name: str,
+    content_type: str,
+    minio_path: str,
     with_commit: bool = True,
 ) -> FileReference:
-
-    minio_path = f"files/{hash}_{file_size_bytes}"
 
     file_reference = FileReference(
         organization_id=org_id,
@@ -35,8 +44,8 @@ def create(
         bucket=org_id,
         file_size_bytes=file_size_bytes,
         created_by=created_by,
-        content_type=content_type,
         original_file_name=original_file_name,
+        content_type=content_type,
     )
 
     general.add(file_reference, with_commit)
