@@ -151,3 +151,10 @@ def remove_task_from_queue(org_id: str, task_id: str, with_commit: bool = False)
         TaskQueue.organization_id == org_id,
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def delete_by_task_id(task_id: str, with_commit: bool = False):
+    session.query(TaskQueue).filter(
+        TaskQueue.id == task_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
