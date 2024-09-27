@@ -7,7 +7,7 @@ from ..session import check_session_and_rollback as check_and_roll
 from ..enums import Tablenames, try_parse_enum_value
 import traceback
 import datetime
-from src.util import daemon
+from .. import daemon
 from threading import Lock
 
 
