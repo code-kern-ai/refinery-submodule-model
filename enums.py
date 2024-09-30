@@ -475,6 +475,7 @@ class TaskType(Enum):
     TASK_QUEUE = "task_queue"
     TASK_QUEUE_ACTION = "task_queue_action"
     RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
+    TRANSFORM_MARKDOWN_CONTENT = "TRANSFORM_MARKDOWN_CONTENT"
 
 
 class TaskQueueAction(Enum):
