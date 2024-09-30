@@ -3,13 +3,13 @@ from ..session import session
 from ..models import FileExtraction
 
 
-def get(org_id: str, file_reference_id: str, ext_method: str) -> FileExtraction:
+def get(org_id: str, file_reference_id: str, extraction_key: str) -> FileExtraction:
     return (
         session.query(FileExtraction)
         .filter(
             FileExtraction.organization_id == org_id,
             FileExtraction.file_reference_id == file_reference_id,
-            FileExtraction.extraction_method == ext_method,
+            FileExtraction.extraction_key == extraction_key,
         )
         .first()
     )
@@ -18,7 +18,7 @@ def get(org_id: str, file_reference_id: str, ext_method: str) -> FileExtraction:
 def create(
     org_id: str,
     file_reference_id: str,
-    ext_method: str,
+    extraction_key: str,
     minio_path: str,
     created_by: str,
     with_commit: bool = True,
@@ -28,7 +28,7 @@ def create(
         organization_id=org_id,
         file_reference_id=file_reference_id,
         minio_path=minio_path,
-        extraction_method=ext_method,
+        extraction_key=extraction_key,
         bucket=org_id,
         created_by=created_by,
     )

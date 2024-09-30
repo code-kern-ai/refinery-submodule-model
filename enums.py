@@ -792,3 +792,8 @@ class CustomerButtonLocation(Enum):
     COGNITION_MACRO_RESULTS_TABLE = "COGNITION_MACRO_RESULTS_TABLE"  # url /macros/<macro_id> # only visible if meta data display is active
 
     # extended on demand over time
+
+
+class MarkdownTransformationInitiator(Enum):
+    TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
+    DATASET_MARKDOWN_FILE = "DATASET_MARKDOWN_FILE"
