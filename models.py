@@ -1783,7 +1783,7 @@ class FileExtraction(Base):
         UniqueConstraint(
             "organization_id",
             "file_reference_id",
-            "extraction_method",
+            "extraction_key",
             name="unique_file_extraction",
         ),
         {"schema": "cognition"},
@@ -1802,7 +1802,43 @@ class FileExtraction(Base):
         ),
         index=True,
     )
-    extraction_method = Column(String)
+    extraction_key = Column(String)
+    minio_path = Column(String)
+    bucket = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class FileTransformation(Base):
+    __tablename__ = Tablenames.FILE_TRANSFORMATION.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "file_extraction_id",
+            "transformation_key",
+            name="unique_file_transformation",
+        ),
+        {"schema": "cognition"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    file_extraction_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.FILE_EXTRACTION.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    transformation_key = Column(String)
     minio_path = Column(String)
     bucket = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
