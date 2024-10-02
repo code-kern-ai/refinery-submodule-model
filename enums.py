@@ -476,6 +476,7 @@ class TaskType(Enum):
     TASK_QUEUE_ACTION = "task_queue_action"
     RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
     TRANSFORM_MARKDOWN_CONTENT = "TRANSFORM_MARKDOWN_CONTENT"
+    PARSE_COGNITION_FILE = "PARSE_COGNITION_FILE"
 
 
 class TaskQueueAction(Enum):
@@ -797,3 +798,9 @@ class CustomerButtonLocation(Enum):
 class MarkdownTransformationInitiator(Enum):
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
     DATASET_MARKDOWN_FILE = "DATASET_MARKDOWN_FILE"
+
+
+class FileCacheProcessingScope(Enum):
+    EXTRACT_TRANSFORM = "FULL_PARSE"
+    EXTRACT = "EXTRACT"
+    TRANSFORM = "TRANSFORM"

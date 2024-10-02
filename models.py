@@ -1775,6 +1775,8 @@ class FileReference(Base):
     file_size_bytes = Column(BigInteger)
     content_type = Column(String)
     original_file_name = Column(String)
+    state = Column(String, default=UploadStates.CREATED.value)
+    meta_data = Column(JSON)
 
 
 class FileExtraction(Base):
