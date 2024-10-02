@@ -800,7 +800,12 @@ class MarkdownTransformationInitiator(Enum):
     DATASET_MARKDOWN_FILE = "DATASET_MARKDOWN_FILE"
 
 
+# UPLOAD_EXTRACT_TRANSFORM --> File was never uploaded, will be newly uploaded, extracted and transformed (Nothing exists)
+# EXTRACT_TRANSFORM --> File was uploaded before, will be newly extracted and transformed (FileReference exists)
+# TRANSFORM --> File was uploaded and extracted before with given config and will be newly transformed (FileReference + FileExtraction exists)
+# CACHE --> File was uploaded, extracted and transformed before with given config and nothing will be recalculated(FileReference + FileExtraction + FileTransformation exists)
 class FileCacheProcessingScope(Enum):
-    EXTRACT_TRANSFORM = "FULL_PARSE"
-    EXTRACT = "EXTRACT"
+    UPLOAD_EXTRACT_TRANSFORM = "UPLOAD_EXTRACT_TRANSFORM"
+    EXTRACT_TRANSFORM = "EXTRACT_TRANSFORM"
     TRANSFORM = "TRANSFORM"
+    CACHE = "CACHE"

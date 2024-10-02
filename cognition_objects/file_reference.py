@@ -1,6 +1,7 @@
 from ..business_objects import general
 from ..session import session
 from ..models import FileReference
+from typing import Dict, Any
 
 
 def get(org_id: str, hash: str, file_size_bytes) -> FileReference:
@@ -34,6 +35,7 @@ def create(
     original_file_name: str,
     content_type: str,
     minio_path: str,
+    meta_data: Dict[str, Any],
     with_commit: bool = True,
 ) -> FileReference:
 
@@ -46,6 +48,7 @@ def create(
         created_by=created_by,
         original_file_name=original_file_name,
         content_type=content_type,
+        meta_data=meta_data,
     )
 
     general.add(file_reference, with_commit)
