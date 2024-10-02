@@ -73,7 +73,7 @@ def get_all_by_type_and_external_id(
 
 
 def __get_add_ids_data_slice(project_id: str, slice_id: str) -> List[str]:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))    
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     slice_id = prevent_sql_injection(slice_id, isinstance(slice_id, str))
     query = f"""
     SELECT  array_agg(lal.id::TEXT)
@@ -82,7 +82,7 @@ def __get_add_ids_data_slice(project_id: str, slice_id: str) -> List[str]:
         ON lal.project_id = _is.project_id AND lal.heuristic_id = _is.id
     WHERE lal.project_id = '{project_id}' 
         AND _is.source_code::JSON->>'data_slice_id' = '{slice_id}'
-        AND _is.type = '{enums.InformationSourceType.CROWD_LABELER.value}' """
+    """
     add_ids = general.execute_first(query)
     if add_ids:
         return add_ids[0]
@@ -108,7 +108,6 @@ def get_by_all_by_user_id(
         INNER JOIN information_source _is
             ON lal.project_id = _is.project_id AND lal.heuristic_id = _is.id
         WHERE _is.source_code::JSON->>'annotator_id' = '{user_id}'
-            AND _is.type = '{enums.InformationSourceType.CROWD_LABELER.value}'
             AND NOT lal.is_locked
         """
         ids = [r[0] for r in general.execute_all(query)]

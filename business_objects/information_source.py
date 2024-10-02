@@ -131,54 +131,6 @@ def get_payloads_by_project_id(project_id: str) -> List[Any]:
     return general.execute_all(query)
 
 
-def get_zero_shot_is_data(project_id: str, information_source_id: str) -> Any:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    information_source_id = prevent_sql_injection(
-        information_source_id, isinstance(information_source_id, str)
-    )
-    sql: str = f"""
-    SELECT base.*, a.name attribute_name
-    FROM (
-        SELECT 
-            _is.id::TEXT, 
-            _is.type is_type,
-            _is.source_code::JSON ->>'config' config,
-            (_is.source_code::JSON ->>'min_confidence')::FLOAT min_confidence,
-            (_is.source_code::JSON ->>'run_individually')::BOOLEAN run_individually,
-            lt.task_target, 
-            COALESCE(lt.attribute_id,(_is.source_code::JSON ->>'attribute_id')::UUID) attribute_id,
-            ltl.labels
-        FROM information_source _is
-        INNER JOIN labeling_task lt
-            ON _is.labeling_task_id = lt.id
-        INNER JOIN (
-            SELECT ltl.labeling_task_id,array_agg(ltl.name) labels
-            FROM labeling_task_label ltl
-            WHERE ltl.project_id = '{project_id}'
-            GROUP BY ltl.labeling_task_id 
-        ) ltl
-            ON _is.labeling_task_id = ltl.labeling_task_id
-        WHERE _is.id = '{information_source_id}' AND _is.project_id = '{project_id}' )base
-    INNER JOIN attribute a
-        ON a.id = base.attribute_id AND a.project_id = '{project_id}'
-    """
-    return general.execute_first(sql)
-
-
-def get_first_crowd_is_for_annotator(project_id: str, annotator_id: str) -> str:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    annotator_id = prevent_sql_injection(annotator_id, isinstance(annotator_id, str))
-    query = f"""
-    SELECT _is.id::TEXT
-    FROM information_source _is
-    WHERE _is.project_id = '{project_id}' AND _is."type" = '{enums.InformationSourceType.CROWD_LABELER.value}'
-    AND _is.source_code::JSON ->>'annotator_id' = '{annotator_id}'
-    """
-    v = general.execute_first(query)
-    if v and v[0]:
-        return v[0]
-
-
 def get_exclusion_record_ids(source_id: str) -> List[str]:
     exclusions = (
         session.query(InformationSourceStatisticsExclusion.record_id).filter(
@@ -223,15 +175,8 @@ def get_all_states(project_id: str, source_id: Optional[str] = None) -> Dict[str
     return {r[0]: r[1] for r in general.execute_all(query)}
 
 
-def get_overview_data(
-    project_id: str, is_model_callback: bool = False
-) -> List[Dict[str, Any]]:
+def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-
-    if is_model_callback:
-        type_selection = " = 'MODEL_CALLBACK'"
-    else:
-        type_selection = " != 'MODEL_CALLBACK'"
     query = f"""
     SELECT array_agg(row_to_json(data_select))
     FROM (
@@ -274,7 +219,6 @@ def get_overview_data(
             GROUP BY source_id) stats
             ON _is.id = stats.source_id
         WHERE _is.project_id = '{project_id}'
-        AND _is.type {type_selection}
         ORDER BY "createdAt" DESC,name
         )data_select """
     values = general.execute_first(query)
@@ -523,15 +467,10 @@ def update_is_selected_for_project(
     project_id: str,
     update_value: bool,
     with_commit: bool = False,
-    is_model_callback: bool = False,
     only_with_state: Optional[enums.PayloadState] = None,
 ) -> None:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
 
-    if is_model_callback:
-        type_selection = " = 'MODEL_CALLBACK'"
-    else:
-        type_selection = " != 'MODEL_CALLBACK'"
     if update_value:
         str_value = "TRUE"
     else:
@@ -549,7 +488,6 @@ def update_is_selected_for_project(
     UPDATE information_source
     SET is_selected = {str_value}
     WHERE project_id = '{project_id}'
-    AND type {type_selection}
     {id_selection}
     """
     general.execute(query)
