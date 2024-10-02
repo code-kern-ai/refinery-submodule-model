@@ -55,6 +55,8 @@ def __get_enriched_query(
     md_file_id: Optional[str] = None,
     dataset_id: Optional[str] = None,
     query_add: Optional[str] = "",
+    exclude_content: bool = False,
+    only_count_llm_logs: bool = False,
 ) -> str:
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     where_add = ""
@@ -64,19 +66,33 @@ def __get_enriched_query(
     if dataset_id:
         prevent_sql_injection(dataset_id, isinstance(dataset_id, str))
         where_add += f" AND mf.dataset_id = '{dataset_id}'"
-
-    query = """
-    SELECT mf.*, COALESCE(mll.llm_logs, '{}') AS llm_logs
-    FROM cognition.markdown_file mf
-    LEFT JOIN (
-        SELECT llm_logs_row.markdown_file_id, array_agg(row_to_json(llm_logs_row)) AS llm_logs
-        FROM (
-            SELECT mll_inner.*
-            FROM cognition.markdown_llm_logs mll_inner
-        ) llm_logs_row
-        GROUP BY llm_logs_row.markdown_file_id
-    ) mll ON mf.id = mll.markdown_file_id
-    """
+    if exclude_content:
+        mf_select = general.construct_select_columns(
+            "markdown_file", "cognition", prefix="mf", exclude_columns=["content"]
+        )
+    else:
+        mf_select = "mf.*"
+    if only_count_llm_logs:
+        query = f"""
+        SELECT {mf_select}, COALESCE(llm_logs_count,0) llm_logs_count
+        FROM cognition.markdown_file mf
+        LEFT JOIN (
+            SELECT mll.markdown_file_id, COUNT(*) llm_logs_count
+            FROM cognition.markdown_llm_logs mll
+            GROUP BY 1
+        ) mll
+            ON mf.id = mll.markdown_file_id
+        """
+    else:
+        query = f"""
+        SELECT {mf_select}, COALESCE(mll.llm_logs, '{{}}') AS llm_logs
+        FROM cognition.markdown_file mf
+        LEFT JOIN (
+            SELECT mll.markdown_file_id, array_agg(row_to_json(mll.*)) AS llm_logs
+            FROM cognition.markdown_llm_logs mll
+            GROUP BY 1
+        ) mll ON mf.id = mll.markdown_file_id
+        """
     query += f"WHERE mf.organization_id = '{org_id}' {where_add}"
     query += query_add
     return query
@@ -87,6 +103,8 @@ def get_all_paginated_for_dataset(
     dataset_id: str,
     page: int,
     limit: int,
+    exclude_content: bool,
+    only_count_llm_logs: bool,
 ) -> Tuple[int, int, List[CognitionMarkdownFile]]:
     total_count = (
         session.query(CognitionMarkdownFile.id)
@@ -104,12 +122,16 @@ def get_all_paginated_for_dataset(
     limit = prevent_sql_injection(limit, isinstance(limit, int))
     page = prevent_sql_injection(page, isinstance(page, int))
     query_add = f"""
-    ORDER BY mf.created_by
+    ORDER BY mf.created_at DESC
     LIMIT {limit}
     OFFSET {(page - 1) * limit}
     """
     enriched_query = __get_enriched_query(
-        org_id=org_id, dataset_id=dataset_id, query_add=query_add
+        org_id=org_id,
+        dataset_id=dataset_id,
+        query_add=query_add,
+        exclude_content=exclude_content,
+        only_count_llm_logs=only_count_llm_logs,
     )
     query_results = general.execute_all(enriched_query)
 
