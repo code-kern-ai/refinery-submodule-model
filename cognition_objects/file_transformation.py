@@ -17,6 +17,17 @@ def get(
     )
 
 
+def get_by_id(org_id, file_transformation_id: str) -> FileTransformation:
+    return (
+        session.query(FileTransformation)
+        .filter(
+            FileTransformation.organization_id == org_id,
+            FileTransformation.id == file_transformation_id,
+        )
+        .first()
+    )
+
+
 def create(
     org_id: str,
     file_extraction_id: str,
