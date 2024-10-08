@@ -29,40 +29,6 @@ def get_count_assigned() -> int:
     return session.query(User.id).filter(User.organization_id != None).count()
 
 
-def get_user_count(organization_id: str, project_id: str) -> List[Any]:
-    organization_id = prevent_sql_injection(
-        organization_id, isinstance(organization_id, str)
-    )
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    sql = f"""
-    SELECT  
-        u.id, 
-        COALESCE(counts,ARRAY[json_build_object(
-                'source_type', '{enums.LabelSource.MANUAL.value}',
-                'count', 0
-            )])
-    FROM PUBLIC.user u
-    LEFT JOIN (
-        SELECT created_by, array_agg(count_json) counts
-        FROM (
-            SELECT rla.created_by, json_build_object(
-                    'source_type', source_type,
-                    'count', COUNT(*)
-                ) count_json
-            FROM project p
-            INNER JOIN record_label_association rla
-                ON p.id = rla.project_id
-            WHERE p.organization_id = '{organization_id}'
-                AND p.id = '{project_id}'
-            GROUP BY rla.created_by, rla.source_type ) x
-        GROUP BY created_by ) count_data
-    ON u.id = count_data.created_by
-    WHERE u.role != '{enums.UserRoles.ANNOTATOR.value}'
-        AND u.organization_id = '{organization_id}'
-    """
-    return general.execute_all(sql)
-
-
 def get_migration_user() -> str:
     query = """
     SELECT u.id

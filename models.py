@@ -345,27 +345,6 @@ class UserSessions(Base):
     temp_session = Column(Boolean, default=True)
 
 
-class PersonalAccessToken(Base):
-    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN.value
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    name = Column(String)
-    scope = Column(String)
-    created_at = Column(DateTime, default=sql.func.now())
-    expires_at = Column(DateTime, nullable=True)
-    last_used = Column(DateTime, nullable=True)
-    token = Column(String)
-
-
 class Notification(Base):
     __tablename__ = Tablenames.NOTIFICATION.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -1096,21 +1075,6 @@ class CognitionProject(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    refinery_references_project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    refinery_question_project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    refinery_relevance_project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
@@ -1125,9 +1089,7 @@ class CognitionProject(Base):
         String, default=CognitionProjectState.CREATED.value
     )  # of type enums.CognitionProjectState.*.value
     facts_grouping_attribute = Column(String)
-    refinery_synchronization_interval_option = Column(String)
     interface_type = Column(String)
-    execute_query_enrichment_if_source_code = Column(String)
 
     customer_color_primary = Column(String, default="#18181b")
     customer_color_primary_only_accent = Column(Boolean, default=False)
@@ -1542,33 +1504,6 @@ class CognitionMarkdownLLMLogs(Base):
     input = Column(String)
     output = Column(String)
     error = Column(String)
-
-
-class CognitionRefinerySynchronizationTask(Base):
-    __tablename__ = Tablenames.REFINERY_SYNCHRONIZATION_TASK.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    cognition_project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    refinery_project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    finished_at = Column(DateTime)
-    state = Column(String)  # e.g. CREATED, FINISHED, FAILED
-    logs = Column(ARRAY(String))
-    num_records_created = Column(Integer)
-
 
 class CognitionMacro(Base):
     __tablename__ = Tablenames.MACRO.value

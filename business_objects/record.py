@@ -394,24 +394,6 @@ def get_missing_columns_str(project_id: str) -> str:
     return ",\n".join([f"'{k[0]}',r.data->'{k[0]}'" for k in missing_columns])
 
 
-def get_zero_shot_n_random_records(
-    project_id: str, attribute_name: str, n: int = 10
-) -> List[Any]:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    attribute_name = prevent_sql_injection(
-        attribute_name, isinstance(attribute_name, str)
-    )
-    n = prevent_sql_injection(n, isinstance(n, int))
-    sql = f"""
-        SELECT r.id, r."data", r."data" ->> '{attribute_name}' "text"
-        FROM record r
-        WHERE project_id = '{project_id}' AND r.category = '{enums.RecordCategory.SCALE.value}'
-        ORDER BY RANDOM()
-        LIMIT {n}
-        """
-    return general.execute_all(sql)
-
-
 def get_record_id_groups(project_id: str, group_size: int = 20) -> List[List[str]]:
     if group_size <= 0:
         return None
