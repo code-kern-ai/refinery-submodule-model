@@ -15,6 +15,17 @@ def get(org_id: str, file_reference_id: str, extraction_key: str) -> FileExtract
     )
 
 
+def get_by_id(org_id, file_extraction_id: str) -> FileExtraction:
+    return (
+        session.query(FileExtraction)
+        .filter(
+            FileExtraction.organization_id == org_id,
+            FileExtraction.id == file_extraction_id,
+        )
+        .first()
+    )
+
+
 def create(
     org_id: str,
     file_reference_id: str,
