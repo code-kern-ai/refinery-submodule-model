@@ -771,16 +771,24 @@ class CustomerButtonLocation(Enum):
     # extended on demand over time
 
 
-class MarkdownTransformationInitiator(Enum):
+class FileCachingInitiator(Enum):
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
     DATASET_MARKDOWN_FILE = "DATASET_MARKDOWN_FILE"
+
+
+class FileCachingState(Enum):
+    CREATED = "CREATED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    CANCELED = "CANCELED"
+    FAILED = "FAILED"
 
 
 # UPLOAD_EXTRACT_TRANSFORM --> File was never uploaded, will be newly uploaded, extracted and transformed (Nothing exists)
 # EXTRACT_TRANSFORM --> File was uploaded before, will be newly extracted and transformed (FileReference exists)
 # TRANSFORM --> File was uploaded and extracted before with given config and will be newly transformed (FileReference + FileExtraction exists)
 # CACHE --> File was uploaded, extracted and transformed before with given config and nothing will be recalculated(FileReference + FileExtraction + FileTransformation exists)
-class FileCacheProcessingScope(Enum):
+class FileCachingProcessingScope(Enum):
     UPLOAD_EXTRACT_TRANSFORM = "UPLOAD_EXTRACT_TRANSFORM"
     EXTRACT_TRANSFORM = "EXTRACT_TRANSFORM"
     TRANSFORM = "TRANSFORM"

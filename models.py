@@ -15,6 +15,7 @@ from .enums import (
     CognitionProjectState,
     StrategyComplexity,
     AdminLogLevel,
+    FileCachingState,
 )
 from sqlalchemy import (
     JSON,
@@ -1505,6 +1506,7 @@ class CognitionMarkdownLLMLogs(Base):
     output = Column(String)
     error = Column(String)
 
+
 class CognitionMacro(Base):
     __tablename__ = Tablenames.MACRO.value
     __table_args__ = {"schema": "cognition"}
@@ -1710,7 +1712,7 @@ class FileReference(Base):
     file_size_bytes = Column(BigInteger)
     content_type = Column(String)
     original_file_name = Column(String)
-    state = Column(String, default=UploadStates.CREATED.value)
+    state = Column(String, default=FileCachingState.CREATED.value)
     meta_data = Column(JSON)
 
 
@@ -1748,6 +1750,7 @@ class FileExtraction(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    state = Column(String, default=FileCachingState.CREATED.value)
 
 
 class FileTransformation(Base):
@@ -1784,6 +1787,7 @@ class FileTransformation(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    state = Column(String, default=FileCachingState.CREATED.value)
 
 
 # =========================== Global tables ===========================
