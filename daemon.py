@@ -48,3 +48,12 @@ def reset_session_token_in_thread(request_new: bool = True):
     new_token = general.remove_and_refresh_session(token, request_new)
     if new_token:
         thread_session_token.set(new_token)
+
+
+def prepare_thread(target, *args, **kwargs) -> threading.Thread:
+    return threading.Thread(
+        target=target,
+        args=args,
+        kwargs=kwargs,
+        daemon=True,
+    )
