@@ -1,6 +1,7 @@
 from ..business_objects import general
 from ..session import session
 from ..models import FileExtraction
+from submodules.model import enums
 
 
 def get(org_id: str, file_reference_id: str, extraction_key: str) -> FileExtraction:
@@ -47,3 +48,26 @@ def create(
     general.add(file_extraction, with_commit)
 
     return file_extraction
+
+
+def update(
+    org_id: str,
+    file_extraction_id: str,
+    minio_path: str = None,
+    state: str = None,
+    with_commit: bool = True,
+) -> FileExtraction:
+    file_extraction = get(org_id, file_extraction_id)
+    if file_extraction.state == enums.FileCachingState.CANCELED.value:
+        return
+    if minio_path is not None:
+        file_extraction.minio_path = minio_path
+    if state is not None:
+        file_extraction.state = state
+    general.flush_or_commit(with_commit)
+    return file_extraction
+
+
+def delete(org_id: str, file_extraction_id: str, with_commit: bool = True) -> None:
+    file_extraction = get_by_id(org_id, file_extraction_id)
+    general.delete(file_extraction, with_commit)

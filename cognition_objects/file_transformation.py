@@ -1,6 +1,7 @@
 from ..business_objects import general
 from ..session import session
 from ..models import FileTransformation
+from submodules.model import enums
 
 
 def get(
@@ -49,3 +50,26 @@ def create(
     general.add(file_transformation, with_commit)
 
     return file_transformation
+
+
+def update(
+    org_id: str,
+    file_transformation_id: str,
+    minio_path: str = None,
+    state: str = None,
+    with_commit: bool = True,
+) -> FileTransformation:
+    file_transformation = get(org_id, file_transformation_id)
+    if file_transformation.state == enums.FileCachingState.CANCELED.value:
+        return
+    if minio_path is not None:
+        file_transformation.minio_path = minio_path
+    if state is not None:
+        file_transformation.state = state
+    general.flush_or_commit(with_commit)
+    return file_transformation
+
+
+def delete(org_id: str, file_transformation_id: str, with_commit: bool = True):
+    file_transformation = get(org_id, file_transformation_id)
+    general.delete(file_transformation, with_commit)
