@@ -59,7 +59,7 @@ def update(
     state: str = None,
     with_commit: bool = True,
 ) -> FileTransformation:
-    file_transformation = get(org_id, file_transformation_id)
+    file_transformation = get_by_id(org_id, file_transformation_id)
     if file_transformation.state == enums.FileCachingState.CANCELED.value:
         return
     if minio_path is not None:
@@ -73,3 +73,18 @@ def update(
 def delete(org_id: str, file_transformation_id: str, with_commit: bool = True):
     file_transformation = get(org_id, file_transformation_id)
     general.delete(file_transformation, with_commit)
+
+
+def set_state_to_failed(
+    org_id: str, file_transformation_id: str, with_commit: bool = True
+) -> FileTransformation:
+    file_transformation = get_by_id(org_id, file_transformation_id)
+    if (
+        not file_transformation
+        or file_transformation.state == enums.FileCachingState.CANCELED.value
+        or file_transformation.state == enums.FileCachingState.COMPLETED.value
+    ):
+        return
+    file_transformation.state = enums.FileCachingState.FAILED.value
+    general.flush_or_commit(with_commit)
+    return file_transformation

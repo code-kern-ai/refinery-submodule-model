@@ -57,7 +57,7 @@ def update(
     state: str = None,
     with_commit: bool = True,
 ) -> FileExtraction:
-    file_extraction = get(org_id, file_extraction_id)
+    file_extraction = get_by_id(org_id, file_extraction_id)
     if file_extraction.state == enums.FileCachingState.CANCELED.value:
         return
     if minio_path is not None:
@@ -71,3 +71,18 @@ def update(
 def delete(org_id: str, file_extraction_id: str, with_commit: bool = True) -> None:
     file_extraction = get_by_id(org_id, file_extraction_id)
     general.delete(file_extraction, with_commit)
+
+
+def set_state_to_failed(
+    org_id: str, file_extraction_id: str, with_commit: bool = True
+) -> FileExtraction:
+    file_extraction = get_by_id(org_id, file_extraction_id)
+    if (
+        not file_extraction
+        or file_extraction.state == enums.FileCachingState.CANCELED.value
+        or file_extraction.state == enums.FileCachingState.COMPLETED.value
+    ):
+        return
+    file_extraction.state = enums.FileCachingState.FAILED.value
+    general.flush_or_commit(with_commit)
+    return file_extraction
