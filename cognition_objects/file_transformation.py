@@ -79,7 +79,7 @@ def update(
 
 
 def delete(org_id: str, file_transformation_id: str, with_commit: bool = True):
-    file_transformation = get(org_id, file_transformation_id)
+    file_transformation = get_by_id(org_id, file_transformation_id)
     general.delete(file_transformation, with_commit)
 
 
