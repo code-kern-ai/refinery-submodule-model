@@ -5,7 +5,10 @@ from submodules.model import enums
 
 
 def get(
-    org_id: str, file_extraction_id: str, transformation_key: str
+    org_id: str,
+    file_extraction_id: str,
+    transformation_key: str,
+    only_completed: bool = False,
 ) -> FileTransformation:
     return (
         session.query(FileTransformation)
@@ -13,6 +16,11 @@ def get(
             FileTransformation.organization_id == org_id,
             FileTransformation.file_extraction_id == file_extraction_id,
             FileTransformation.transformation_key == transformation_key,
+            (
+                FileTransformation.state == enums.FileCachingState.COMPLETED.value
+                if only_completed
+                else True
+            ),
         )
         .first()
     )

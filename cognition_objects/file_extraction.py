@@ -4,13 +4,23 @@ from ..models import FileExtraction
 from submodules.model import enums
 
 
-def get(org_id: str, file_reference_id: str, extraction_key: str) -> FileExtraction:
+def get(
+    org_id: str,
+    file_reference_id: str,
+    extraction_key: str,
+    only_completed: bool = False,
+) -> FileExtraction:
     return (
         session.query(FileExtraction)
         .filter(
             FileExtraction.organization_id == org_id,
             FileExtraction.file_reference_id == file_reference_id,
             FileExtraction.extraction_key == extraction_key,
+            (
+                FileExtraction.state == enums.FileCachingState.COMPLETED.value
+                if only_completed
+                else True
+            ),
         )
         .first()
     )
