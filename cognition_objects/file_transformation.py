@@ -88,3 +88,21 @@ def set_state_to_failed(
     file_transformation.state = enums.FileCachingState.FAILED.value
     general.flush_or_commit(with_commit)
     return file_transformation
+
+
+def set_state_to_failed_by_transformation_key(
+    org_id: str,
+    file_extraction_id: str,
+    transformation_key: str,
+    with_commit: bool = True,
+) -> FileTransformation:
+    file_transformation = get(org_id, file_extraction_id, transformation_key)
+    if (
+        not file_transformation
+        or file_transformation.state == enums.FileCachingState.CANCELED.value
+        or file_transformation.state == enums.FileCachingState.COMPLETED.value
+    ):
+        return
+    file_transformation.state = enums.FileCachingState.FAILED.value
+    general.flush_or_commit(with_commit)
+    return file_transformation

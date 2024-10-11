@@ -86,3 +86,18 @@ def set_state_to_failed(
     file_extraction.state = enums.FileCachingState.FAILED.value
     general.flush_or_commit(with_commit)
     return file_extraction
+
+
+def set_state_to_failed_by_extraction_key(
+    org_id: str, file_reference_id: str, extraction_key: str, with_commit: bool = True
+) -> FileExtraction:
+    file_extraction = get(org_id, file_reference_id, extraction_key)
+    if (
+        not file_extraction
+        or file_extraction.state == enums.FileCachingState.CANCELED.value
+        or file_extraction.state == enums.FileCachingState.COMPLETED.value
+    ):
+        return
+    file_extraction.state = enums.FileCachingState.FAILED.value
+    general.flush_or_commit(with_commit)
+    return file_extraction
