@@ -32,7 +32,7 @@ def get_all_by_project_id(project_id: str) -> List[CognitionStrategy]:
     return (
         session.query(CognitionStrategy)
         .filter(CognitionStrategy.project_id == project_id)
-        .order_by(CognitionStrategy.created_at.asc())
+        .order_by(CognitionStrategy.order.desc())
         .all()
     )
 
@@ -52,6 +52,7 @@ def create(
     description: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
+    order: Optional[int] = None,
 ) -> CognitionStrategy:
     strategy: CognitionStrategy = CognitionStrategy(
         project_id=project_id,
@@ -59,6 +60,7 @@ def create(
         created_at=created_at,
         name=name,
         description=description,
+        order=order,
     )
     general.add(strategy, with_commit)
 
@@ -71,6 +73,7 @@ def update(
     name: Optional[str] = None,
     description: Optional[str] = None,
     complexity: Optional[StrategyComplexity] = None,
+    order: Optional[int] = None,
     with_commit: bool = True,
 ) -> CognitionStrategy:
     strategy = get(project_id, strategy_id)
@@ -80,6 +83,8 @@ def update(
         strategy.description = description
     if complexity is not None:
         strategy.complexity = complexity.value
+    if order is not None:
+        strategy.order = order
     general.add(strategy, with_commit)
 
     return strategy
