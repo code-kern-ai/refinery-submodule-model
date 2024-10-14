@@ -2,6 +2,7 @@ from ..business_objects import general
 from ..session import session
 from ..models import FileExtraction
 from submodules.model import enums
+from typing import Optional
 
 
 def get(
@@ -10,23 +11,21 @@ def get(
     extraction_key: str,
     only_completed: bool = False,
 ) -> FileExtraction:
-    return (
-        session.query(FileExtraction)
-        .filter(
-            FileExtraction.organization_id == org_id,
-            FileExtraction.file_reference_id == file_reference_id,
-            FileExtraction.extraction_key == extraction_key,
-            (
-                FileExtraction.state == enums.FileCachingState.COMPLETED.value
-                if only_completed
-                else True
-            ),
-        )
-        .first()
+    query = session.query(FileExtraction).filter(
+        FileExtraction.organization_id == org_id,
+        FileExtraction.file_reference_id == file_reference_id,
+        FileExtraction.extraction_key == extraction_key,
     )
 
+    if only_completed:
+        query = query.filter(
+            FileExtraction.state == enums.FileCachingState.COMPLETED.value
+        )
 
-def get_by_id(org_id, file_extraction_id: str) -> FileExtraction:
+    return query.first()
+
+
+def get_by_id(org_id: str, file_extraction_id: str) -> FileExtraction:
     return (
         session.query(FileExtraction)
         .filter(
@@ -63,8 +62,8 @@ def create(
 def update(
     org_id: str,
     file_extraction_id: str,
-    minio_path: str = None,
-    state: str = None,
+    minio_path: Optional[str] = None,
+    state: Optional[str] = None,
     with_commit: bool = True,
 ) -> FileExtraction:
     file_extraction = get_by_id(org_id, file_extraction_id)

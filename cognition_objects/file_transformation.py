@@ -2,6 +2,7 @@ from ..business_objects import general
 from ..session import session
 from ..models import FileTransformation
 from submodules.model import enums
+from typing import Optional
 
 
 def get(
@@ -10,23 +11,20 @@ def get(
     transformation_key: str,
     only_completed: bool = False,
 ) -> FileTransformation:
-    return (
-        session.query(FileTransformation)
-        .filter(
-            FileTransformation.organization_id == org_id,
-            FileTransformation.file_extraction_id == file_extraction_id,
-            FileTransformation.transformation_key == transformation_key,
-            (
-                FileTransformation.state == enums.FileCachingState.COMPLETED.value
-                if only_completed
-                else True
-            ),
-        )
-        .first()
+    query = session.query(FileTransformation).filter(
+        FileTransformation.organization_id == org_id,
+        FileTransformation.file_extraction_id == file_extraction_id,
+        FileTransformation.transformation_key == transformation_key,
     )
 
+    if only_completed:
+        query = query.filter(
+            FileTransformation.state == enums.FileCachingState.COMPLETED.value
+        )
+    return query.first()
 
-def get_by_id(org_id, file_transformation_id: str) -> FileTransformation:
+
+def get_by_id(org_id: str, file_transformation_id: str) -> FileTransformation:
     return (
         session.query(FileTransformation)
         .filter(
@@ -63,8 +61,8 @@ def create(
 def update(
     org_id: str,
     file_transformation_id: str,
-    minio_path: str = None,
-    state: str = None,
+    minio_path: Optional[str] = None,
+    state: Optional[str] = None,
     with_commit: bool = True,
 ) -> FileTransformation:
     file_transformation = get_by_id(org_id, file_transformation_id)
