@@ -85,6 +85,7 @@ def update(
         strategy.complexity = complexity.value
     if order is not None:
         strategy.order = order
+
     general.add(strategy, with_commit)
 
     return strategy
