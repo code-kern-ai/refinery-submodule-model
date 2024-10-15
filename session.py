@@ -74,7 +74,6 @@ def start_session_cleanup():
 
 def __start_session_cleanup():
     while True:
-        print("Checking THREAD via module!!", flush=True)
         with session_lock:
             sessions = general.get_session_lookup(exclude_last_x_seconds=5 * 60)
             for session in sessions:
