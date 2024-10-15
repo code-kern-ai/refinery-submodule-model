@@ -1701,6 +1701,7 @@ class FileReference(Base):
         String,
         index=True,
     )
+    last_used = Column(DateTime, default=sql.func.now())
     minio_path = Column(String)
     bucket = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
