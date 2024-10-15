@@ -5,7 +5,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exc import PendingRollbackError
 import traceback
+
+from .business_objects import general
 from .util import collect_engine_variables
+from threading import Lock
+from src.util import daemon
+import time
+
+session_lock = Lock()
 
 request_id_ctx_var = ContextVar("request_id", default=None)
 
@@ -59,3 +66,22 @@ def get_engine_dialect() -> Any:
     if not engine:
         return None
     return engine.dialect
+
+
+def start_session_cleanup():
+    daemon.run(__start_session_cleanup)
+
+
+def __start_session_cleanup():
+    while True:
+        print("Checking THREAD via module!!", flush=True)
+        with session_lock:
+            sessions = general.get_session_lookup(exclude_last_x_seconds=5 * 60)
+            for session in sessions:
+                try:
+                    general.force_remove_and_refresh_session_by_id(
+                        session["session_id"]
+                    )
+                except Exception:
+                    traceback.print_exc()
+        time.sleep(10)
