@@ -6,8 +6,11 @@ import traceback
 thread_session_token = ContextVar("token", default=None)
 
 
-def run_without_db_token(target, *args, **kwargs):
-    """DB session token isn't automatically created. You can still do this with general.get_ctx_token but need to return it yourself with remove_and_refresh_session."""
+def run(target, *args, **kwargs):
+    """
+    DB session token isn't automatically created.
+    You can still do this with general.get_ctx_token but need to return it yourself with remove_and_refresh_session.
+    """
     threading.Thread(
         target=target,
         args=args,
@@ -17,7 +20,10 @@ def run_without_db_token(target, *args, **kwargs):
 
 
 def run_with_db_token(target, *args, **kwargs):
-    """DB session token is automatically created & returned at the end. Long running threads needs to occasionally daemon.reset_session_token_in_thread to ensure the session doesn't get a timeout."""
+    """
+    DB session token is automatically created & returned at the end.
+    Long running threads needs to occasionally daemon.reset_session_token_in_thread to ensure the session doesn't get a timeout.
+    """
 
     # this is a workaround to set the token in the actual thread context
     def wrapper():

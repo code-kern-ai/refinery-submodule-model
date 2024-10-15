@@ -67,7 +67,7 @@ def force_remove_and_refresh_session_by_id(session_id: str) -> bool:
         if session_id not in session_lookup:
             return False
     # context vars cant be closed from a different context but we can work around it by using a thread (which creates a new context) with the same id
-    daemon.run_without_db_token(__close_in_context(session_id))
+    daemon.run(__close_in_context(session_id))
     return True
 
 
