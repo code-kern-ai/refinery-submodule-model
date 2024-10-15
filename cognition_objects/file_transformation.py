@@ -2,7 +2,7 @@ from ..business_objects import general
 from ..session import session
 from ..models import FileTransformation
 from submodules.model import enums
-from typing import Optional
+from typing import Optional, List
 
 
 def get(
@@ -32,6 +32,19 @@ def get_by_id(org_id: str, file_transformation_id: str) -> FileTransformation:
             FileTransformation.id == file_transformation_id,
         )
         .first()
+    )
+
+
+def get_all_by_file_extraction_id(
+    org_id: str, file_extraction_id: str
+) -> List[FileTransformation]:
+    return (
+        session.query(FileTransformation)
+        .filter(
+            FileTransformation.organization_id == org_id,
+            FileTransformation.file_extraction_id == file_extraction_id,
+        )
+        .all()
     )
 
 
@@ -112,3 +125,13 @@ def set_state_to_failed_by_transformation_key(
     file_transformation.state = enums.FileCachingState.FAILED.value
     general.flush_or_commit(with_commit)
     return file_transformation
+
+
+def delete_all_by_file_extraction_id(
+    org_id: str, file_extraction_id: str, with_commit: bool = True
+):
+    session.query(FileTransformation).filter(
+        FileTransformation.organization_id == org_id,
+        FileTransformation.file_extraction_id == file_extraction_id,
+    ).delete()
+    general.flush_or_commit(with_commit)

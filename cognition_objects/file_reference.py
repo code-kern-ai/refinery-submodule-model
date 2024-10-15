@@ -1,7 +1,7 @@
 from ..business_objects import general
 from ..session import session
 from ..models import FileReference
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 
 def get(org_id: str, hash: str, file_size_bytes) -> FileReference:
@@ -24,6 +24,18 @@ def get_by_id(org_id: str, file_reference_id: str) -> FileReference:
             FileReference.id == file_reference_id,
         )
         .first()
+    )
+
+
+def get_all(org_id: str, page: int, limit: int) -> List[FileReference]:
+    return (
+        session.query(FileReference)
+        .filter(
+            FileReference.organization_id == org_id,
+        )
+        .limit(limit)
+        .offset(max(0, (page - 1) * limit))
+        .all()
     )
 
 
@@ -54,3 +66,11 @@ def create(
     general.add(file_reference, with_commit)
 
     return file_reference
+
+
+def delete(org_id: str, file_reference_id: str, with_commit: bool = True) -> None:
+    session.query(FileReference).filter(
+        FileReference.organization_id == org_id,
+        FileReference.id == file_reference_id,
+    ).delete()
+    general.flush_or_commit(with_commit)

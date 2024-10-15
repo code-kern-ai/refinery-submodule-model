@@ -2,7 +2,7 @@ from ..business_objects import general
 from ..session import session
 from ..models import FileExtraction
 from submodules.model import enums
-from typing import Optional
+from typing import Optional, List
 
 
 def get(
@@ -33,6 +33,19 @@ def get_by_id(org_id: str, file_extraction_id: str) -> FileExtraction:
             FileExtraction.id == file_extraction_id,
         )
         .first()
+    )
+
+
+def get_all_by_file_reference_id(
+    org_id: str, file_reference_id: str
+) -> List[FileExtraction]:
+    return (
+        session.query(FileExtraction)
+        .filter(
+            FileExtraction.organization_id == org_id,
+            FileExtraction.file_reference_id == file_reference_id,
+        )
+        .all()
     )
 
 
@@ -110,3 +123,13 @@ def set_state_to_failed_by_extraction_key(
     file_extraction.state = enums.FileCachingState.FAILED.value
     general.flush_or_commit(with_commit)
     return file_extraction
+
+
+def delete_all_by_file_reference_id(
+    org_id: str, file_reference_id: str, with_commit: bool = True
+) -> None:
+    session.query(FileExtraction).filter(
+        FileExtraction.organization_id == org_id,
+        FileExtraction.file_reference_id == file_reference_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
