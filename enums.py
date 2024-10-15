@@ -124,7 +124,6 @@ class Tablenames(Enum):
     MARKDOWN_FILE = "markdown_file"
     PYTHON_STEP = "python_step"
     LLM_STEP = "llm_step"
-    MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
     WEBSOCKET_ACCESS = "websocket_access"
     CONSUMPTION_LOG = "consumption_log"
@@ -143,6 +142,7 @@ class Tablenames(Enum):
     FILE_REFERENCE = "file_reference"
     FILE_EXTRACTION = "file_extraction"
     FILE_TRANSFORMATION = "file_transformation"
+    FILE_TRANSFORMATION_LLM_LOGS = "file_transformation_llm_logs"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs

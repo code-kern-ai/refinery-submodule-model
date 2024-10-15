@@ -4,7 +4,7 @@ from datetime import datetime
 from .. import enums
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionMarkdownFile, CognitionMarkdownLLMLogs
+from ..models import CognitionMarkdownFile
 from ..util import prevent_sql_injection
 
 
@@ -138,15 +138,6 @@ def get_all_paginated_for_dataset(
     return total_count, num_pages, query_results
 
 
-def get_all_logs_for_md_file_id(md_file_id: str) -> List[CognitionMarkdownLLMLogs]:
-    return (
-        session.query(CognitionMarkdownLLMLogs)
-        .filter(CognitionMarkdownLLMLogs.markdown_file_id == md_file_id)
-        .order_by(CognitionMarkdownLLMLogs.created_at.asc())
-        .all()
-    )
-
-
 def can_access_file(org_id: str, file_id: str) -> bool:
     # since org specific files dont have a project_id but we still need to check the access rights
     # we collect from the requested file and match with org id from middleware/internal routing
@@ -218,30 +209,6 @@ def update(
     general.flush_or_commit(with_commit)
 
     return markdown_file
-
-
-def create_md_llm_log(
-    markdown_file_id: str,
-    model_used: str,
-    input_text: str,
-    output_text: Optional[str] = None,
-    error: Optional[str] = None,
-    created_at: Optional[datetime] = None,
-    finished_at: Optional[datetime] = None,
-    with_commit: bool = True,
-) -> None:
-    md_llm_log = CognitionMarkdownLLMLogs(
-        markdown_file_id=markdown_file_id,
-        input=input_text,
-        output=output_text,
-        error=error,
-        created_at=created_at,
-        finished_at=finished_at,
-        model_used=model_used,
-    )
-    general.add(md_llm_log, with_commit)
-
-    return md_llm_log
 
 
 def delete(org_id: str, md_file_id: str, with_commit: bool = True) -> None:

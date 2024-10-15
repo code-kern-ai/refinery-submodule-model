@@ -1,8 +1,9 @@
 from ..business_objects import general
 from ..session import session
-from ..models import FileTransformation
+from ..models import FileTransformation, FileTransformationLLMLogs
 from submodules.model import enums
 from typing import Optional, List
+from datetime import datetime
 
 
 def get(
@@ -135,3 +136,27 @@ def delete_all_by_file_extraction_id(
         FileTransformation.file_extraction_id == file_extraction_id,
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def create_file_transformation_llm_log(
+    file_transformation_id: str,
+    model_used: str,
+    input_text: str,
+    output_text: Optional[str] = None,
+    error: Optional[str] = None,
+    created_at: Optional[datetime] = None,
+    finished_at: Optional[datetime] = None,
+    with_commit: bool = True,
+) -> None:
+    file_transformation_llm_log = FileTransformationLLMLogs(
+        file_transformation_id=file_transformation_id,
+        input=input_text,
+        output=output_text,
+        error=error,
+        created_at=created_at,
+        finished_at=finished_at,
+        model_used=model_used,
+    )
+    general.add(file_transformation_llm_log, with_commit)
+
+    return file_transformation_llm_log

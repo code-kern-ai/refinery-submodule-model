@@ -1488,14 +1488,14 @@ class CognitionMarkdownFile(Base):
     meta_data = Column(JSON)
 
 
-class CognitionMarkdownLLMLogs(Base):
-    __tablename__ = Tablenames.MARKDOWN_LLM_LOGS.value
+class FileTransformationLLMLogs(Base):
+    __tablename__ = Tablenames.FILE_TRANSFORMATION_LLM_LOGS.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    markdown_file_id = Column(
+    file_transformation_id = Column(
         UUID(as_uuid=True),
         ForeignKey(
-            f"cognition.{Tablenames.MARKDOWN_FILE.value}.id", ondelete="CASCADE"
+            f"cognition.{Tablenames.FILE_TRANSFORMATION.value}.id", ondelete="CASCADE"
         ),
         index=True,
     )
