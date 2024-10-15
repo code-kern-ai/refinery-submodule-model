@@ -27,7 +27,7 @@ def get_by_id(org_id: str, file_reference_id: str) -> FileReference:
     )
 
 
-def get_all(org_id: str, page: int, limit: int) -> List[FileReference]:
+def get_all_by_org(org_id: str, page: int, limit: int) -> List[FileReference]:
     return (
         session.query(FileReference)
         .filter(
@@ -37,6 +37,10 @@ def get_all(org_id: str, page: int, limit: int) -> List[FileReference]:
         .offset(max(0, (page - 1) * limit))
         .all()
     )
+
+
+def get_all() -> List[FileReference]:
+    return session.query(FileReference).all()
 
 
 def create(
