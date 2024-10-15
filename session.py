@@ -68,7 +68,7 @@ def get_engine_dialect() -> Any:
     return engine.dialect
 
 
-def start_session_cleanup():
+def start_session_cleanup_thread():
     daemon.run(__start_session_cleanup)
 
 
