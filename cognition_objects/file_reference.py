@@ -27,15 +27,26 @@ def get_by_id(org_id: str, file_reference_id: str) -> FileReference:
     )
 
 
-def get_all_by_org(org_id: str, page: int, limit: int) -> List[FileReference]:
+def get_all_by_org(org_id: str, offset: int, limit: int) -> List[FileReference]:
     return (
         session.query(FileReference)
         .filter(
             FileReference.organization_id == org_id,
         )
+        .order_by(FileReference.last_used.desc())
         .limit(limit)
-        .offset(max(0, (page - 1) * limit))
+        .offset(offset)
         .all()
+    )
+
+
+def get_count_by_org(org_id: str) -> int:
+    return (
+        session.query(FileReference)
+        .filter(
+            FileReference.organization_id == org_id,
+        )
+        .count()
     )
 
 
