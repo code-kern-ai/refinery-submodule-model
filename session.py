@@ -69,7 +69,10 @@ def get_engine_dialect() -> Any:
 
 
 def start_session_cleanup_thread():
-    daemon.run(__start_session_cleanup)
+    """
+    Start a thread that cleans up sessions older than 5 minutes.
+    """
+    daemon.run_without_db_token(__start_session_cleanup)
 
 
 def __start_session_cleanup():
@@ -81,6 +84,7 @@ def __start_session_cleanup():
                     general.force_remove_and_refresh_session_by_id(
                         session["session_id"]
                     )
+                    print("Session removed", session, flush=True)
                 except Exception:
                     traceback.print_exc()
         time.sleep(10)

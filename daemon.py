@@ -6,7 +6,7 @@ import traceback
 thread_session_token = ContextVar("token", default=None)
 
 
-def run(target, *args, **kwargs):
+def run_without_db_token(target, *args, **kwargs):
     """
     DB session token isn't automatically created.
     You can still do this with general.get_ctx_token but need to return it yourself with remove_and_refresh_session.
