@@ -5,12 +5,11 @@ from . import project as cognition_project
 from ..session import session
 from ..models import (
     CognitionEnvironmentVariable,
-    CognitionMarkdownFile,
     CognitionMarkdownDataset,
     CognitionProject,
 )
 from ..util import prevent_sql_injection
-from sqlalchemy import or_, and_
+from sqlalchemy import or_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.expression import cast
 
@@ -64,30 +63,6 @@ def get_by_name_and_org_id(
     )
 
 
-def get_by_md_file_id(md_file_id: str) -> CognitionEnvironmentVariable:
-    env_var_id = cast(
-        CognitionMarkdownDataset.llm_config.op("->")("transformation").op("->>")(
-            "envVarId"
-        ),
-        UUID,
-    )
-    return (
-        session.query(CognitionEnvironmentVariable)
-        .join(
-            CognitionMarkdownDataset,
-            env_var_id == CognitionEnvironmentVariable.id,
-        )
-        .join(
-            CognitionMarkdownFile,
-            CognitionMarkdownFile.dataset_id == CognitionMarkdownDataset.id,
-        )
-        .filter(
-            CognitionMarkdownFile.id == md_file_id,
-        )
-        .first()
-    )
-
-
 def get_dataset_env_var_value(
     dataset_id: str, org_id: str, scope: Literal["extraction", "transformation"]
 ) -> Union[str, None]:
@@ -112,11 +87,11 @@ def get_dataset_env_var_value(
         return v.value
 
 
-def get_dataset_azure_models_env_var_value(dataset_id: str, org_id) -> Union[str, None]:
+def get_dataset_extraction_env_var_value(
+    dataset_id: str, org_id: str, env_var: str
+) -> str:
     env_var_id = cast(
-        CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(
-            "azureDiEnvVarId"
-        ),
+        CognitionMarkdownDataset.llm_config.op("->")("extraction").op("->>")(env_var),
         UUID,
     )
     v = (

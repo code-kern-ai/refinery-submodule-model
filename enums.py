@@ -124,7 +124,6 @@ class Tablenames(Enum):
     MARKDOWN_FILE = "markdown_file"
     PYTHON_STEP = "python_step"
     LLM_STEP = "llm_step"
-    MARKDOWN_LLM_LOGS = "markdown_llm_logs"
     MARKDOWN_DATASET = "markdown_dataset"
     WEBSOCKET_ACCESS = "websocket_access"
     CONSUMPTION_LOG = "consumption_log"
@@ -140,6 +139,10 @@ class Tablenames(Enum):
         "macro_execution_summary"  # summary of macro folder executions
     )
     CUSTOMER_BUTTON = "customer_button"
+    FILE_REFERENCE = "file_reference"
+    FILE_EXTRACTION = "file_extraction"
+    FILE_TRANSFORMATION = "file_transformation"
+    FILE_TRANSFORMATION_LLM_LOGS = "file_transformation_llm_logs"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -457,6 +460,7 @@ class TaskType(Enum):
     TASK_QUEUE = "task_queue"
     TASK_QUEUE_ACTION = "task_queue_action"
     RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
+    PARSE_COGNITION_FILE = "PARSE_COGNITION_FILE"
 
 
 class TaskQueueAction(Enum):
@@ -764,3 +768,27 @@ class CustomerButtonLocation(Enum):
     COGNITION_MACRO_RESULTS_TABLE = "COGNITION_MACRO_RESULTS_TABLE"  # url /macros/<macro_id> # only visible if meta data display is active
 
     # extended on demand over time
+
+
+class FileCachingInitiator(Enum):
+    TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
+    DATASET_MARKDOWN_FILE = "DATASET_MARKDOWN_FILE"
+
+
+class FileCachingState(Enum):
+    CREATED = "CREATED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    CANCELED = "CANCELED"
+    FAILED = "FAILED"
+
+
+# UPLOAD_EXTRACT_TRANSFORM --> File was never uploaded, will be newly uploaded, extracted and transformed (Nothing exists)
+# EXTRACT_TRANSFORM --> File was uploaded before, will be newly extracted and transformed (FileReference exists)
+# TRANSFORM --> File was uploaded and extracted before with given config and will be newly transformed (FileReference + FileExtraction exists)
+# CACHE --> File was uploaded, extracted and transformed before with given config and nothing will be recalculated(FileReference + FileExtraction + FileTransformation exists)
+class FileCachingProcessingScope(Enum):
+    UPLOAD_EXTRACT_TRANSFORM = "UPLOAD_EXTRACT_TRANSFORM"
+    EXTRACT_TRANSFORM = "EXTRACT_TRANSFORM"
+    TRANSFORM = "TRANSFORM"
+    CACHE = "CACHE"
