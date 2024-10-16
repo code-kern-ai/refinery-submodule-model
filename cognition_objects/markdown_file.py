@@ -56,7 +56,6 @@ def __get_enriched_query(
     dataset_id: Optional[str] = None,
     query_add: Optional[str] = "",
     exclude_content: bool = False,
-    only_count_llm_logs: bool = False,
 ) -> str:
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     where_add = ""
@@ -72,27 +71,9 @@ def __get_enriched_query(
         )
     else:
         mf_select = "mf.*"
-    if only_count_llm_logs:
-        query = f"""
-        SELECT {mf_select}, COALESCE(llm_logs_count,0) llm_logs_count
-        FROM cognition.markdown_file mf
-        LEFT JOIN (
-            SELECT mll.markdown_file_id, COUNT(*) llm_logs_count
-            FROM cognition.markdown_llm_logs mll
-            GROUP BY 1
-        ) mll
-            ON mf.id = mll.markdown_file_id
-        """
-    else:
-        query = f"""
-        SELECT {mf_select}, COALESCE(mll.llm_logs, '{{}}') AS llm_logs
-        FROM cognition.markdown_file mf
-        LEFT JOIN (
-            SELECT mll.markdown_file_id, array_agg(row_to_json(mll.*)) AS llm_logs
-            FROM cognition.markdown_llm_logs mll
-            GROUP BY 1
-        ) mll ON mf.id = mll.markdown_file_id
-        """
+
+    query = f"""SELECT {mf_select} FROM cognition.markdown_file mf
+    """
     query += f"WHERE mf.organization_id = '{org_id}' {where_add}"
     query += query_add
     return query
@@ -131,7 +112,6 @@ def get_all_paginated_for_dataset(
         dataset_id=dataset_id,
         query_add=query_add,
         exclude_content=exclude_content,
-        only_count_llm_logs=only_count_llm_logs,
     )
     query_results = general.execute_all(enriched_query)
 

@@ -160,3 +160,13 @@ def create_file_transformation_llm_log(
     general.add(file_transformation_llm_log, with_commit)
 
     return file_transformation_llm_log
+
+
+def get_llm_logs_count(org_id: str, file_transformation_id: str) -> int:
+    return (
+        session.query(FileTransformationLLMLogs)
+        .filter(
+            FileTransformationLLMLogs.file_transformation_id == file_transformation_id
+        )
+        .count()
+    )
