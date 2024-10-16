@@ -49,6 +49,17 @@ def get_all_by_file_reference_id(
     )
 
 
+def get_all_by_extraction_key(org_id: str, extraction_key: str) -> List[FileExtraction]:
+    return (
+        session.query(FileExtraction)
+        .filter(
+            FileExtraction.organization_id == org_id,
+            FileExtraction.extraction_key == extraction_key,
+        )
+        .all()
+    )
+
+
 def create(
     org_id: str,
     file_reference_id: str,
