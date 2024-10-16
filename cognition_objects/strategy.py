@@ -33,6 +33,7 @@ def get_all_by_project_id(project_id: str) -> List[CognitionStrategy]:
         session.query(CognitionStrategy)
         .filter(CognitionStrategy.project_id == project_id)
         .order_by(CognitionStrategy.order.desc())
+        .order_by(CognitionStrategy.created_at.desc())
         .all()
     )
 
