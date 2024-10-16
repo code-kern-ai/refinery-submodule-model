@@ -168,6 +168,7 @@ def update(
     finished_at: Optional[datetime] = None,
     error: Optional[str] = None,
     meta_data: Optional[Dict[str, Any]] = None,
+    overwrite_meta_data: bool = True,
     with_commit: bool = True,
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = get(org_id, markdown_file_id)
@@ -184,8 +185,10 @@ def update(
     if error is not None:
         markdown_file.error = error
     if meta_data is not None:
-        markdown_file.meta_data = meta_data
-
+        if overwrite_meta_data:
+            markdown_file.meta_data = meta_data
+        else:
+            markdown_file.meta_data = {**markdown_file.meta_data, **meta_data}
     general.flush_or_commit(with_commit)
 
     return markdown_file
