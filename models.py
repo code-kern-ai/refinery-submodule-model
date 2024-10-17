@@ -1124,6 +1124,7 @@ class CognitionStrategy(Base):
     complexity = Column(
         String, default=StrategyComplexity.SIMPLE.value
     )  # of type enums.StrategyComplexity.*.value
+    order = Column(Integer, default=0)
 
 
 class CognitionStrategyRequirement(Base):
@@ -1503,6 +1504,7 @@ class CognitionMarkdownLLMLogs(Base):
     input = Column(String)
     output = Column(String)
     error = Column(String)
+
 
 class CognitionMacro(Base):
     __tablename__ = Tablenames.MACRO.value
