@@ -1126,6 +1126,7 @@ class CognitionStrategy(Base):
     complexity = Column(
         String, default=StrategyComplexity.SIMPLE.value
     )  # of type enums.StrategyComplexity.*.value
+    order = Column(Integer, default=0)
 
 
 class CognitionStrategyRequirement(Base):
