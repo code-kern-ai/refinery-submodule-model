@@ -7,7 +7,14 @@ from ..session import session
 from submodules.model.cognition_objects import (
     macro as macro_db_bo,
     markdown_file as markdown_file_db_bo,
+    file_extraction as file_extraction_db_bo,
+    file_transformation as file_transformation_db_bo,
 )
+
+FILE_CACHING_IN_PROGRESS_STATES = [
+    enums.FileCachingState.RUNNING.value,
+    enums.FileCachingState.CREATED.value,
+]
 
 
 def get_all_tasks(
@@ -167,6 +174,27 @@ def set_markdown_file_task_to_failed(
     if markdown_file:
         markdown_file.state = enums.CognitionMarkdownFileState.FAILED.value
         general.flush_or_commit(with_commit)
+
+
+def set_parse_cognition_file_task_to_failed(
+    org_id: str,
+    file_reference_id: str,
+    extraction_key: str,
+    transformation_key: str,
+    with_commit: bool = False,
+):
+    if file_extraction := file_extraction_db_bo.get(
+        org_id, file_reference_id, extraction_key
+    ):
+        if file_extraction.state in FILE_CACHING_IN_PROGRESS_STATES:
+            file_extraction.state = enums.FileCachingState.CANCELED.value
+
+        if file_transformation := file_transformation_db_bo.get(
+            org_id, file_extraction.id, transformation_key
+        ):
+            if file_transformation.state in FILE_CACHING_IN_PROGRESS_STATES:
+                file_transformation.state = enums.FileCachingState.CANCELED.value
+    general.commit()
 
 
 def __select_running_information_source_payloads(

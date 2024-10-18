@@ -15,6 +15,7 @@ from .enums import (
     CognitionProjectState,
     StrategyComplexity,
     AdminLogLevel,
+    FileCachingState,
 )
 from sqlalchemy import (
     JSON,
@@ -29,6 +30,7 @@ from sqlalchemy import (
     String,
     sql,
     UniqueConstraint,
+    BigInteger,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -1487,14 +1489,14 @@ class CognitionMarkdownFile(Base):
     meta_data = Column(JSON)
 
 
-class CognitionMarkdownLLMLogs(Base):
-    __tablename__ = Tablenames.MARKDOWN_LLM_LOGS.value
+class FileTransformationLLMLogs(Base):
+    __tablename__ = Tablenames.FILE_TRANSFORMATION_LLM_LOGS.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    markdown_file_id = Column(
+    file_transformation_id = Column(
         UUID(as_uuid=True),
         ForeignKey(
-            f"cognition.{Tablenames.MARKDOWN_FILE.value}.id", ondelete="CASCADE"
+            f"cognition.{Tablenames.FILE_TRANSFORMATION.value}.id", ondelete="CASCADE"
         ),
         index=True,
     )
@@ -1676,6 +1678,118 @@ class CognitionMacroExecutionSummary(Base):
     macro_type = Column(String)  # of type enums.MacroType
     execution_count = Column(Integer)
     processed_files_count = Column(Integer)
+
+
+class FileReference(Base):
+    __tablename__ = Tablenames.FILE_REFERENCE.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "hash",
+            "file_size_bytes",
+            name="unique_file_reference",
+        ),
+        {"schema": "cognition"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    hash = Column(
+        String,
+        index=True,
+    )
+    last_used = Column(DateTime, default=sql.func.now())
+    minio_path = Column(String)
+    bucket = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    file_size_bytes = Column(BigInteger)
+    content_type = Column(String)
+    original_file_name = Column(String)
+    state = Column(String, default=FileCachingState.CREATED.value)
+    meta_data = Column(JSON)
+
+
+class FileExtraction(Base):
+    __tablename__ = Tablenames.FILE_EXTRACTION.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "file_reference_id",
+            "extraction_key",
+            name="unique_file_extraction",
+        ),
+        {"schema": "cognition"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    file_reference_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.FILE_REFERENCE.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    extraction_key = Column(String)
+    minio_path = Column(String)
+    bucket = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    state = Column(String, default=FileCachingState.CREATED.value)
+
+
+class FileTransformation(Base):
+    __tablename__ = Tablenames.FILE_TRANSFORMATION.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "file_extraction_id",
+            "transformation_key",
+            name="unique_file_transformation",
+        ),
+        {"schema": "cognition"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    file_extraction_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.FILE_EXTRACTION.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    transformation_key = Column(String)
+    minio_path = Column(String)
+    bucket = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    state = Column(String, default=FileCachingState.CREATED.value)
 
 
 # =========================== Global tables ===========================

@@ -238,10 +238,13 @@ def update(
                 if key not in new_values:
                     new_values[key] = {}
                 for sub_key in llm_config[key]:
-                    new_values[key][sub_key] = llm_config[key][sub_key]
+                    if llm_config[key][sub_key] == "_null":
+                        if sub_key in new_values[key]:
+                            del new_values[key][sub_key]
+                    else:
+                        new_values[key][sub_key] = llm_config[key][sub_key]
             else:
                 new_values[key] = llm_config[key]
-
         project.llm_config = new_values
         flag_modified(project, "llm_config")
 

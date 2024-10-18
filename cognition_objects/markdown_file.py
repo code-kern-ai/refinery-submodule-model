@@ -4,7 +4,7 @@ from datetime import datetime
 from .. import enums
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionMarkdownFile, CognitionMarkdownLLMLogs
+from ..models import CognitionMarkdownFile
 from ..util import prevent_sql_injection
 
 
@@ -56,7 +56,6 @@ def __get_enriched_query(
     dataset_id: Optional[str] = None,
     query_add: Optional[str] = "",
     exclude_content: bool = False,
-    only_count_llm_logs: bool = False,
 ) -> str:
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     where_add = ""
@@ -72,27 +71,9 @@ def __get_enriched_query(
         )
     else:
         mf_select = "mf.*"
-    if only_count_llm_logs:
-        query = f"""
-        SELECT {mf_select}, COALESCE(llm_logs_count,0) llm_logs_count
-        FROM cognition.markdown_file mf
-        LEFT JOIN (
-            SELECT mll.markdown_file_id, COUNT(*) llm_logs_count
-            FROM cognition.markdown_llm_logs mll
-            GROUP BY 1
-        ) mll
-            ON mf.id = mll.markdown_file_id
-        """
-    else:
-        query = f"""
-        SELECT {mf_select}, COALESCE(mll.llm_logs, '{{}}') AS llm_logs
-        FROM cognition.markdown_file mf
-        LEFT JOIN (
-            SELECT mll.markdown_file_id, array_agg(row_to_json(mll.*)) AS llm_logs
-            FROM cognition.markdown_llm_logs mll
-            GROUP BY 1
-        ) mll ON mf.id = mll.markdown_file_id
-        """
+
+    query = f"""SELECT {mf_select} FROM cognition.markdown_file mf
+    """
     query += f"WHERE mf.organization_id = '{org_id}' {where_add}"
     query += query_add
     return query
@@ -131,20 +112,10 @@ def get_all_paginated_for_dataset(
         dataset_id=dataset_id,
         query_add=query_add,
         exclude_content=exclude_content,
-        only_count_llm_logs=only_count_llm_logs,
     )
     query_results = general.execute_all(enriched_query)
 
     return total_count, num_pages, query_results
-
-
-def get_all_logs_for_md_file_id(md_file_id: str) -> List[CognitionMarkdownLLMLogs]:
-    return (
-        session.query(CognitionMarkdownLLMLogs)
-        .filter(CognitionMarkdownLLMLogs.markdown_file_id == md_file_id)
-        .order_by(CognitionMarkdownLLMLogs.created_at.asc())
-        .all()
-    )
 
 
 def can_access_file(org_id: str, file_id: str) -> bool:
@@ -197,6 +168,7 @@ def update(
     finished_at: Optional[datetime] = None,
     error: Optional[str] = None,
     meta_data: Optional[Dict[str, Any]] = None,
+    overwrite_meta_data: bool = True,
     with_commit: bool = True,
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = get(org_id, markdown_file_id)
@@ -213,35 +185,13 @@ def update(
     if error is not None:
         markdown_file.error = error
     if meta_data is not None:
-        markdown_file.meta_data = meta_data
-
+        if overwrite_meta_data:
+            markdown_file.meta_data = meta_data
+        else:
+            markdown_file.meta_data = {**markdown_file.meta_data, **meta_data}
     general.flush_or_commit(with_commit)
 
     return markdown_file
-
-
-def create_md_llm_log(
-    markdown_file_id: str,
-    model_used: str,
-    input_text: str,
-    output_text: Optional[str] = None,
-    error: Optional[str] = None,
-    created_at: Optional[datetime] = None,
-    finished_at: Optional[datetime] = None,
-    with_commit: bool = True,
-) -> None:
-    md_llm_log = CognitionMarkdownLLMLogs(
-        markdown_file_id=markdown_file_id,
-        input=input_text,
-        output=output_text,
-        error=error,
-        created_at=created_at,
-        finished_at=finished_at,
-        model_used=model_used,
-    )
-    general.add(md_llm_log, with_commit)
-
-    return md_llm_log
 
 
 def delete(org_id: str, md_file_id: str, with_commit: bool = True) -> None:
