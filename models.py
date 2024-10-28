@@ -1265,6 +1265,7 @@ class CognitionMessage(Base):
     feedback_message = Column(String)
 
     scope_dict_diff_previous_conversation = Column(JSON)
+    scope_dict_diff_new = Column(JSON)
 
 
 class CognitionPipelineLogs(Base):
@@ -1300,6 +1301,8 @@ class CognitionPipelineLogs(Base):
     has_error = Column(Boolean)
     scope_dict_diff_previous_message = Column(JSON)
     record_dict_diff_previous_message = Column(JSON)
+    scope_dict_diff_new = Column(JSON)
+    record_dict_diff_new = Column(JSON)
     content = Column(ARRAY(String))
     time_elapsed = Column(Float)
     skipped_step = Column(Boolean, default=False)
