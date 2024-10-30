@@ -49,6 +49,72 @@ def get_last_n_by_conversation_id(
     )
 
 
+def get_scope_changes_before_message(
+    project_id: str, message_id: str
+) -> List[List[Dict[str, Any]]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    message_id = prevent_sql_injection(message_id, isinstance(message_id, str))
+
+    query = f"""
+    SELECT COALESCE(array_agg(m2.scope_dict_diff_new ORDER BY m2.created_at asc),ARRAY[]::JSON[]) changes
+    FROM cognition.message m
+    INNER JOIN cognition.message m2
+        ON m.project_id = m2.project_id AND m.conversation_id = m2.conversation_id 
+        AND m.id != m2.id AND m2.created_at < m.created_at
+    WHERE m.project_id = '{project_id}' AND m.id = '{message_id}'
+"""
+
+    result = general.execute_first(query)
+    if result:
+        return result[0]
+    return []
+
+
+def get_message_short_for_conversation_for_pipeline(
+    project_id: str, conversation_id: str
+) -> List[Dict[str, str]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    conversation_id = prevent_sql_injection(
+        conversation_id, isinstance(conversation_id, str)
+    )
+    query = f"""
+    SELECT jsonb_object_agg(message_id,json_build_object('time_elapsed',time_elapsed,'has_error',CASE WHEN has_error = 1 THEN TRUE ELSE FALSE END, 'strategy_id', strategy_id, 'answer', answer))
+    FROM (
+        SELECT 
+            pl.message_id,
+            MAX(m.strategy_id::TEXT) strategy_id, 
+            MAX(m.answer) answer, 
+            sum(pl.time_elapsed)time_elapsed, 
+            MAX(CASE WHEN pl.has_error THEN 1 ELSE 0 END) has_error
+        FROM cognition.message m
+        INNER JOIN cognition.pipeline_logs pl
+            ON m.project_id = pl.project_id AND m.id = pl.message_id
+        WHERE pl.project_id = '{project_id}' AND m.conversation_id = '{conversation_id}'
+        GROUP BY pl.message_id )x """
+
+    time_elapsed = general.execute_first(query)
+    if time_elapsed and time_elapsed[0]:
+        time_elapsed = time_elapsed[0]
+
+    return [
+        {
+            "id": str(e.id),
+            "question": e.question,
+            "created_at": str(e.created_at),
+            **time_elapsed.get(str(e.id), -1),
+        }
+        for e in (
+            session.query(CognitionMessage)
+            .filter(
+                CognitionMessage.project_id == project_id,
+                CognitionMessage.conversation_id == conversation_id,
+            )
+            .order_by(CognitionMessage.created_at.asc())
+            .all()
+        )
+    ]
+
+
 def get(project_id: str, message_id: str) -> CognitionMessage:
     return (
         session.query(CognitionMessage)

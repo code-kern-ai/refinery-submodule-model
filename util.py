@@ -162,11 +162,11 @@ def __sql_alchemy_to_dict(
 
 def to_frontend_obj(value: Union[List, Dict]):
     if isinstance(value, dict):
-        return {__to_camel_case(k): to_frontend_obj(v) for k, v in value.items()}
+        return {to_camel_case(k): to_frontend_obj(v) for k, v in value.items()}
     elif is_list_like(value):
         return [to_frontend_obj(x) for x in value]
     else:
-        return __to_json_serializable(value)
+        return to_json_serializable(value)
 
 
 def to_frontend_obj_raw(value: Union[List, Dict]):
@@ -175,10 +175,10 @@ def to_frontend_obj_raw(value: Union[List, Dict]):
     elif is_list_like(value):
         return [to_frontend_obj_raw(x) for x in value]
     else:
-        return __to_json_serializable(value)
+        return to_json_serializable(value)
 
 
-def __to_json_serializable(x: Any):
+def to_json_serializable(x: Any):
     if isinstance(x, datetime):
         return x.isoformat()
     elif isinstance(x, UUID):
@@ -187,7 +187,7 @@ def __to_json_serializable(x: Any):
         return x
 
 
-def __to_camel_case(name: str):
+def to_camel_case(name: str):
     if is_camel_case(name):
         return name
     name = sub(r"(_|-)+", " ", name).title().replace(" ", "")
