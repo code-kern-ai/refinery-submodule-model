@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any, Tuple
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionPipelineLogs
+from ..models import CognitionPipelineLogs, CognitionMessage
 from datetime import datetime
 from .. import enums
 
@@ -13,6 +13,26 @@ def get_all_by_message_id(
     query = session.query(CognitionPipelineLogs).filter(
         CognitionPipelineLogs.project_id == project_id,
         CognitionPipelineLogs.message_id == message_id,
+    )
+    if user_id:
+        query = query.filter(CognitionPipelineLogs.created_by == user_id)
+    return query.order_by(CognitionPipelineLogs.created_at.asc()).all()
+
+
+def get_all_by_conversation_id(
+    project_id: str, conversation_id: str, user_id: Optional[str] = None
+) -> List[CognitionPipelineLogs]:
+    query = (
+        session.query(CognitionPipelineLogs)
+        .join(
+            CognitionMessage,
+            (CognitionMessage.project_id == CognitionPipelineLogs.project_id)
+            & (CognitionMessage.id == CognitionPipelineLogs.message_id),
+        )
+        .filter(
+            CognitionPipelineLogs.project_id == project_id,
+            CognitionMessage.conversation_id == conversation_id,
+        )
     )
     if user_id:
         query = query.filter(CognitionPipelineLogs.created_by == user_id)
@@ -37,14 +57,6 @@ def get_all_by_message_id_until_step(
         .order_by(CognitionPipelineLogs.created_at.asc())
         .all()
     )
-
-    # import json
-
-    # print(
-    #     "collected_until",
-    #     json.dumps([log.record_dict_diff_new for log in pipeline_logs], indent=2),
-    #     flush=True,
-    # )
 
     pipeline_logs_until_step = []
     for pipeline_log in pipeline_logs:
@@ -162,7 +174,7 @@ def get_all_by_messages_ids(project_id: str, message_ids: List[str]):
 
 
 # migration method to be removed in release after next
-def get_logs_to_be_migrated_to_new_structure() -> List[Tuple[str, str, str, str]]:
+def get_logs_to_be_migrated_to_new_structure() -> List[Tuple[str, str, str, str, str]]:
     query = """
     SELECT x.id::TEXT conversation_id,m.id::TEXT message_id, pl.id::TEXT log_id, pl.record_dict_diff_previous_message, pl.scope_dict_diff_previous_message
     FROM (
@@ -188,7 +200,7 @@ def get_logs_to_be_migrated_to_new_structure() -> List[Tuple[str, str, str, str]
     return []
 
 
-def update_to_new_structure(
+def update_to_new_diff_structure(
     log_id: str,
     new_record_dict_diff: List[Dict[str, Any]],
     new_scope_dict_diff: List[Dict[str, Any]],

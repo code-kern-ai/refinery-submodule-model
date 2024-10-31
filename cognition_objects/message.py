@@ -416,3 +416,42 @@ def get_feedback_line_chart_data(
     if value and value[0]:
         return value[0]
     return []
+
+
+# migration method to be removed after next release
+def get_messages_to_be_migrated_to_new_structure() -> List[Tuple[str, str, str]]:
+    query = """
+    SELECT x.id::TEXT conversation_id,m.id::TEXT message_id, m.scope_dict_diff_previous_conversation
+    FROM (
+        SELECT DISTINCT c.id, c.project_id
+        FROM cognition.conversation c
+        INNER JOIN cognition.message m
+            ON c.id = m.conversation_id AND c.project_id = m.project_id
+        WHERE m.scope_dict_diff_previous_conversation::TEXT != '"null"'
+        LIMIT 50 -- max conversations per chunk
+    )x
+    INNER JOIN cognition.message m
+        ON m.conversation_id = x.id AND m.project_id = x.project_id
+    ORDER BY m.created_at ASC
+    """
+    values = general.execute_all(query)
+    if values:
+        return [(value[0], value[1], value[2]) for value in values]
+    return []
+
+
+def update_to_new_diff_structure(
+    message_id: str,
+    new_scope_dict_diff: List[Dict[str, Any]],
+    with_commit: bool = False,
+):
+    session.query(CognitionMessage).filter(CognitionMessage.id == message_id).update(
+        {
+            CognitionMessage.scope_dict_diff_previous_conversation: "null",
+            CognitionMessage.scope_dict_diff_new: new_scope_dict_diff,
+        },
+        synchronize_session=False,
+    )
+
+    if with_commit:
+        general.commit()
