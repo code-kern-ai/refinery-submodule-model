@@ -1,23 +1,42 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionPipelineLogs
+from ..models import CognitionPipelineLogs, CognitionMessage
 from datetime import datetime
 from .. import enums
 
 
 def get_all_by_message_id(
-    project_id: str, message_id: str
+    project_id: str, message_id: str, user_id: Optional[str] = None
 ) -> List[CognitionPipelineLogs]:
-    return (
+
+    query = session.query(CognitionPipelineLogs).filter(
+        CognitionPipelineLogs.project_id == project_id,
+        CognitionPipelineLogs.message_id == message_id,
+    )
+    if user_id:
+        query = query.filter(CognitionPipelineLogs.created_by == user_id)
+    return query.order_by(CognitionPipelineLogs.created_at.asc()).all()
+
+
+def get_all_by_conversation_id(
+    project_id: str, conversation_id: str, user_id: Optional[str] = None
+) -> List[CognitionPipelineLogs]:
+    query = (
         session.query(CognitionPipelineLogs)
+        .join(
+            CognitionMessage,
+            (CognitionMessage.project_id == CognitionPipelineLogs.project_id)
+            & (CognitionMessage.id == CognitionPipelineLogs.message_id),
+        )
         .filter(
             CognitionPipelineLogs.project_id == project_id,
-            CognitionPipelineLogs.message_id == message_id,
+            CognitionMessage.conversation_id == conversation_id,
         )
-        .order_by(CognitionPipelineLogs.created_at.asc())
-        .all()
     )
+    if user_id:
+        query = query.filter(CognitionPipelineLogs.created_by == user_id)
+    return query.order_by(CognitionPipelineLogs.created_at.asc()).all()
 
 
 def get_all_by_message_id_until_step(
@@ -85,8 +104,8 @@ def create(
     strategy_step_id: str,
     has_error: bool,
     time_elapsed: float,
-    record_dict_diff_previous: Dict[str, Any],
-    scope_dict_diff_previous: Dict[str, Any],
+    record_dict_diff_previous_new: Dict[str, Any],
+    scope_dict_diff_previous_new: Dict[str, Any],
     skipped_step: Optional[bool] = None,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
@@ -118,8 +137,8 @@ def create(
         strategy_step_id=strategy_step_id,
         has_error=has_error,
         time_elapsed=time_elapsed,
-        record_dict_diff_previous_message=record_dict_diff_previous,
-        scope_dict_diff_previous_message=scope_dict_diff_previous,
+        record_dict_diff_new=record_dict_diff_previous_new,
+        scope_dict_diff_new=scope_dict_diff_previous_new,
         skipped_step=skipped_step,
         iteration_number=iteration_number,
     )
@@ -152,3 +171,52 @@ def get_all_by_messages_ids(project_id: str, message_ids: List[str]):
         .order_by(CognitionPipelineLogs.created_at.asc())
         .all()
     )
+
+
+# migration method to be removed in release after next
+def get_logs_to_be_migrated_to_new_structure() -> List[Tuple[str, str, str, str, str]]:
+    query = """
+    SELECT x.id::TEXT conversation_id,m.id::TEXT message_id, pl.id::TEXT log_id, pl.record_dict_diff_previous_message, pl.scope_dict_diff_previous_message
+    FROM (
+        SELECT DISTINCT c.id, c.project_id
+        FROM cognition.conversation c
+        INNER JOIN cognition.message m
+            ON c.id = m.conversation_id AND c.project_id = m.project_id
+        INNER JOIN cognition.pipeline_logs pl
+            ON m.project_id = pl.project_id AND m.id = pl.message_id
+        WHERE pl.scope_dict_diff_previous_message::TEXT != '"null"' OR pl.record_dict_diff_previous_message::TEXT != '"null"'
+        LIMIT 50 -- max conversations per chunk
+    )x
+    INNER JOIN cognition.message m
+        ON m.conversation_id = x.id AND m.project_id = x.project_id
+    INNER JOIN cognition.pipeline_logs pl
+        ON m.project_id = pl.project_id AND m.id = pl.message_id
+    ORDER BY pl.created_at ASC
+    """
+
+    values = general.execute_all(query)
+    if values:
+        return [(value[0], value[1], value[2], value[3], value[4]) for value in values]
+    return []
+
+
+def update_to_new_diff_structure(
+    log_id: str,
+    new_record_dict_diff: List[Dict[str, Any]],
+    new_scope_dict_diff: List[Dict[str, Any]],
+    with_commit: bool = False,
+):
+    session.query(CognitionPipelineLogs).filter(
+        CognitionPipelineLogs.id == log_id
+    ).update(
+        {
+            CognitionPipelineLogs.record_dict_diff_previous_message: "null",
+            CognitionPipelineLogs.scope_dict_diff_previous_message: "null",
+            CognitionPipelineLogs.record_dict_diff_new: new_record_dict_diff,
+            CognitionPipelineLogs.scope_dict_diff_new: new_scope_dict_diff,
+        },
+        synchronize_session=False,
+    )
+
+    if with_commit:
+        general.commit()

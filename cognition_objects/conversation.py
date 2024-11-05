@@ -244,7 +244,7 @@ def update_message(
     feedback_category: Optional[str] = None,
     feedback_message: Optional[str] = None,
     strategy_id: Optional[str] = None,
-    scope_dict_diff_previous_conversation: Optional[Dict[str, Any]] = None,
+    scope_dict_diff_new: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     message_entity = message.get(project_id, message_id)
@@ -258,10 +258,8 @@ def update_message(
         message_entity.feedback_category = feedback_category
     if feedback_message is not None:
         message_entity.feedback_message = feedback_message
-    if scope_dict_diff_previous_conversation is not None:
-        message_entity.scope_dict_diff_previous_conversation = (
-            scope_dict_diff_previous_conversation
-        )
+    if scope_dict_diff_new is not None:
+        message_entity.scope_dict_diff_new = scope_dict_diff_new
     general.flush_or_commit(with_commit)
     conversation_entity = get(project_id, conversation_id)
     return conversation_entity
