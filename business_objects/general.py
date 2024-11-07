@@ -112,6 +112,10 @@ def remove_and_refresh_session(
         return get_ctx_token()
 
 
+def expire_all() -> None:
+    session.expire_all()
+
+
 def flush() -> None:
     session.flush()
 
