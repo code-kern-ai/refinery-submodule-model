@@ -209,10 +209,6 @@ class EmbeddingType(Enum):
     ON_TOKEN = "ON_TOKEN"
 
 
-class ConfusionMatrixElements(Enum):
-    OUTSIDE = "Outside"
-
-
 class UploadStates(Enum):
     """
     Explanation of the differences between PENDING and WAITING:
@@ -363,11 +359,6 @@ class SliceTypes(Enum):
     STATIC_DEFAULT = "STATIC_DEFAULT"
     STATIC_OUTLIER = "STATIC_OUTLIER"
     DYNAMIC_DEFAULT = "DYNAMIC_DEFAULT"
-
-
-class InterAnnotatorConstants(Enum):
-    ID_GOLD_USER = "GOLD_STAR"
-    ID_NULL_USER = "NULL_USER"
 
 
 class EmbeddingState(Enum):
