@@ -377,28 +377,6 @@ def update(
     return project
 
 
-def is_rats_tokenization_still_running(project_id: str) -> bool:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    query = f"""
-    SELECT rtt.type, rtt.state
-    FROM record_tokenization_task rtt
-    WHERE rtt.project_id = '{project_id}'
-    ORDER BY rtt.started_at DESC
-    LIMIT 1
-    """
-    values = general.execute_first(query)
-    if not values:
-        # e.g. at the very start of a project no entry exists yet
-        return True
-    if (
-        values[0] == enums.TokenizerTask.TYPE_TOKEN_STATISTICS.value
-        and values[1] == enums.TokenizerTask.STATE_FINISHED.value
-    ):
-        return False
-    else:
-        return True
-
-
 def __build_sql_label_distribution(
     project_id: str,
     labeling_task_id: Optional[str] = None,
