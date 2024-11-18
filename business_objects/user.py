@@ -106,3 +106,15 @@ def __create_migration_organization():
 def delete(user_id: str, with_commit: bool = False) -> None:
     session.query(User).filter(User.id == user_id).delete()
     general.flush_or_commit(with_commit)
+
+
+def get_missing_users(user_ids: List[str]):
+    query = f"""
+    SELECT jsonb_object_agg(u.id, u.last_interaction)
+    FROM public.user u
+    WHERE id IN ({','.join([f"'{user_id}'" for user_id in user_ids])})
+    """
+    value = general.execute_first(query)
+    if value is None or value[0] is None:
+        return {}
+    return value[0]
