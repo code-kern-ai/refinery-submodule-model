@@ -118,3 +118,16 @@ def get_missing_users(user_ids: List[str]):
     if value is None or value[0] is None:
         return {}
     return value[0]
+
+
+def get_user_to_organization():
+    query = """
+    SELECT jsonb_object_agg(u.id, jsonb_build_object('id', o.id, 'name', o.name))
+    FROM public.user u
+    INNER JOIN organization o
+        ON u.organization_id = o.id
+    """
+    value = general.execute_first(query)
+    if value is None or value[0] is None:
+        return {}
+    return value[0]
