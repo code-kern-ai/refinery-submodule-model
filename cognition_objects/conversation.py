@@ -129,8 +129,8 @@ def get_all_paginated_by_project_id(
         total_count_query = total_count_query.filter(
             CognitionConversation.created_by == user_id
         )
-    total_count = total_count_query.count()
 
+    total_count = total_count_query.count()
     if total_count == 0:
         num_pages = 0
     else:
@@ -169,10 +169,16 @@ def __get_conversation_ids_by_filter(
     fact_contains: Optional[str] = None,
     feedback_value: Optional[str] = None,
     feedback_message_contains: Optional[str] = None,
+    created_at_from: Optional[str] = None,
+    created_at_to: Optional[str] = None,
 ) -> Subquery:
     query = select(CognitionConversation.id).filter(
         CognitionConversation.project_id == project_id
     )
+    if created_at_from is not None:
+        query = query.filter(CognitionConversation.created_at >= created_at_from)
+    if created_at_to is not None:
+        query = query.filter(CognitionConversation.created_at <= created_at_to)
     if user_id is not None:
         query = query.filter(CognitionConversation.created_by == user_id)
     if has_error is not None:
@@ -220,7 +226,6 @@ def __get_conversation_ids_by_filter(
         query = query.filter(
             CognitionMessage.feedback_message.ilike(feedback_message_contains)
         )
-
     return query
 
 
