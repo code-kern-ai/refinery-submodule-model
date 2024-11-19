@@ -5,8 +5,13 @@ from datetime import datetime
 from ..cognition_objects import message
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionConversation
+from ..models import CognitionConversation, CognitionMessage
 from ..util import prevent_sql_injection
+from sqlalchemy.sql.expression import Subquery
+from sqlalchemy import or_
+from sqlalchemy.sql.expression import cast
+from sqlalchemy import String as sqlalchemy_string
+from sqlalchemy import select
 
 
 def get(project_id: str, conversation_id: str) -> CognitionConversation:
@@ -103,11 +108,23 @@ def get_overview_list(
 
 
 def get_all_paginated_by_project_id(
-    project_id: str, page: int, limit: int, order_asc: bool = True, user_id: str = None
+    project_id: str,
+    page: int,
+    limit: int,
+    order_asc: bool = True,
+    user_id: Optional[str] = None,
+    filter_dict: Optional[Dict[str, Any]] = None,
 ) -> Tuple[int, int, List[CognitionConversation]]:
     total_count_query = session.query(CognitionConversation.id).filter(
         CognitionConversation.project_id == project_id
     )
+    subquery = None
+    if filter_dict is not None:
+        subquery = __get_conversation_ids_by_filter(project_id, **filter_dict)
+        total_count_query = total_count_query.filter(
+            CognitionConversation.id.in_(subquery)
+        )
+
     if user_id is not None:
         total_count_query = total_count_query.filter(
             CognitionConversation.created_by == user_id
@@ -130,14 +147,82 @@ def get_all_paginated_by_project_id(
         )
         if user_id is not None:
             query = query.filter(CognitionConversation.created_by == user_id)
+        if subquery is not None:
+            query = query.filter(CognitionConversation.id.in_(subquery))
         if order_asc:
             query = query.order_by(CognitionConversation.created_at.asc())
         else:
             query = query.order_by(CognitionConversation.created_at.desc())
+        print(general.print_orm_query(query))
         paginated_result = query.limit(limit).offset((page - 1) * limit).all()
     else:
         paginated_result = []
     return total_count, num_pages, paginated_result
+
+
+def __get_conversation_ids_by_filter(
+    project_id: str,
+    user_id: Optional[str] = None,
+    has_error: Optional[bool] = None,
+    has_tmp_files: Optional[bool] = None,
+    tmp_file_name: Optional[str] = None,
+    question_or_answer: Optional[str] = None,
+    fact_contains: Optional[str] = None,
+    feedback_value: Optional[str] = None,
+    feedback_message_contains: Optional[str] = None,
+) -> Subquery:
+    query = select(CognitionConversation.id).filter(
+        CognitionConversation.project_id == project_id
+    )
+    if user_id is not None:
+        query = query.filter(CognitionConversation.created_by == user_id)
+    if has_error is not None:
+        if has_error:
+            query = query.filter(CognitionConversation.error.isnot(None))
+        else:
+            query = query.filter(CognitionConversation.error.is_(None))
+    if has_tmp_files is not None:
+        query = query.filter(CognitionConversation.has_tmp_files == has_tmp_files)
+    if tmp_file_name is not None:
+        tmp_file_name = "%" + tmp_file_name + "%"
+        query = query.filter(
+            CognitionConversation.scope_dict.op("->>")("parsed_documents").ilike(
+                tmp_file_name
+            )
+        )
+    if (
+        question_or_answer is not None
+        or fact_contains is not None
+        or feedback_value is not None
+        or feedback_message_contains is not None
+    ):
+        query = query.join(
+            CognitionMessage,
+            (CognitionMessage.project_id == CognitionConversation.project_id)
+            & (CognitionMessage.conversation_id == CognitionConversation.id),
+        )
+    if question_or_answer is not None:
+        question_or_answer = "%" + question_or_answer + "%"
+        query = query.filter(
+            or_(
+                CognitionMessage.question.ilike(question_or_answer),
+                CognitionMessage.answer.ilike(question_or_answer),
+            )
+        )
+    if fact_contains is not None:
+        fact_contains = "%" + fact_contains + "%"
+        query = query.filter(
+            cast(CognitionMessage.facts, sqlalchemy_string).ilike(fact_contains)
+        )
+    if feedback_value is not None:
+        query = query.filter(CognitionMessage.feedback_value == feedback_value)
+    if feedback_message_contains is not None:
+        feedback_message_contains = "%" + feedback_message_contains + "%"
+        query = query.filter(
+            CognitionMessage.feedback_message.ilike(feedback_message_contains)
+        )
+
+    return query
 
 
 def has_error(project_id: str, conversation_id: str) -> bool:

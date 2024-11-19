@@ -9,6 +9,7 @@ import traceback
 import datetime
 from .. import daemon
 from threading import Lock
+from sqlalchemy.dialects import postgresql
 
 
 __THREAD_LOCK = Lock()
@@ -278,3 +279,15 @@ def simple_selection_builder(
     {where}
     {order_by_s}
     """
+
+
+def print_orm_query(
+    query, bound_params: bool = True, return_as_str: bool = False
+) -> Optional[str]:
+    return_str = query.statement.compile(
+        dialect=postgresql.dialect(), compile_kwargs={"literal_binds": bound_params}
+    )
+    if return_as_str:
+        return return_str
+
+    print(return_str, flush=True)
