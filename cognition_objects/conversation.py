@@ -153,7 +153,6 @@ def get_all_paginated_by_project_id(
             query = query.order_by(CognitionConversation.created_at.asc())
         else:
             query = query.order_by(CognitionConversation.created_at.desc())
-        print(general.print_orm_query(query))
         paginated_result = query.limit(limit).offset((page - 1) * limit).all()
     else:
         paginated_result = []
