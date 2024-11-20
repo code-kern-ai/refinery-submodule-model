@@ -139,7 +139,7 @@ def update_user(
     verified: str,
     created_at: str,
     metadata_public: Optional[str] = None,
-    sso_provider: Optional[bool] = False,
+    sso_provider: Optional[str] = None,
     with_commit: bool = False,
 ) -> User:
 
