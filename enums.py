@@ -143,6 +143,9 @@ class Tablenames(Enum):
     FILE_EXTRACTION = "file_extraction"
     FILE_TRANSFORMATION = "file_transformation"
     FILE_TRANSFORMATION_LLM_LOGS = "file_transformation_llm_logs"
+    PIPELINE_VERSION = (
+        "pipeline_version"  # dump of previous versions to easily jump between
+    )
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -792,3 +795,8 @@ class ChangeAction(Enum):
     LIST_VALUE_CHANGED = "LIST_VALUE_CHANGED"
     ITEM_REMOVED = "ITEM_REMOVED"
     ITEM_ADDED = "ITEM_ADDED"
+
+
+class PipelineVersionType(Enum):
+    AUTO_SAVE = "AUTO_SAVE"  # any save operation in relevant but only 10 per project
+    PERSISTED = "NAMED_VERSION"  # any AUTO_SAVE that is considered worth keeping
