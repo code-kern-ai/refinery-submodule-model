@@ -131,3 +131,32 @@ def get_user_to_organization():
     if value is None or value[0] is None:
         return {}
     return value[0]
+
+
+def update_user(
+    user: User,
+    email: str,
+    verified: str,
+    created_at: str,
+    metadata_public: Optional[str] = None,
+    sso_provider: Optional[bool] = False,
+    with_commit: bool = False,
+) -> User:
+
+    if user is None:
+        return
+
+    if email is not None:
+        user.email = email
+    if verified:
+        user.verified = verified
+    if created_at is not None:
+        user.created_at = created_at
+    if metadata_public is not None:
+        user.metadata_public = metadata_public
+    if sso_provider is not None:
+        user.sso_provider = sso_provider
+
+    general.flush_or_commit(with_commit)
+
+    return user

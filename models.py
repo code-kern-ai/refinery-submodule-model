@@ -214,6 +214,11 @@ class User(Base):
         order_by="created_at.desc()",
     )
     last_interaction = Column(DateTime)
+    email = Column(String, unique=True)
+    verified = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
+    metadata_public = Column(JSON)
+    sso_provider = Column(String)
 
 
 class Team(Base):
