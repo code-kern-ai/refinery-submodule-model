@@ -54,8 +54,10 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     order: Optional[int] = None,
+    id: Optional[str] = None,
 ) -> CognitionStrategy:
     strategy: CognitionStrategy = CognitionStrategy(
+        id=id,
         project_id=project_id,
         created_by=user_id,
         created_at=created_at,
@@ -96,5 +98,12 @@ def delete(project_id: str, strategy_id: str, with_commit: bool = True) -> None:
     session.query(CognitionStrategy).filter(
         CognitionStrategy.project_id == project_id,
         CognitionStrategy.id == strategy_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_all_by_project_id(project_id: str, with_commit: bool = True) -> None:
+    session.query(CognitionStrategy).filter(
+        CognitionStrategy.project_id == project_id
     ).delete()
     general.flush_or_commit(with_commit)

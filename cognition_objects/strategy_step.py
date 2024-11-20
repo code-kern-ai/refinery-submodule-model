@@ -67,10 +67,12 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     execute_if_source_code: Optional[str] = None,
+    id: Optional[str] = None,
 ) -> CognitionStrategyStep:
     if not execute_if_source_code:
         execute_if_source_code = EXECUTE_IF_SOURCE_CODE
     strategy: CognitionStrategyStep = CognitionStrategyStep(
+        id=id,
         project_id=project_id,
         strategy_id=strategy_id,
         created_by=user_id,
