@@ -142,6 +142,16 @@ def get_active_users_after_filter(
     limit: int,
 ) -> User:
 
+    last_interaction_range = prevent_sql_injection(
+        last_interaction_range, isinstance(last_interaction_range, datetime)
+    )
+    sort_key = prevent_sql_injection(sort_key, isinstance(sort_key, str))
+    sort_direction = prevent_sql_injection(
+        sort_direction, isinstance(sort_direction, str)
+    )
+    offset = prevent_sql_injection(offset, isinstance(offset, int))
+    limit = prevent_sql_injection(limit, isinstance(limit, int))
+
     query = f"""
     SELECT u.*, o.name as organization_name
     FROM public.user u 
