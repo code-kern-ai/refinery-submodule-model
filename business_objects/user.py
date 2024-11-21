@@ -136,7 +136,7 @@ def get_user_to_organization():
 def update_user(
     user: User,
     email: str,
-    verified: str,
+    verified: bool,
     created_at: str,
     metadata_public: Optional[str] = None,
     sso_provider: Optional[str] = None,
@@ -148,7 +148,7 @@ def update_user(
 
     if email is not None:
         user.email = email
-    if verified:
+    if verified is not None:
         user.verified = verified
     if created_at is not None:
         user.created_at = created_at
