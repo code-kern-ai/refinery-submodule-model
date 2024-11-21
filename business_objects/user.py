@@ -135,11 +135,11 @@ def get_user_to_organization():
 
 
 def get_active_users_after_filter(
-    last_interaction_range: datetime,
-    sort_key: str,
-    sort_direction: str,
-    offset: int,
-    limit: int,
+    last_interaction_range: Optional[datetime] = None,
+    sort_key: Optional[str] = None,
+    sort_direction: Optional[str] = None,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ) -> User:
 
     last_interaction_range = prevent_sql_injection(
