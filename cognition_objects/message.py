@@ -4,6 +4,7 @@ from ..business_objects import general
 from ..session import session
 from ..models import CognitionMessage
 from ..util import prevent_sql_injection
+from .pipeline_version import get_current_version
 
 
 def get_all_by_conversation_id(
@@ -228,6 +229,7 @@ def create(
         created_at=created_at,
         question=question,
         facts=[],
+        version_id=get_current_version(project_id).id,
     )
 
     general.add(message, with_commit)

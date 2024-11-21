@@ -33,6 +33,7 @@ def get_all_versions(project_id: str) -> List[CognitionPipelineVersion]:
     return (
         session.query(CognitionPipelineVersion)
         .filter(CognitionPipelineVersion.project_id == project_id)
+        .order_by(CognitionPipelineVersion.created_at.asc())
         .all()
     )
 
