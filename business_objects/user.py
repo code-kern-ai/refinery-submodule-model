@@ -1,3 +1,4 @@
+from datetime import datetime
 from . import general, organization, team_member
 from .. import User, enums
 from ..session import session
@@ -106,3 +107,66 @@ def __create_migration_organization():
 def delete(user_id: str, with_commit: bool = False) -> None:
     session.query(User).filter(User.id == user_id).delete()
     general.flush_or_commit(with_commit)
+
+
+def get_missing_users(user_ids: List[str]):
+    query = f"""
+    SELECT jsonb_object_agg(u.id, u.last_interaction)
+    FROM public.user u
+    WHERE id IN ({','.join([f"'{user_id}'" for user_id in user_ids])})
+    """
+    value = general.execute_first(query)
+    if value is None or value[0] is None:
+        return {}
+    return value[0]
+
+
+def get_user_to_organization():
+    query = """
+    SELECT jsonb_object_agg(u.id, jsonb_build_object('id', o.id, 'name', o.name))
+    FROM public.user u
+    INNER JOIN organization o
+        ON u.organization_id = o.id
+    """
+    value = general.execute_first(query)
+    if value is None or value[0] is None:
+        return {}
+    return value[0]
+
+
+def get_active_users_after_filter(
+    last_interaction_range: Optional[datetime] = None,
+    sort_key: Optional[str] = None,
+    sort_direction: Optional[str] = None,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
+) -> User:
+
+    last_interaction_range = prevent_sql_injection(
+        last_interaction_range, isinstance(last_interaction_range, datetime)
+    )
+    sort_key = prevent_sql_injection(sort_key, isinstance(sort_key, str))
+    sort_direction = prevent_sql_injection(
+        sort_direction, isinstance(sort_direction, str)
+    )
+    offset = prevent_sql_injection(offset, isinstance(offset, int))
+    limit = prevent_sql_injection(limit, isinstance(limit, int))
+
+    query = f"""
+    SELECT u.*, o.name as organization_name
+    FROM public.user u 
+    LEFT JOIN organization o
+        ON u.organization_id = o.id
+    """
+
+    if last_interaction_range:
+        query += f"\nWHERE last_interaction >= '{last_interaction_range}'"
+    if sort_key:
+        sort_direction = "DESC" if sort_direction == -1 else "ASC"
+        query += f"\nORDER BY {sort_key} {sort_direction}"
+    if offset:
+        query += f"\nOFFSET {offset}"
+    if limit:
+        query += f"\nLIMIT {limit}"
+
+    return general.execute_all(query)
