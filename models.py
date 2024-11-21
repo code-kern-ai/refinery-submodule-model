@@ -1275,7 +1275,9 @@ class CognitionMessage(Base):
     version_id = Column(
         # pipeline version with which the version was created, can be null if the version isn't available anymore (e.g. deleted)
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PIPELINE_VERSION.value}.id", ondelete="SET NULL"),
+        ForeignKey(
+            f"cognition.{Tablenames.PIPELINE_VERSION.value}.id", ondelete="SET NULL"
+        ),
         index=True,
     )
 
