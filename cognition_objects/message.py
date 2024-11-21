@@ -50,6 +50,18 @@ def get_last_n_by_conversation_id(
     )
 
 
+def get_message_ids_with_version_id(project_id: str, version_id: str) -> List[str]:
+    return [
+        str(e.id)
+        for e in session.query(CognitionMessage)
+        .filter(
+            CognitionMessage.project_id == project_id,
+            CognitionMessage.version_id == version_id,
+        )
+        .all()
+    ]
+
+
 def get_scope_changes_before_message(
     project_id: str, message_id: str
 ) -> List[List[Dict[str, Any]]]:
@@ -456,5 +468,22 @@ def update_to_new_diff_structure(
         synchronize_session=False,
     )
 
+    if with_commit:
+        general.commit()
+
+
+def update_version_id_for_messages(
+    project_id: str,
+    message_ids: List[str],
+    version_id: str,
+    with_commit: bool = True,
+):
+    session.query(CognitionMessage).filter(
+        CognitionMessage.project_id == project_id,
+        CognitionMessage.id.in_(message_ids),
+    ).update(
+        {CognitionMessage.version_id: version_id},
+        synchronize_session=False,
+    )
     if with_commit:
         general.commit()
