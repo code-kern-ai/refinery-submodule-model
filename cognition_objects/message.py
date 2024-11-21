@@ -79,14 +79,15 @@ def get_message_short_for_conversation_for_pipeline(
         conversation_id, isinstance(conversation_id, str)
     )
     query = f"""
-    SELECT jsonb_object_agg(message_id,json_build_object('time_elapsed',time_elapsed,'has_error',CASE WHEN has_error = 1 THEN TRUE ELSE FALSE END, 'strategy_id', strategy_id, 'answer', answer))
+    SELECT jsonb_object_agg(message_id,json_build_object('time_elapsed',time_elapsed,'has_error',CASE WHEN has_error = 1 THEN TRUE ELSE FALSE END, 'strategy_id', strategy_id, 'answer', answer,'version_id',version_id))
     FROM (
         SELECT 
             pl.message_id,
             MAX(m.strategy_id::TEXT) strategy_id, 
             MAX(m.answer) answer, 
             sum(pl.time_elapsed)time_elapsed, 
-            MAX(CASE WHEN pl.has_error THEN 1 ELSE 0 END) has_error
+            MAX(CASE WHEN pl.has_error THEN 1 ELSE 0 END) has_error,
+            max(version_id::TEXT) version_id
         FROM cognition.message m
         INNER JOIN cognition.pipeline_logs pl
             ON m.project_id = pl.project_id AND m.id = pl.message_id
