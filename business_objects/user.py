@@ -1,3 +1,4 @@
+from datetime import datetime
 from . import general, organization, team_member
 from .. import User, enums
 from ..session import session
@@ -133,30 +134,29 @@ def get_user_to_organization():
     return value[0]
 
 
-def update_user(
-    user: User,
-    email: str,
-    verified: bool,
-    created_at: str,
-    metadata_public: Optional[str] = None,
-    sso_provider: Optional[str] = None,
-    with_commit: bool = False,
+def get_active_users_after_filter(
+    last_interaction_range: datetime,
+    sort_key: str,
+    sort_direction: str,
+    offset: int,
+    limit: int,
 ) -> User:
 
-    if user is None:
-        return
+    query = f"""
+    SELECT u.*, o.name as organization_name
+    FROM public.user u 
+    LEFT JOIN organization o
+        ON u.organization_id = o.id
+    """
 
-    if email is not None:
-        user.email = email
-    if verified is not None:
-        user.verified = verified
-    if created_at is not None:
-        user.created_at = created_at
-    if metadata_public is not None:
-        user.metadata_public = metadata_public
-    if sso_provider is not None:
-        user.sso_provider = sso_provider
+    if last_interaction_range:
+        query += f"\nWHERE last_interaction >= '{last_interaction_range}'"
+    if sort_key:
+        sort_direction = "DESC" if sort_direction == -1 else "ASC"
+        query += f"\nORDER BY {sort_key} {sort_direction}"
+    if offset:
+        query += f"\nOFFSET {offset}"
+    if limit:
+        query += f"\nLIMIT {limit}"
 
-    general.flush_or_commit(with_commit)
-
-    return user
+    return general.execute_all(query)
