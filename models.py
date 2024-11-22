@@ -1293,9 +1293,10 @@ class CognitionPipelineLogs(Base):
     )
     strategy_step_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
-        ),
+        # removed fkey constraint to ensure that a different pipeline version message can still be matched
+        # ForeignKey(
+        #     f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
+        # ),
         index=True,
     )
     message_id = Column(
