@@ -50,6 +50,18 @@ def get_last_n_by_conversation_id(
     )
 
 
+def get_message_ids_with_version_id(project_id: str, version_id: str) -> List[str]:
+    return [
+        str(e.id)
+        for e in session.query(CognitionMessage)
+        .filter(
+            CognitionMessage.project_id == project_id,
+            CognitionMessage.version_id == version_id,
+        )
+        .all()
+    ]
+
+
 def get_scope_changes_before_message(
     project_id: str, message_id: str
 ) -> List[List[Dict[str, Any]]]:
@@ -79,14 +91,15 @@ def get_message_short_for_conversation_for_pipeline(
         conversation_id, isinstance(conversation_id, str)
     )
     query = f"""
-    SELECT jsonb_object_agg(message_id,json_build_object('time_elapsed',time_elapsed,'has_error',CASE WHEN has_error = 1 THEN TRUE ELSE FALSE END, 'strategy_id', strategy_id, 'answer', answer))
+    SELECT jsonb_object_agg(message_id,json_build_object('time_elapsed',time_elapsed,'has_error',CASE WHEN has_error = 1 THEN TRUE ELSE FALSE END, 'strategy_id', strategy_id, 'answer', answer,'version_id',version_id))
     FROM (
         SELECT 
             pl.message_id,
             MAX(m.strategy_id::TEXT) strategy_id, 
             MAX(m.answer) answer, 
             sum(pl.time_elapsed)time_elapsed, 
-            MAX(CASE WHEN pl.has_error THEN 1 ELSE 0 END) has_error
+            MAX(CASE WHEN pl.has_error THEN 1 ELSE 0 END) has_error,
+            max(version_id::TEXT) version_id
         FROM cognition.message m
         INNER JOIN cognition.pipeline_logs pl
             ON m.project_id = pl.project_id AND m.id = pl.message_id
@@ -455,5 +468,22 @@ def update_to_new_diff_structure(
         synchronize_session=False,
     )
 
+    if with_commit:
+        general.commit()
+
+
+def update_version_id_for_messages(
+    project_id: str,
+    message_ids: List[str],
+    version_id: str,
+    with_commit: bool = True,
+):
+    session.query(CognitionMessage).filter(
+        CognitionMessage.project_id == project_id,
+        CognitionMessage.id.in_(message_ids),
+    ).update(
+        {CognitionMessage.version_id: version_id},
+        synchronize_session=False,
+    )
     if with_commit:
         general.commit()
