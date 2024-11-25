@@ -25,6 +25,20 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
     )
 
 
+def get_all_with_org() -> List[CognitionConversation]:
+    query = """
+    SELECT
+        cc.*,
+        cp.organization_id
+    FROM
+        cognition.conversation cc
+    JOIN
+        cognition.project cp
+    ON
+        cc.project_id = cp.id;"""
+    return general.execute_all(query)
+
+
 def get_scoped(project_id: str, conversation_id: str, user_id) -> CognitionConversation:
     return (
         session.query(CognitionConversation)
