@@ -156,6 +156,8 @@ class Organization(Base):
 
     # designed as opt out to ensure "forgotten" doesn't result in issues
     log_admin_requests = Column(String, default=AdminLogLevel.NO_GET.value)
+    conversation_lifespan_days = Column(Integer)
+    file_lifespan_days = Column(Integer)
 
 
 class User(Base):
