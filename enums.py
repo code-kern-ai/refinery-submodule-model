@@ -103,7 +103,6 @@ class Tablenames(Enum):
     KNOWLEDGE_BASE = "knowledge_base"
     KNOWLEDGE_TERM = "knowledge_term"
     USER_SESSIONS = "user_sessions"
-    USER_ACTIVITY = "user_activity"
     UPLOAD_TASK = "upload_task"
     DATA_SLICE = "data_slice"
     DATA_SLICE_RECORD_ASSOCIATION = "data_slice_record_association"
