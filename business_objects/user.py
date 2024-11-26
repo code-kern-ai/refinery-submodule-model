@@ -157,6 +157,7 @@ def get_active_users_after_filter(
     FROM public.user u 
     LEFT JOIN organization o
         ON u.organization_id = o.id
+    WHERE u.email IS NOT NULL
     """
 
     if last_interaction_range:
