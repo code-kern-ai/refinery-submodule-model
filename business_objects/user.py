@@ -161,7 +161,7 @@ def get_active_users_after_filter(
     """
 
     if last_interaction_range:
-        query += f"\nWHERE last_interaction >= '{last_interaction_range}'"
+        query += f"\nAND last_interaction >= '{last_interaction_range}'"
     if sort_key:
         sort_direction = "DESC" if sort_direction == -1 else "ASC"
         query += f"\nORDER BY {sort_key} {sort_direction}"
