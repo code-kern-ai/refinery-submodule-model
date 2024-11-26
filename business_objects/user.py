@@ -2,7 +2,9 @@ from datetime import datetime
 from . import general, organization, team_member
 from .. import User, enums
 from ..session import session
-from typing import List, Any, Optional
+from typing import List, Optional
+from sqlalchemy import sql
+
 
 from ..util import prevent_sql_injection
 
@@ -140,7 +142,7 @@ def get_active_users_after_filter(
     sort_direction: Optional[str] = None,
     offset: Optional[int] = None,
     limit: Optional[int] = None,
-) -> User:
+) -> List[User]:
 
     last_interaction_range = prevent_sql_injection(
         last_interaction_range, isinstance(last_interaction_range, datetime)
@@ -152,7 +154,7 @@ def get_active_users_after_filter(
     offset = prevent_sql_injection(offset, isinstance(offset, int))
     limit = prevent_sql_injection(limit, isinstance(limit, int))
 
-    query = f"""
+    query = """
     SELECT u.*, o.name as organization_name
     FROM public.user u 
     LEFT JOIN organization o
@@ -171,3 +173,9 @@ def get_active_users_after_filter(
         query += f"\nLIMIT {limit}"
 
     return general.execute_all(query)
+
+
+def update_last_interaction(user_id: str) -> None:
+    user_item = get(user_id)
+    user_item.last_interaction = sql.func.now()
+    general.commit()

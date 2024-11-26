@@ -189,11 +189,6 @@ class User(Base):
         Tablenames.USER,
         Tablenames.RECORD_LABEL_ASSOCIATION,
     )
-    user_activities = parent_to_child_relationship(
-        Tablenames.USER,
-        Tablenames.USER_ACTIVITY,
-        order_by="created_at.desc()",
-    )
     weak_supervision_runs = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.WEAK_SUPERVISION_TASK,
@@ -314,19 +309,6 @@ class LabelingAccessLink(Base):
     is_locked = Column(Boolean, default=False)
     # corresponding data last changed at (e.g. if a data slice was updated or the heuristic was updated)
     changed_at = Column(DateTime, default=sql.func.now())
-
-
-class UserActivity(Base):
-    __tablename__ = Tablenames.USER_ACTIVITY.value
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    activity = Column(JSON)
-    created_at = Column(DateTime)
-    from_backup = Column(Boolean)
 
 
 class UserSessions(Base):
