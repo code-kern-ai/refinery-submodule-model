@@ -140,8 +140,6 @@ class Organization(Base):
     # database entry
     is_paying = Column(Boolean, default=False)
     created_at = Column(DateTime, default=sql.func.now())
-    gdpr_compliant = Column(Boolean, default=False)
-
     projects = parent_to_child_relationship(
         Tablenames.ORGANIZATION,
         Tablenames.PROJECT,
