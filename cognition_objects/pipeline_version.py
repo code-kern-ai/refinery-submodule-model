@@ -61,7 +61,7 @@ def create_pipeline_version(
             .filter(
                 CognitionPipelineVersion.project_id == project_id,
                 CognitionPipelineVersion.version_type
-                != enums.PipelineVersionType.PERSISTED.value,
+                != enums.PipelineVersionType.NAMED_VERSION.value,
             )
             .order_by(CognitionPipelineVersion.created_at.asc())
             .limit(current_count - MAX_AUTO_SAVE_VERSIONS + 1)
@@ -87,7 +87,7 @@ def persist_version(
     version = get_version_by_id(project_id, version_id)
     if name:
         version.name = name
-    version.version_type = enums.PipelineVersionType.PERSISTED.value
+    version.version_type = enums.PipelineVersionType.NAMED_VERSION.value
     general.commit()
 
 

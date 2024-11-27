@@ -1273,7 +1273,7 @@ class CognitionMessage(Base):
     scope_dict_diff_previous_conversation = Column(JSON)
     scope_dict_diff_new = Column(JSON)
     version_id = Column(
-        # pipeline version with which the version was created, can be null if the version isn't available anymore (e.g. deleted)
+        # pipeline version with which the message was created, can be null if the version isn't available anymore (e.g. deleted)
         UUID(as_uuid=True),
         ForeignKey(
             f"cognition.{Tablenames.PIPELINE_VERSION.value}.id", ondelete="SET NULL"
