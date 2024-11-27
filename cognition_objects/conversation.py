@@ -25,17 +25,32 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
     )
 
 
-def get_all_with_org() -> List[CognitionConversation]:
+def get_conversations_to_clean_up() -> List[Tuple[str, str, str]]:
     query = """
-    SELECT
-        cc.*,
-        cp.organization_id
-    FROM
-        cognition.conversation cc
-    JOIN
-        cognition.project cp
-    ON
-        cc.project_id = cp.id;"""
+    SELECT cc.id, cc.project_id, o.id organization_id
+    FROM cognition.conversation cc
+    INNER JOIN cognition.project cp
+        ON cc.project_id = cp.id
+    INNER JOIN (
+        SELECT o.*, NOW() - INTERVAL '1 DAY' * conversation_lifespan_days conversation_delete_by
+        FROM PUBLIC.organization o
+    ) o
+        ON cp.organization_id = o.id AND cc.created_at <= o.conversation_delete_by"""
+    return general.execute_all(query)
+
+
+def get_conversation_files_to_clean_up() -> List[Tuple[str, str, str]]:
+    query = """
+    SELECT cc.id, cc.project_id, o.id organization_id
+    FROM cognition.conversation cc
+    INNER JOIN cognition.project cp
+        ON cc.project_id = cp.id
+    INNER JOIN (
+        SELECT o.*, NOW() - INTERVAL '1 DAY' * file_lifespan_days file_delete_by
+        FROM PUBLIC.organization o
+    ) o
+        ON cp.organization_id = o.id AND cc.created_at <= o.file_delete_by
+    WHERE NOT cc.archived AND cc.has_tmp_files """
     return general.execute_all(query)
 
 
