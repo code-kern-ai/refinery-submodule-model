@@ -5,7 +5,7 @@ from submodules.model import enums
 
 
 from ..session import session
-from ..models import Organization, Project
+from ..models import Organization, Project, User
 from ..business_objects import project, user, general
 from ..util import prevent_sql_injection
 
@@ -60,6 +60,10 @@ def get_organization_overview_stats(
     )
     if values:
         return values[0]
+
+
+def get_user_count(organization_id: str) -> int:
+    return session.query(User).filter(User.organization_id == organization_id).count()
 
 
 def __get_organization_overview_stats_query(organization_id: str):
