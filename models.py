@@ -16,6 +16,7 @@ from .enums import (
     StrategyComplexity,
     AdminLogLevel,
     FileCachingState,
+    PipelineVersionType,
 )
 from sqlalchemy import (
     JSON,
@@ -1253,6 +1254,14 @@ class CognitionMessage(Base):
 
     scope_dict_diff_previous_conversation = Column(JSON)
     scope_dict_diff_new = Column(JSON)
+    version_id = Column(
+        # pipeline version with which the message was created, can be null if the version isn't available anymore (e.g. deleted)
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.PIPELINE_VERSION.value}.id", ondelete="SET NULL"
+        ),
+        index=True,
+    )
 
 
 class CognitionPipelineLogs(Base):
@@ -1266,9 +1275,10 @@ class CognitionPipelineLogs(Base):
     )
     strategy_step_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
-        ),
+        # removed fkey constraint to ensure that a different pipeline version message can still be matched
+        # ForeignKey(
+        #     f"cognition.{Tablenames.STRATEGY_STEP.value}.id", ondelete="CASCADE"
+        # ),
         index=True,
     )
     message_id = Column(
@@ -1743,6 +1753,26 @@ class FileExtraction(Base):
         index=True,
     )
     state = Column(String, default=FileCachingState.CREATED.value)
+
+
+class CognitionPipelineVersion(Base):
+    __tablename__ = Tablenames.PIPELINE_VERSION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    version_type = Column(String, default=PipelineVersionType.AUTO_SAVE.value)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    pipeline_dump = Column(JSON)
 
 
 class FileTransformation(Base):
