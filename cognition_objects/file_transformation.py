@@ -25,11 +25,21 @@ def get(
     return query.first()
 
 
-def get_by_id(org_id: str, file_transformation_id: str) -> FileTransformation:
+def get_by_org_and_id(org_id: str, file_transformation_id: str) -> FileTransformation:
     return (
         session.query(FileTransformation)
         .filter(
             FileTransformation.organization_id == org_id,
+            FileTransformation.id == file_transformation_id,
+        )
+        .first()
+    )
+
+
+def get_by_id(file_transformation_id: str) -> FileTransformation:
+    return (
+        session.query(FileTransformation)
+        .filter(
             FileTransformation.id == file_transformation_id,
         )
         .first()
@@ -79,7 +89,7 @@ def update(
     state: Optional[str] = None,
     with_commit: bool = True,
 ) -> FileTransformation:
-    file_transformation = get_by_id(org_id, file_transformation_id)
+    file_transformation = get_by_org_and_id(org_id, file_transformation_id)
     if file_transformation.state == enums.FileCachingState.CANCELED.value:
         return
     if minio_path is not None:
@@ -91,14 +101,14 @@ def update(
 
 
 def delete(org_id: str, file_transformation_id: str, with_commit: bool = True):
-    file_transformation = get_by_id(org_id, file_transformation_id)
+    file_transformation = get_by_org_and_id(org_id, file_transformation_id)
     general.delete(file_transformation, with_commit)
 
 
 def set_state_to_failed(
     org_id: str, file_transformation_id: str, with_commit: bool = True
 ) -> FileTransformation:
-    file_transformation = get_by_id(org_id, file_transformation_id)
+    file_transformation = get_by_org_and_id(org_id, file_transformation_id)
     if (
         not file_transformation
         or file_transformation.state == enums.FileCachingState.CANCELED.value
@@ -148,6 +158,9 @@ def create_file_transformation_llm_log(
     finished_at: Optional[datetime] = None,
     with_commit: bool = True,
 ) -> None:
+    file_transformation = get_by_id(file_transformation_id)
+    if not file_transformation:
+        return
     file_transformation_llm_log = FileTransformationLLMLogs(
         file_transformation_id=file_transformation_id,
         input=input_text,
