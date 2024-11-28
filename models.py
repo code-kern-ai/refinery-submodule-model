@@ -141,8 +141,6 @@ class Organization(Base):
     # database entry
     is_paying = Column(Boolean, default=False)
     created_at = Column(DateTime, default=sql.func.now())
-    gdpr_compliant = Column(Boolean, default=False)
-
     projects = parent_to_child_relationship(
         Tablenames.ORGANIZATION,
         Tablenames.PROJECT,
@@ -157,6 +155,8 @@ class Organization(Base):
 
     # designed as opt out to ensure "forgotten" doesn't result in issues
     log_admin_requests = Column(String, default=AdminLogLevel.NO_GET.value)
+    conversation_lifespan_days = Column(Integer)
+    file_lifespan_days = Column(Integer, default=14)
 
 
 class User(Base):

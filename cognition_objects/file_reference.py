@@ -1,7 +1,7 @@
 from ..business_objects import general
 from ..session import session
 from ..models import FileReference
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 
 def get(org_id: str, hash: str, file_size_bytes) -> FileReference:
@@ -52,6 +52,18 @@ def get_count_by_org(org_id: str) -> int:
 
 def get_all() -> List[FileReference]:
     return session.query(FileReference).all()
+
+
+def get_all_for_cleanup() -> List[Tuple[str, str]]:
+    query = """
+    SELECT fr.id, fr.organization_id
+    FROM cognition.file_reference fr
+    INNER JOIN (
+        SELECT o.*, NOW() - INTERVAL '1 DAY' * file_lifespan_days file_delete_by
+        FROM PUBLIC.organization o
+    ) o
+        ON fr.organization_id = o.id AND fr.last_used <= o.file_delete_by"""
+    return general.execute_all(query)
 
 
 def create(
