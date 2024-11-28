@@ -235,6 +235,10 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionMessage:
+    version_id = None
+    current_version = get_current_version(project_id)
+    if current_version:
+        version_id = current_version.id
     message = CognitionMessage(
         project_id=project_id,
         conversation_id=conversation_id,
@@ -242,7 +246,7 @@ def create(
         created_at=created_at,
         question=question,
         facts=[],
-        version_id=get_current_version(project_id).id,
+        version_id=version_id,
     )
 
     general.add(message, with_commit)
