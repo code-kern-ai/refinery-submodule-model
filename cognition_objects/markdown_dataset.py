@@ -77,7 +77,7 @@ def get_all_paginated_for_category_origin(
     page = prevent_sql_injection(page, isinstance(page, int))
 
     query_add = f"""
-        ORDER BY md.created_at
+        ORDER BY md.created_at DESC
         LIMIT {limit}
         OFFSET {(page - 1) * limit}
     """
