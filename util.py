@@ -1,7 +1,7 @@
 import os
 from typing import Tuple, Any, Union, List, Dict, Optional, Iterable
 from pydantic import BaseModel
-import collections
+from collections.abc import Iterable as collections_abc_Iterable
 from re import sub, match, compile
 import sqlalchemy
 from uuid import UUID
@@ -196,7 +196,7 @@ def to_camel_case(name: str):
 
 def is_list_like(value: Any) -> bool:
     return (
-        isinstance(value, collections.Iterable)
+        isinstance(value, collections_abc_Iterable)
         and not isinstance(value, str)
         and not isinstance(value, dict)
         and not isinstance(value, Row)
