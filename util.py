@@ -96,8 +96,11 @@ def sql_alchemy_to_dict(
     sql_alchemy_object: Any,
     for_frontend: bool = False,
     column_whitelist: Optional[Iterable[str]] = None,
+    column_rename_map: Optional[Dict[str, str]] = None,
 ):
     result = __sql_alchemy_to_dict(sql_alchemy_object, column_whitelist)
+    if column_rename_map:
+        return {column_rename_map.get(k, k): v for k, v in result.items()}
     if for_frontend:
         return to_frontend_obj(result)
     return result
