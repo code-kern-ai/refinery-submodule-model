@@ -96,11 +96,14 @@ def sql_alchemy_to_dict(
     sql_alchemy_object: Any,
     for_frontend: bool = False,
     column_whitelist: Optional[Iterable[str]] = None,
+    column_blacklist: Optional[Iterable[str]] = None,
     column_rename_map: Optional[Dict[str, str]] = None,
 ):
-    result = __sql_alchemy_to_dict(sql_alchemy_object, column_whitelist)
+    result = __sql_alchemy_to_dict(
+        sql_alchemy_object, column_whitelist, column_blacklist
+    )
     if column_rename_map:
-        return {column_rename_map.get(k, k): v for k, v in result.items()}
+        result = {column_rename_map.get(k, k): v for k, v in result.items()}
     if for_frontend:
         return to_frontend_obj(result)
     return result
@@ -139,11 +142,16 @@ def pack_edges_node(result, name: str, max_lvl: Optional[int] = None):
 
 
 def __sql_alchemy_to_dict(
-    sql_alchemy_object: Any, column_whitelist: Optional[Iterable[str]] = None
+    sql_alchemy_object: Any,
+    column_whitelist: Optional[Iterable[str]] = None,
+    column_blacklist: Optional[Iterable[str]] = None,
 ):
     if isinstance(sql_alchemy_object, list):
         # list is for all() queries
-        return [__sql_alchemy_to_dict(x, column_whitelist) for x in sql_alchemy_object]
+        return [
+            __sql_alchemy_to_dict(x, column_whitelist, column_blacklist)
+            for x in sql_alchemy_object
+        ]
 
     elif isinstance(sql_alchemy_object, Row):
         # basic SELECT .. FROM query)
@@ -151,13 +159,15 @@ def __sql_alchemy_to_dict(
         return {
             k: v
             for k, v in dict(sql_alchemy_object._mapping).items()
-            if not column_whitelist or k in column_whitelist
+            if (not column_whitelist or k in column_whitelist)
+            and (not column_blacklist or k not in column_blacklist)
         }
     elif isinstance(sql_alchemy_object, Base):
         return {
             c.name: getattr(sql_alchemy_object, c.name)
             for c in sql_alchemy_object.__table__.columns
-            if not column_whitelist or c.name in column_whitelist
+            if (not column_whitelist or c.name in column_whitelist)
+            and (not column_blacklist or c.name not in column_blacklist)
         }
     else:
         return sql_alchemy_object
