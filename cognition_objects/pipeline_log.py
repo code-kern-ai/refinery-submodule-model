@@ -1,9 +1,10 @@
 from typing import List, Optional, Dict, Any, Tuple
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionPipelineLogs, CognitionMessage
+from ..models import CognitionPipelineLogs, CognitionMessage, CognitionConversation
 from datetime import datetime
 from .. import enums
+from sqlalchemy.sql import func
 
 
 def get_all_by_message_id(
@@ -220,3 +221,63 @@ def update_to_new_diff_structure(
 
     if with_commit:
         general.commit()
+
+
+def get_error_and_time_elapsed_by_conversation_id(
+    project_id: str,
+    conversation_id: str,
+) -> List[CognitionPipelineLogs]:
+    grouped_message_logs = (
+        session.query(
+            CognitionMessage.id,
+            func.sum(CognitionPipelineLogs.time_elapsed).label("time_logs_elapsed"),
+            func.bool_or(CognitionPipelineLogs.has_error).label("logs_have_error"),
+        )
+        .join(CognitionMessage)
+        .join(CognitionConversation)
+        .filter(
+            CognitionPipelineLogs.project_id == project_id,
+            CognitionPipelineLogs.message_id == CognitionMessage.id,
+            CognitionMessage.conversation_id == conversation_id,
+        )
+        .group_by(CognitionMessage.id)
+        .all()
+    )
+    grouped_logs_dict = {}
+    for message in grouped_message_logs:
+        grouped_logs_dict[message.id] = {
+            "time_logs_elapsed": message.time_logs_elapsed,
+            "logs_have_error": message.logs_have_error,
+        }
+
+    return grouped_logs_dict
+
+
+def get_error_and_time_elapsed_by_conversation_ids(
+    project_id: str,
+    conversation_ids: List[str],
+) -> Dict[str, CognitionPipelineLogs]:
+    grouped_message_logs = (
+        session.query(
+            CognitionMessage.id,
+            func.sum(CognitionPipelineLogs.time_elapsed).label("time_logs_elapsed"),
+            func.bool_or(CognitionPipelineLogs.has_error).label("logs_have_error"),
+        )
+        .join(CognitionMessage)
+        .join(CognitionConversation)
+        .filter(
+            CognitionPipelineLogs.project_id == project_id,
+            CognitionPipelineLogs.message_id == CognitionMessage.id,
+            CognitionMessage.conversation_id.in_(conversation_ids),
+        )
+        .group_by(CognitionMessage.id)
+        .all()
+    )
+    grouped_logs_dict = {}
+    for message in grouped_message_logs:
+        grouped_logs_dict[message.id] = {
+            "time_logs_elapsed": message.time_logs_elapsed,
+            "logs_have_error": message.logs_have_error,
+        }
+
+    return grouped_logs_dict

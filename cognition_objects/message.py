@@ -5,6 +5,7 @@ from ..session import session
 from ..models import CognitionMessage
 from ..util import prevent_sql_injection
 from .pipeline_version import get_current_version
+from collections import defaultdict
 
 
 def get_all_by_conversation_id(
@@ -19,6 +20,24 @@ def get_all_by_conversation_id(
         .order_by(CognitionMessage.created_at.asc())
         .all()
     )
+
+
+def get_all_by_conversation_ids(
+    project_id: str, conversation_ids: List[str]
+) -> Dict[str, List[CognitionMessage]]:
+    messages = (
+        session.query(CognitionMessage)
+        .filter(
+            CognitionMessage.project_id == project_id,
+            CognitionMessage.conversation_id.in_(conversation_ids),
+        )
+        .order_by(CognitionMessage.created_at.asc())
+        .all()
+    )
+    messages_by_conversation = defaultdict(list)
+    for message in messages:
+        messages_by_conversation[message.conversation_id].append(message)
+    return messages_by_conversation
 
 
 def get_last_by_conversation_id(
