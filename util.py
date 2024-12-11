@@ -100,10 +100,8 @@ def sql_alchemy_to_dict(
     column_rename_map: Optional[Dict[str, str]] = None,
 ):
     result = __sql_alchemy_to_dict(
-        sql_alchemy_object, column_whitelist, column_blacklist
+        sql_alchemy_object, column_whitelist, column_blacklist, column_rename_map
     )
-    if column_rename_map:
-        result = {column_rename_map.get(k, k): v for k, v in result.items()}
     if for_frontend:
         return to_frontend_obj(result)
     return result
@@ -145,30 +143,40 @@ def __sql_alchemy_to_dict(
     sql_alchemy_object: Any,
     column_whitelist: Optional[Iterable[str]] = None,
     column_blacklist: Optional[Iterable[str]] = None,
+    column_rename_map: Optional[Dict[str, str]] = None,
 ):
+    def rename_columns(data: Dict[str, Any]) -> Dict[str, Any]:
+        if column_rename_map:
+            return {column_rename_map.get(k, k): v for k, v in data.items()}
+        return data
+
     if isinstance(sql_alchemy_object, list):
         # list is for all() queries
         return [
-            __sql_alchemy_to_dict(x, column_whitelist, column_blacklist)
+            __sql_alchemy_to_dict(
+                x, column_whitelist, column_blacklist, column_rename_map
+            )
             for x in sql_alchemy_object
         ]
 
     elif isinstance(sql_alchemy_object, Row):
         # basic SELECT .. FROM query)
         # _mapping is a RowMapping object that is not serializable but dict like
-        return {
+        result = {
             k: v
             for k, v in dict(sql_alchemy_object._mapping).items()
             if (not column_whitelist or k in column_whitelist)
             and (not column_blacklist or k not in column_blacklist)
         }
+        return rename_columns(result)
     elif isinstance(sql_alchemy_object, Base):
-        return {
+        result = {
             c.name: getattr(sql_alchemy_object, c.name)
             for c in sql_alchemy_object.__table__.columns
             if (not column_whitelist or c.name in column_whitelist)
             and (not column_blacklist or c.name not in column_blacklist)
         }
+        return rename_columns(result)
     else:
         return sql_alchemy_object
 
