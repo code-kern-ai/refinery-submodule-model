@@ -145,9 +145,15 @@ def __sql_alchemy_to_dict(
     column_blacklist: Optional[Iterable[str]] = None,
     column_rename_map: Optional[Dict[str, str]] = None,
 ):
-    def rename_columns(data: Dict[str, Any]) -> Dict[str, Any]:
+    def rename_columns(data: Any) -> Any:
         if column_rename_map:
-            return {column_rename_map.get(k, k): v for k, v in data.items()}
+            if isinstance(data, dict):
+                data = {
+                    column_rename_map.get(k, k): rename_columns(v)
+                    for k, v in data.items()
+                }
+            elif isinstance(data, list):
+                data = [rename_columns(item) for item in data]
         return data
 
     if isinstance(sql_alchemy_object, list):
