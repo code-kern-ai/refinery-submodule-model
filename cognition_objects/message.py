@@ -26,32 +26,27 @@ def get_all_by_conversation_ids(
 ) -> Dict[str, List[CognitionMessage]]:
 
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    conversation_ids = prevent_sql_injection(
-        conversation_ids, isinstance(conversation_ids, list)
+    conversation_ids = [
+        prevent_sql_injection(conversation_id, isinstance(conversation_id, str))
+        for conversation_id in conversation_ids
+    ]
+    conversation_where = (
+        " AND conversation_id IN ('" + "','".join(conversation_ids) + "')"
     )
-    conversation_where = "conversation_id IN ('" + "','".join(conversation_ids) + "')"
     query = f"""
     SELECT jsonb_object_agg(conversation_id, messages)
     FROM (
-        SELECT m.conversation_id,
-               array_agg(row_to_json(m)) AS messages
-        FROM (
-            SELECT *
-            FROM cognition.message
-            WHERE project_id = '{project_id}'
-            AND {conversation_where}
-            ORDER BY created_at ASC
-        ) m
-        GROUP BY m.conversation_id
+        SELECT m.conversation_id, array_agg(row_to_json(m) ORDER BY created_at ASC) AS messages
+        FROM cognition.message m
+        WHERE project_id = '{project_id}'{conversation_where}
+        GROUP BY conversation_id
     ) x
     """
 
     message_info = general.execute_first(query)
     if message_info and message_info[0]:
-        message_info = message_info[0]
-    else:
-        message_info = {}
-    return message_info
+        return message_info[0]
+    return {}
 
 
 def get_last_by_conversation_id(

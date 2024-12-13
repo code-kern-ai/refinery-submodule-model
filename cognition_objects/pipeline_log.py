@@ -228,11 +228,12 @@ def get_error_and_time_elapsed_by_conversation_ids(
     conversation_ids: List[str],
 ) -> Dict[str, CognitionPipelineLogs]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    conversation_ids = prevent_sql_injection(
-        conversation_ids, isinstance(conversation_ids, list)
-    )
+    conversation_ids = [
+        prevent_sql_injection(conversation_id, isinstance(conversation_id, str))
+        for conversation_id in conversation_ids
+    ]
     conversation_where = (
-        " m.conversation_id IN ('" + "','".join(conversation_ids) + "')"
+        " AND m.conversation_id IN ('" + "','".join(conversation_ids) + "')"
     )
     query = f"""
     SELECT jsonb_object_agg(id, jsonb_build_object('logs_have_error', has_error, 'time_logs_elapsed', time_elapsed))
@@ -241,12 +242,10 @@ def get_error_and_time_elapsed_by_conversation_ids(
         FROM cognition.message m
         INNER JOIN cognition.pipeline_logs pl
             ON m.project_id = pl.project_id AND m.id = pl.message_id
-        WHERE m.project_Id = '{project_id}' AND {conversation_where}
+        WHERE m.project_Id = '{project_id}'{conversation_where}
         GROUP BY m.id
     )x"""
     conversation_info = general.execute_first(query)
     if conversation_info and conversation_info[0]:
-        conversation_info = conversation_info[0]
-    else:
-        conversation_info = {}
-    return conversation_info
+        return conversation_info[0]
+    return {}
