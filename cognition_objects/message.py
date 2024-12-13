@@ -5,7 +5,6 @@ from ..session import session
 from ..models import CognitionMessage
 from ..util import prevent_sql_injection
 from .pipeline_version import get_current_version
-from collections import defaultdict
 
 
 def get_all_by_conversation_id(
@@ -25,19 +24,34 @@ def get_all_by_conversation_id(
 def get_all_by_conversation_ids(
     project_id: str, conversation_ids: List[str]
 ) -> Dict[str, List[CognitionMessage]]:
-    messages = (
-        session.query(CognitionMessage)
-        .filter(
-            CognitionMessage.project_id == project_id,
-            CognitionMessage.conversation_id.in_(conversation_ids),
-        )
-        .order_by(CognitionMessage.created_at.asc())
-        .all()
+
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    conversation_ids = prevent_sql_injection(
+        conversation_ids, isinstance(conversation_ids, list)
     )
-    messages_by_conversation = defaultdict(list)
-    for message in messages:
-        messages_by_conversation[message.conversation_id].append(message)
-    return messages_by_conversation
+    conversation_where = "conversation_id IN ('" + "','".join(conversation_ids) + "')"
+    query = f"""
+    SELECT jsonb_object_agg(conversation_id, messages)
+    FROM (
+        SELECT m.conversation_id,
+               array_agg(row_to_json(m)) AS messages
+        FROM (
+            SELECT *
+            FROM cognition.message
+            WHERE project_id = '{project_id}'
+            AND {conversation_where}
+            ORDER BY created_at ASC
+        ) m
+        GROUP BY m.conversation_id
+    ) x
+    """
+
+    message_info = general.execute_first(query)
+    if message_info and message_info[0]:
+        message_info = message_info[0]
+    else:
+        message_info = {}
+    return message_info
 
 
 def get_last_by_conversation_id(

@@ -183,6 +183,15 @@ def __sql_alchemy_to_dict(
             and (not column_blacklist or c.name not in column_blacklist)
         }
         return rename_columns(result)
+    elif isinstance(sql_alchemy_object, dict):
+        result = {
+            k: v
+            for k, v in sql_alchemy_object.items()
+            if (not column_whitelist or k in column_whitelist)
+            and (not column_blacklist or k not in column_blacklist)
+        }
+        return rename_columns(result)
+
     else:
         return sql_alchemy_object
 
