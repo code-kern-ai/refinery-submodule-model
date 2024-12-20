@@ -227,6 +227,8 @@ def get_error_and_time_elapsed_by_conversation_ids(
     project_id: str,
     conversation_ids: List[str],
 ) -> Dict[str, CognitionPipelineLogs]:
+    if not conversation_ids:
+        return {}
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     conversation_ids = [
         prevent_sql_injection(conversation_id, isinstance(conversation_id, str))
