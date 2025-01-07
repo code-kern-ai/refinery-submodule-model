@@ -70,48 +70,47 @@ def get_task_and_label_by_ids_and_type(
 def get_labeling_tasks_by_project_id_full(project_id: str) -> Row:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
-    WITH attribute_select AS (	
-        SELECT id, jsonb_build_object('id',id,'name', NAME,'relative_position', relative_position, 'data_type', data_Type) a_data
+    WITH attribute_select AS (
+        SELECT id, a.NAME, relative_position
         FROM attribute a
         WHERE project_id = '{project_id}'
     ),
-    label_select AS (	
-        SELECT labeling_Task_id, jsonb_build_object('edges',array_agg(jsonb_build_object('node',jsonb_build_object('id',id,'name', NAME,'color', color, 'hotkey', hotkey)))) l_data
+    label_select AS (
+        SELECT labeling_Task_id, array_agg(jsonb_build_object('id',id,'name', NAME,'color', color, 'hotkey', hotkey)) l_data
         FROM labeling_task_label ltl
         WHERE project_id = '{project_id}'
         GROUP BY 1
-    ), 
+    ),
     is_select AS (
-        SELECT labeling_task_id, jsonb_build_object('edges',array_agg(jsonb_build_object('node',jsonb_build_object('id',id,'type', type,'return_type', return_type, 'description', description,'name',NAME)))) i_data
+        SELECT labeling_task_id, array_agg(jsonb_build_object('id',id,'type', type,'return_type', return_type, 'description', description,'name',NAME)) i_data
         FROM information_source _is
         WHERE project_id = '{project_id}'
         GROUP BY 1
     )
 
-    SELECT 
-        '{project_id}' id,
-        jsonb_build_object('edges',array_agg(jsonb_build_object('node', lt_data))) labeling_tasks
-    FROM (
-        SELECT 
-            jsonb_build_object(
-                'id',lt.id,
-                'name', NAME,
-                'task_target', task_target, 
-                'task_type', task_type, 
-                'attribute',a.a_data,
-                'labels',COALESCE(l.l_data,jsonb_build_object('edges',ARRAY[]::jsonb[])),
-                'information_sources',COALESCE(i.i_data,jsonb_build_object('edges',ARRAY[]::jsonb[]))
-            ) lt_data
-        FROM labeling_task lt
-        LEFT JOIN attribute_select a
-            ON lt.attribute_id = a.id
-        LEFT JOIN label_select l
-            ON l.labeling_Task_id = lt.id
-        LEFT JOIN is_select i
-            ON i.labeling_task_id = lt.id
-        WHERE project_id = '{project_id}'
-    ) x """
-    return general.execute_first(query)
+    SELECT array_agg(
+        jsonb_build_object(
+            'id',lt.id,
+            'name', lt.NAME,
+            'task_target', task_target,
+            'task_type', task_type,
+            'target_id',CASE WHEN lt.task_target = '{enums.LabelingTaskTarget.ON_ATTRIBUTE.value}' THEN a.id::TEXT ELSE '' END,
+            'target_name',CASE WHEN lt.task_target = '{enums.LabelingTaskTarget.ON_ATTRIBUTE.value}' THEN a.name ELSE '' END,
+            'labels',COALESCE(l.l_data,ARRAY[]::jsonb[]),
+            'information_sources',COALESCE(i.i_data,ARRAY[]::jsonb[])
+        ) ORDER BY a.relative_position, a.name) lt_data
+    FROM labeling_task lt
+    LEFT JOIN attribute_select a
+        ON lt.attribute_id = a.id
+    LEFT JOIN label_select l
+        ON l.labeling_Task_id = lt.id
+    LEFT JOIN is_select i
+        ON i.labeling_task_id = lt.id
+    WHERE project_id = '{project_id}' """
+    values = general.execute_first(query)
+    if values and values[0]:
+        return values[0]
+    return []
 
 
 def get_task_name_id_dict(project_id: str) -> Dict[str, str]:
