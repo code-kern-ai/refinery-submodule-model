@@ -95,7 +95,7 @@ def get_labeling_tasks_by_project_id_full(project_id: str) -> Row:
             'task_target', task_target,
             'task_type', task_type,
             'target_id',CASE WHEN lt.task_target = '{enums.LabelingTaskTarget.ON_ATTRIBUTE.value}' THEN a.id::TEXT ELSE '' END,
-            'target_name',CASE WHEN lt.task_target = '{enums.LabelingTaskTarget.ON_ATTRIBUTE.value}' THEN a.name ELSE '' END,
+            'target_name',CASE WHEN lt.task_target = '{enums.LabelingTaskTarget.ON_ATTRIBUTE.value}' THEN a.name ELSE 'Full Record' END,
             'labels',COALESCE(l.l_data,ARRAY[]::jsonb[]),
             'information_sources',COALESCE(i.i_data,ARRAY[]::jsonb[])
         ) ORDER BY a.relative_position, a.name) lt_data
