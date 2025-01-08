@@ -58,8 +58,9 @@ def get_organization_overview_stats(
     values = general.execute_first(
         __get_organization_overview_stats_query(organization_id)
     )
-    if values:
+    if values and values[0]:
         return values[0]
+    return []
 
 
 def get_user_count(organization_id: str) -> int:
