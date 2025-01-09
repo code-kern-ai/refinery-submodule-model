@@ -104,6 +104,46 @@ def get_all_embeddings_by_project_id(project_id: str) -> List[Embedding]:
     return session.query(Embedding).filter(Embedding.project_id == project_id).all()
 
 
+def get_all_embeddings_by_project_id_extended(project_id: str) -> List[Dict[str, Any]]:
+    query = __get_all_embeddings_by_project_id_extended_query(project_id)
+    return general.execute_all(query)
+
+
+def __get_all_embeddings_by_project_id_extended_query(project_id: str) -> str:
+    return f"""
+    WITH embeddings AS (
+        SELECT
+            e.*,
+            (SELECT COUNT(r.*) FROM record r WHERE r.project_id = '{project_id}') number_records,
+            (SELECT COUNT(et.*) FROM embedding_tensor et WHERE et.embedding_id = e.id) tensor_count
+        FROM embedding e
+        WHERE e.project_id = '{project_id}'
+    )
+    SELECT
+        embeddings.*,
+        CASE
+            WHEN embeddings."type" = '{enums.EmbeddingType.ON_ATTRIBUTE.value}' THEN (
+                SELECT COALESCE(json_array_length(et."data"), 0)
+                FROM embedding_tensor et
+                WHERE et.embedding_id = embeddings.id
+                LIMIT 1)
+            WHEN embeddings."type" = '{enums.EmbeddingType.ON_TOKEN.value}' THEN (
+                SELECT COALESCE(json_array_length(et."data"->0), 0)
+                FROM embedding_tensor et
+                WHERE et.embedding_id = embeddings.id
+                LIMIT 1)
+        END dimension,
+        CASE
+            WHEN embeddings."state" = '{enums.EmbeddingState.FINISHED.value}' THEN
+                1.
+            WHEN embeddings."state" IN ('{enums.EmbeddingState.INITIALIZING.value}', '{enums.EmbeddingState.WAITING.value}') THEN
+                0.
+            ELSE LEAST(0.1 + (embeddings.tensor_count / (embeddings.number_records * 0.9)), 0.99)
+        END progress
+    FROM embeddings
+    """
+
+
 def get_finished_embeddings(project_id: str) -> List[Embedding]:
     return (
         session.query(Embedding)

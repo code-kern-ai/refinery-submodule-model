@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from collections.abc import Iterable as collections_abc_Iterable
 from re import sub, match, compile
 import sqlalchemy
+import decimal
 from uuid import UUID
 from datetime import datetime
 
@@ -185,6 +186,8 @@ def to_frontend_obj_raw(value: Union[List, Dict]):
 def to_json_serializable(x: Any):
     if isinstance(x, datetime):
         return x.isoformat()
+    elif isinstance(x, decimal.Decimal):
+        return float(x)
     elif isinstance(x, UUID):
         return str(x)
     else:
