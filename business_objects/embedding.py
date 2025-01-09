@@ -105,6 +105,7 @@ def get_all_embeddings_by_project_id(project_id: str) -> List[Embedding]:
 
 
 def get_all_embeddings_by_project_id_extended(project_id: str) -> List[Dict[str, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = __get_all_embeddings_by_project_id_extended_query(project_id)
     return general.execute_all(query)
 
