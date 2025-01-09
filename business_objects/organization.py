@@ -70,41 +70,47 @@ def get_user_count(organization_id: str) -> int:
 def __get_organization_overview_stats_query(organization_id: str):
     return f"""
     WITH labeled_records AS (
-    SELECT project_id, source_type, COUNT(*) source_records
-    FROM (
-        SELECT rla.project_id, rla.record_id, rla.source_type
-        FROM record r
-        INNER JOIN record_label_association rla
-            ON r.project_id = rla.project_id AND r.id = rla.record_id AND r.category = '{enums.RecordCategory.SCALE.value}'
-        INNER JOIN project p
-            ON rla.project_id = p.id
-        WHERE p.organization_id = '{organization_id}'
-        AND rla.source_type IN ('{enums.LabelSource.MANUAL.value}', '{enums.LabelSource.WEAK_SUPERVISION.value}')
-        GROUP BY rla.project_id, rla.record_id, rla.source_type
-    ) r_reduction
-    GROUP BY project_id, source_type)
-
-    SELECT array_agg(row_to_json(x))
-    FROM (
-        SELECT 
-            base.project_id "projectId", 
-            base.base_count "numDataScaleUploaded", 
-            COALESCE(lr_m.source_records,0) "numDataScaleManual", 
-            COALESCE(lr_w.source_records,0) "numDataScaleProgrammatical"
+        SELECT project_id, source_type, COUNT(*) source_records
         FROM (
-            SELECT r.project_id, COUNT(*) base_count
-            FROM project p
-            LEFT JOIN record r
-                ON r.project_id = p.id
+            SELECT rla.project_id, rla.record_id, rla.source_type
+            FROM record r
+            INNER JOIN record_label_association rla
+                ON r.project_id = rla.project_id AND r.id = rla.record_id AND r.category = '{enums.RecordCategory.SCALE.value}'
+            INNER JOIN project p
+                ON rla.project_id = p.id
             WHERE p.organization_id = '{organization_id}'
-            AND p."status" != '{enums.ProjectStatus.IN_DELETION.value}'
-            AND r.category = '{enums.RecordCategory.SCALE.value}'
-            GROUP BY r.project_id
-        ) base
-        LEFT JOIN labeled_records lr_m
-            ON base.project_id = lr_m.project_id AND lr_m.source_type = '{enums.LabelSource.MANUAL.value}'
-        LEFT JOIN labeled_records lr_w
-            ON base.project_id = lr_w.project_id AND lr_w.source_type = '{enums.LabelSource.WEAK_SUPERVISION.value}' )x
+            AND rla.source_type IN ('{enums.LabelSource.MANUAL.value}', '{enums.LabelSource.WEAK_SUPERVISION.value}')
+            GROUP BY rla.project_id, rla.record_id, rla.source_type
+        ) r_reduction
+        GROUP BY project_id, source_type
+    ) SELECT jsonb_object_agg(x."projectId", row_to_json(x))
+    FROM (
+        SELECT
+            *,
+            TRIM_SCALE(ROUND(("numDataScaleManual" * 100. / "numDataScaleUploaded")::numeric, 2)) || ' %' "manuallyLabeled",
+            TRIM_SCALE(ROUND(("numDataScaleProgrammatical" * 100. / "numDataScaleUploaded")::numeric, 2)) || ' %' "weaklySupervised"
+        FROM (
+            SELECT 
+                base.project_id "projectId", 
+                base.base_count "numDataScaleUploaded", 
+                COALESCE(lr_m.source_records,0) "numDataScaleManual", 
+                COALESCE(lr_w.source_records,0) "numDataScaleProgrammatical"
+            FROM (
+                SELECT r.project_id, COUNT(*) base_count
+                FROM project p
+                LEFT JOIN record r
+                    ON r.project_id = p.id
+                WHERE p.organization_id = '{organization_id}'
+                AND p."status" != '{enums.ProjectStatus.IN_DELETION.value}'
+                AND r.category = '{enums.RecordCategory.SCALE.value}'
+                GROUP BY r.project_id
+            ) base
+            LEFT JOIN labeled_records lr_m
+                ON base.project_id = lr_m.project_id AND lr_m.source_type = '{enums.LabelSource.MANUAL.value}'
+            LEFT JOIN labeled_records lr_w
+                ON base.project_id = lr_w.project_id AND lr_w.source_type = '{enums.LabelSource.WEAK_SUPERVISION.value}'
+        ) y 
+    ) x
     """
 
 
