@@ -127,7 +127,7 @@ def get_all_embeddings_by_project_id_extended(project_id: str) -> List[Dict[str,
     return general.execute_all(query)
 
 
-def __get_embedding_whitelist_columns_string():
+def __get_embedding_whitelist_columns_string() -> str:
     global EMBEDDINGS_WHITELIST_COLUMNS_STRING
     if EMBEDDINGS_WHITELIST_COLUMNS_STRING is None:
         EMBEDDINGS_WHITELIST_COLUMNS_STRING = general.construct_select_columns(
