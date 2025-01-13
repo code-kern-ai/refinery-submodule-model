@@ -11,6 +11,23 @@ from .. import enums
 from ..util import prevent_sql_injection
 
 
+ALL_EMBEDDINGS_WHITELIST = {
+    "id",
+    "name",
+    "custom",
+    "type",
+    "state",
+    "progress",
+    "dimension",
+    "count",
+    "platform",
+    "model",
+    "filter_attributes",
+    "attribute_id",
+}
+EMBEDDINGS_WHITELIST_COLUMNS_STRING = None
+
+
 def get(project_id: str, embedding_id: str) -> Embedding:
     return (
         session.query(Embedding)
@@ -102,6 +119,62 @@ def get_all_embeddings() -> List[Embedding]:
 
 def get_all_embeddings_by_project_id(project_id: str) -> List[Embedding]:
     return session.query(Embedding).filter(Embedding.project_id == project_id).all()
+
+
+def get_all_embeddings_by_project_id_extended(project_id: str) -> List[Dict[str, Any]]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    query = __get_all_embeddings_by_project_id_extended_query(project_id)
+    return general.execute_all(query)
+
+
+def __get_embedding_whitelist_columns_string() -> str:
+    global EMBEDDINGS_WHITELIST_COLUMNS_STRING
+    if EMBEDDINGS_WHITELIST_COLUMNS_STRING is None:
+        EMBEDDINGS_WHITELIST_COLUMNS_STRING = general.construct_select_columns(
+            Embedding.__tablename__,
+            prefix="e",
+            include_columns=ALL_EMBEDDINGS_WHITELIST,
+        )
+    return EMBEDDINGS_WHITELIST_COLUMNS_STRING
+
+
+def __get_all_embeddings_by_project_id_extended_query(project_id: str) -> str:
+    return f"""
+    WITH num_recs AS (
+        SELECT COUNT(r.*) number_records
+        FROM record r
+        WHERE r.project_id = '{project_id}'
+    ), e AS (
+        SELECT
+            {__get_embedding_whitelist_columns_string()},
+            nr.number_records,
+            (SELECT COUNT(et.*) FROM embedding_tensor et WHERE et.embedding_id = e.id) tensor_count
+        FROM embedding e, num_recs nr
+        WHERE e.project_id = '{project_id}'
+    )
+    SELECT
+        {__get_embedding_whitelist_columns_string()},
+        CASE
+            WHEN e."type" = '{enums.EmbeddingType.ON_ATTRIBUTE.value}' THEN (
+                SELECT json_array_length(et."data")
+                FROM embedding_tensor et
+                WHERE et.embedding_id = e.id
+                LIMIT 1)
+            WHEN e."type" = '{enums.EmbeddingType.ON_TOKEN.value}' THEN (
+                SELECT json_array_length(et."data"->0)
+                FROM embedding_tensor et
+                WHERE et.embedding_id = e.id
+                LIMIT 1)
+        END dimension,
+        CASE
+            WHEN e."state" = '{enums.EmbeddingState.FINISHED.value}' THEN
+                1.
+            WHEN e."state" IN ('{enums.EmbeddingState.INITIALIZING.value}', '{enums.EmbeddingState.WAITING.value}') THEN
+                0.
+            ELSE LEAST(0.1 + (e.tensor_count / (e.number_records * 0.9)), 0.99)
+        END progress
+    FROM e
+    """
 
 
 def get_finished_embeddings(project_id: str) -> List[Embedding]:

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from collections.abc import Iterable as collections_abc_Iterable
 from re import sub, match, compile
 import sqlalchemy
+import decimal
 from uuid import UUID
 from datetime import datetime
 
@@ -107,38 +108,6 @@ def sql_alchemy_to_dict(
     return result
 
 
-def pack_edges_node(result, name: str, max_lvl: Optional[int] = None):
-
-    def convert_value(value, max_lvl: int):
-        new_lvl = max_lvl - 1 if max_lvl is not None else None
-        if isinstance(value, list):
-            return {
-                "edges": [
-                    {
-                        "node": (
-                            convert_value(item, new_lvl)
-                            if max_lvl is None or max_lvl > 0
-                            else item
-                        )
-                    }
-                    for item in value
-                ]
-            }
-        elif isinstance(value, dict):
-            return {
-                key: (
-                    convert_value(val, new_lvl)
-                    if max_lvl is None or max_lvl > 0
-                    else val
-                )
-                for key, val in value.items()
-            }
-        else:
-            return value
-
-    return {"data": {name: convert_value(result, max_lvl)}}
-
-
 def __sql_alchemy_to_dict(
     sql_alchemy_object: Any,
     column_whitelist: Optional[Iterable[str]] = None,
@@ -217,6 +186,8 @@ def to_frontend_obj_raw(value: Union[List, Dict]):
 def to_json_serializable(x: Any):
     if isinstance(x, datetime):
         return x.isoformat()
+    elif isinstance(x, decimal.Decimal):
+        return float(x)
     elif isinstance(x, UUID):
         return str(x)
     else:
