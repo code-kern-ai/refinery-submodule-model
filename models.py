@@ -482,6 +482,7 @@ class Attribute(Base):
     started_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
     progress = Column(Float)
+    additional_config = Column(JSON)  # currently used when data_type == LLM_RESPONSE
 
     embeddings = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
