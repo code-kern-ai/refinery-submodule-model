@@ -218,6 +218,7 @@ def create(
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
     with_commit: bool = False,
+    additional_config: Optional[Dict[str, Any]] = None,
 ) -> Attribute:
     attribute: Attribute = Attribute(
         project_id=project_id,
@@ -246,6 +247,9 @@ def create(
     if finished_at is not None:
         attribute.finished_at = finished_at
 
+    if additional_config is not None:
+        attribute.additional_config = additional_config
+
     general.add(attribute, with_commit)
     return attribute
 
@@ -264,6 +268,7 @@ def update(
     finished_at: Optional[datetime] = None,
     visibility: Optional[str] = None,
     progress: Optional[float] = None,
+    additional_config: Optional[Dict[str, Any]] = None,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
     if data_type is not None:
@@ -291,6 +296,10 @@ def update(
 
     if finished_at is not None:
         attribute.finished_at = finished_at
+
+    if additional_config is not None:
+        attribute.additional_config = additional_config
+        flag_modified(attribute, "additional_config")
 
     general.flush_or_commit(with_commit)
     return attribute
