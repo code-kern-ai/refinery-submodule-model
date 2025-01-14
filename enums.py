@@ -145,6 +145,7 @@ class Tablenames(Enum):
     PIPELINE_VERSION = (
         "pipeline_version"  # dump of previous versions to easily jump between
     )
+    EVALUATION_SET = "evaluation_set"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
