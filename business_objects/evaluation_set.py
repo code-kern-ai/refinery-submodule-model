@@ -25,7 +25,6 @@ def create(
     project_id: str,
     question: str,
     created_by: str,
-    name: str,
     record_ids: List[str],
     with_commit: bool = False,
 ) -> EvaluationSet:
@@ -33,7 +32,6 @@ def create(
         project_id=project_id,
         question=question,
         created_by=created_by,
-        name=name,
         record_ids=record_ids,
     )
 
