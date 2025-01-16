@@ -802,3 +802,9 @@ class ChangeAction(Enum):
 class PipelineVersionType(Enum):
     AUTO_SAVE = "AUTO_SAVE"  # any save operation in relevant but only 10 per project
     NAMED_VERSION = "NAMED_VERSION"  # any AUTO_SAVE that is considered worth keeping
+
+
+class EvaluationRunState(Enum):
+    STARTED = "STARTED"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
