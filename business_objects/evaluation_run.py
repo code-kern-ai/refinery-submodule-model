@@ -70,3 +70,23 @@ def create(
     general.add(eval_run, with_commit)
 
     return eval_run
+
+
+def update(
+    project_id: str,
+    evaluation_run_id: str,
+    state: EvaluationRunState,
+    results: Optional[str] = None,
+    meta_info: Optional[str] = None,
+    with_commit: bool = False,
+) -> EvaluationRun:
+    eval_run: EvaluationRun = get(project_id, evaluation_run_id)
+    if state is not None:
+        eval_run.state = state
+    if results is not None:
+        eval_run.results = results
+    if meta_info is not None:
+        eval_run.meta_info = meta_info
+
+    general.flush_or_commit(with_commit)
+    return eval_run
