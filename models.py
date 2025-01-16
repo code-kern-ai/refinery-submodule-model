@@ -1867,6 +1867,7 @@ class CustomerButton(Base):
 class EvaluationSet(Base):
     __tablename__ = Tablenames.EVALUATION_SET.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
@@ -1878,5 +1879,51 @@ class EvaluationSet(Base):
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    record_ids = Column(JSON)
+
+
+class EvaluationGroup(Base):
+    __tablename__ = Tablenames.EVALUATION_GROUP.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String)
-    data = Column(JSON)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    evaluation_set_ids = Column(JSON)
+
+
+class EvaluationRun(Base):
+    __tablename__ = Tablenames.EVALUATION_RUN.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    evaluation_group_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.EVALUATION_GROUP.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    embedding_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    state = Column(String)
+    results = Column(JSON)
+    meta_info = Column(JSON)
