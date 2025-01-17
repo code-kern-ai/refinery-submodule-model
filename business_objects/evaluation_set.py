@@ -1,6 +1,6 @@
 from typing import List
 
-from ..models import EvaluationSet
+from ..models import EvaluationSet, EvaluationGroup
 from ..session import session
 from . import general
 
@@ -16,6 +16,26 @@ def get(project_id: str, evaluation_set_id: str) -> EvaluationSet:
 def get_all(project_id: str) -> List[EvaluationSet]:
     query = session.query(EvaluationSet).filter(
         EvaluationSet.project_id == project_id,
+    )
+    query = query.order_by(EvaluationSet.question)
+    return query.all()
+
+
+def get_by_evaluation_group_id(
+    project_id: str, evaluation_group_id: str
+) -> List[EvaluationSet]:
+
+    evaluation_group = (
+        session.query(EvaluationGroup)
+        .filter(
+            EvaluationGroup.project_id == project_id,
+            EvaluationGroup.id == evaluation_group_id,
+        )
+        .first()
+    )
+    query = session.query(EvaluationSet).filter(
+        EvaluationSet.project_id == project_id,
+        EvaluationSet.id.in_(evaluation_group.evaluation_set_ids),
     )
     query = query.order_by(EvaluationSet.question)
     return query.all()
