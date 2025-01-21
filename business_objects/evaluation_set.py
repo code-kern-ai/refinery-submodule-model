@@ -58,3 +58,12 @@ def create(
     general.add(eval_set, with_commit)
 
     return eval_set
+
+
+def delete_all(project_id: str, set_ids: List[str], with_commit: bool = False) -> None:
+    session.query(EvaluationSet).filter(
+        EvaluationSet.project_id == project_id,
+        EvaluationSet.id.in_(set_ids),
+    ).delete(synchronize_session=False)
+    if with_commit:
+        session.commit()

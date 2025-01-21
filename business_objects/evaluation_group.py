@@ -38,3 +38,14 @@ def create(
     general.add(eval_group, with_commit)
 
     return eval_group
+
+
+def delete_all(project_id: str, group_ids: str, with_commit: bool = False):
+    query = session.query(EvaluationGroup).filter(
+        EvaluationGroup.project_id == project_id,
+        EvaluationGroup.id.in_(group_ids),
+    )
+    query.delete(synchronize_session=False)
+
+    if with_commit:
+        general.commit()
