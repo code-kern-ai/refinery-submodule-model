@@ -90,3 +90,14 @@ def update(
 
     general.flush_or_commit(with_commit)
     return eval_run
+
+
+def delete_all(project_id: str, run_ids: str, with_commit: bool = False):
+    query = session.query(EvaluationRun).filter(
+        EvaluationRun.project_id == project_id,
+        EvaluationRun.id.in_(run_ids),
+    )
+    query.delete(synchronize_session=False)
+
+    if with_commit:
+        general.commit()
