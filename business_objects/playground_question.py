@@ -27,10 +27,6 @@ def get_all(project_id: str) -> List[PlaygroundQuestion]:
 def create(
     project_id: str,
     question: str,
-    created_by: str,
-    embedding_id: str,
-    record_ids: List[str],
-    meta_info: Optional[str] = None,
     with_commit: bool = False,
 ) -> PlaygroundQuestion:
 
@@ -58,13 +54,7 @@ def create(
     q = PlaygroundQuestion(
         project_id=project_id,
         question=question,
-        created_by=created_by,
-        embedding_id=embedding_id,
-        record_ids=record_ids,
     )
-
-    if meta_info is not None:
-        q.meta_info = meta_info
 
     general.add(q, with_commit)
 
