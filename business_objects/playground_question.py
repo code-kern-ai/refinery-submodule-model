@@ -5,6 +5,9 @@ from ..session import session
 from . import general
 
 
+MAX_SAVED_QUESTIONS_HISTORY_PER_PROJECT = 100
+
+
 def get(project_id: str, question_id: str) -> PlaygroundQuestion:
     query = session.query(PlaygroundQuestion).filter(
         PlaygroundQuestion.project_id == project_id,
@@ -30,6 +33,28 @@ def create(
     meta_info: Optional[str] = None,
     with_commit: bool = False,
 ) -> PlaygroundQuestion:
+
+    current_count = (
+        session.query(PlaygroundQuestion)
+        .filter(
+            PlaygroundQuestion.project_id == project_id,
+        )
+        .count()
+    )
+
+    if current_count >= MAX_SAVED_QUESTIONS_HISTORY_PER_PROJECT:
+        oldest = (
+            session.query(PlaygroundQuestion)
+            .filter(
+                PlaygroundQuestion.project_id == project_id,
+            )
+            .order_by(PlaygroundQuestion.created_at.asc())
+            .limit(current_count - MAX_SAVED_QUESTIONS_HISTORY_PER_PROJECT + 1)
+            .all()
+        )
+        set_ids = [q.id for q in oldest]
+        delete_all(project_id, set_ids, False)
+
     q = PlaygroundQuestion(
         project_id=project_id,
         question=question,
@@ -53,3 +78,11 @@ def delete_all(project_id: str, set_ids: List[str], with_commit: bool = False) -
     ).delete(synchronize_session=False)
     if with_commit:
         session.commit()
+
+
+def delete(project_id: str, id: str, with_commit: bool = True) -> None:
+    session.query(PlaygroundQuestion).filter(
+        PlaygroundQuestion.project_id == project_id,
+        PlaygroundQuestion.id == id,
+    ).delete()
+    general.flush_or_commit(with_commit)
