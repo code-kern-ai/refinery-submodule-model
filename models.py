@@ -1927,3 +1927,27 @@ class EvaluationRun(Base):
     state = Column(String)
     results = Column(JSON)
     meta_info = Column(JSON)
+
+
+class PlaygroundQuestion(Base):
+    __tablename__ = Tablenames.PLAYGROUND_QUESTION.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    embedding_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    record_ids = Column(JSON)
+    meta_info = Column(JSON)
