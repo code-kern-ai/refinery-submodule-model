@@ -65,5 +65,4 @@ def delete_all(project_id: str, set_ids: List[str], with_commit: bool = False) -
         EvaluationSet.project_id == project_id,
         EvaluationSet.id.in_(set_ids),
     ).delete(synchronize_session=False)
-    if with_commit:
-        session.commit()
+    general.flush_or_commit(with_commit)

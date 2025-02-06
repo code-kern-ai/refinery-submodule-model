@@ -66,8 +66,7 @@ def delete_all(project_id: str, set_ids: List[str], with_commit: bool = False) -
         PlaygroundQuestion.project_id == project_id,
         PlaygroundQuestion.id.in_(set_ids),
     ).delete(synchronize_session=False)
-    if with_commit:
-        session.commit()
+    general.flush_or_commit(with_commit)
 
 
 def delete(project_id: str, id: str, with_commit: bool = True) -> None:

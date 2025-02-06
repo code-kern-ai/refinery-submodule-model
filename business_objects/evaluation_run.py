@@ -95,4 +95,3 @@ def delete_all(project_id: str, run_ids: str, with_commit: bool = False):
     )
     query.delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
-    general.flush_or_commit(with_commit)

@@ -46,6 +46,4 @@ def delete_all(project_id: str, group_ids: str, with_commit: bool = False):
         EvaluationGroup.id.in_(group_ids),
     )
     query.delete(synchronize_session=False)
-
-    if with_commit:
-        general.commit()
+    general.flush_or_commit(with_commit)
