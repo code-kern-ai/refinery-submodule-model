@@ -61,10 +61,10 @@ def create(
     return q
 
 
-def delete_all(project_id: str, set_ids: List[str], with_commit: bool = False) -> None:
+def delete_all(project_id: str, ids: List[str], with_commit: bool = False) -> None:
     session.query(PlaygroundQuestion).filter(
         PlaygroundQuestion.project_id == project_id,
-        PlaygroundQuestion.id.in_(set_ids),
+        PlaygroundQuestion.id.in_(ids),
     ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
 
