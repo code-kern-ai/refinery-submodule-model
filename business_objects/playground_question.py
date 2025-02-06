@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from ..models import PlaygroundQuestion
 from ..session import session
@@ -28,15 +28,17 @@ def create(
     project_id: str,
     question: str,
     with_commit: bool = False,
-) -> PlaygroundQuestion:
+) -> Any:
 
-    current_count = (
+    current_questions = (
         session.query(PlaygroundQuestion)
         .filter(
             PlaygroundQuestion.project_id == project_id,
         )
-        .count()
+        .all()
     )
+
+    current_count = len(current_questions)
 
     if current_count >= MAX_SAVED_QUESTIONS_HISTORY_PER_PROJECT:
         oldest = (
@@ -51,14 +53,19 @@ def create(
         ids = [q.id for q in oldest]
         delete_all(project_id, ids, False)
 
-    q = PlaygroundQuestion(
-        project_id=project_id,
-        question=question,
+    current_count_question = sum(
+        1 for q in current_questions if str(q.question).lower() == question.lower()
     )
 
-    general.add(q, with_commit)
+    if current_count_question == 0:
+        q = PlaygroundQuestion(
+            project_id=project_id,
+            question=question,
+        )
+        general.add(q, with_commit)
+        return q
 
-    return q
+    return None
 
 
 def delete_all(project_id: str, ids: List[str], with_commit: bool = False) -> None:
