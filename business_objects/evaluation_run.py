@@ -71,7 +71,7 @@ def create(
 def update(
     project_id: str,
     evaluation_run_id: str,
-    state: EvaluationRunState,
+    state: Optional[EvaluationRunState] = None,
     results: Optional[str] = None,
     meta_info: Optional[str] = None,
     with_commit: bool = False,
