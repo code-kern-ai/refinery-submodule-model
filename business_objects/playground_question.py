@@ -48,8 +48,8 @@ def create(
             .limit(current_count - MAX_SAVED_QUESTIONS_HISTORY_PER_PROJECT + 1)
             .all()
         )
-        set_ids = [q.id for q in oldest]
-        delete_all(project_id, set_ids, False)
+        ids = [q.id for q in oldest]
+        delete_all(project_id, ids, False)
 
     q = PlaygroundQuestion(
         project_id=project_id,
