@@ -59,13 +59,9 @@ def create(
         project_id=project_id,
         embedding_id=embedding_id,
         state=state,
+        results=results,
+        meta_info=meta_info,
     )
-
-    if results is not None:
-        eval_run.results = results
-
-    if meta_info is not None:
-        eval_run.meta_info = meta_info
 
     general.add(eval_run, with_commit)
 
@@ -98,6 +94,5 @@ def delete_all(project_id: str, run_ids: str, with_commit: bool = False):
         EvaluationRun.id.in_(run_ids),
     )
     query.delete(synchronize_session=False)
-
-    if with_commit:
-        general.commit()
+    general.flush_or_commit(with_commit)
+    general.flush_or_commit(with_commit)
