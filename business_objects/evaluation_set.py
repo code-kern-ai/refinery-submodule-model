@@ -1,6 +1,8 @@
 from typing import List
 
-from ..models import EvaluationSet, EvaluationGroup
+from submodules.model.util import prevent_sql_injection
+
+from ..models import EvaluationSet
 from ..session import session
 from . import general
 
@@ -24,16 +26,23 @@ def get_all(project_id: str) -> List[EvaluationSet]:
 def get_by_evaluation_group_id(
     project_id: str, evaluation_group_id: str
 ) -> List[EvaluationSet]:
-    query = (
-        session.query(EvaluationSet)
-        .join(EvaluationGroup, EvaluationSet.id.in_(EvaluationGroup.evaluation_set_ids))
-        .filter(
-            EvaluationGroup.project_id == project_id,
-            EvaluationGroup.id == evaluation_group_id,
-        )
-        .order_by(EvaluationSet.question)
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    evaluation_group_id = prevent_sql_injection(
+        evaluation_group_id, isinstance(evaluation_group_id, str)
     )
-    return query.all()
+
+    query = f"""
+    SELECT es.*
+    FROM evaluation_group eg
+    JOIN LATERAL jsonb_array_elements_text(eg.evaluation_set_ids::jsonb) AS elem(evaluation_set_id) ON TRUE
+    JOIN evaluation_set es ON es.id = elem.evaluation_set_id::uuid
+    WHERE eg.project_id = '{project_id}'
+    AND eg.id = '{evaluation_group_id}'
+    AND es.project_id = '{project_id}'
+    ORDER BY es.question;
+    """
+
+    return general.execute_all(query)
 
 
 def create(
