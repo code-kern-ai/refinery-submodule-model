@@ -1939,3 +1939,15 @@ class PlaygroundQuestion(Base):
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    """
+    Playground question can be extended with the below properties to allow the following:
+        - User can see questions with specific results relating to the embedding used
+        - Can be used for comparison with new results using same question but different embedding
+    """
+    # embedding_id = Column(
+    #     UUID(as_uuid=True),
+    #     ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="SET NULL"),
+    #     index=True,
+    # )
+    # record_ids = Column(JSON)
+    # meta_info = Column(JSON)
