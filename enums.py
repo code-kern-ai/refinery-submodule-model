@@ -806,6 +806,7 @@ class PipelineVersionType(Enum):
 
 
 class EvaluationRunState(Enum):
-    STARTED = "STARTED"
-    FINISHED = "FINISHED"
+    INITIATED = "INITIATED"
+    RUNNING = "RUNNING"
+    SUCCESS = "SUCCESS"
     FAILED = "FAILED"
