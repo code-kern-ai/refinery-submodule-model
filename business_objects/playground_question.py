@@ -20,7 +20,7 @@ def get_all(project_id: str) -> List[PlaygroundQuestion]:
     query = session.query(PlaygroundQuestion).filter(
         PlaygroundQuestion.project_id == project_id,
     )
-    query = query.order_by(PlaygroundQuestion.created_at.asc())
+    query = query.order_by(PlaygroundQuestion.created_at.desc())
     return query.all()
 
 
