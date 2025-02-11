@@ -1427,6 +1427,30 @@ class CognitionPersonalAccessToken(Base):
     token = Column(String)
 
 
+class CognitionPersonalAccessTokenETL(Base):
+    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    dataset_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.MARKDOWN_DATASET.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    scope = Column(String)
+    expires_at = Column(DateTime)
+    last_used = Column(DateTime)
+    token = Column(String)
+
+
 class CognitionMarkdownDataset(Base):
     __tablename__ = Tablenames.MARKDOWN_DATASET.value
     __table_args__ = {"schema": "cognition"}
