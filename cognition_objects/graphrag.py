@@ -11,3 +11,7 @@ def get_all_indexes(org_id: str) -> List[GraphRAGIndex]:
         .order_by(GraphRAGIndex.created_at)
         .all()
     )
+
+
+def get_all_indexes_count(org_id: str) -> int:
+    return session.query(GraphRAGIndex).filter_by(organization_id=org_id).count()

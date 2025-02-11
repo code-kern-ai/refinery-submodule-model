@@ -19,6 +19,14 @@ def get(org_id: str, id: str) -> CognitionMarkdownDataset:
     )
 
 
+def get_all(org_id: str) -> CognitionMarkdownDataset:
+    return (
+        session.query(CognitionMarkdownDataset)
+        .filter(CognitionMarkdownDataset.organization_id == org_id)
+        .all()
+    )
+
+
 def __get_enriched_query(
     org_id: str,
     id: Optional[str] = None,
