@@ -1,4 +1,4 @@
-from typing import List, List, Optional
+from typing import List, Optional
 
 from ..models import KnowledgeBase
 from ..exceptions import EntityAlreadyExistsException, EntityNotFoundException
@@ -12,7 +12,6 @@ def get(project_id: str, base_id: str) -> KnowledgeBase:
         .filter(KnowledgeBase.project_id == project_id, KnowledgeBase.id == base_id)
         .first()
     )
-
 
 
 def get_all_by_project_id(project_id: str) -> List[KnowledgeBase]:

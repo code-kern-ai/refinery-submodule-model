@@ -9,6 +9,7 @@ from ..enums import AttributeState, AttributeVisibility, DataTypes, RecordCatego
 from ..models import Attribute
 from ..session import session
 from submodules.model import enums
+from sqlalchemy import or_
 
 from ..util import prevent_sql_injection
 
@@ -109,7 +110,11 @@ def get_text_attributes(
     if state_filter is None:
         state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     query = session.query(Attribute).filter(
-        Attribute.project_id == project_id, Attribute.data_type == DataTypes.TEXT.value
+        Attribute.project_id == project_id,
+        or_(
+            Attribute.data_type == DataTypes.TEXT.value,
+            Attribute.data_type == DataTypes.LLM_RESPONSE.value,
+        ),
     )
     if state_filter:
         query = query.filter(Attribute.state.in_(state_filter))
@@ -140,7 +145,9 @@ def get_non_text_attributes(
     if not state_filter:
         state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     query = session.query(Attribute).filter(
-        Attribute.project_id == project_id, Attribute.data_type != DataTypes.TEXT.value
+        Attribute.project_id == project_id,
+        Attribute.data_type != DataTypes.TEXT.value,
+        Attribute.data_type != DataTypes.LLM_RESPONSE.value,
     )
     if state_filter:
         query = query.filter(Attribute.state.in_(state_filter))
@@ -218,6 +225,7 @@ def create(
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
     with_commit: bool = False,
+    additional_config: Optional[Dict[str, Any]] = None,
 ) -> Attribute:
     attribute: Attribute = Attribute(
         project_id=project_id,
@@ -246,6 +254,9 @@ def create(
     if finished_at is not None:
         attribute.finished_at = finished_at
 
+    if additional_config is not None:
+        attribute.additional_config = additional_config
+
     general.add(attribute, with_commit)
     return attribute
 
@@ -264,6 +275,7 @@ def update(
     finished_at: Optional[datetime] = None,
     visibility: Optional[str] = None,
     progress: Optional[float] = None,
+    additional_config: Optional[Dict[str, Any]] = None,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
     if data_type is not None:
@@ -291,6 +303,10 @@ def update(
 
     if finished_at is not None:
         attribute.finished_at = finished_at
+
+    if additional_config is not None:
+        attribute.additional_config = additional_config
+        flag_modified(attribute, "additional_config")
 
     general.flush_or_commit(with_commit)
     return attribute
