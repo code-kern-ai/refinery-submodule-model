@@ -145,6 +145,10 @@ class Tablenames(Enum):
     PIPELINE_VERSION = (
         "pipeline_version"  # dump of previous versions to easily jump between
     )
+    EVALUATION_SET = "evaluation_set"
+    EVALUATION_GROUP = "evaluation_group"
+    EVALUATION_RUN = "evaluation_run"
+    PLAYGROUND_QUESTION = "playground_question"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -799,3 +803,10 @@ class ChangeAction(Enum):
 class PipelineVersionType(Enum):
     AUTO_SAVE = "AUTO_SAVE"  # any save operation in relevant but only 10 per project
     NAMED_VERSION = "NAMED_VERSION"  # any AUTO_SAVE that is considered worth keeping
+
+
+class EvaluationRunState(Enum):
+    INITIATED = "INITIATED"
+    RUNNING = "RUNNING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
