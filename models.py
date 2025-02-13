@@ -1829,6 +1829,8 @@ class GraphRAGIndex(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    state = Column(String)
+    error = Column(String)
 
 
 # =========================== Global tables ===========================
