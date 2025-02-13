@@ -1,25 +1,27 @@
 import uuid
 
 from .enums import (
+    AdminLogLevel,
+    AdminMessageLevel,
+    AttributeState,
     AttributeVisibility,
     CascadeBehaviour,
-    NotificationState,
-    Tablenames,
-    Notification as NotificationEnums,
-    UploadStates,
-    PayloadState,
-    SliceTypes,
-    UserRoles,
-    AttributeState,
-    AdminMessageLevel,
     CognitionProjectState,
-    StrategyComplexity,
-    AdminLogLevel,
     FileCachingState,
+    Notification as NotificationEnums,
+    NotificationState,
+    PayloadState,
     PipelineVersionType,
+    SliceTypes,
+    StrategyComplexity,
+    Tablenames,
+    TokenScope,
+    TokenSubject,
+    UploadStates,
+    UserRoles,
 )
 from sqlalchemy import (
-    JSON,
+    BigInteger,
     Boolean,
     Column,
     Date,
@@ -27,11 +29,11 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    JSON,
     LargeBinary,
     String,
     sql,
     UniqueConstraint,
-    BigInteger,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -1445,10 +1447,26 @@ class CognitionPersonalAccessTokenETL(Base):
     )
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
-    scope = Column(String)
     expires_at = Column(DateTime)
     last_used = Column(DateTime)
     token = Column(String)
+
+
+class CognitionPersonalAccessTokenScopeETL(Base):
+    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime, default=sql.func.now())
+    scope = Column(String, default=TokenScope.READ_WRITE.value)
+    subject = Column(String, default=TokenSubject.PROJECT.value)
+    subject_id = Column(UUID(as_uuid=True))  # can be a dataset_id or project_id
+    token_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"{Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
 
 
 class CognitionMarkdownDataset(Base):

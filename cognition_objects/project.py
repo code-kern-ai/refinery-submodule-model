@@ -2,7 +2,12 @@ from typing import List, Optional, Dict, Any, Iterable
 from ..business_objects import general, team_resource, user
 from ..cognition_objects import consumption_log, consumption_summary
 from ..session import session
-from ..models import CognitionProject, TeamMember, TeamResource
+from ..models import (
+    CognitionPersonalAccessTokenScopeETL,
+    CognitionProject,
+    TeamMember,
+    TeamResource,
+)
 from .. import enums
 from datetime import datetime
 from ..util import prevent_sql_injection
@@ -274,5 +279,8 @@ def delete(project_id: str, with_commit: bool = True) -> None:
     )
     session.query(CognitionProject).filter(
         CognitionProject.id == project_id,
+    ).delete()
+    session.query(CognitionPersonalAccessTokenScopeETL).filter(
+        CognitionPersonalAccessTokenScopeETL.type_id == project_id,
     ).delete()
     general.flush_or_commit(with_commit)

@@ -8,10 +8,7 @@ from . import general, attribute
 
 from .. import enums
 from ..session import session
-from ..models import (
-    Project,
-    Record,
-)
+from ..models import Project, Record
 from ..util import prevent_sql_injection
 
 QUEUE_PROJECT_NAME = "@@HIDDEN_QUEUE_PROJECT@@"
