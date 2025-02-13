@@ -1464,7 +1464,8 @@ class CognitionPersonalAccessTokenScopeETL(Base):
     token_id = Column(
         UUID(as_uuid=True),
         ForeignKey(
-            f"{Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value}.id", ondelete="CASCADE"
+            f"cognition.{Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value}.id",
+            ondelete="CASCADE",
         ),
         index=True,
     )
