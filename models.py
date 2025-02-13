@@ -1458,6 +1458,14 @@ class CognitionPersonalAccessTokenScopeETL(Base):
     scope = Column(String, default=TokenScope.READ_WRITE.value)
     subject = Column(String, default=TokenSubject.PROJECT.value)
     subject_id = Column(UUID(as_uuid=True))  # can be a dataset_id or project_id
+    token_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value}.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+    )
 
 
 class CognitionMarkdownDataset(Base):
