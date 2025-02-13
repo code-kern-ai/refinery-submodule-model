@@ -1434,13 +1434,6 @@ class CognitionPersonalAccessTokenETL(Base):
     __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    dataset_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.MARKDOWN_DATASET.value}.id", ondelete="CASCADE"
-        ),
-        index=True,
-    )
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
@@ -1451,6 +1444,10 @@ class CognitionPersonalAccessTokenETL(Base):
     expires_at = Column(DateTime)
     last_used = Column(DateTime)
     token = Column(String)
+    scopes = parent_to_child_relationship(
+        Tablenames.PERSONAL_ACCESS_TOKEN_ETL,
+        Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL,
+    )
 
 
 class CognitionPersonalAccessTokenScopeETL(Base):
@@ -1461,14 +1458,6 @@ class CognitionPersonalAccessTokenScopeETL(Base):
     scope = Column(String, default=TokenScope.READ_WRITE.value)
     subject = Column(String, default=TokenSubject.PROJECT.value)
     subject_id = Column(UUID(as_uuid=True))  # can be a dataset_id or project_id
-    token_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value}.id",
-            ondelete="CASCADE",
-        ),
-        index=True,
-    )
 
 
 class CognitionMarkdownDataset(Base):
