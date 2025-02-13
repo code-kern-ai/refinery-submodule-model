@@ -53,17 +53,18 @@ def create(
         ids = [q.id for q in oldest]
         delete_all(project_id, ids, False)
 
-    current_count_question = sum(
-        1 for q in current_questions if str(q.question).lower() == question.lower()
-    )
-
-    if current_count_question == 0:
-        q = PlaygroundQuestion(
-            project_id=project_id,
-            question=question,
+    if question:
+        current_count_question = sum(
+            1 for q in current_questions if str(q.question).lower() == question.lower()
         )
-        general.add(q, with_commit)
-        return q
+
+        if current_count_question == 0:
+            q = PlaygroundQuestion(
+                project_id=project_id,
+                question=question,
+            )
+            general.add(q, with_commit)
+            return q
 
     return None
 
