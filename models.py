@@ -1430,7 +1430,7 @@ class CognitionPersonalAccessToken(Base):
     token = Column(String)
 
 
-class CognitionPersonalAccessTokenETL(Base):
+class CognitionPersonalAccessTokenEtl(Base):
     __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -1450,7 +1450,7 @@ class CognitionPersonalAccessTokenETL(Base):
     )
 
 
-class CognitionPersonalAccessTokenScopeETL(Base):
+class CognitionPersonalAccessTokenScopeEtl(Base):
     __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
