@@ -5,7 +5,7 @@ from submodules.model.enums import TokenSubject
 from submodules.model.business_objects import general
 from submodules.model.models import (
     CognitionPersonalAccessTokenEtl,
-    CognitionPersonalAccessTokenScopeEtl,
+    PersonalAccessTokenScopeEtl,
 )
 
 
@@ -42,7 +42,6 @@ def get_by_token(token: str) -> CognitionPersonalAccessTokenEtl:
 
 
 def create(
-    subject_id: str,
     created_by: str,
     name: str,
     scope: str,
@@ -57,8 +56,8 @@ def create(
         expires_at=expires_at,
         created_by=created_by,
     )
-    pat_scope = CognitionPersonalAccessTokenScopeEtl(
-        scope=scope, subject=subject, subject_id=subject_id, token_id=pat.id
+    pat_scope = PersonalAccessTokenScopeEtl(
+        scope=scope, subject=subject, token_id=pat.id
     )
     general.add(pat)
     general.add(pat_scope, with_commit)

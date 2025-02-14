@@ -3,7 +3,6 @@ from ..business_objects import general, team_resource, user
 from ..cognition_objects import consumption_log, consumption_summary
 from ..session import session
 from ..models import (
-    CognitionPersonalAccessTokenScopeEtl,
     CognitionProject,
     TeamMember,
     TeamResource,
@@ -279,8 +278,5 @@ def delete(project_id: str, with_commit: bool = True) -> None:
     )
     session.query(CognitionProject).filter(
         CognitionProject.id == project_id,
-    ).delete()
-    session.query(CognitionPersonalAccessTokenScopeEtl).filter(
-        CognitionPersonalAccessTokenScopeEtl.type_id == project_id,
     ).delete()
     general.flush_or_commit(with_commit)

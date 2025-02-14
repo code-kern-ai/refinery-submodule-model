@@ -5,7 +5,6 @@ from ..business_objects import general
 from ..session import session
 from ..models import (
     CognitionMarkdownDataset,
-    CognitionPersonalAccessTokenScopeEtl,
     Project,
 )
 from ..enums import Tablenames, MarkdownFileCategoryOrigin
@@ -184,9 +183,5 @@ def delete_many(org_id: str, dataset_ids: List[str], with_commit: bool = True) -
         CognitionMarkdownDataset.organization_id == org_id,
         CognitionMarkdownDataset.id.in_(dataset_ids),
     ).delete(synchronize_session=False)
-
-    session.query(CognitionPersonalAccessTokenScopeEtl).filter(
-        CognitionPersonalAccessTokenScopeEtl.type_id.in_(dataset_ids),
-    ).delete()
 
     general.flush_or_commit(with_commit)
