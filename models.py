@@ -1445,7 +1445,8 @@ class CognitionPersonalAccessTokenEtl(Base):
     last_used = Column(DateTime)
     token = Column(String)
     scopes = parent_to_child_relationship(
-        Tablenames.PERSONAL_ACCESS_TOKEN_ETL, Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL
+        Tablenames.PERSONAL_ACCESS_TOKEN_ETL,
+        Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL,
     )
 
 
