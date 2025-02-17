@@ -1441,7 +1441,7 @@ class CognitionPersonalAccessTokenEtl(Base):
             "name",
             "expires_at",
             "last_used",
-            # "token",
+            "token",
             "scopes",
         ],
     }

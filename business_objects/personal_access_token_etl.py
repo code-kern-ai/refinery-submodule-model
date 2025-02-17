@@ -63,7 +63,6 @@ def get_or_create(
             expires_at=expires_at,
             created_by=created_by,
         )
-        general.add(pat)
     return pat
 
 
@@ -85,10 +84,9 @@ def create(
     pat_scope = PersonalAccessTokenScopeEtl(
         scope=scope,
         subject=subject,
-        token_id=pat.id,
     )
-    general.add(pat_scope)
-    general.flush_or_commit(with_commit)
+    pat.scopes.append(pat_scope)
+    general.add(pat, with_commit)
     return pat
 
 
