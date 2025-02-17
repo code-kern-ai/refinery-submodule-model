@@ -1831,6 +1831,8 @@ class GraphRAGIndex(Base):
     )
     state = Column(String)
     error = Column(String)
+    settings = Column(JSON)
+    root_dir = Column(String)
 
 
 # =========================== Global tables ===========================
