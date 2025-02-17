@@ -41,6 +41,32 @@ def get_by_token(token: str) -> CognitionPersonalAccessTokenEtl:
     )
 
 
+def get_token_scopes(token_id: str) -> List[PersonalAccessTokenScopeEtl]:
+    return (
+        session.query(PersonalAccessTokenScopeEtl)
+        .filter(PersonalAccessTokenScopeEtl.token_id == token_id)
+        .all()
+    )
+
+
+def get_or_create(
+    name: str,
+    token: str,
+    expires_at: datetime,
+    created_by: str,
+) -> CognitionPersonalAccessTokenEtl:
+    pat = get_by_user_and_name(created_by, name)
+    if not pat:
+        pat = CognitionPersonalAccessTokenEtl(
+            name=name,
+            token=token,
+            expires_at=expires_at,
+            created_by=created_by,
+        )
+        general.add(pat)
+    return pat
+
+
 def create(
     created_by: str,
     name: str,
@@ -50,18 +76,19 @@ def create(
     subject: str = TokenSubject.PROJECT.value,
     with_commit: bool = False,
 ) -> CognitionPersonalAccessTokenEtl:
-    pat = CognitionPersonalAccessTokenEtl(
+    pat = get_or_create(
         name=name,
         token=token,
         expires_at=expires_at,
         created_by=created_by,
     )
     pat_scope = PersonalAccessTokenScopeEtl(
-        scope=scope, subject=subject, token_id=pat.id
+        scope=scope,
+        subject=subject,
+        token_id=pat.id,
     )
-    general.add(pat)
-    general.add(pat_scope, with_commit)
-
+    general.add(pat_scope)
+    general.flush_or_commit(with_commit)
     return pat
 
 
@@ -75,7 +102,7 @@ def delete(
     general.flush_or_commit(with_commit)
 
 
-def delete_token_by_ids(
+def delete_many(
     token_ids: List[str],
     with_commit: bool = False,
 ) -> None:

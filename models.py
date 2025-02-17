@@ -1432,7 +1432,19 @@ class CognitionPersonalAccessToken(Base):
 
 class CognitionPersonalAccessTokenEtl(Base):
     __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value
-    __table_args__ = {"schema": "cognition"}
+    __table_args__ = {
+        "schema": "cognition",
+        "include_columns": [
+            "id",
+            "created_by",
+            "created_at",
+            "name",
+            "expires_at",
+            "last_used",
+            # "token",
+            "scopes",
+        ],
+    }
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
         UUID(as_uuid=True),
@@ -1457,6 +1469,7 @@ class PersonalAccessTokenScopeEtl(Base):
     created_at = Column(DateTime, default=sql.func.now())
     scope = Column(String, default=TokenScope.READ_WRITE.value)
     subject = Column(String, default=TokenSubject.PROJECT.value)
+    subject_id = Column(UUID(as_uuid=True))  # project_id or dataset_id
     token_id = Column(
         UUID(as_uuid=True),
         ForeignKey(
