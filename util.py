@@ -145,7 +145,9 @@ def __sql_alchemy_to_dict(
         }
         return rename_columns(result)
     elif isinstance(sql_alchemy_object, Base):
-        columns = sql_alchemy_object.__table_args__.get("include_columns")
+        columns = getattr(sql_alchemy_object, "__table_args__", {}).get(
+            "include_columns"
+        )
         result = (
             {
                 c: __sql_alchemy_to_dict(getattr(sql_alchemy_object, c))
