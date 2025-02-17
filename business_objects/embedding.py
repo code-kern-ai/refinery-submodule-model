@@ -317,7 +317,10 @@ def __build_payload_selector(
         for attr, data_type in attributes_to_include.items():
             if payload_selector != "":
                 payload_selector += ","
-            if data_type != enums.DataTypes.TEXT.value:
+            if (
+                data_type != enums.DataTypes.TEXT.value
+                and data_type != enums.DataTypes.LLM_RESPONSE.value
+            ):
                 payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"

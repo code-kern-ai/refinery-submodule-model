@@ -8,6 +8,7 @@ class DataTypes(Enum):
     BOOLEAN = "BOOLEAN"
     CATEGORY = "CATEGORY"
     TEXT = "TEXT"
+    LLM_RESPONSE = "LLM_RESPONSE"
     EMBEDDING_LIST = "EMBEDDING_LIST"  # only for embeddings & default hidden
     UNKNOWN = "UNKNOWN"
 
