@@ -617,9 +617,10 @@ class LLMProvider(Enum):
     AZURE_FOUNDRY = "Azure Foundry"
 
 
-class OpenAIClientType(Enum):
+class AIClientType(Enum):
     OPEN_AI = "OPEN_AI"
     AZURE = "AZURE"
+    AZURE_FOUNDRY = "AZURE_FOUNDRY"
 
 
 class CognitionMarkdownFileState(Enum):
