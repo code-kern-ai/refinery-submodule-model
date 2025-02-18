@@ -9,6 +9,16 @@ from submodules.model.models import (
 )
 
 
+def get(token_id: str) -> CognitionPersonalAccessTokenEtl:
+    return (
+        session.query(CognitionPersonalAccessTokenEtl)
+        .filter(
+            CognitionPersonalAccessTokenEtl.id == token_id,
+        )
+        .first()
+    )
+
+
 def get_by_user_and_name(
     created_by: str,
     name: str,
