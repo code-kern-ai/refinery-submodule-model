@@ -3,14 +3,8 @@ from datetime import datetime
 
 from ..business_objects import general
 from ..session import session
-from ..models import (
-    CognitionMarkdownDataset,
-    Project,
-)
-from ..enums import (
-    Tablenames,
-    MarkdownFileCategoryOrigin,
-)
+from ..models import CognitionMarkdownDataset, Project
+from ..enums import Tablenames, MarkdownFileCategoryOrigin
 from ..util import prevent_sql_injection
 
 
