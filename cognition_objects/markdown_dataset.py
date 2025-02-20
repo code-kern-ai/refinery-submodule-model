@@ -7,7 +7,10 @@ from ..models import (
     CognitionMarkdownDataset,
     Project,
 )
-from ..enums import Tablenames, MarkdownFileCategoryOrigin
+from ..enums import (
+    Tablenames,
+    MarkdownFileCategoryOrigin,
+)
 from ..util import prevent_sql_injection
 
 

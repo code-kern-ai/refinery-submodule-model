@@ -432,18 +432,22 @@ class TokenScope(Enum):
     READ = "READ"
     READ_WRITE = "READ_WRITE"
 
-    @classmethod
-    def all(cls):
-        return [cls.READ.value, cls.READ_WRITE.value]
+    def all():
+        return [
+            TokenScope.READ.value,
+            TokenScope.READ_WRITE.value,
+        ]
 
 
 class TokenSubject(Enum):
     PROJECT = Tablenames.PROJECT.value.upper()
     MARKDOWN_DATASET = Tablenames.MARKDOWN_DATASET.value.upper()
 
-    @classmethod
-    def all(cls):
-        return [cls.PROJECT.value, cls.MARKDOWN_DATASET.value]
+    def all():
+        return [
+            TokenSubject.PROJECT.value,
+            TokenSubject.MARKDOWN_DATASET.value,
+        ]
 
 
 class TokenizationTaskTypes(Enum):
