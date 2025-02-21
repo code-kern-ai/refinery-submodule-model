@@ -1451,6 +1451,11 @@ class CognitionPersonalAccessTokenEtl(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     expires_at = Column(DateTime)
