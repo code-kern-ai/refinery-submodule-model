@@ -146,7 +146,7 @@ def __sql_alchemy_to_dict(
         return rename_columns(result)
     elif isinstance(sql_alchemy_object, Base):
         result = {
-            c.name: __sql_alchemy_to_dict(getattr(sql_alchemy_object, c.name))
+            c.name: getattr(sql_alchemy_object, c.name)
             for c in sql_alchemy_object.__table__.columns
             if (not column_whitelist or c.name in column_whitelist)
             and (not column_blacklist or c.name not in column_blacklist)
