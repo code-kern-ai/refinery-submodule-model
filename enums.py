@@ -111,6 +111,8 @@ class Tablenames(Enum):
     COMMENT_DATA = "comment_data"
     LABELING_ACCESS_LINK = "labeling_access_link"
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
+    PERSONAL_ACCESS_TOKEN_ETL = "personal_access_token_etl"
+    PERSONAL_ACCESS_TOKEN_SCOPE_ETL = "personal_access_token_scope_etl"
     ADMIN_MESSAGE = "admin_message"
     TASK_QUEUE = "task_queue"
     CONVERSATION = "conversation"
@@ -429,6 +431,23 @@ class TokenExpireAtValues(Enum):
 class TokenScope(Enum):
     READ = "READ"
     READ_WRITE = "READ_WRITE"
+
+    def all():
+        return [
+            TokenScope.READ.value,
+            TokenScope.READ_WRITE.value,
+        ]
+
+
+class TokenSubject(Enum):
+    PROJECT = Tablenames.PROJECT.value.upper()
+    MARKDOWN_DATASET = Tablenames.MARKDOWN_DATASET.value.upper()
+
+    def all():
+        return [
+            TokenSubject.PROJECT.value,
+            TokenSubject.MARKDOWN_DATASET.value,
+        ]
 
 
 class TokenizationTaskTypes(Enum):

@@ -1,25 +1,27 @@
 import uuid
 
 from .enums import (
+    AdminLogLevel,
+    AdminMessageLevel,
+    AttributeState,
     AttributeVisibility,
     CascadeBehaviour,
-    NotificationState,
-    Tablenames,
-    Notification as NotificationEnums,
-    UploadStates,
-    PayloadState,
-    SliceTypes,
-    UserRoles,
-    AttributeState,
-    AdminMessageLevel,
     CognitionProjectState,
-    StrategyComplexity,
-    AdminLogLevel,
     FileCachingState,
+    Notification as NotificationEnums,
+    NotificationState,
+    PayloadState,
     PipelineVersionType,
+    SliceTypes,
+    StrategyComplexity,
+    Tablenames,
+    TokenScope,
+    TokenSubject,
+    UploadStates,
+    UserRoles,
 )
 from sqlalchemy import (
-    JSON,
+    BigInteger,
     Boolean,
     Column,
     Date,
@@ -27,11 +29,11 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    JSON,
     LargeBinary,
     String,
     sql,
     UniqueConstraint,
-    BigInteger,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -1426,6 +1428,49 @@ class CognitionPersonalAccessToken(Base):
     expires_at = Column(DateTime)
     last_used = Column(DateTime)
     token = Column(String)
+
+
+class CognitionPersonalAccessTokenEtl(Base):
+    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    expires_at = Column(DateTime)
+    last_used = Column(DateTime)
+    token = Column(String)
+    scopes = parent_to_child_relationship(
+        Tablenames.PERSONAL_ACCESS_TOKEN_ETL,
+        Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL,
+    )
+
+
+class PersonalAccessTokenScopeEtl(Base):
+    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime, default=sql.func.now())
+    scope = Column(String, default=TokenScope.READ_WRITE.value)
+    subject = Column(String, default=TokenSubject.PROJECT.value)
+    subject_id = Column(UUID(as_uuid=True))  # project_id or dataset_id
+    token_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value}.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+    )
 
 
 class CognitionMarkdownDataset(Base):
