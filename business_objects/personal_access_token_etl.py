@@ -1,5 +1,5 @@
 import datetime
-from typing import List
+from typing import List, Dict, Any
 from ..session import session
 from submodules.model.enums import TokenSubject
 from submodules.model.business_objects import general
@@ -21,7 +21,7 @@ INNER JOIN (
 """
 
 
-def get(token_id: str) -> CognitionPersonalAccessTokenEtl:
+def get(token_id: str) -> Dict[str, Any]:
     sql = TOKEN_WITH_SCOPE_QUERY + f"WHERE pate.id = '{token_id}'"
     return general.execute_first(sql)
 
@@ -40,12 +40,12 @@ def get_by_user_and_name(
     )
 
 
-def get_all(org_id: str) -> List[CognitionPersonalAccessTokenEtl]:
+def get_all(org_id: str) -> List[Dict[str, Any]]:
     sql = TOKEN_WITH_SCOPE_QUERY + f"WHERE pate.organization_id = '{org_id}'"
     return general.execute_all(sql)
 
 
-def get_all_by_user(user_id: str) -> List[CognitionPersonalAccessTokenEtl]:
+def get_all_by_user(user_id: str) -> List[Dict[str, Any]]:
     sql = TOKEN_WITH_SCOPE_QUERY + f"WHERE pate.created_by = '{user_id}'"
     return general.execute_all(sql)
 
