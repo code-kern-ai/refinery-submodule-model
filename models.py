@@ -1432,19 +1432,7 @@ class CognitionPersonalAccessToken(Base):
 
 class CognitionPersonalAccessTokenEtl(Base):
     __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value
-    __table_args__ = {
-        "schema": "cognition",
-        "include_columns": [
-            "id",
-            "created_by",
-            "created_at",
-            "name",
-            "expires_at",
-            "last_used",
-            "token",
-            "scopes",
-        ],
-    }
+    __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
         UUID(as_uuid=True),
