@@ -504,6 +504,7 @@ class StrategyStepType(Enum):
     # INFO: will replace retrieval in the future, direct access to neural search without gates
     NEURAL_SEARCH = "NEURAL_SEARCH"
     WEBHOOK = "WEBHOOK"
+    GRAPHRAG_SEARCH = "GRAPHRAG_SEARCH"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -530,6 +531,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.TMP_DOC_RETRIEVAL: "Temporary document retrieval",
     StrategyStepType.CALL_OTHER_AGENT: "Retrieve results from other agents",
     StrategyStepType.WEBHOOK: "Webhook",
+    StrategyStepType.GRAPHRAG_SEARCH: "Query GraphRAG index",
 }
 
 STEP_WHEN_TO_USE = {
@@ -546,6 +548,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.TMP_DOC_RETRIEVAL: "When you want to retrieve results from conversation specific documents",
     StrategyStepType.CALL_OTHER_AGENT: "When you want to call another agent",
     StrategyStepType.WEBHOOK: "When you want to run a webhook",
+    StrategyStepType.GRAPHRAG_SEARCH: "When you want to query a knowledge graph",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -563,6 +566,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.TMP_DOC_RETRIEVAL: "Retrieving facts from conversation specific documents",
     StrategyStepType.CALL_OTHER_AGENT: "Calling another agent",
     StrategyStepType.WEBHOOK: "Running webhook",
+    StrategyStepType.GRAPHRAG_SEARCH: "Querying knowledge graph",
 }
 
 STEP_ERRORS = {
