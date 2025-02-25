@@ -165,11 +165,18 @@ def __sql_alchemy_to_dict(
         return sql_alchemy_object
 
 
-def to_frontend_obj(value: Union[List, Dict]):
+def to_frontend_obj(value: Union[List, Dict], blacklist_keys: List[str] = []):
     if isinstance(value, dict):
-        return {to_camel_case(k): to_frontend_obj(v) for k, v in value.items()}
+        return {
+            to_camel_case(k): (
+                to_frontend_obj(v, blacklist_keys=blacklist_keys)
+                if k not in blacklist_keys
+                else v
+            )
+            for k, v in value.items()
+        }
     elif is_list_like(value):
-        return [to_frontend_obj(x) for x in value]
+        return [to_frontend_obj(x, blacklist_keys=blacklist_keys) for x in value]
     else:
         return to_json_serializable(value)
 
