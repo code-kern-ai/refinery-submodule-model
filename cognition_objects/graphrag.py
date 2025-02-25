@@ -1,7 +1,7 @@
 from ..business_objects import general
 from ..session import session
 from ..models import GraphRAGIndex
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Optional, Iterable
 from submodules.model.enums import GraphRAGIndexState
 
 
@@ -38,6 +38,30 @@ def get_all_indexes_count(org_id: str) -> int:
     return session.query(GraphRAGIndex).filter_by(organization_id=org_id).count()
 
 
+def get_all_paginated_by_org_id(org_id: str, page: int, limit: int) -> Dict[str, Any]:
+    total_count = (
+        session.query(GraphRAGIndex.id)
+        .filter(GraphRAGIndex.organization_id == org_id)
+        .count()
+    )
+
+    num_pages = int(total_count / limit)
+    if total_count % limit > 0:
+        num_pages += 1
+    if page > 0:
+        paginated_result = (
+            session.query(GraphRAGIndex)
+            .filter(GraphRAGIndex.organization_id == org_id)
+            .order_by(GraphRAGIndex.created_at.desc())
+            .limit(limit)
+            .offset((page - 1) * limit)
+            .all()
+        )
+    else:
+        paginated_result = []
+    return total_count, num_pages, paginated_result
+
+
 def update(
     org_id: str,
     index_id: str,
@@ -62,3 +86,17 @@ def update(
         index.settings = settings
     general.flush_or_commit(with_commit)
     return index
+
+
+def delete_many(
+    org_id: str,
+    index_ids: Iterable[str],
+    with_commit: Optional[bool] = True,
+) -> None:
+
+    session.query(GraphRAGIndex).filter(
+        GraphRAGIndex.organization_id == org_id,
+        GraphRAGIndex.id.in_(index_ids),
+    ).delete(synchronize_session=False)
+
+    general.flush_or_commit(with_commit)
