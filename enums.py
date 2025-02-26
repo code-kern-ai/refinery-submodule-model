@@ -8,6 +8,7 @@ class DataTypes(Enum):
     BOOLEAN = "BOOLEAN"
     CATEGORY = "CATEGORY"
     TEXT = "TEXT"
+    LLM_RESPONSE = "LLM_RESPONSE"
     EMBEDDING_LIST = "EMBEDDING_LIST"  # only for embeddings & default hidden
     UNKNOWN = "UNKNOWN"
 
@@ -110,6 +111,8 @@ class Tablenames(Enum):
     COMMENT_DATA = "comment_data"
     LABELING_ACCESS_LINK = "labeling_access_link"
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
+    PERSONAL_ACCESS_TOKEN_ETL = "personal_access_token_etl"
+    PERSONAL_ACCESS_TOKEN_SCOPE_ETL = "personal_access_token_scope_etl"
     ADMIN_MESSAGE = "admin_message"
     TASK_QUEUE = "task_queue"
     CONVERSATION = "conversation"
@@ -146,6 +149,10 @@ class Tablenames(Enum):
         "pipeline_version"  # dump of previous versions to easily jump between
     )
     GRAPHRAG_INDEX = "graphrag_index"
+    EVALUATION_SET = "evaluation_set"
+    EVALUATION_GROUP = "evaluation_group"
+    EVALUATION_RUN = "evaluation_run"
+    PLAYGROUND_QUESTION = "playground_question"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -426,6 +433,23 @@ class TokenScope(Enum):
     READ = "READ"
     READ_WRITE = "READ_WRITE"
 
+    def all():
+        return [
+            TokenScope.READ.value,
+            TokenScope.READ_WRITE.value,
+        ]
+
+
+class TokenSubject(Enum):
+    PROJECT = Tablenames.PROJECT.value.upper()
+    MARKDOWN_DATASET = Tablenames.MARKDOWN_DATASET.value.upper()
+
+    def all():
+        return [
+            TokenSubject.PROJECT.value,
+            TokenSubject.MARKDOWN_DATASET.value,
+        ]
+
 
 class TokenizationTaskTypes(Enum):
     ATTRIBUTE = "ATTRIBUTE"
@@ -614,11 +638,13 @@ class LLMProvider(Enum):
     OPENAI = "Open AI"
     OPEN_SOURCE = "Open-Source"
     AZURE = "Azure"
+    AZURE_FOUNDRY = "Azure Foundry"
 
 
-class OpenAIClientType(Enum):
+class AIClientType(Enum):
     OPEN_AI = "OPEN_AI"
     AZURE = "AZURE"
+    AZURE_FOUNDRY = "AZURE_FOUNDRY"
 
 
 class CognitionMarkdownFileState(Enum):
@@ -810,4 +836,10 @@ class GraphRAGIndexState(Enum):
     CREATED = "CREATED"
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
+
+
+class EvaluationRunState(Enum):
+    INITIATED = "INITIATED"
+    RUNNING = "RUNNING"
+    SUCCESS = "SUCCESS"
     FAILED = "FAILED"

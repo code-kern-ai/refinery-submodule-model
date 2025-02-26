@@ -1,25 +1,27 @@
 import uuid
 
 from .enums import (
+    AdminLogLevel,
+    AdminMessageLevel,
+    AttributeState,
     AttributeVisibility,
     CascadeBehaviour,
-    NotificationState,
-    Tablenames,
-    Notification as NotificationEnums,
-    UploadStates,
-    PayloadState,
-    SliceTypes,
-    UserRoles,
-    AttributeState,
-    AdminMessageLevel,
     CognitionProjectState,
-    StrategyComplexity,
-    AdminLogLevel,
     FileCachingState,
+    Notification as NotificationEnums,
+    NotificationState,
+    PayloadState,
     PipelineVersionType,
+    SliceTypes,
+    StrategyComplexity,
+    Tablenames,
+    TokenScope,
+    TokenSubject,
+    UploadStates,
+    UserRoles,
 )
 from sqlalchemy import (
-    JSON,
+    BigInteger,
     Boolean,
     Column,
     Date,
@@ -27,11 +29,11 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    JSON,
     LargeBinary,
     String,
     sql,
     UniqueConstraint,
-    BigInteger,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -482,6 +484,7 @@ class Attribute(Base):
     started_at = Column(DateTime, default=sql.func.now())
     finished_at = Column(DateTime)
     progress = Column(Float)
+    additional_config = Column(JSON, comment="used when data_type == LLM_RESPONSE")
 
     embeddings = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
@@ -1427,6 +1430,49 @@ class CognitionPersonalAccessToken(Base):
     token = Column(String)
 
 
+class CognitionPersonalAccessTokenEtl(Base):
+    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    expires_at = Column(DateTime)
+    last_used = Column(DateTime)
+    token = Column(String)
+    scopes = parent_to_child_relationship(
+        Tablenames.PERSONAL_ACCESS_TOKEN_ETL,
+        Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL,
+    )
+
+
+class PersonalAccessTokenScopeEtl(Base):
+    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime, default=sql.func.now())
+    scope = Column(String, default=TokenScope.READ_WRITE.value)
+    subject = Column(String, default=TokenSubject.PROJECT.value)
+    subject_id = Column(UUID(as_uuid=True))  # project_id or dataset_id
+    token_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value}.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+    )
+
+
 class CognitionMarkdownDataset(Base):
     __tablename__ = Tablenames.MARKDOWN_DATASET.value
     __table_args__ = {"schema": "cognition"}
@@ -1885,3 +1931,92 @@ class CustomerButton(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+
+
+class EvaluationSet(Base):
+    __tablename__ = Tablenames.EVALUATION_SET.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    record_ids = Column(JSON)
+
+
+class EvaluationGroup(Base):
+    __tablename__ = Tablenames.EVALUATION_GROUP.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    evaluation_set_ids = Column(JSON)
+
+
+class EvaluationRun(Base):
+    __tablename__ = Tablenames.EVALUATION_RUN.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    evaluation_group_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.EVALUATION_GROUP.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    embedding_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    state = Column(String)
+    results = Column(JSON)
+    meta_info = Column(JSON)
+
+
+class PlaygroundQuestion(Base):
+    __tablename__ = Tablenames.PLAYGROUND_QUESTION.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    """
+    Playground question can be extended with the below properties to allow the following:
+        - User can see questions with specific results relating to the embedding used
+        - Can be used for comparison with new results using same question but different embedding
+    """
+    # embedding_id = Column(
+    #     UUID(as_uuid=True),
+    #     ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="SET NULL"),
+    #     index=True,
+    # )
+    # record_ids = Column(JSON)
+    # meta_info = Column(JSON)
