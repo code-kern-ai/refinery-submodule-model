@@ -836,6 +836,7 @@ class GraphRAGIndexState(Enum):
     CREATED = "CREATED"
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 class EvaluationRunState(Enum):
