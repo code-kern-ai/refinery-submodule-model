@@ -25,17 +25,32 @@ def get(org_id: str, index_id: str) -> GraphRAGIndex:
     )
 
 
-def get_all_indexes(org_id: str) -> List[GraphRAGIndex]:
+def get_all_indexes(org_id: str, include_failed=True) -> List[GraphRAGIndex]:
+    if include_failed:
+        return (
+            session.query(GraphRAGIndex)
+            .filter_by(organization_id=org_id)
+            .order_by(GraphRAGIndex.created_at)
+            .all()
+        )
     return (
         session.query(GraphRAGIndex)
-        .filter_by(organization_id=org_id)
+        .filter(GraphRAGIndex.organization_id == org_id)
+        .filter(GraphRAGIndex.state != GraphRAGIndexState.FAILED.value)
         .order_by(GraphRAGIndex.created_at)
         .all()
     )
 
 
-def get_all_indexes_count(org_id: str) -> int:
-    return session.query(GraphRAGIndex).filter_by(organization_id=org_id).count()
+def get_all_indexes_count(org_id: str, include_failed=True) -> int:
+    if include_failed:
+        return session.query(GraphRAGIndex).filter_by(organization_id=org_id).count()
+    return (
+        session.query(GraphRAGIndex)
+        .filter(GraphRAGIndex.organization_id == org_id)
+        .filter(GraphRAGIndex.state != GraphRAGIndexState.FAILED.value)
+        .count()
+    )
 
 
 def get_all_paginated_by_org_id(org_id: str, page: int, limit: int) -> Dict[str, Any]:
