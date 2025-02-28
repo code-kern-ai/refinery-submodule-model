@@ -1875,7 +1875,7 @@ class GraphRAGIndex(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
-    state = Column(String)
+    state = Column(String)  # enum.GraphRAGIndexState
     error = Column(String)
     settings = Column(JSON)
     root_dir = Column(String)
