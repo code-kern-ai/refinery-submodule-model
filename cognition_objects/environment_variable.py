@@ -7,6 +7,7 @@ from ..models import (
     CognitionEnvironmentVariable,
     CognitionMarkdownDataset,
     CognitionProject,
+    GraphRAGIndex,
 )
 from ..util import prevent_sql_injection
 from sqlalchemy import or_
@@ -151,6 +152,25 @@ def get_cognition_project_extraction_env_var_value(
         .join(CognitionProject, env_var_id == CognitionEnvironmentVariable.id)
         .filter(
             CognitionProject.id == cognition_project_id,
+        )
+        .first()
+    )
+    if v and v[0]:
+        return str(v[0])
+
+
+def get_cognition_graphrag_env_var_value(org_id: str, graphrag_index_id: str) -> str:
+
+    env_var_id = cast(
+        GraphRAGIndex.settings.op("->>")("env_var_id"),
+        UUID,
+    )
+    v = (
+        session.query(CognitionEnvironmentVariable.value)
+        .filter(CognitionEnvironmentVariable.organization_id == org_id)
+        .join(GraphRAGIndex, env_var_id == CognitionEnvironmentVariable.id)
+        .filter(
+            GraphRAGIndex.id == graphrag_index_id,
         )
         .first()
     )

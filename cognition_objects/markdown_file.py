@@ -83,9 +83,9 @@ def get_all_paginated_for_dataset(
     org_id: str,
     dataset_id: str,
     page: int,
-    limit: int,
     exclude_content: bool,
     only_count_llm_logs: bool,
+    limit: Optional[int] = None,
 ) -> Tuple[int, int, List[CognitionMarkdownFile]]:
     total_count = (
         session.query(CognitionMarkdownFile.id)
@@ -93,20 +93,27 @@ def get_all_paginated_for_dataset(
         .filter(CognitionMarkdownFile.dataset_id == dataset_id)
         .count()
     )
-
-    num_pages = int(total_count / limit)
-    if total_count % limit > 0:
-        num_pages += 1
+    if limit:
+        num_pages = int(total_count / limit)
+        if total_count % limit > 0:
+            num_pages += 1
+    else:
+        num_pages = 1
 
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     dataset_id = prevent_sql_injection(dataset_id, isinstance(org_id, str))
     limit = prevent_sql_injection(limit, isinstance(limit, int))
     page = prevent_sql_injection(page, isinstance(page, int))
-    query_add = f"""
+    query_add = """
     ORDER BY mf.created_at DESC
-    LIMIT {limit}
-    OFFSET {(page - 1) * limit}
     """
+
+    if limit:
+        query_add += f"""
+        LIMIT {limit}
+        OFFSET {(page - 1) * (limit)}
+        """
+
     enriched_query = __get_enriched_query(
         org_id=org_id,
         dataset_id=dataset_id,

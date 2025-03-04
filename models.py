@@ -1858,6 +1858,29 @@ class FileTransformation(Base):
     state = Column(String, default=FileCachingState.CREATED.value)
 
 
+class GraphRAGIndex(Base):
+    __tablename__ = Tablenames.GRAPHRAG_INDEX.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    state = Column(String)  # enum.GraphRAGIndexState
+    error = Column(String)
+    settings = Column(JSON)
+    root_dir = Column(String)
+
+
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
