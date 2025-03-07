@@ -28,11 +28,13 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     JSON,
     LargeBinary,
     String,
     sql,
+    TIMESTAMP,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -159,6 +161,7 @@ class Organization(Base):
     log_admin_requests = Column(String, default=AdminLogLevel.NO_GET.value)
     conversation_lifespan_days = Column(Integer)
     file_lifespan_days = Column(Integer, default=14)
+    token_limit = Column(JSON, default={"FILE_UPLOAD": 50})  # per hour
 
 
 class User(Base):
@@ -1468,6 +1471,39 @@ class PersonalAccessTokenScopeEtl(Base):
         ForeignKey(
             f"cognition.{Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value}.id",
             ondelete="CASCADE",
+        ),
+        index=True,
+    )
+
+
+class PersonalAccessTokenActivityLogEtl(Base):
+    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_ACTIVITY_LOG_ETL.value
+    __table_args__ = (
+        Index(
+            f"idx_{Tablenames.PERSONAL_ACCESS_TOKEN_ACTIVITY_LOG_ETL.value}_created_at",
+            "created_at",
+            postgresql_using="brin",
+        ),
+        {"schema": "cognition"},
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(TIMESTAMP.timezone, default=sql.func.now())  # clustered index
+    action = Column(String, index=True)  # index
+    quantity = Column(Integer)
+    endpoint = Column(String)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"{Tablenames.ORGANIZATION.value}.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+    )
+    token_scope_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL.value}.id",
+            ondelete="SET NULL",
         ),
         index=True,
     )

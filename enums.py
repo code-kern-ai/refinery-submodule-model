@@ -113,6 +113,7 @@ class Tablenames(Enum):
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
     PERSONAL_ACCESS_TOKEN_ETL = "personal_access_token_etl"
     PERSONAL_ACCESS_TOKEN_SCOPE_ETL = "personal_access_token_scope_etl"
+    PERSONAL_ACCESS_TOKEN_ACTIVITY_LOG_ETL = "personal_access_token_activity_log_etl"
     ADMIN_MESSAGE = "admin_message"
     TASK_QUEUE = "task_queue"
     CONVERSATION = "conversation"
