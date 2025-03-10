@@ -430,6 +430,10 @@ class TokenExpireAtValues(Enum):
     NEVER = "NEVER"
 
 
+class TokenLimit(Enum):
+    FILE_UPLOAD = "FILE_UPLOAD"
+
+
 class TokenScope(Enum):
     READ = "READ"
     READ_WRITE = "READ_WRITE"

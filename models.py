@@ -15,6 +15,7 @@ from .enums import (
     SliceTypes,
     StrategyComplexity,
     Tablenames,
+    TokenLimit,
     TokenScope,
     TokenSubject,
     UploadStates,
@@ -34,7 +35,6 @@ from sqlalchemy import (
     LargeBinary,
     String,
     sql,
-    TIMESTAMP,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -161,7 +161,7 @@ class Organization(Base):
     log_admin_requests = Column(String, default=AdminLogLevel.NO_GET.value)
     conversation_lifespan_days = Column(Integer)
     file_lifespan_days = Column(Integer, default=14)
-    token_limit = Column(JSON, default={"FILE_UPLOAD": 50})  # per hour
+    token_limit = Column(JSON, default={TokenLimit.FILE_UPLOAD.value: 50})  # per hour
 
 
 class User(Base):
@@ -1487,9 +1487,9 @@ class PersonalAccessTokenActivityLogEtl(Base):
         {"schema": "cognition"},
     )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    created_at = Column(TIMESTAMP.timezone, default=sql.func.now())  # clustered index
-    action = Column(String, index=True)  # index
-    quantity = Column(Integer)
+    created_at = Column(DateTime, default=sql.func.now())
+    action = Column(String, index=True)
+    quantity = Column(Integer, default=1)
     endpoint = Column(String)
     organization_id = Column(
         UUID(as_uuid=True),
