@@ -27,7 +27,7 @@ def is_limit_breached(org_id: str, file_upload_limit: int = None) -> bool:
         file_upload_interval=FILE_UPLOAD_INTERVAL,
     )
     files_uploaded_no = general.execute_first(query)
-    if not files_uploaded_no:
+    if not files_uploaded_no[0]:
         return False
 
     return files_uploaded_no[0] >= file_upload_limit
@@ -46,11 +46,11 @@ def get_retry_after(org_id: str, file_upload_limit: int = None) -> int:
         .order_by(PersonalAccessTokenActivityLogEtl.created_at.desc())
         .first()
     )
-    retry_after = (
-        FILE_UPLOAD_INTERVAL
-        - (datetime.datetime.now() - latest_activity.created_at).seconds
+    time_since_latest = (
+        datetime.datetime.now(datetime.timezone.utc) - latest_activity.created_at
     )
-    return retry_after.seconds
+    retry_after = FILE_UPLOAD_INTERVAL - time_since_latest.seconds
+    return retry_after
 
 
 def create(
@@ -93,17 +93,17 @@ def delete_many(
         return
 
 
-def _create_dummy_pat_activity():
-    import random
-    import uuid
+# def _create_dummy_pat_activity():
+#     import random
+#     import uuid
 
-    org_id = uuid.UUID("d1f11be8-4944-47b8-a8f3-6ddcbb27fafc")
-    token_scope_id = uuid.UUID("a2acf86b-9ef1-4806-a2f6-3e1572b43780")
-    for i in range(10):
-        pat_activity = create(  # noqa
-            org_id=org_id,
-            action=TokenLimit.FILE_UPLOAD.value,
-            quantity=random.randint(1, 5),
-            endpoint="/cognition-api/api/v1/converters/external/parse/",
-            token_scope_id=token_scope_id,
-        )
+#     org_id = uuid.UUID("d1f11be8-4944-47b8-a8f3-6ddcbb27fafc")
+#     token_scope_id = uuid.UUID("a2acf86b-9ef1-4806-a2f6-3e1572b43780")
+#     for i in range(3):
+#         pat_activity = create(  # noqa
+#             org_id=org_id,
+#             action=TokenLimit.FILE_UPLOAD.value,
+#             quantity=random.randint(1, 5),
+#             endpoint="/cognition-api/api/v1/converters/external/parse/",
+#             token_scope_id=token_scope_id,
+#         )
