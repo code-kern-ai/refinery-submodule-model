@@ -1487,7 +1487,7 @@ class PersonalAccessTokenActivityLogEtl(Base):
         {"schema": "cognition"},
     )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    created_at = Column(DateTime, default=sql.func.now())
+    created_at = Column(DateTime(timezone=True), default=sql.func.now())
     action = Column(String, index=True)
     quantity = Column(Integer, default=1)
     endpoint = Column(String)
