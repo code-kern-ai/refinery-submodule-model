@@ -161,7 +161,13 @@ class Organization(Base):
     log_admin_requests = Column(String, default=AdminLogLevel.NO_GET.value)
     conversation_lifespan_days = Column(Integer)
     file_lifespan_days = Column(Integer, default=14)
-    token_limit = Column(JSON, default={TokenLimit.FILE_UPLOAD.value: 50})  # per hour
+    token_limit = Column(
+        JSON,
+        default={
+            TokenLimit.FILE_UPLOAD_LIMIT.lowercase(): 50,
+            TokenLimit.FILE_UPLOAD_INTERVAL.lowercase(): 3600,
+        },
+    )  # per hour
 
 
 class User(Base):

@@ -431,7 +431,11 @@ class TokenExpireAtValues(Enum):
 
 
 class TokenLimit(Enum):
-    FILE_UPLOAD = "FILE_UPLOAD"
+    FILE_UPLOAD_LIMIT = "FILE_UPLOAD_LIMIT"
+    FILE_UPLOAD_INTERVAL = "FILE_UPLOAD_INTERVAL"
+
+    def lowercase(self):
+        return self.value.lower()
 
 
 class TokenScope(Enum):

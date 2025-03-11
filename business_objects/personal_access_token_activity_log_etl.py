@@ -9,7 +9,6 @@ from submodules.model.models import (
 
 FILE_UPLOAD_INTERVAL = 3600  # 1 hour in seconds
 FILE_UPLOAD_LIMIT = 50  # per interval
-FILE_UPLOAD_ACTION = TokenLimit.FILE_UPLOAD.value
 
 TOKEN_LIMIT_BREACH_QUERY = """SELECT SUM(quantity)
 FROM cognition.personal_access_token_activity_log_etl patale
@@ -19,12 +18,13 @@ WHERE patale.organization_id = '{org_id}'
 """
 
 
-def is_limit_breached(org_id: str, file_upload_limit: int = None) -> bool:
-    file_upload_limit = int(file_upload_limit or FILE_UPLOAD_LIMIT)
+def is_limit_breached(
+    org_id: str, file_upload_limit: int, file_upload_interval: int
+) -> bool:
     query = TOKEN_LIMIT_BREACH_QUERY.format(
         org_id=org_id,
-        upload_action=FILE_UPLOAD_ACTION,
-        file_upload_interval=FILE_UPLOAD_INTERVAL,
+        upload_action=TokenLimit.FILE_UPLOAD_LIMIT.value,
+        file_upload_interval=file_upload_interval,
     )
     files_uploaded_no = general.execute_first(query)
     if not files_uploaded_no[0]:
@@ -33,15 +33,20 @@ def is_limit_breached(org_id: str, file_upload_limit: int = None) -> bool:
     return files_uploaded_no[0] >= file_upload_limit
 
 
-def get_retry_after(org_id: str, file_upload_limit: int = None) -> int:
-    if not is_limit_breached(org_id, file_upload_limit):
+def get_retry_after(
+    org_id: str, file_upload_limit: int = None, file_upload_interval: int = None
+) -> int:
+    file_upload_limit = int(file_upload_limit or FILE_UPLOAD_LIMIT)
+    file_upload_interval = int(file_upload_interval or FILE_UPLOAD_INTERVAL)
+    if not is_limit_breached(org_id, file_upload_limit, file_upload_interval):
         return False
 
     latest_activity = (
         session.query(PersonalAccessTokenActivityLogEtl)
         .filter(
             PersonalAccessTokenActivityLogEtl.organization_id == org_id,
-            PersonalAccessTokenActivityLogEtl.action == FILE_UPLOAD_ACTION,
+            PersonalAccessTokenActivityLogEtl.action
+            == TokenLimit.FILE_UPLOAD_LIMIT.value,
         )
         .order_by(PersonalAccessTokenActivityLogEtl.created_at.desc())
         .first()
@@ -49,7 +54,7 @@ def get_retry_after(org_id: str, file_upload_limit: int = None) -> int:
     time_since_latest = (
         datetime.datetime.now(datetime.timezone.utc) - latest_activity.created_at
     )
-    retry_after = FILE_UPLOAD_INTERVAL - time_since_latest.seconds
+    retry_after = file_upload_interval - time_since_latest.seconds
     return retry_after
 
 
