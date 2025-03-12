@@ -1,5 +1,4 @@
 import datetime
-from typing import List
 from submodules.model.enums import TokenLimit
 from submodules.model.session import session
 from submodules.model.business_objects import general
@@ -18,9 +17,9 @@ WHERE patale.organization_id = '{org_id}'
 """
 
 
-def is_limit_breached(
+def get_remaining_upload_limit(
     org_id: str, file_upload_limit: int, file_upload_interval: int
-) -> bool:
+) -> int:
     query = TOKEN_LIMIT_BREACH_QUERY.format(
         org_id=org_id,
         upload_action=TokenLimit.FILE_UPLOAD_LIMIT.value,
@@ -28,9 +27,17 @@ def is_limit_breached(
     )
     files_uploaded_no = general.execute_first(query)
     if not files_uploaded_no[0]:
-        return False
+        return file_upload_limit
+    return file_upload_limit - files_uploaded_no[0]
 
-    return files_uploaded_no[0] >= file_upload_limit
+
+def is_limit_breached(
+    org_id: str, file_upload_limit: int, file_upload_interval: int
+) -> bool:
+    remaining_upload_limit = get_remaining_upload_limit(
+        org_id, file_upload_limit, file_upload_interval
+    )
+    return remaining_upload_limit <= 0
 
 
 def get_retry_after(
@@ -78,13 +85,13 @@ def create(
 
 
 def delete_many(
-    token_activity_ids: List[str] = None,
+    org_id: str = None,
     delete_after_days: int = 90,
     with_commit: bool = False,
 ) -> None:
-    if token_activity_ids:
+    if org_id:
         session.query(PersonalAccessTokenActivityLogEtl).filter(
-            PersonalAccessTokenActivityLogEtl.id.in_(token_activity_ids),
+            PersonalAccessTokenActivityLogEtl.organization_id == org_id,
         ).delete()
         general.flush_or_commit(with_commit)
         return
@@ -92,7 +99,8 @@ def delete_many(
     if delete_after_days:
         session.query(PersonalAccessTokenActivityLogEtl).filter(
             PersonalAccessTokenActivityLogEtl.created_at
-            < datetime.datetime.now() - datetime.timedelta(days=delete_after_days),
+            < datetime.datetime.now(datetime.timezone.utc)
+            - datetime.timedelta(days=delete_after_days),
         ).delete()
         general.flush_or_commit(with_commit)
         return
