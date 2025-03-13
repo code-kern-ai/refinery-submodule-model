@@ -104,19 +104,3 @@ def delete_many(
         ).delete()
         general.flush_or_commit(with_commit)
         return
-
-
-# def _create_dummy_pat_activity():
-#     import random
-#     import uuid
-
-#     org_id = uuid.UUID("d1f11be8-4944-47b8-a8f3-6ddcbb27fafc")
-#     token_scope_id = uuid.UUID("a2acf86b-9ef1-4806-a2f6-3e1572b43780")
-#     for i in range(3):
-#         pat_activity = create(  # noqa
-#             org_id=org_id,
-#             action=TokenLimit.FILE_UPLOAD.value,
-#             quantity=random.randint(1, 5),
-#             endpoint="/cognition-api/api/v1/converters/external/parse/",
-#             token_scope_id=token_scope_id,
-#         )
