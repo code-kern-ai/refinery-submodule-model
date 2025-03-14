@@ -49,7 +49,7 @@ def get_retry_after(
     file_upload_limit = int(file_upload_limit or FILE_UPLOAD_LIMIT)
     file_upload_interval = int(file_upload_interval or FILE_UPLOAD_INTERVAL)
     if not is_limit_breached(org_id, file_upload_limit, file_upload_interval):
-        return False
+        return 0
 
     latest_activity = (
         session.query(PersonalAccessTokenActivityLogEtl)
