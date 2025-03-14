@@ -5,6 +5,7 @@ from submodules.model.business_objects import general
 from submodules.model.models import (
     PersonalAccessTokenActivityLogEtl,
 )
+from submodules.model.util import prevent_sql_injection
 
 FILE_UPLOAD_INTERVAL = 3600  # 1 hour in seconds
 FILE_UPLOAD_LIMIT = 50  # per interval
@@ -21,9 +22,11 @@ def get_remaining_upload_limit(
     org_id: str, file_upload_limit: int, file_upload_interval: int
 ) -> int:
     query = TOKEN_LIMIT_BREACH_QUERY.format(
-        org_id=org_id,
+        org_id=prevent_sql_injection(org_id, isinstance(org_id, str)),
         upload_action=TokenLimit.FILE_UPLOAD_LIMIT.value,
-        file_upload_interval=file_upload_interval,
+        file_upload_interval=prevent_sql_injection(
+            file_upload_interval, isinstance(file_upload_interval, int)
+        ),
     )
     files_uploaded_no = general.execute_first(query)
     if not files_uploaded_no[0]:
