@@ -430,6 +430,10 @@ class TokenExpireAtValues(Enum):
     NEVER = "NEVER"
 
 
+class TokenAction(Enum):
+    FILE_UPLOAD = "FILE_UPLOAD"
+
+
 class TokenLimit(Enum):
     FILE_UPLOAD_LIMIT = "FILE_UPLOAD_LIMIT"
     FILE_UPLOAD_INTERVAL = "FILE_UPLOAD_INTERVAL"

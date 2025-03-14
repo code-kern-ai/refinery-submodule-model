@@ -1,5 +1,5 @@
 import datetime
-from submodules.model.enums import TokenLimit
+from submodules.model.enums import TokenAction
 from submodules.model.session import session
 from submodules.model.business_objects import general
 from submodules.model.models import (
@@ -23,7 +23,7 @@ def get_remaining_upload_limit(
 ) -> int:
     query = TOKEN_LIMIT_BREACH_QUERY.format(
         org_id=prevent_sql_injection(org_id, isinstance(org_id, str)),
-        upload_action=TokenLimit.FILE_UPLOAD_LIMIT.value,
+        upload_action=TokenAction.FILE_UPLOAD.value,
         file_upload_interval=prevent_sql_injection(
             file_upload_interval, isinstance(file_upload_interval, int)
         ),
@@ -55,8 +55,7 @@ def get_retry_after(
         session.query(PersonalAccessTokenActivityLogEtl)
         .filter(
             PersonalAccessTokenActivityLogEtl.organization_id == org_id,
-            PersonalAccessTokenActivityLogEtl.action
-            == TokenLimit.FILE_UPLOAD_LIMIT.value,
+            PersonalAccessTokenActivityLogEtl.action == TokenAction.FILE_UPLOAD.value,
         )
         .order_by(PersonalAccessTokenActivityLogEtl.created_at.desc())
         .first()
