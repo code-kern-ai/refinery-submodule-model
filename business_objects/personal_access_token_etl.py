@@ -10,14 +10,14 @@ from submodules.model.models import (
 
 TOKEN_WITH_SCOPE_QUERY = """SELECT
     pate.*,
-    token_scope.scopes
+    ts.scopes
 FROM cognition.personal_access_token_etl pate
 INNER JOIN (
     SELECT patse.token_id, array_agg(row_to_json(patse)) AS scopes
     FROM (SELECT * FROM cognition.personal_access_token_scope_etl) patse
     GROUP BY patse.token_id
-) token_scope
-    ON pate.id = token_scope.token_id
+) ts
+    ON pate.id = ts.token_id
 """
 
 

@@ -113,6 +113,7 @@ class Tablenames(Enum):
     PERSONAL_ACCESS_TOKEN = "personal_access_token"
     PERSONAL_ACCESS_TOKEN_ETL = "personal_access_token_etl"
     PERSONAL_ACCESS_TOKEN_SCOPE_ETL = "personal_access_token_scope_etl"
+    PERSONAL_ACCESS_TOKEN_ACTIVITY_LOG_ETL = "personal_access_token_activity_log_etl"
     ADMIN_MESSAGE = "admin_message"
     TASK_QUEUE = "task_queue"
     CONVERSATION = "conversation"
@@ -427,6 +428,18 @@ class TokenExpireAtValues(Enum):
     ONE_MONTH = "ONE_MONTH"
     THREE_MONTHS = "THREE_MONTHS"
     NEVER = "NEVER"
+
+
+class TokenAction(Enum):
+    FILE_UPLOAD = "FILE_UPLOAD"
+
+
+class TokenLimit(Enum):
+    FILE_UPLOAD_LIMIT = "FILE_UPLOAD_LIMIT"
+    FILE_UPLOAD_INTERVAL = "FILE_UPLOAD_INTERVAL"
+
+    def lowercase(self):
+        return self.value.lower()
 
 
 class TokenScope(Enum):

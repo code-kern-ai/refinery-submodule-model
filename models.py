@@ -15,6 +15,7 @@ from .enums import (
     SliceTypes,
     StrategyComplexity,
     Tablenames,
+    TokenLimit,
     TokenScope,
     TokenSubject,
     UploadStates,
@@ -28,6 +29,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     JSON,
     LargeBinary,
@@ -159,6 +161,13 @@ class Organization(Base):
     log_admin_requests = Column(String, default=AdminLogLevel.NO_GET.value)
     conversation_lifespan_days = Column(Integer)
     file_lifespan_days = Column(Integer, default=14)
+    token_limit = Column(
+        JSON,
+        default={
+            TokenLimit.FILE_UPLOAD_LIMIT.lowercase(): 50,
+            TokenLimit.FILE_UPLOAD_INTERVAL.lowercase(): 3600,
+        },
+    )  # per hour
 
 
 class User(Base):
@@ -1468,6 +1477,39 @@ class PersonalAccessTokenScopeEtl(Base):
         ForeignKey(
             f"cognition.{Tablenames.PERSONAL_ACCESS_TOKEN_ETL.value}.id",
             ondelete="CASCADE",
+        ),
+        index=True,
+    )
+
+
+class PersonalAccessTokenActivityLogEtl(Base):
+    __tablename__ = Tablenames.PERSONAL_ACCESS_TOKEN_ACTIVITY_LOG_ETL.value
+    __table_args__ = (
+        Index(
+            f"idx_{Tablenames.PERSONAL_ACCESS_TOKEN_ACTIVITY_LOG_ETL.value}_created_at",
+            "created_at",
+            postgresql_using="brin",
+        ),
+        {"schema": "cognition"},
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime(timezone=True), default=sql.func.now())
+    action = Column(String, index=True)
+    quantity = Column(Integer, default=1)
+    endpoint = Column(String)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"{Tablenames.ORGANIZATION.value}.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+    )
+    token_scope_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.PERSONAL_ACCESS_TOKEN_SCOPE_ETL.value}.id",
+            ondelete="SET NULL",
         ),
         index=True,
     )
