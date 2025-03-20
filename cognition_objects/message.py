@@ -30,6 +30,10 @@ def get_all_by_conversation_ids(
         prevent_sql_injection(conversation_id, isinstance(conversation_id, str))
         for conversation_id in conversation_ids
     ]
+
+    if not conversation_ids:
+        return {}
+
     conversation_where = (
         " AND conversation_id IN ('" + "','".join(conversation_ids) + "')"
     )
