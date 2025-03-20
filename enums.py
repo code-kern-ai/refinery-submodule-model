@@ -649,15 +649,22 @@ class RefinerySynchronizationIntervalOption(Enum):
 
 class LLMProvider(Enum):
     OPENAI = "Open AI"
-    OPEN_SOURCE = "Open-Source"
     AZURE = "Azure"
     AZURE_FOUNDRY = "Azure Foundry"
 
+    @staticmethod
+    def from_string(value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        if changed_value == "OPEN_AI":
+            return LLMProvider.OPENAI
+        elif changed_value == "AZURE":
+            return LLMProvider.AZURE
+        elif changed_value == "AZURE_FOUNDRY":
+            return LLMProvider.AZURE_FOUNDRY
+        raise ValueError("Could not parse LLMProvider from string")
 
-class AIClientType(Enum):
-    OPEN_AI = "OPEN_AI"
-    AZURE = "AZURE"
-    AZURE_FOUNDRY = "AZURE_FOUNDRY"
+    def as_key(self):
+        return self.value.replace(" ", "_").upper()
 
 
 class CognitionMarkdownFileState(Enum):
