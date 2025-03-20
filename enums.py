@@ -662,6 +662,9 @@ class LLMProvider(Enum):
             return LLMProvider.AZURE_FOUNDRY
         raise ValueError("Could not parse LLMProvider from string")
 
+    def as_key(self):
+        return self.value.replace(" ", "_").upper()
+
 
 class CognitionMarkdownFileState(Enum):
     QUEUE = "QUEUE"
