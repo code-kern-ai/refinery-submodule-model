@@ -654,11 +654,12 @@ class LLMProvider(Enum):
 
     @staticmethod
     def from_string(value: str):
-        if value.upper().replace(" ", "_").replace("-", "_") == "OPEN_AI":
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        if changed_value == "OPEN_AI":
             return LLMProvider.OPENAI
-        if value.upper().replace(" ", "_").replace("-", "_") == "AZURE":
+        elif changed_value == "AZURE":
             return LLMProvider.AZURE
-        if value.upper().replace(" ", "_").replace("-", "_") == "AZURE_FOUNDRY":
+        elif changed_value == "AZURE_FOUNDRY":
             return LLMProvider.AZURE_FOUNDRY
         raise ValueError("Could not parse LLMProvider from string")
 
