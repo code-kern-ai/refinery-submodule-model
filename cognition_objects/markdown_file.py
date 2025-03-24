@@ -179,6 +179,9 @@ def update(
     with_commit: bool = True,
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = get(org_id, markdown_file_id)
+    if markdown_file is None:
+        # doesn't exist anymore => nothing to do
+        return
     if content is not None:
         markdown_file.content = content
     if is_reviewed is not None:
