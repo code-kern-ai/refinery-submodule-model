@@ -441,7 +441,9 @@ def get_match_record_ids_to_qdrant_ids_with_max_score(
                 project_id, embedding_id, chunk, limit
             ):
                 results.extend(r)
-        return results
+                if len(results) >= limit:
+                    break
+        return results[: max(0, limit)]
 
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
