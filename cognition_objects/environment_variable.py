@@ -160,6 +160,7 @@ def get_cognition_project_extraction_env_var_value(
 
 
 def get_cognition_graphrag_env_var_value(org_id: str, graphrag_index_id: str) -> str:
+    # currently not in use because of fixed env var
 
     env_var_id = cast(
         GraphRAGIndex.settings.op("->>")("env_var_id"),
