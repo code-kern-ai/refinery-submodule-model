@@ -630,7 +630,7 @@ def get_macro_execution_group_conversation_id(group_id: str):
     group_id = prevent_sql_injection(group_id, isinstance(group_id, str))
     query = f"""
     SELECT
-        *
+        c.id
     FROM
         cognition.conversation c
     WHERE
