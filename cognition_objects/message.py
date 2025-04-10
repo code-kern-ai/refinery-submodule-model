@@ -7,6 +7,13 @@ from ..util import prevent_sql_injection
 from .pipeline_version import get_current_version
 
 
+DEFAULT_TIME_ELAPSED = {
+    "time_elapsed": 0,
+    "has_error": True,
+    "answer": "",
+}
+
+
 def get_all_by_conversation_id(
     project_id: str, conversation_id: str
 ) -> List[CognitionMessage]:
@@ -141,13 +148,15 @@ def get_message_short_for_conversation_for_pipeline(
     time_elapsed = general.execute_first(query)
     if time_elapsed and time_elapsed[0]:
         time_elapsed = time_elapsed[0]
+    else:
+        time_elapsed = {}
 
     return [
         {
             "id": str(e.id),
             "question": e.question,
             "created_at": str(e.created_at),
-            **time_elapsed.get(str(e.id), -1),
+            **time_elapsed.get(str(e.id), DEFAULT_TIME_ELAPSED),
         }
         for e in (
             session.query(CognitionMessage)
