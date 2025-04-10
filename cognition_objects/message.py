@@ -11,7 +11,6 @@ DEFAULT_TIME_ELAPSED = {
     "time_elapsed": 0,
     "has_error": True,
     "answer": "",
-    # "version_id": "",
 }
 
 
