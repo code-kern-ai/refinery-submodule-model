@@ -626,6 +626,22 @@ def get_macro_execution_data_for_message_queue(
     return []
 
 
+def get_macro_execution_group_conversation_id(group_id: str):
+    group_id = prevent_sql_injection(group_id, isinstance(group_id, str))
+    query = f"""
+    SELECT
+        c.id
+    FROM
+        cognition.conversation c
+    WHERE
+        c.scope_dict->>'group_execution_id' = '{group_id}';
+    """
+    result = general.execute_first(query)
+    if result and result[0]:
+        return result[0]
+    return None
+
+
 def delete_by_exec_groups(
     macro_id: str,
     group_ids: List[str],

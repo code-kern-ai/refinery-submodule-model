@@ -755,6 +755,12 @@ class MacroType(Enum):
     DOCUMENT_MESSAGE_QUEUE = "DOCUMENT_MESSAGE_QUEUE"
     FOLDER_MESSAGE_QUEUE = "FOLDER_MESSAGE_QUEUE"
 
+    def all():
+        return [
+            MacroType.DOCUMENT_MESSAGE_QUEUE.value,
+            MacroType.FOLDER_MESSAGE_QUEUE.value,
+        ]
+
 
 # currently only one option, but could be extended in the future
 class MacroNodeContentType(Enum):

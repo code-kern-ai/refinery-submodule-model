@@ -83,6 +83,23 @@ def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQu
     )
 
 
+def get_waiting_by_macro_group_execution_ids(
+    project_id: str, source_ids: List[str]
+) -> TaskQueue:
+    source_ids = prevent_sql_injection(source_ids, isinstance(source_ids, list))
+    return (
+        session.query(TaskQueue)
+        .filter(
+            TaskQueue.task_type == enums.TaskType.RUN_COGNITION_MACRO.value,
+            text(
+                f"task_info->>'group_execution_id' IN ({','.join(map(repr, source_ids))})"
+            ),
+            text(f"task_info->>'project_id' = '{project_id}'"),
+        )
+        .first()
+    )
+
+
 def get_by_tokenization(project_id: str) -> TaskQueue:
     # could have multiple tokenization tasks in queue
     # if active => something is running else it's queued
