@@ -2,7 +2,7 @@ import uuid
 from typing import Any, Dict, List, Optional, Union
 from sqlalchemy.orm.session import make_transient as make_transient_original
 from ..session import session, engine
-from ..session import request_id_ctx_var
+from ..session import request_id_ctx_var, exit_on_timeout
 from ..session import check_session_and_rollback as check_and_roll
 from ..enums import Tablenames, try_parse_enum_value
 import traceback
@@ -18,6 +18,7 @@ __THREAD_LOCK = Lock()
 session_lookup = {}
 
 
+@exit_on_timeout
 def get_ctx_token() -> Any:
     global session_lookup
     session_uuid = str(uuid.uuid4())
@@ -46,6 +47,7 @@ def get_session_lookup(exclude_last_x_seconds: int = 5) -> Dict[str, Dict[str, A
     ]
 
 
+@exit_on_timeout
 def reset_ctx_token(
     ctx_token: Any,
     remove_db: Optional[bool] = False,
@@ -86,21 +88,25 @@ def __close_in_context(session_uuid: str):
         del session_lookup[session_uuid]
 
 
+@exit_on_timeout
 def add(entity: Any, with_commit: bool = False) -> None:
     session.add(entity)
     flush_or_commit(with_commit)
 
 
+@exit_on_timeout
 def add_all(entities: List[Any], with_commit: bool = False) -> None:
     session.add_all(entities)
     flush_or_commit(with_commit)
 
 
+@exit_on_timeout
 def delete(entity: Any, with_commit: bool = False) -> None:
     session.delete(entity)
     flush_or_commit(with_commit)
 
 
+@exit_on_timeout
 def commit() -> None:
     session.commit()
 
@@ -132,18 +138,22 @@ def flush_or_commit(commit: bool = False) -> None:
         session.flush()
 
 
+@exit_on_timeout
 def execute(sql: Any, *args) -> Any:
     return session.execute(sql, *args)
 
 
+@exit_on_timeout
 def execute_all(sql: str) -> List[Any]:
     return session.execute(sql).all()
 
 
+@exit_on_timeout
 def execute_first(sql: str) -> Any:
     return session.execute(sql).first()
 
 
+@exit_on_timeout
 def execute_distinct_count(count_sql: str) -> int:
     return session.execute(count_sql).first().distinct_count
 

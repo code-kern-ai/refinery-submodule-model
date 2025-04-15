@@ -1,7 +1,7 @@
 from datetime import datetime
 from . import general, organization, team_member
 from .. import User, enums
-from ..session import session
+from ..session import session, exit_on_timeout
 from typing import List, Optional
 from sqlalchemy import sql
 
@@ -9,14 +9,17 @@ from sqlalchemy import sql
 from ..util import prevent_sql_injection
 
 
+@exit_on_timeout
 def get(user_id: str) -> User:
     return session.query(User).get(user_id)
 
 
+@exit_on_timeout
 def get_by_id_list(user_ids: List[str]) -> List[User]:
     return session.query(User).filter(User.id.in_(user_ids)).all()
 
 
+@exit_on_timeout
 def get_all(
     organization_id: Optional[str] = None, user_role: Optional[enums.UserRoles] = None
 ) -> List[User]:
@@ -28,10 +31,12 @@ def get_all(
     return query.all()
 
 
+@exit_on_timeout
 def get_count_assigned() -> int:
     return session.query(User.id).filter(User.organization_id != None).count()
 
 
+@exit_on_timeout
 def get_migration_user() -> str:
     query = """
     SELECT u.id

@@ -1,9 +1,12 @@
 from typing import Any
 import os
+import sys
+import asyncio
+import docker
 from contextvars import ContextVar
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.exc import PendingRollbackError
+from sqlalchemy.exc import PendingRollbackError, TimeoutError
 import traceback
 
 from . import daemon
@@ -32,11 +35,12 @@ def get_request_id():
 
 engine = create_engine(
     os.getenv("POSTGRES"),
-    pool_size=pool_size,
-    max_overflow=pool_max_overflow,
+    pool_size=3,  # pool_size,
+    max_overflow=0,  # pool_max_overflow,
     pool_recycle=pool_recycle,
     pool_use_lifo=pool_use_lifo,
     pool_pre_ping=pool_pre_ping,
+    pool_timeout=5,
 )
 
 session = scoped_session(
@@ -50,6 +54,23 @@ logging.basicConfig()
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
  """
+
+
+def exit_on_timeout(f):
+    def safe_execution(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except TimeoutError as e:
+            client = docker.from_env()
+            container = client.containers.get("cognition-gateway")
+            loop = asyncio.get_event_loop()
+            print(f"TimeoutError in {f.__name__}: {e}", flush=True)
+            traceback.print_exc()
+            loop.stop()
+            container.restart()
+            sys.exit(1)
+
+    return safe_execution
 
 
 def check_session_and_rollback():
