@@ -179,3 +179,15 @@ def update_last_interaction(user_id: str) -> None:
     user_item = get(user_id)
     user_item.last_interaction = sql.func.now()
     general.commit()
+
+
+def check_email_in_full_admin(email: str) -> bool:
+    email = prevent_sql_injection(email, isinstance(email, str))
+    query = f"""
+    SELECT EXISTS (
+        SELECT 1
+        FROM global.full_admin_access
+        WHERE email = '{email}'
+    )
+    """
+    return general.execute_first(query)[0]
