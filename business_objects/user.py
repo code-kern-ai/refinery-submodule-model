@@ -182,6 +182,7 @@ def update_last_interaction(user_id: str) -> None:
 
 
 def check_email_in_full_admin(email: str) -> bool:
+    email = email.lower()
     email = prevent_sql_injection(email, isinstance(email, str))
     query = f"""
     SELECT EXISTS (
@@ -190,4 +191,7 @@ def check_email_in_full_admin(email: str) -> bool:
         WHERE email = '{email}'
     )
     """
-    return general.execute_first(query)[0]
+    result = general.execute_first(query)
+    if result and result[0]:
+        return True
+    return False
