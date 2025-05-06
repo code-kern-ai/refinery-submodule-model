@@ -5,10 +5,13 @@ from ..session import session
 from typing import List, Optional
 from sqlalchemy import sql
 
+from ..db_cache import TTLCacheDecorator, CacheEnum
+
 
 from ..util import prevent_sql_injection
 
 
+@TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
 def get(user_id: str) -> User:
     return session.query(User).get(user_id)
 

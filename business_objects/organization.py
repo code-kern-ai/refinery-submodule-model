@@ -8,8 +8,10 @@ from ..session import session
 from ..models import Organization, Project, User
 from ..business_objects import project, user, general
 from ..util import prevent_sql_injection
+from ..db_cache import TTLCacheDecorator, CacheEnum
 
 
+@TTLCacheDecorator(CacheEnum.ORGANIZATION, 5, "id")
 def get(id: str) -> Organization:
     return session.query(Organization).get(id)
 
