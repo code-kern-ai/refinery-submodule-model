@@ -1,19 +1,35 @@
 from datetime import datetime
 from . import general, organization, team_member
 from .. import User, enums
+from typing import Dict, Any
 from ..session import session
 from typing import List, Optional
 from sqlalchemy import sql
 
 from ..db_cache import TTLCacheDecorator, CacheEnum
 
-
 from ..util import prevent_sql_injection
 
 
-@TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
 def get(user_id: str) -> User:
     return session.query(User).get(user_id)
+
+
+@TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
+def get_user_cached(user_id: str) -> User:
+    """
+    Get user by id and return as dict
+    """
+    user = get(user_id)
+    if not user:
+        return None
+
+    general.expunge(user)
+    general.make_transient(user)
+    return user
+    # if not user:
+    #     return {}
+    # return sql_alchemy_to_dict(user)
 
 
 def get_by_id_list(user_ids: List[str]) -> List[User]:

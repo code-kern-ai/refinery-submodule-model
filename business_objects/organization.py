@@ -11,9 +11,18 @@ from ..util import prevent_sql_injection
 from ..db_cache import TTLCacheDecorator, CacheEnum
 
 
-@TTLCacheDecorator(CacheEnum.ORGANIZATION, 5, "id")
 def get(id: str) -> Organization:
     return session.query(Organization).get(id)
+
+
+@TTLCacheDecorator(CacheEnum.ORGANIZATION, 5, "id")
+def get_org_cached(id: str) -> Organization:
+    o = get(id)
+    if not o:
+        return None
+    general.expunge(o)
+    general.make_transient(o)
+    return o
 
 
 def get_by_name(name: str) -> Organization:
@@ -120,7 +129,7 @@ def log_admin_requests(org_id: str) -> str:  # enum AdminLogLevel
     if not org_id:
         # e.g. not assigned to an organization = not logged
         return None
-    if o := get(org_id):
+    if o := get_org_cached(org_id):
         return o.log_admin_requests
     return None
 
