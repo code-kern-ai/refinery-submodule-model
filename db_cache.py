@@ -81,13 +81,13 @@ class TTLCacheDecorator:
                 if entry:
                     value, expires_at = entry
                     if now < expires_at:
-                        print(f"Cache hit for {key} in {self.cache_type}")
+                        # print(f"Cache hit for {key} in {self.cache_type}")
                         return value
                     # expired
                     del cache[key]
 
             # miss or expired
-            print(f"No cache hit for {key} in {self.cache_type}")
+            # print(f"No cache hit for {key} in {self.cache_type}")
             result = fn(*args, **kwargs)
             with _CACHE_LOCK:
                 cache = _GLOBAL_CACHE_MAP[self.cache_type]
