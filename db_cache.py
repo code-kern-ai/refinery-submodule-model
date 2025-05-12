@@ -11,6 +11,7 @@ class CacheEnum(Enum):
     DEFAULT = "default"
     USER = "user"
     ORGANIZATION = "organization"
+    PROJECT = "project"
     TEAM = "team"
     # extend with more categories as needed
 

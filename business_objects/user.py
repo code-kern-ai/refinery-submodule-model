@@ -1,12 +1,14 @@
 from datetime import datetime
 from . import general, organization, team_member
 from .. import User, enums
-from typing import Dict, Any
-from ..session import session
+
+# from typing import Dict, Any
+from ..session import session, request_id_ctx_var
 from typing import List, Optional
 from sqlalchemy import sql
 
 from ..db_cache import TTLCacheDecorator, CacheEnum
+from ..session_wrapper import with_session
 
 from ..util import prevent_sql_injection
 
@@ -16,10 +18,12 @@ def get(user_id: str) -> User:
 
 
 @TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
+@with_session()
 def get_user_cached(user_id: str) -> User:
     """
     Get user by id and return as dict
     """
+    print("get_user_cached with session:", request_id_ctx_var.get(), flush=True)
     user = get(user_id)
     if not user:
         return None
