@@ -38,24 +38,73 @@ def _run_with_session(
             session.remove()
 
 
-def with_session(auto_remove: bool = True, new_session: bool = True):
+# def with_session(auto_remove: bool = True, new_session: bool = True):
+#     """
+#     Decorator for sync DB functions.
+
+#     Args:
+#         auto_remove: session.remove() after fn returns (default True)
+#         new_session: force a fresh session UUID for each call (default False)
+
+#     Usage:
+#         @with_session()
+#         def read_data(...):
+#             session = Session()
+#             return session.query(...)
+
+#         @with_session(auto_remove=False, new_session=True)
+#         def batch_ops(...):
+#             session = Session()
+#             # do writes in an isolated session context
+#     """
+
+#     def decorator(fn):
+#         @functools.wraps(fn)
+#         def wrapper(*args, **kwargs):
+#             return _run_with_session(
+#                 fn,
+#                 *args,
+#                 auto_remove=auto_remove,
+#                 new_session=new_session,
+#                 **kwargs,
+#             )
+
+#         return wrapper
+
+#     return decorator
+
+
+# async def run_db(
+#     fn, *args, auto_remove: bool = True, new_session: bool = True, **kwargs
+# ):
+#     """
+#     Async helper: runs a sync @with_session function in a threadpool.
+
+#     Args:
+#         fn: the @with_session-decorated function to call
+#         auto_remove: pass-through to control session removal
+#         new_session: pass-through to force fresh session UUID
+#     """
+#     ctx = copy_context()
+#     return await asyncio.to_thread(
+#         lambda: ctx.run(
+#             _run_with_session,
+#             fn,
+#             *args,
+#             auto_remove,
+#             new_session,
+#             **kwargs,
+#         )
+#     )
+
+
+def with_session(auto_remove: bool = True, new_session: bool = False):
     """
     Decorator for sync DB functions.
 
     Args:
         auto_remove: session.remove() after fn returns (default True)
         new_session: force a fresh session UUID for each call (default False)
-
-    Usage:
-        @with_session()
-        def read_data(...):
-            session = Session()
-            return session.query(...)
-
-        @with_session(auto_remove=False, new_session=True)
-        def batch_ops(...):
-            session = Session()
-            # do writes in an isolated session context
     """
 
     def decorator(fn):
@@ -75,7 +124,7 @@ def with_session(auto_remove: bool = True, new_session: bool = True):
 
 
 async def run_db(
-    fn, *args, auto_remove: bool = True, new_session: bool = True, **kwargs
+    fn, *args, auto_remove: bool = True, new_session: bool = False, **kwargs
 ):
     """
     Async helper: runs a sync @with_session function in a threadpool.
@@ -86,13 +135,16 @@ async def run_db(
         new_session: pass-through to force fresh session UUID
     """
     ctx = copy_context()
-    return await asyncio.to_thread(
-        lambda: ctx.run(
+
+    def call():
+        # explicitly pass keyword-only args
+        return ctx.run(
             _run_with_session,
             fn,
             *args,
-            auto_remove,
-            new_session,
+            auto_remove=auto_remove,
+            new_session=new_session,
             **kwargs,
         )
-    )
+
+    return await asyncio.to_thread(call)
