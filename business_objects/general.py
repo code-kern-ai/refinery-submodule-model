@@ -11,9 +11,12 @@ from .. import daemon
 from threading import Lock
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import Select
+import os
 
 
 __THREAD_LOCK = Lock()
+
+IS_DEV = os.getenv("IS_DEV", "false").lower() in {"true", "1", "yes", "y"}
 
 session_lookup = {}
 
@@ -23,7 +26,11 @@ def get_ctx_token() -> Any:
     session_uuid = str(uuid.uuid4())
     session_id = request_id_ctx_var.set(session_uuid)
 
-    call_stack = "".join(traceback.format_stack()[-5:])
+    if IS_DEV:
+        # traces are usually long running and only useful for debugging
+        call_stack = "".join(traceback.format_stack()[-5:])
+    else:
+        call_stack = "Activate dev mode to see call stack"
     with __THREAD_LOCK:
         session_lookup[session_uuid] = {
             "session_id": session_uuid,
