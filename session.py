@@ -88,3 +88,22 @@ def __start_session_cleanup():
                 except Exception:
                     traceback.print_exc()
         time.sleep(10)
+
+
+def pool_report():
+    """
+    Returns a dict with pool metrics for the engine bound to the given
+    SQLAlchemy Session (or global `engine` if sess is None).
+    """
+    # eng  = sess.get_bind() if sess else engine
+    pool = engine.pool
+
+    return {
+        "pool_size": pool.size(),
+        "checked_in": pool.checkedin(),
+        "overflow": pool.overflow(),
+        "checked_out": pool.checkedout(),
+        "max_overflow": pool._max_overflow,
+        "total_capacity": pool.size() + pool._max_overflow,
+        "available": (pool.size() + pool._max_overflow) - pool.checkedout(),
+    }
