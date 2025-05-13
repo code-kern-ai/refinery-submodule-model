@@ -155,6 +155,7 @@ class Tablenames(Enum):
     EVALUATION_RUN = "evaluation_run"
     PLAYGROUND_QUESTION = "playground_question"
     FULL_ADMIN_ACCESS = "full_admin_access"
+    THIRD_PARTY_INTEGRATION = "third_party_integration"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -493,6 +494,7 @@ class TaskType(Enum):
     TASK_QUEUE_ACTION = "task_queue_action"
     RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
     PARSE_COGNITION_FILE = "PARSE_COGNITION_FILE"
+    THIRD_PARTY_INTEGRATION = "THIRD_PARTY_INTEGRATION"
 
 
 class TaskQueueAction(Enum):
@@ -871,3 +873,18 @@ class EvaluationRunState(Enum):
     RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
+
+
+class CognitionThirdPartyIntegrationType(Enum):
+    # CSV = "CSV"
+    # JSON = "JSON"
+    # PDF = "PDF" TODO: how to handle ETL
+    # XLSX = "XLSX"
+    WEBPAGE = "WEBPAGE"
+    GITHUB = "GITHUB"
+
+    def all():
+        return [
+            CognitionThirdPartyIntegrationType.WEBPAGE.value,
+            CognitionThirdPartyIntegrationType.GITHUB.value,
+        ]

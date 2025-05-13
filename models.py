@@ -2070,3 +2070,34 @@ class FullAdminAccess(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True)
     meta_info = Column(JSON)
+
+
+class CognitionThirdPartyIntegration(Base):
+    __tablename__ = Tablenames.THIRD_PARTY_INTEGRATION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    description = Column(String)
+    state = Column(String)  # of type enums.CognitionMarkdownFileState.*.value
+    type = Column(String)  # of type enums.CognitionThirdPartyIntegrationType.*.value
+    config = Column(JSON)
+    """JSON object that contains the configuration for the integration type.
+    Examples:
+        - For a webhook integration, it might contain the URL and headers.
+        - For an API integration, it might contain the API key and endpoint.
+        - For a database integration, it might contain the connection string and credentials.
+
+    """
+
+    llm_config = Column(JSON)
