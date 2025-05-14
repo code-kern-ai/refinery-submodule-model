@@ -2101,3 +2101,4 @@ class CognitionThirdPartyIntegration(Base):
     """
 
     llm_config = Column(JSON)
+    error_message = Column(String)

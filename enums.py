@@ -679,6 +679,17 @@ class CognitionMarkdownFileState(Enum):
     FINISHED = "FINISHED"
     FAILED = "FAILED"
 
+    def all():
+        return [
+            CognitionMarkdownFileState.QUEUE.value,
+            CognitionMarkdownFileState.EXTRACTING.value,
+            CognitionMarkdownFileState.TOKENIZING.value,
+            CognitionMarkdownFileState.SPLITTING.value,
+            CognitionMarkdownFileState.TRANSFORMING.value,
+            CognitionMarkdownFileState.FINISHED.value,
+            CognitionMarkdownFileState.FAILED.value,
+        ]
+
 
 class CognitionInterfaceType(Enum):
     CHAT = "CHAT"
@@ -876,15 +887,16 @@ class EvaluationRunState(Enum):
 
 
 class CognitionThirdPartyIntegrationType(Enum):
+    # PDF = "PDF" TODO: how to handle ETL
     # CSV = "CSV"
     # JSON = "JSON"
-    # PDF = "PDF" TODO: how to handle ETL
+    # DOCX = "DOCX"
     # XLSX = "XLSX"
-    WEBPAGE = "WEBPAGE"
-    GITHUB = "GITHUB"
+    # WEBPAGE = "WEBPAGE"
+    SQL = "SQL"
+    GITHUB_FILE = "GITHUB_FILE"
+    GITHUB_ISSUE = "GITHUB_ISSUE"
 
-    def all():
-        return [
-            CognitionThirdPartyIntegrationType.WEBPAGE.value,
-            CognitionThirdPartyIntegrationType.GITHUB.value,
-        ]
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
