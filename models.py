@@ -2072,8 +2072,8 @@ class FullAdminAccess(Base):
     meta_info = Column(JSON)
 
 
-class CognitionThirdPartyIntegration(Base):
-    __tablename__ = Tablenames.THIRD_PARTY_INTEGRATION.value
+class CognitionIntegration(Base):
+    __tablename__ = Tablenames.INTEGRATION.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(
@@ -2090,7 +2090,7 @@ class CognitionThirdPartyIntegration(Base):
     name = Column(String)
     description = Column(String)
     state = Column(String)  # of type enums.CognitionMarkdownFileState.*.value
-    type = Column(String)  # of type enums.CognitionThirdPartyIntegrationType.*.value
+    type = Column(String)  # of type enums.CognitionIntegrationType.*.value
     config = Column(JSON)
     """JSON object that contains the configuration for the integration type.
     Examples:
@@ -2104,8 +2104,8 @@ class CognitionThirdPartyIntegration(Base):
     error_message = Column(String)
 
 
-class CognitionOrganizationIntegrationAccess(Base):
-    __tablename__ = Tablenames.ORGANIZATION_INTEGRATION_ACCESS.value
+class CognitionIntegrationAccess(Base):
+    __tablename__ = Tablenames.INTEGRATION_ACCESS.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
@@ -2119,6 +2119,4 @@ class CognitionOrganizationIntegrationAccess(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    integration_type = Column(
-        String
-    )  # of type enums.CognitionThirdPartyIntegrationType.*.value
+    integration_type = Column(String)  # of type enums.CognitionIntegrationType.*.value

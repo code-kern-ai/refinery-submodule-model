@@ -4,36 +4,36 @@ from fastapi import HTTPException
 
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionThirdPartyIntegration
+from ..models import CognitionIntegration
 from ..enums import CognitionMarkdownFileState
 
 
-def get_by_id(id: str) -> CognitionThirdPartyIntegration:
+def get_by_id(id: str) -> CognitionIntegration:
     return (
-        session.query(CognitionThirdPartyIntegration)
-        .filter(CognitionThirdPartyIntegration.id == id)
+        session.query(CognitionIntegration)
+        .filter(CognitionIntegration.id == id)
         .first()
     )
 
 
-def get(project_id: str, name: str) -> CognitionThirdPartyIntegration:
+def get(project_id: str, name: str) -> CognitionIntegration:
     return (
-        session.query(CognitionThirdPartyIntegration)
+        session.query(CognitionIntegration)
         .filter(
-            CognitionThirdPartyIntegration.project_id == project_id,
-            CognitionThirdPartyIntegration.name == name,
+            CognitionIntegration.project_id == project_id,
+            CognitionIntegration.name == name,
         )
         .first()
     )
 
 
-def get_all_by_project_id(project_id: str) -> List[CognitionThirdPartyIntegration]:
+def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
     return (
-        session.query(CognitionThirdPartyIntegration)
+        session.query(CognitionIntegration)
         .filter(
-            CognitionThirdPartyIntegration.project_id == project_id,
+            CognitionIntegration.project_id == project_id,
         )
-        .order_by(CognitionThirdPartyIntegration.created_at.asc())
+        .order_by(CognitionIntegration.created_at.asc())
         .all()
     )
 
@@ -50,10 +50,10 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     id: Optional[str] = None,
-) -> CognitionThirdPartyIntegration:
+) -> CognitionIntegration:
     if state not in CognitionMarkdownFileState.all():
         raise HTTPException(status_code=400, detail=f"Invalid state: {state}")
-    integration: CognitionThirdPartyIntegration = CognitionThirdPartyIntegration(
+    integration: CognitionIntegration = CognitionIntegration(
         id=id,
         project_id=project_id,
         created_by=user_id,
@@ -79,8 +79,8 @@ def update(
     llm_config: Optional[Dict] = None,
     error_message: Optional[str] = None,
     with_commit: bool = True,
-) -> CognitionThirdPartyIntegration:
-    integration: CognitionThirdPartyIntegration = get_by_id(id)
+) -> CognitionIntegration:
+    integration: CognitionIntegration = get_by_id(id)
 
     if name is not None:
         integration.name = name
@@ -96,24 +96,22 @@ def update(
         integration.llm_config = llm_config
     if error_message is not None:
         integration.error_message = error_message
-    general.flush_or_commit(with_commit)
+
+    general.add(integration, with_commit)
     return integration
 
 
 def execution_finished(id: str) -> bool:
     return bool(
-        session.query(CognitionThirdPartyIntegration)
+        session.query(CognitionIntegration)
         .filter(
-            CognitionThirdPartyIntegration.id == id,
-            CognitionThirdPartyIntegration.state
-            == CognitionMarkdownFileState.FINISHED.value,
+            CognitionIntegration.id == id,
+            CognitionIntegration.state == CognitionMarkdownFileState.FINISHED.value,
         )
         .first()
     )
 
 
 def delete(id: str, with_commit: bool = True) -> None:
-    session.query(CognitionThirdPartyIntegration).filter(
-        CognitionThirdPartyIntegration.id == id
-    ).delete()
+    session.query(CognitionIntegration).filter(CognitionIntegration.id == id).delete()
     general.flush_or_commit(with_commit)

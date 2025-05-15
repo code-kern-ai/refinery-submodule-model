@@ -155,8 +155,8 @@ class Tablenames(Enum):
     EVALUATION_RUN = "evaluation_run"
     PLAYGROUND_QUESTION = "playground_question"
     FULL_ADMIN_ACCESS = "full_admin_access"
-    THIRD_PARTY_INTEGRATION = "third_party_integration"
-    ORGANIZATION_INTEGRATION_ACCESS = "integration_organization_access"
+    INTEGRATION = "integration"
+    INTEGRATION_ACCESS = "integration_access"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -495,7 +495,7 @@ class TaskType(Enum):
     TASK_QUEUE_ACTION = "task_queue_action"
     RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
     PARSE_COGNITION_FILE = "PARSE_COGNITION_FILE"
-    THIRD_PARTY_INTEGRATION = "THIRD_PARTY_INTEGRATION"
+    INTEGRATION = "INTEGRATION"
 
 
 class TaskQueueAction(Enum):
@@ -887,7 +887,7 @@ class EvaluationRunState(Enum):
     FAILED = "FAILED"
 
 
-class CognitionThirdPartyIntegrationType(Enum):
+class CognitionIntegrationType(Enum):
     # CSV = "CSV"
     # JSON = "JSON"
     # DOCX = "DOCX"
@@ -902,12 +902,8 @@ class CognitionThirdPartyIntegrationType(Enum):
     def from_string(value: str):
         changed_value = value.upper().replace(" ", "_").replace("-", "_")
         try:
-            return CognitionThirdPartyIntegrationType[changed_value]
+            return CognitionIntegrationType[changed_value]
         except KeyError:
-            raise ValueError(
-                "Could not parse CognitionThirdPartyIntegrationType from string"
+            raise KeyError(
+                f"Could not parse CognitionIntegrationType from string '{changed_value}'"
             )
-
-    @classmethod
-    def all(cls):
-        return [e.value for e in cls]
