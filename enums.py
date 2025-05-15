@@ -156,6 +156,7 @@ class Tablenames(Enum):
     PLAYGROUND_QUESTION = "playground_question"
     FULL_ADMIN_ACCESS = "full_admin_access"
     THIRD_PARTY_INTEGRATION = "third_party_integration"
+    ORGANIZATION_INTEGRATION_ACCESS = "integration_organization_access"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -887,7 +888,6 @@ class EvaluationRunState(Enum):
 
 
 class CognitionThirdPartyIntegrationType(Enum):
-    # PDF = "PDF" TODO: how to handle ETL
     # CSV = "CSV"
     # JSON = "JSON"
     # DOCX = "DOCX"
@@ -896,6 +896,17 @@ class CognitionThirdPartyIntegrationType(Enum):
     SQL = "SQL"
     GITHUB_FILE = "GITHUB_FILE"
     GITHUB_ISSUE = "GITHUB_ISSUE"
+    PDF = "PDF"
+
+    @staticmethod
+    def from_string(value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        try:
+            return CognitionThirdPartyIntegrationType[changed_value]
+        except KeyError:
+            raise ValueError(
+                "Could not parse CognitionThirdPartyIntegrationType from string"
+            )
 
     @classmethod
     def all(cls):

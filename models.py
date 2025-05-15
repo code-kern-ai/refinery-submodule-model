@@ -2102,3 +2102,23 @@ class CognitionThirdPartyIntegration(Base):
 
     llm_config = Column(JSON)
     error_message = Column(String)
+
+
+class CognitionOrganizationIntegrationAccess(Base):
+    __tablename__ = Tablenames.ORGANIZATION_INTEGRATION_ACCESS.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    integration_type = Column(
+        String
+    )  # of type enums.CognitionThirdPartyIntegrationType.*.value
