@@ -9,6 +9,7 @@ from submodules.model.cognition_objects import (
     markdown_file as markdown_file_db_bo,
     file_extraction as file_extraction_db_bo,
     file_transformation as file_transformation_db_bo,
+    integration as integration_db_bo,
 )
 
 FILE_CACHING_IN_PROGRESS_STATES = [
@@ -195,6 +196,16 @@ def set_parse_cognition_file_task_to_failed(
             if file_transformation.state in FILE_CACHING_IN_PROGRESS_STATES:
                 file_transformation.state = enums.FileCachingState.CANCELED.value
     general.commit()
+
+
+def set_integration_task_to_failed(
+    integration_id: str,
+    with_commit: bool = False,
+) -> None:
+    integration = integration_db_bo.get_by_id(integration_id)
+    if integration:
+        integration.state = enums.CognitionMarkdownFileState.FAILED.value
+        general.flush_or_commit(with_commit)
 
 
 def __select_running_information_source_payloads(
