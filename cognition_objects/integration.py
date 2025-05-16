@@ -93,9 +93,7 @@ def update(
     if description is not None:
         integration.description = description
     if state is not None:
-        if state not in CognitionMarkdownFileState.all():
-            raise HTTPException(status_code=400, detail=f"Invalid state: {state}")
-        integration.state = state
+        integration.state = state.value
     if integration_config is not None:
         integration.config = integration_config
     if llm_config is not None:
