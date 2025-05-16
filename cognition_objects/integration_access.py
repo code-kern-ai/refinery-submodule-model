@@ -40,7 +40,7 @@ def get(
 def create(
     org_id: str,
     user_id: str,
-    integration_type: CognitionIntegrationType,
+    integration_types: List[CognitionIntegrationType],
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionIntegrationAccess:
@@ -48,7 +48,7 @@ def create(
         org_id=org_id,
         created_by=user_id,
         created_at=created_at,
-        integration_type=integration_type,
+        integration_types=integration_types,
     )
     general.add(integration_access, with_commit)
 
