@@ -5,7 +5,10 @@ from fastapi import HTTPException
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionIntegration
-from ..enums import CognitionMarkdownFileState
+from ..enums import (
+    CognitionMarkdownFileState,
+    CognitionIntegrationType,
+)
 
 
 def get_by_id(id: str) -> CognitionIntegration:
@@ -44,7 +47,7 @@ def create(
     name: str,
     description: str,
     state: str,
-    integration_type: str,
+    integration_type: CognitionIntegrationType,
     integration_config: Dict,
     llm_config: Dict,
     extract_history: Optional[Dict] = {},
@@ -62,7 +65,7 @@ def create(
         name=name,
         description=description,
         state=state,
-        type=integration_type,
+        type=integration_type.value,
         config=integration_config,
         llm_config=llm_config,
         extract_history=extract_history,
