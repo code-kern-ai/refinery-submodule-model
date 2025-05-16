@@ -2124,4 +2124,4 @@ class CognitionIntegrationAccess(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    integration_type = Column(String)  # of type enums.CognitionIntegrationType.*.value
+    integration_types = Column(ARRAY)  # of type enums.CognitionIntegrationType.*.value
