@@ -2102,6 +2102,11 @@ class CognitionIntegration(Base):
 
     llm_config = Column(JSON)
     error_message = Column(String)
+    last_extraction = Column(JSON, default={})
+    # Information relevant for "delta" extraction. Varies based on the integration type.
+    # e.g. for github issue => last timestamp
+    # e.g. for github file => file name + SHA
+    # e.g. for PDF => file name + page number
 
 
 class CognitionIntegrationAccess(Base):
