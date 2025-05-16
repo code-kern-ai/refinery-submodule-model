@@ -47,6 +47,7 @@ def create(
     integration_type: str,
     integration_config: Dict,
     llm_config: Dict,
+    last_extraction: Optional[Dict] = {},
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     id: Optional[str] = None,
@@ -64,6 +65,7 @@ def create(
         type=integration_type,
         config=integration_config,
         llm_config=llm_config,
+        last_extraction=last_extraction,
     )
     general.add(integration, with_commit)
 
@@ -78,6 +80,7 @@ def update(
     integration_config: Optional[int] = None,
     llm_config: Optional[Dict] = None,
     error_message: Optional[str] = None,
+    last_extraction: Optional[Dict] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
     integration: CognitionIntegration = get_by_id(id)
@@ -96,6 +99,8 @@ def update(
         integration.llm_config = llm_config
     if error_message is not None:
         integration.error_message = error_message
+    if last_extraction is not None:
+        integration.last_extraction = last_extraction
 
     general.add(integration, with_commit)
     return integration
