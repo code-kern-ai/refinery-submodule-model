@@ -680,16 +680,9 @@ class CognitionMarkdownFileState(Enum):
     FINISHED = "FINISHED"
     FAILED = "FAILED"
 
-    def all():
-        return [
-            CognitionMarkdownFileState.QUEUE.value,
-            CognitionMarkdownFileState.EXTRACTING.value,
-            CognitionMarkdownFileState.TOKENIZING.value,
-            CognitionMarkdownFileState.SPLITTING.value,
-            CognitionMarkdownFileState.TRANSFORMING.value,
-            CognitionMarkdownFileState.FINISHED.value,
-            CognitionMarkdownFileState.FAILED.value,
-        ]
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
 
 
 class CognitionInterfaceType(Enum):

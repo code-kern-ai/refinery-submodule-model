@@ -42,7 +42,6 @@ def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
 
 
 def create(
-    project_id: str,
     user_id: str,
     name: str,
     description: str,
@@ -54,6 +53,7 @@ def create(
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     id: Optional[str] = None,
+    project_id: Optional[str] = None,
 ) -> CognitionIntegration:
     if state not in CognitionMarkdownFileState.all():
         raise HTTPException(status_code=400, detail=f"Invalid state: {state}")

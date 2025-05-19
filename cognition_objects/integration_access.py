@@ -45,7 +45,7 @@ def create(
     created_at: Optional[datetime] = None,
 ) -> CognitionIntegrationAccess:
     integration_access: CognitionIntegrationAccess = CognitionIntegrationAccess(
-        org_id=org_id,
+        organization_id=org_id,
         created_by=user_id,
         created_at=created_at,
         integration_types=integration_types,
