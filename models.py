@@ -2085,7 +2085,7 @@ class CognitionIntegration(Base):
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
+        index=False,
     )
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
@@ -2117,7 +2117,7 @@ class CognitionIntegrationAccess(Base):
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
+        index=False,
     )
     created_at = Column(DateTime, default=sql.func.now())
     organization_id = Column(
@@ -2128,3 +2128,32 @@ class CognitionIntegrationAccess(Base):
     integration_types = Column(
         ARRAY(String)
     )  # of type enums.CognitionIntegrationType.*.value
+
+
+class CognitionIntegrationRecord(Base):
+    __tablename__ = Tablenames.INTEGRATION_RECORD.value
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "record_id",
+            name="unique_record",
+        ),
+        {"schema": "cognition"},
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET_NULL"),
+        index=False,
+    )
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="SET_NULL"),
+        index=True,
+    )
+    record_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.RECORD.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
