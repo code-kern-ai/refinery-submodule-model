@@ -19,7 +19,6 @@ def get(id: str) -> Organization:
 @TTLCacheDecorator(CacheEnum.ORGANIZATION, 5, "id")
 @with_session()
 def get_org_cached(id: str) -> Organization:
-    print("get_org_cached with session:", request_id_ctx_var.get(), flush=True)
     o = get(id)
     if not o:
         return None
@@ -132,7 +131,7 @@ def log_admin_requests(org_id: str) -> str:  # enum AdminLogLevel
     if not org_id:
         # e.g. not assigned to an organization = not logged
         return None
-    if o := get_org_cached(org_id):
+    if o := get(org_id):
         return o.log_admin_requests
     return None
 

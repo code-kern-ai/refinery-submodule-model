@@ -32,17 +32,38 @@ def get_request_id():
 
 engine = create_engine(
     os.getenv("POSTGRES"),
-    pool_size=pool_size,
-    max_overflow=pool_max_overflow,
+    pool_size=1,
+    max_overflow=0,
     pool_recycle=pool_recycle,
     pool_use_lifo=pool_use_lifo,
     pool_pre_ping=pool_pre_ping,
+    pool_timeout=1,
 )
 
 session = scoped_session(
     sessionmaker(autocommit=False, autoflush=True, bind=engine),
     scopefunc=get_request_id,
 )
+
+
+def pool_report():
+    """
+    Returns a dict with pool metrics for the engine bound to the given
+    SQLAlchemy Session (or global `engine` if sess is None).
+    """
+    # eng  = sess.get_bind() if sess else engine
+    pool = engine.pool
+
+    return {
+        "pool_size": pool.size(),
+        "checked_in": pool.checkedin(),
+        "overflow": pool.overflow(),
+        "checked_out": pool.checkedout(),
+        "max_overflow": pool._max_overflow,
+        "total_capacity": pool.size() + pool._max_overflow,
+        "available": (pool.size() + pool._max_overflow) - pool.checkedout(),
+    }
+
 
 ## uncomment following lines to enable db logging
 """ import logging
@@ -88,22 +109,3 @@ def __start_session_cleanup():
                 except Exception:
                     traceback.print_exc()
         time.sleep(10)
-
-
-def pool_report():
-    """
-    Returns a dict with pool metrics for the engine bound to the given
-    SQLAlchemy Session (or global `engine` if sess is None).
-    """
-    # eng  = sess.get_bind() if sess else engine
-    pool = engine.pool
-
-    return {
-        "pool_size": pool.size(),
-        "checked_in": pool.checkedin(),
-        "overflow": pool.overflow(),
-        "checked_out": pool.checkedout(),
-        "max_overflow": pool._max_overflow,
-        "total_capacity": pool.size() + pool._max_overflow,
-        "available": (pool.size() + pool._max_overflow) - pool.checkedout(),
-    }

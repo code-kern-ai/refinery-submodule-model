@@ -7,6 +7,7 @@ from .business_objects import general
 from contextvars import copy_context
 from .session import session, request_id_ctx_var
 import functools
+from contextlib import contextmanager
 
 
 def _run_with_session(
@@ -36,66 +37,6 @@ def _run_with_session(
     finally:
         if auto_remove:
             session.remove()
-
-
-# def with_session(auto_remove: bool = True, new_session: bool = True):
-#     """
-#     Decorator for sync DB functions.
-
-#     Args:
-#         auto_remove: session.remove() after fn returns (default True)
-#         new_session: force a fresh session UUID for each call (default False)
-
-#     Usage:
-#         @with_session()
-#         def read_data(...):
-#             session = Session()
-#             return session.query(...)
-
-#         @with_session(auto_remove=False, new_session=True)
-#         def batch_ops(...):
-#             session = Session()
-#             # do writes in an isolated session context
-#     """
-
-#     def decorator(fn):
-#         @functools.wraps(fn)
-#         def wrapper(*args, **kwargs):
-#             return _run_with_session(
-#                 fn,
-#                 *args,
-#                 auto_remove=auto_remove,
-#                 new_session=new_session,
-#                 **kwargs,
-#             )
-
-#         return wrapper
-
-#     return decorator
-
-
-# async def run_db(
-#     fn, *args, auto_remove: bool = True, new_session: bool = True, **kwargs
-# ):
-#     """
-#     Async helper: runs a sync @with_session function in a threadpool.
-
-#     Args:
-#         fn: the @with_session-decorated function to call
-#         auto_remove: pass-through to control session removal
-#         new_session: pass-through to force fresh session UUID
-#     """
-#     ctx = copy_context()
-#     return await asyncio.to_thread(
-#         lambda: ctx.run(
-#             _run_with_session,
-#             fn,
-#             *args,
-#             auto_remove,
-#             new_session,
-#             **kwargs,
-#         )
-#     )
 
 
 def with_session(auto_remove: bool = True, new_session: bool = False):
@@ -148,3 +89,21 @@ async def run_db(
         )
 
     return await asyncio.to_thread(call)
+
+
+@contextmanager
+def session_on_demand(new_session: bool = True, auto_remove: bool = True):
+
+    try:
+        if new_session or request_id_ctx_var.get() is None:
+            general.get_ctx_token()
+        yield
+
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        if auto_remove:
+            session.remove()
+
+        # general.remove_and_refresh_session()
