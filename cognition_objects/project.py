@@ -9,7 +9,6 @@ from ..util import prevent_sql_injection
 from sqlalchemy.orm.attributes import flag_modified
 from copy import deepcopy
 from ..db_cache import TTLCacheDecorator, CacheEnum
-from ..session_wrapper import with_session
 
 
 def get(project_id: str) -> CognitionProject:
@@ -21,9 +20,7 @@ def get(project_id: str) -> CognitionProject:
 
 
 @TTLCacheDecorator(CacheEnum.PROJECT, 5, "project_id")
-@with_session()
 def get_cached(project_id: str) -> CognitionProject:
-    print("get_project_cached with session:", request_id_ctx_var.get(), flush=True)
     p = get(project_id)
     if not p:
         return None
@@ -57,9 +54,7 @@ def get_by_user(project_id: str, user_id: str) -> CognitionProject:
 
 
 @TTLCacheDecorator(CacheEnum.PROJECT, 5, "project_id", "user_id")
-@with_session()
 def get_by_user_cached(project_id: str, user_id: str) -> CognitionProject:
-    print("get_by_user_cached with session:", request_id_ctx_var.get(), flush=True)
     p = get_by_user(project_id, user_id)
     if not p:
         return None

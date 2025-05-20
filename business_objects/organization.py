@@ -9,7 +9,6 @@ from ..models import Organization, Project, User
 from ..business_objects import project, user, general
 from ..util import prevent_sql_injection
 from ..db_cache import TTLCacheDecorator, CacheEnum
-from ..session_wrapper import with_session
 
 
 def get(id: str) -> Organization:
@@ -17,7 +16,6 @@ def get(id: str) -> Organization:
 
 
 @TTLCacheDecorator(CacheEnum.ORGANIZATION, 5, "id")
-@with_session()
 def get_org_cached(id: str) -> Organization:
     o = get(id)
     if not o:

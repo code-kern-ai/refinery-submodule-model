@@ -37,7 +37,7 @@ engine = create_engine(
     pool_recycle=pool_recycle,
     pool_use_lifo=pool_use_lifo,
     pool_pre_ping=pool_pre_ping,
-    pool_timeout=1,
+    pool_timeout=10,
 )
 
 session = scoped_session(
@@ -75,9 +75,12 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 def check_session_and_rollback():
     try:
-        _ = session.connection()
+        # Check if the session is in a transaction
+        # Otherwise, connection would be first checked out (and thus await new connection from pool)
+        if session.registry().in_transaction():
+            _ = session.connection()
     except PendingRollbackError:
-        print("session issue detected, rollback initiated", flush=True)
+        print("Session issue detected, rollback initiated", flush=True)
         print(traceback.format_exc(), flush=True)
         while session.registry().in_transaction():
             session.rollback()
