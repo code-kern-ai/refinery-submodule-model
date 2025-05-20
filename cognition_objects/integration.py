@@ -45,6 +45,7 @@ def create(
     user_id: str,
     name: str,
     description: str,
+    tokenizer: str,
     state: str,
     integration_type: CognitionIntegrationType,
     integration_config: Dict,
@@ -64,6 +65,7 @@ def create(
         created_at=created_at,
         name=name,
         description=description,
+        tokenizer=tokenizer,
         state=state,
         type=integration_type.value,
         config=integration_config,
@@ -79,6 +81,7 @@ def update(
     id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    tokenizer: Optional[str] = None,
     state: Optional[CognitionMarkdownFileState] = None,
     integration_config: Optional[int] = None,
     llm_config: Optional[Dict] = None,
@@ -92,6 +95,8 @@ def update(
         integration.name = name
     if description is not None:
         integration.description = description
+    if tokenizer is not None:
+        integration.tokenizer = tokenizer
     if state is not None:
         integration.state = state.value
     if integration_config is not None:
