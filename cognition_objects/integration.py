@@ -4,7 +4,7 @@ from fastapi import HTTPException
 
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionIntegration
+from ..models import CognitionIntegration, Project
 from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
@@ -19,15 +19,17 @@ def get_by_id(id: str) -> CognitionIntegration:
     )
 
 
-def get(project_id: str, name: str) -> CognitionIntegration:
-    return (
+def get(
+    org_id: str, integration_type: Optional[str] = None
+) -> List[CognitionIntegration]:
+    query = (
         session.query(CognitionIntegration)
-        .filter(
-            CognitionIntegration.project_id == project_id,
-            CognitionIntegration.name == name,
-        )
-        .first()
+        .join(Project, CognitionIntegration.project_id == Project.id)
+        .filter(Project.organization_id == org_id)
     )
+    if integration_type:
+        query = query.filter(CognitionIntegration.type == integration_type)
+    return query.order_by(CognitionIntegration.created_at).all()
 
 
 def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
