@@ -55,6 +55,17 @@ def create(
     return integration_access
 
 
+def update(
+    id: str,
+    integration_types: List[CognitionIntegrationType],
+    with_commit: bool = True,
+) -> CognitionIntegrationAccess:
+    integration_access = get_by_id(id)
+    integration_access.integration_types = integration_types
+    general.add(integration_access, with_commit)
+    return integration_access
+
+
 def delete(id: str, with_commit: bool = True) -> None:
     session.query(CognitionIntegrationAccess).filter(
         CognitionIntegrationAccess.id == id
