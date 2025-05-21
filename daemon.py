@@ -1,9 +1,6 @@
 import threading
 from submodules.model.business_objects import general
-from contextvars import ContextVar
 import traceback
-
-thread_session_token = ContextVar("token", default=None)
 
 
 def run_without_db_token(target, *args, **kwargs):
@@ -27,9 +24,7 @@ def run_with_db_token(target, *args, **kwargs):
 
     # this is a workaround to set the token in the actual thread context
     def wrapper():
-        token = general.get_ctx_token()
-        print(f"=== Thread token set ===, {token.var.get()}", flush=True)
-        thread_session_token.set(token)
+        general.get_ctx_token()
         try:
             target(*args, **kwargs)
         except Exception:
@@ -37,24 +32,12 @@ def run_with_db_token(target, *args, **kwargs):
             print(traceback.format_exc(), flush=True)
             print("===========================", flush=True)
         finally:
-            reset_session_token_in_thread(False)
+            general.remove_and_refresh_session()
 
     threading.Thread(
         target=wrapper,
         daemon=True,
     ).start()
-
-
-def reset_session_token_in_thread(request_new: bool = True):
-    token = thread_session_token.get()
-    if not token:
-        # shouldn't happen if used with the run_with_session_token function
-        # so we print where it was called from
-        print(traceback.format_stack())
-        raise ValueError("No token set in thread context")
-    new_token = general.remove_and_refresh_session(request_new)
-    if new_token:
-        thread_session_token.set(new_token)
 
 
 def prepare_thread(target, *args, **kwargs) -> threading.Thread:
