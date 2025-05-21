@@ -105,13 +105,12 @@ def session_on_demand():
 
 @asynccontextmanager
 async def async_session_on_demand():
-
     general.get_ctx_token()
     ctx = copy_context()
     try:
         yield
     except Exception:
-        await asyncio.to_thread(session.rollback)
+        await asyncio.to_thread(lambda: ctx.run(session.rollback))
         raise
     finally:
         await asyncio.to_thread(lambda: ctx.run(general.remove_and_refresh_session))
