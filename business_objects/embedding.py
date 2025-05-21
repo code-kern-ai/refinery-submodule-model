@@ -670,11 +670,6 @@ def create(
         embedding.additional_data = {}
 
     general.add(embedding, with_commit)
-    print(
-        "--------------------------------------------",
-        embedding.delta_full_recalculation_threshold,
-        flush=True,
-    )
     return embedding
 
 
