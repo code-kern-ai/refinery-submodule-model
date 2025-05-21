@@ -32,12 +32,11 @@ def get_request_id():
 
 engine = create_engine(
     os.getenv("POSTGRES"),
-    pool_size=1,
-    max_overflow=0,
+    pool_size=pool_size,
+    max_overflow=pool_max_overflow,
     pool_recycle=pool_recycle,
     pool_use_lifo=pool_use_lifo,
     pool_pre_ping=pool_pre_ping,
-    pool_timeout=10,
 )
 
 session = scoped_session(

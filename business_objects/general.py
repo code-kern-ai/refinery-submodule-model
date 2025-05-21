@@ -11,12 +11,11 @@ from .. import daemon
 from threading import Lock
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import Select
-import os
 
 
 __THREAD_LOCK = Lock()
 
-IS_DEV = os.getenv("IS_DEV", "false").lower() in {"true", "1", "yes", "y"}
+IS_DEV = True
 
 session_lookup = {}
 
@@ -24,8 +23,8 @@ session_lookup = {}
 def get_ctx_token() -> Any:
     global session_lookup
     session_uuid = str(uuid.uuid4())
+    print("Session ID: ", session_uuid, flush=True)
     session_id = request_id_ctx_var.set(session_uuid)
-
     if IS_DEV:
         # traces are usually long running and only useful for debugging
         call_stack = "".join(traceback.format_stack()[-5:])
@@ -116,6 +115,7 @@ def remove_and_refresh_session(request_new: bool = False) -> Union[Any, None]:
     except Exception:
         print("Error: check_session_and_rollback() failed", flush=True)
         print(traceback.format_exc(), flush=True)
+    print("Session removed", request_id_ctx_var.get(), flush=True)
     reset_ctx_token(True)
     if request_new:
         return get_ctx_token()

@@ -28,6 +28,7 @@ def run_with_db_token(target, *args, **kwargs):
     # this is a workaround to set the token in the actual thread context
     def wrapper():
         token = general.get_ctx_token()
+        print(f"=== Thread token set ===, {token.var.get()}", flush=True)
         thread_session_token.set(token)
         try:
             target(*args, **kwargs)
@@ -51,7 +52,7 @@ def reset_session_token_in_thread(request_new: bool = True):
         # so we print where it was called from
         print(traceback.format_stack())
         raise ValueError("No token set in thread context")
-    new_token = general.remove_and_refresh_session(token, request_new)
+    new_token = general.remove_and_refresh_session(request_new)
     if new_token:
         thread_session_token.set(new_token)
 
