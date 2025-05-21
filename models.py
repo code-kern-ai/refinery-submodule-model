@@ -2062,3 +2062,11 @@ class PlaygroundQuestion(Base):
     # )
     # record_ids = Column(JSON)
     # meta_info = Column(JSON)
+
+
+class FullAdminAccess(Base):
+    __tablename__ = Tablenames.FULL_ADMIN_ACCESS.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email = Column(String, unique=True)
+    meta_info = Column(JSON)
