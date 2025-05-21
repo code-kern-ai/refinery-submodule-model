@@ -226,6 +226,7 @@ class User(Base):
     created_at = Column(DateTime, default=sql.func.now())
     metadata_public = Column(JSON)
     sso_provider = Column(String)
+    oidc_identifier = Column(String)
 
 
 class Team(Base):
