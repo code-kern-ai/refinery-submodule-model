@@ -485,6 +485,43 @@ def count(project_id: str) -> int:
     return session.query(Record).filter(Record.project_id == project_id).count()
 
 
+def count_missing_delta(project_id: str, attribute_id: str) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_id = prevent_sql_injection(attribute_id, isinstance(attribute_id, str))
+    query = f"""
+    WITH n AS (
+        SELECT NAME
+        FROM attribute a
+        WHERE id = '{attribute_id}'
+    )
+    SELECT COUNT(*)
+    FROM record r, n
+    WHERE r.project_id = '{project_id}'
+    AND r.data->>n.name IS NULL
+    """
+    value = general.execute_first(query)
+    if not value or not value[0]:
+        return 0
+    return value[0]
+
+
+def get_missing_delta_record_ids(project_id: str, attribute_id: str) -> List[str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_id = prevent_sql_injection(attribute_id, isinstance(attribute_id, str))
+    query = f"""
+    WITH n AS (
+        SELECT NAME
+        FROM attribute a
+        WHERE id = '{attribute_id}'
+    )
+    SELECT r.id::TEXT
+    FROM record r, n
+    WHERE r.project_id = '{project_id}'
+    AND r.data->>n.name IS NULL
+    """
+    return [row[0] for row in general.execute_all(query)]
+
+
 def count_attribute_list_entries(project_id: str, attribute_name: str) -> int:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     attribute_name = prevent_sql_injection(
