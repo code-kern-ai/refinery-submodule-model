@@ -782,6 +782,22 @@ def delete_tensors(embedding_id: str, with_commit: bool = False) -> None:
     general.flush_or_commit(with_commit)
 
 
+def delete_tensors_by_record_ids(
+    project_id: str,
+    record_ids: List[str],
+    embedding_id: Optional[str] = None,
+    with_commit: bool = False,
+) -> None:
+    query = session.query(EmbeddingTensor).filter(
+        EmbeddingTensor.project_id == project_id,
+        EmbeddingTensor.record_id.in_(record_ids),
+    )
+    if embedding_id:
+        query = query.filter(EmbeddingTensor.embedding_id == embedding_id)
+    query.delete()
+    general.flush_or_commit(with_commit)
+
+
 def delete_by_record_ids(
     project_id: str,
     embedding_id: str,
