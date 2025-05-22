@@ -3,7 +3,7 @@ from . import general, organization, team_member
 from .. import User, enums
 
 # from typing import Dict, Any
-from ..session import session, request_id_ctx_var
+from ..session import session
 from typing import List, Optional
 from sqlalchemy import sql
 
