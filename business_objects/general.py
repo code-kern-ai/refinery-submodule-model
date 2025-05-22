@@ -11,11 +11,11 @@ from .. import daemon
 from threading import Lock
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import Select
-
+import os
 
 __THREAD_LOCK = Lock()
 
-IS_DEV = True
+IS_DEV = os.getenv("IS_DEV", "false").lower() in {"true", "1", "yes", "y"}
 
 session_lookup = {}
 
