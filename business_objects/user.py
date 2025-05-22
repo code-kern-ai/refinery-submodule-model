@@ -28,9 +28,6 @@ def get_user_cached(user_id: str) -> User:
     general.expunge(user)
     general.make_transient(user)
     return user
-    # if not user:
-    #     return {}
-    # return sql_alchemy_to_dict(user)
 
 
 def get_by_id_list(user_ids: List[str]) -> List[User]:
