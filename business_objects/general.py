@@ -56,6 +56,8 @@ def reset_ctx_token(ctx_token: Any = None, remove_db: Optional[bool] = False) ->
         session.remove()
 
     session_uuid = request_id_ctx_var.get()
+    if session_uuid is None:
+        print("Session not found in context variable", flush=True)
     if ctx_token:
         request_id_ctx_var.reset(ctx_token)
     else:
