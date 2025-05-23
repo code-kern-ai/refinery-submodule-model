@@ -460,6 +460,10 @@ def get_attribute_data(
     attribute_name = prevent_sql_injection(
         attribute_name, isinstance(attribute_name, str)
     )
+    if embedding_id:
+        embedding_id = prevent_sql_injection(
+            embedding_id, isinstance(embedding_id, str)
+        )
     query = None
     order = __get_order_by(project_id, prefix="r.")
     join_extension, where_add = "", ""
