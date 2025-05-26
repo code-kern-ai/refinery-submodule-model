@@ -90,6 +90,7 @@ def update(
     integration_config: Optional[int] = None,
     llm_config: Optional[Dict] = None,
     error_message: Optional[str] = None,
+    started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
@@ -109,6 +110,8 @@ def update(
         integration.llm_config = llm_config
     if error_message is not None:
         integration.error_message = error_message
+    if started_at is not None:
+        integration.finished_at = started_at
     if finished_at is not None:
         integration.finished_at = finished_at
 
