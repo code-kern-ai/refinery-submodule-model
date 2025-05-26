@@ -2100,6 +2100,7 @@ class CognitionIntegration(Base):
         index=False,
     )
     created_at = Column(DateTime, default=sql.func.now())
+    finished_at = Column(DateTime)
     name = Column(String)
     description = Column(String)
     tokenizer = Column(String)

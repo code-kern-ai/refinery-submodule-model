@@ -54,6 +54,7 @@ def create(
     extract_history: Optional[Dict] = {},
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
+    finished_at: Optional[datetime] = None,
     id: Optional[str] = None,
     project_id: Optional[str] = None,
 ) -> CognitionIntegration:
@@ -65,6 +66,7 @@ def create(
         project_id=project_id,
         created_by=user_id,
         created_at=created_at,
+        finished_at=finished_at,
         name=name,
         description=description,
         tokenizer=tokenizer,
@@ -88,7 +90,7 @@ def update(
     integration_config: Optional[int] = None,
     llm_config: Optional[Dict] = None,
     error_message: Optional[str] = None,
-    extract_history: Optional[Dict] = None,
+    finished_at: Optional[datetime] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
     integration: CognitionIntegration = get_by_id(id)
@@ -107,8 +109,8 @@ def update(
         integration.llm_config = llm_config
     if error_message is not None:
         integration.error_message = error_message
-    if extract_history is not None:
-        integration.extract_history = extract_history
+    if finished_at is not None:
+        integration.finished_at = finished_at
 
     general.add(integration, with_commit)
     return integration
