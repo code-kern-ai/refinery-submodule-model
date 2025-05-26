@@ -1930,6 +1930,35 @@ class GraphRAGIndex(Base):
     root_dir = Column(String)
 
 
+class StepTemplates(Base):
+    __tablename__ = Tablenames.STEP_TEMPLATES.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    config = Column(JSON)  # JSON schema for the step template
+    # config contains all step configurations in an array & variable fields to be changed on useage
+    # e.g.
+    # {
+    #     "variables": [
+    # {"name": "Env var", "path": "[0].config.llmConfig.environmentVariable", "hasDefault": True, "defaultValue": "OpenAI Leo"},
+    # {"name": "System Prompt", "path": "[0].config.templatePrompt", "hasDefault": False},
+    # ],
+    #     "steps": [{...},{...}]
+    # }
+
+
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
