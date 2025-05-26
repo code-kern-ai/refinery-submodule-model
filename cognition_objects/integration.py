@@ -119,7 +119,10 @@ def execution_finished(id: str) -> bool:
         session.query(CognitionIntegration)
         .filter(
             CognitionIntegration.id == id,
-            CognitionIntegration.state == CognitionMarkdownFileState.FINISHED.value,
+            CognitionIntegration.state.in_(
+                CognitionMarkdownFileState.FINISHED.value,
+                CognitionMarkdownFileState.FAILED.value,
+            ),
         )
         .first()
     )
