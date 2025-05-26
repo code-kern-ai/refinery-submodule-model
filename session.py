@@ -44,6 +44,26 @@ session = scoped_session(
     scopefunc=get_request_id,
 )
 
+
+def pool_report():
+    """
+    Returns a dict with pool metrics for the engine bound to the given
+    SQLAlchemy Session (or global `engine` if sess is None).
+    """
+    # eng  = sess.get_bind() if sess else engine
+    pool = engine.pool
+
+    return {
+        "pool_size": pool.size(),
+        "checked_in": pool.checkedin(),
+        "overflow": pool.overflow(),
+        "checked_out": pool.checkedout(),
+        "max_overflow": pool._max_overflow,
+        "total_capacity": pool.size() + pool._max_overflow,
+        "available": (pool.size() + pool._max_overflow) - pool.checkedout(),
+    }
+
+
 ## uncomment following lines to enable db logging
 """ import logging
 logging.basicConfig()
@@ -54,9 +74,12 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 def check_session_and_rollback():
     try:
-        _ = session.connection()
+        # Check if the session is in a transaction
+        # Otherwise, connection would be first checked out (and thus await new connection from pool)
+        if session.registry().in_transaction():
+            _ = session.connection()
     except PendingRollbackError:
-        print("session issue detected, rollback initiated", flush=True)
+        print("Session issue detected, rollback initiated", flush=True)
         print(traceback.format_exc(), flush=True)
         while session.registry().in_transaction():
             session.rollback()

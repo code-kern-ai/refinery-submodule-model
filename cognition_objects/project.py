@@ -1,13 +1,14 @@
 from typing import List, Optional, Dict, Any, Iterable
 from ..business_objects import general, team_resource, user
 from ..cognition_objects import consumption_log, consumption_summary
-from ..session import session
+from ..session import session, request_id_ctx_var
 from ..models import CognitionProject, TeamMember, TeamResource
 from .. import enums
 from datetime import datetime
 from ..util import prevent_sql_injection
 from sqlalchemy.orm.attributes import flag_modified
 from copy import deepcopy
+from ..db_cache import TTLCacheDecorator, CacheEnum
 
 
 def get(project_id: str) -> CognitionProject:
@@ -16,6 +17,16 @@ def get(project_id: str) -> CognitionProject:
         .filter(CognitionProject.id == project_id)
         .first()
     )
+
+
+@TTLCacheDecorator(CacheEnum.PROJECT, 5, "project_id")
+def get_cached(project_id: str) -> CognitionProject:
+    p = get(project_id)
+    if not p:
+        return None
+    general.expunge(p)
+    general.make_transient(p)
+    return p
 
 
 def get_org_id(project_id: str) -> str:
@@ -40,6 +51,16 @@ def get_by_user(project_id: str, user_id: str) -> CognitionProject:
         .filter(CognitionProject.id == project_id)
         .first()
     )
+
+
+@TTLCacheDecorator(CacheEnum.PROJECT, 5, "project_id", "user_id")
+def get_by_user_cached(project_id: str, user_id: str) -> CognitionProject:
+    p = get_by_user(project_id, user_id)
+    if not p:
+        return None
+    general.expunge(p)
+    general.make_transient(p)
+    return p
 
 
 def get_all(org_id: str, order_by_name: bool = False) -> List[CognitionProject]:
