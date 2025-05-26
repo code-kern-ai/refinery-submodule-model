@@ -111,7 +111,7 @@ def update(
     if error_message is not None:
         integration.error_message = error_message
     if started_at is not None:
-        integration.finished_at = started_at
+        integration.started_at = started_at
     if finished_at is not None:
         integration.finished_at = finished_at
 
