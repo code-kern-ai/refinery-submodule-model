@@ -42,6 +42,7 @@ def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
 
 
 def create(
+    org_id: str,
     user_id: str,
     name: str,
     description: str,
@@ -60,6 +61,7 @@ def create(
         raise HTTPException(status_code=400, detail=f"Invalid state: {state}")
     integration: CognitionIntegration = CognitionIntegration(
         id=id,
+        organization_id=org_id,
         project_id=project_id,
         created_by=user_id,
         created_at=created_at,
