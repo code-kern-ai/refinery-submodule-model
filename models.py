@@ -807,6 +807,13 @@ class Embedding(Base):
     )
     additional_data = Column(JSON)
 
+    # threshold indicates when the embedding should be completely recalculated
+    delta_full_recalculation_threshold = Column(Float, default=0.5)
+    # holds the current number of records that were caluclated with the previous PCA if new records + current delta > threshold we recreate completely
+    # note that this number can be higher than expected because of updated records being recalculated as well
+    # meaning in theory if someone updates the same record over and over again at some point the full recalculation will be triggered
+    current_delta_record_count = Column(Integer, default=0)
+
 
 class EmbeddingTensor(Base):
     __tablename__ = Tablenames.EMBEDDING_TENSOR.value

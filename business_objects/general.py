@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 from sqlalchemy.orm.session import make_transient as make_transient_original
 from ..session import session, engine
 from ..session import request_id_ctx_var
-from ..session import check_session_and_rollback as check_and_roll
+from ..session import check_session_and_rollback
 from ..enums import Tablenames, try_parse_enum_value
 import traceback
 import datetime
@@ -11,9 +11,11 @@ from .. import daemon
 from threading import Lock
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql import Select
-
+import os
 
 __THREAD_LOCK = Lock()
+
+IS_DEV = os.getenv("IS_DEV", "false").lower() in {"true", "1", "yes", "y"}
 
 session_lookup = {}
 
@@ -22,8 +24,11 @@ def get_ctx_token() -> Any:
     global session_lookup
     session_uuid = str(uuid.uuid4())
     session_id = request_id_ctx_var.set(session_uuid)
-
-    call_stack = "".join(traceback.format_stack()[-5:])
+    if IS_DEV:
+        # traces are usually long running and only useful for debugging
+        call_stack = "".join(traceback.format_stack()[-5:])
+    else:
+        call_stack = "Activate dev mode to see call stack"
     with __THREAD_LOCK:
         session_lookup[session_uuid] = {
             "session_id": session_uuid,
@@ -46,15 +51,18 @@ def get_session_lookup(exclude_last_x_seconds: int = 5) -> Dict[str, Dict[str, A
     ]
 
 
-def reset_ctx_token(
-    ctx_token: Any,
-    remove_db: Optional[bool] = False,
-) -> None:
+def reset_ctx_token(ctx_token: Any = None, remove_db: Optional[bool] = False) -> None:
     if remove_db:
         session.remove()
-    session_uuid = ctx_token.var.get()
 
-    request_id_ctx_var.reset(ctx_token)
+    session_uuid = request_id_ctx_var.get()
+    if session_uuid is None:
+        print("Session not found in context variable", flush=True)
+    if ctx_token:
+        request_id_ctx_var.reset(ctx_token)
+    else:
+        request_id_ctx_var.set(None)
+
     global session_lookup
     with __THREAD_LOCK:
         if session_uuid in session_lookup:
@@ -106,9 +114,13 @@ def commit() -> None:
 
 
 def remove_and_refresh_session(
-    session_token: Any, request_new: bool = False
+    session_token: Any = None, request_new: bool = False
 ) -> Union[Any, None]:
-    check_and_roll()
+    try:
+        check_session_and_rollback()
+    except Exception:
+        print("Error: check_session_and_rollback() failed", flush=True)
+        print(traceback.format_exc(), flush=True)
     reset_ctx_token(session_token, True)
     if request_new:
         return get_ctx_token()
