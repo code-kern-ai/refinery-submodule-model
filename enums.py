@@ -543,6 +543,7 @@ class StrategyStepType(Enum):
     NEURAL_SEARCH = "NEURAL_SEARCH"
     WEBHOOK = "WEBHOOK"
     GRAPHRAG_SEARCH = "GRAPHRAG_SEARCH"
+    TEMPLATED = "TEMPLATED"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -570,6 +571,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.CALL_OTHER_AGENT: "Retrieve results from other agents",
     StrategyStepType.WEBHOOK: "Webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "Query GraphRAG index",
+    StrategyStepType.TEMPLATED: "Templated step",
 }
 
 STEP_WHEN_TO_USE = {
@@ -587,6 +589,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.CALL_OTHER_AGENT: "When you want to call another agent",
     StrategyStepType.WEBHOOK: "When you want to run a webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "When you want to query a knowledge graph",
+    StrategyStepType.TEMPLATED: "When you want to reuse existing templates",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -605,6 +608,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.CALL_OTHER_AGENT: "Calling another agent",
     StrategyStepType.WEBHOOK: "Running webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "Querying knowledge graph",
+    StrategyStepType.TEMPLATED: "Running templated step",
 }
 
 STEP_ERRORS = {
