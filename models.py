@@ -2076,6 +2076,11 @@ class CognitionIntegration(Base):
     __tablename__ = Tablenames.INTEGRATION.value
     __table_args__ = {"schema": "cognition"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),

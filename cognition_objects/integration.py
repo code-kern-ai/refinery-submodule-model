@@ -22,10 +22,8 @@ def get_by_id(id: str) -> CognitionIntegration:
 def get(
     org_id: str, integration_type: Optional[str] = None
 ) -> List[CognitionIntegration]:
-    query = (
-        session.query(CognitionIntegration)
-        .join(Project, CognitionIntegration.project_id == Project.id)
-        .filter(Project.organization_id == org_id)
+    query = session.query(CognitionIntegration).filter(
+        CognitionIntegration.organization_id == org_id
     )
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
@@ -132,6 +130,15 @@ def clear_history(id: str) -> None:
     general.add(integration, True)
 
 
-def delete(id: str, with_commit: bool = True) -> None:
-    session.query(CognitionIntegration).filter(CognitionIntegration.id == id).delete()
+def delete_many(
+    ids: List[str], delete_refinery_projects: bool = False, with_commit: bool = True
+) -> None:
+    integrations = session.query(CognitionIntegration).filter(
+        CognitionIntegration.id.in_(ids)
+    )
+    if delete_refinery_projects:
+        session.query(Project).filter(
+            Project.id.in_(filter(None, [i.project_id for i in integrations]))
+        ).delete(synchronize_session=False)
+    integrations.delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
