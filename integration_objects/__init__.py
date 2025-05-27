@@ -5,6 +5,7 @@ from datetime import datetime
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
 from ..session import session
+from ..enums import IntegrationMetadata
 
 
 def get_by_id(IntegrationModel, id: str) -> object:
@@ -48,21 +49,16 @@ def create(
     created_by: str,
     integration_id: str,
     running_id: int,
-    source: str,
-    delta_criteria: str,
-    minio_file_name: str,
     created_at: Optional[datetime] = None,
     id: Optional[str] = None,
     with_commit: bool = True,
-    **kwargs,
+    **metadata,
 ) -> object:
+    kwargs = __get_supported_metadata(IntegrationModel.__tablename__, **metadata)
     integration_record = IntegrationModel(
         created_by=created_by,
         integration_id=integration_id,
         running_id=running_id,
-        source=source,
-        delta_criteria=delta_criteria,
-        minio_file_name=minio_file_name,
         created_at=created_at,
         id=id,
         **kwargs,
@@ -78,30 +74,24 @@ def update(
     id: str,
     updated_by: str,
     running_id: Optional[int] = None,
-    source: Optional[str] = None,
-    delta_criteria: Optional[str] = None,
-    minio_file_name: Optional[str] = None,
     updated_at: Optional[datetime] = None,
     with_commit: bool = True,
-    **kwargs,
+    **metadata,
 ) -> object:
     integration_record = get_by_id(IntegrationModel, id)
     integration_record.updated_by = updated_by
 
     if running_id is not None:
         integration_record.running_id = running_id
-    if source is not None:
-        integration_record.source = source
-    if delta_criteria is not None:
-        integration_record.delta_criteria = delta_criteria
-    if minio_file_name is not None:
-        integration_record.minio_file_name = minio_file_name
     if updated_at is not None:
         integration_record.updated_at = updated_at
 
+    kwargs = __get_supported_metadata(IntegrationModel.__tablename__, **metadata)
     for key, value in kwargs.items():
         if not hasattr(integration_record, key):
-            raise ValueError(f"Invalid field '{key}' for {IntegrationModel.__name__}")
+            raise ValueError(
+                f"Invalid field '{key}' for {IntegrationModel.__tablename__}"
+            )
         if value is not None:
             setattr(integration_record, key, value)
 
@@ -122,6 +112,13 @@ def clear_history(IntegrationModel, id: str, with_commit: bool = False) -> None:
     integration_record = get_by_id(IntegrationModel, id)
     integration_record.delta_criteria = None
     general.add(integration_record, with_commit)
+
+
+def __get_supported_metadata(table_name: str, **kwargs) -> None:
+    supported_keys = IntegrationMetadata.from_table_name(table_name)
+    return {
+        key: kwargs[key] for key in supported_keys.value.intersection(kwargs.keys())
+    }
 
 
 __all__ = [

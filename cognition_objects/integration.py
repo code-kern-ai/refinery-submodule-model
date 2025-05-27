@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict
 from datetime import datetime
 from fastapi import HTTPException
+from sqlalchemy import func
 
 from ..business_objects import general
 from ..session import session
@@ -41,6 +42,18 @@ def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
     )
 
 
+def count_org_integrations(org_id: str) -> int:
+    counts = (
+        session.query(CognitionIntegration.type, func.count(CognitionIntegration.id))
+        .filter(
+            CognitionIntegration.organization_id == org_id,
+        )
+        .group_by(CognitionIntegration.type)
+        .all()
+    )
+    return {cognition_type: count for cognition_type, count in counts}
+
+
 def create(
     org_id: str,
     user_id: str,
@@ -51,7 +64,6 @@ def create(
     integration_type: CognitionIntegrationType,
     integration_config: Dict,
     llm_config: Dict,
-    extract_history: Optional[Dict] = {},
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
@@ -74,7 +86,6 @@ def create(
         type=integration_type.value,
         config=integration_config,
         llm_config=llm_config,
-        extract_history=extract_history,
     )
     general.add(integration, with_commit)
 
@@ -125,8 +136,10 @@ def execution_finished(id: str) -> bool:
         .filter(
             CognitionIntegration.id == id,
             CognitionIntegration.state.in_(
-                CognitionMarkdownFileState.FINISHED.value,
-                CognitionMarkdownFileState.FAILED.value,
+                [
+                    CognitionMarkdownFileState.FINISHED.value,
+                    CognitionMarkdownFileState.FAILED.value,
+                ]
             ),
         )
         .first()

@@ -905,3 +905,52 @@ class CognitionIntegrationType(Enum):
             raise KeyError(
                 f"Could not parse CognitionIntegrationType from string '{changed_value}'"
             )
+
+
+class IntegrationMetadata(Enum):
+    """
+    Enum for controlling and documenting the dynamic metadata fields associated with different integration types.
+
+    The `IntegrationMetadata` enum defines which metadata keys are expected and allowed for each integration type
+    (e.g., GITHUB_FILE, GITHUB_ISSUE, PDF). Each member contains a set of keys specific to that integration, while
+    the `__DEFAULT__` member defines a set of common metadata fields (`source`, `delta_criteria`, `minio_file_name`)
+    that are always included.
+
+    During extraction (see the `extract` functions in the integration handlers), metadata is dynamically attached to
+    each document according to the rules defined here. This ensures that only the relevant and allowed metadata fields
+    are published to the database for each integration type.
+
+    The enum provides utility methods:
+      - `from_string(value: str)`: Returns the union of default and integration-specific metadata keys for a given type.
+      - `from_table_name(table_name: str)`: Looks up metadata keys based on the integration's table name.
+
+    This enum is used by the integration object logic (see `submodules/model/integration_objects/__init__.py`) to
+    validate and filter metadata before persisting it, ensuring consistency and preventing unwanted fields from being
+    stored in the database.
+
+    Example:
+        IntegrationMetadata.from_string("PDF")
+        # returns: {"source", "delta_criteria", "minio_file_name", "file_path", "page", "total_pages", "title"}
+    """
+
+    __DEFAULT__ = {"source", "delta_criteria", "minio_file_name"}
+
+    GITHUB_FILE = {"path", "sha", "code_language"}
+    GITHUB_ISSUE = {"url", "state", "number", "assignee", "milestone"}
+    PDF = {"file_path", "page", "total_pages", "title"}
+
+    @staticmethod
+    def from_string(value: str):
+        default = IntegrationMetadata.__DEFAULT__.value
+
+        try:
+            metadata_keys = IntegrationMetadata[value].value
+        except KeyError:
+            raise ValueError(
+                f"Could not parse IntegrationMetadata from string '{value}'"
+            )
+        return default.union(metadata_keys)
+
+    @staticmethod
+    def from_table_name(table_name: str):
+        raise IntegrationMetadata.from_string(table_name.upper())
