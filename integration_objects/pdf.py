@@ -53,7 +53,6 @@ def update(
     updated_by: str,
     running_id: Optional[int] = None,
     updated_at: Optional[datetime] = None,
-    with_commit: bool = True,
     **metadata
 ) -> IntegrationModel:
     return integration_objects.update(
@@ -62,7 +61,6 @@ def update(
         updated_by=updated_by,
         running_id=running_id,
         updated_at=updated_at,
-        with_commit=with_commit,
         **metadata
     )
 

@@ -23,6 +23,17 @@ def get_by_running_id(IntegrationModel, integration_id: str, running_id: int) ->
     )
 
 
+def get_by_source(IntegrationModel, integration_id: str, source: str) -> object:
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration_id,
+            IntegrationModel.source == source,
+        )
+        .first()
+    )
+
+
 def get_all_by_integration_id(IntegrationModel, integration_id: str) -> List[object]:
     return (
         session.query(IntegrationModel)
@@ -75,7 +86,6 @@ def update(
     updated_by: str,
     running_id: Optional[int] = None,
     updated_at: Optional[datetime] = None,
-    with_commit: bool = True,
     **metadata,
 ) -> object:
     integration_record = get_by_id(IntegrationModel, id)
@@ -86,16 +96,19 @@ def update(
     if updated_at is not None:
         integration_record.updated_at = updated_at
 
+    record_updated = False
     kwargs = __get_supported_metadata(IntegrationModel.__tablename__, **metadata)
     for key, value in kwargs.items():
         if not hasattr(integration_record, key):
             raise ValueError(
                 f"Invalid field '{key}' for {IntegrationModel.__tablename__}"
             )
-        if value is not None:
+        existing_value = getattr(integration_record, key, None)
+        if value is not None and value != existing_value:
             setattr(integration_record, key, value)
+            record_updated = True
 
-    general.add(integration_record, with_commit)
+    general.add(integration_record, with_commit=record_updated)
 
     return integration_record
 
@@ -116,15 +129,14 @@ def clear_history(IntegrationModel, id: str, with_commit: bool = False) -> None:
 
 def __get_supported_metadata(table_name: str, **kwargs) -> None:
     supported_keys = IntegrationMetadata.from_table_name(table_name)
-    return {
-        key: kwargs[key] for key in supported_keys.value.intersection(kwargs.keys())
-    }
+    return {key: kwargs[key] for key in supported_keys.intersection(kwargs.keys())}
 
 
 __all__ = [
     "create",
     "update",
     "delete_many",
+    "clear_history",
     "get_by_id",
     "get_by_running_id",
     "get_all_by_integration_id",

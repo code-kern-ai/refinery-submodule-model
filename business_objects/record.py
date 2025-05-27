@@ -913,14 +913,3 @@ def get_first_no_text_column(project_id: str, record_id: str) -> str:
     WHERE r.project_id = '{project_id}' AND r.id = '{record_id}'
     """
     return general.execute_first(query)[0]
-
-
-def get_integration_delta_record(project_id: str, source: str) -> Record:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    source = prevent_sql_injection(source, isinstance(source, str))
-    query = f"""
-    SELECT r.*
-    FROM record r
-    WHERE r.project_id = '{project_id}' AND r.data->>'source' = '{source}'
-    """
-    return general.execute_first(query)

@@ -941,16 +941,14 @@ class IntegrationMetadata(Enum):
 
     @staticmethod
     def from_string(value: str):
-        default = IntegrationMetadata.__DEFAULT__.value
-
         try:
             metadata_keys = IntegrationMetadata[value].value
         except KeyError:
             raise ValueError(
                 f"Could not parse IntegrationMetadata from string '{value}'"
             )
-        return default.union(metadata_keys)
+        return IntegrationMetadata.__DEFAULT__.union(metadata_keys)
 
     @staticmethod
     def from_table_name(table_name: str):
-        raise IntegrationMetadata.from_string(table_name.upper())
+        return IntegrationMetadata.from_string(table_name.upper())

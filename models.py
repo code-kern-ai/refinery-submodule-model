@@ -2166,6 +2166,7 @@ class IntegrationGithubFile(Base):
     source = Column(String, index=True)
     path = Column(String)
     sha = Column(String)
+    code_language = Column(String)
 
     delta_criteria = Column(JSON)
     minio_file_name = Column(String)
