@@ -2237,3 +2237,36 @@ class IntegrationPdf(Base):
 
     delta_criteria = Column(JSON)
     minio_file_name = Column(String)
+
+
+class IntegrationSharepoint(Base):
+    __tablename__ = Tablenames.INTEGRATION_SHAREPOINT.value
+    __table_args__ = {"schema": "integration"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=False,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=False,
+        nullable=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    # file_path = Column(String)
+    # page = Column(Integer)
+    # total_pages = Column(Integer)
+    # title = Column(String)
+
+    delta_criteria = Column(JSON)
+    minio_file_name = Column(String)

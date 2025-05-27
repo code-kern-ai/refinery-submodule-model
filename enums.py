@@ -162,6 +162,7 @@ class Tablenames(Enum):
     INTEGRATION_GITHUB_FILE = "github_file"
     INTEGRATION_GITHUB_ISSUE = "github_issue"
     INTEGRATION_PDF = "pdf"
+    INTEGRATION_SHAREPOINT = "sharepoint"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -891,7 +892,7 @@ class CognitionIntegrationType(Enum):
     # DOCX = "DOCX"
     # XLSX = "XLSX"
     # WEBPAGE = "WEBPAGE"
-    SQL = "SQL"
+    SHAREPOINT = "SHAREPOINT"
     GITHUB_FILE = "GITHUB_FILE"
     GITHUB_ISSUE = "GITHUB_ISSUE"
     PDF = "PDF"
@@ -938,6 +939,7 @@ class IntegrationMetadata(Enum):
     GITHUB_FILE = {"path", "sha", "code_language"}
     GITHUB_ISSUE = {"url", "state", "number", "assignee", "milestone"}
     PDF = {"file_path", "page", "total_pages", "title"}
+    SHAREPOINT = {}
 
     @staticmethod
     def from_string(value: str):

@@ -1,11 +1,23 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 
+from sqlalchemy import func
 from datetime import datetime
 
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
 from ..session import session
 from ..enums import IntegrationMetadata
+
+
+def get(IntegrationModel, id: str, integration_id: str) -> object:
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.id == id,
+            IntegrationModel.integration_id == integration_id,
+        )
+        .first()
+    )
 
 
 def get_by_id(IntegrationModel, id: str) -> object:
@@ -55,6 +67,28 @@ def get_all_by_project_id(IntegrationModel, project_id: str) -> List[object]:
     )
 
 
+def get_existing_integration_records(
+    IntegrationModel, integration_id: str
+) -> Dict[str, object]:
+    return {
+        integration.source: integration
+        for integration in get_all_by_integration_id(IntegrationModel, integration_id)
+    }
+
+
+def get_max_running_id(IntegrationModel, integration_id: str) -> int:
+    """
+    Get the maximum running_id for a given integration_id.
+    Returns 0 if no records are found.
+    """
+    max_running_id = (
+        session.query(func.coalesce(func.max(IntegrationModel.running_id), 0))
+        .filter(IntegrationModel.integration_id == integration_id)
+        .first()
+    )
+    return max_running_id[0]
+
+
 def create(
     IntegrationModel,
     created_by: str,
@@ -83,12 +117,13 @@ def create(
 def update(
     IntegrationModel,
     id: str,
+    integration_id: str,
     updated_by: str,
     running_id: Optional[int] = None,
     updated_at: Optional[datetime] = None,
     **metadata,
 ) -> object:
-    integration_record = get_by_id(IntegrationModel, id)
+    integration_record = get(IntegrationModel, id, integration_id)
     integration_record.updated_by = updated_by
 
     if running_id is not None:
@@ -108,7 +143,8 @@ def update(
             setattr(integration_record, key, value)
             record_updated = True
 
-    general.add(integration_record, with_commit=record_updated)
+    if record_updated:
+        general.add(integration_record, with_commit=True)
 
     return integration_record
 
@@ -130,15 +166,3 @@ def clear_history(IntegrationModel, id: str, with_commit: bool = False) -> None:
 def __get_supported_metadata(table_name: str, **kwargs) -> None:
     supported_keys = IntegrationMetadata.from_table_name(table_name)
     return {key: kwargs[key] for key in supported_keys.intersection(kwargs.keys())}
-
-
-__all__ = [
-    "create",
-    "update",
-    "delete_many",
-    "clear_history",
-    "get_by_id",
-    "get_by_running_id",
-    "get_all_by_integration_id",
-    "get_all_by_project_id",
-]
