@@ -157,7 +157,11 @@ class Tablenames(Enum):
     FULL_ADMIN_ACCESS = "full_admin_access"
     INTEGRATION = "integration"
     INTEGRATION_ACCESS = "integration_access"
-    INTEGRATION_RECORD = "integration_record"
+
+    # Individial integrations
+    INTEGRATION_GITHUB_FILE = "github_file"
+    INTEGRATION_GITHUB_ISSUE = "github_issue"
+    INTEGRATION_PDF = "pdf"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs

@@ -2118,11 +2118,6 @@ class CognitionIntegration(Base):
 
     llm_config = Column(JSON)
     error_message = Column(String)
-    extract_history = Column(JSON)
-    # Information relevant for "delta" extraction. Varies based on the integration type.
-    # e.g. for github issue => last timestamp
-    # e.g. for github file => file name + SHA
-    # e.g. for PDF => file name + page number
 
 
 class CognitionIntegrationAccess(Base):
@@ -2143,3 +2138,101 @@ class CognitionIntegrationAccess(Base):
     integration_types = Column(
         ARRAY(String)
     )  # of type enums.CognitionIntegrationType.*.value
+
+
+class IntegrationGithubFile(Base):
+    __tablename__ = Tablenames.INTEGRATION_GITHUB_FILE.value
+    __table_args__ = {"schema": "integration"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=False,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=False,
+        nullable=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    path = Column(String)
+    sha = Column(String)
+
+    delta_criteria = Column(JSON)
+    minio_file_name = Column(String)
+
+
+class IntegrationGithubIssue(Base):
+    __tablename__ = Tablenames.INTEGRATION_GITHUB_ISSUE.value
+    __table_args__ = {"schema": "integration"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=False,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=False,
+        nullable=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    url = Column(String)
+    state = Column(String)
+    assignee = Column(String)
+    milestone = Column(String)
+    number = Column(Integer)
+
+    delta_criteria = Column(JSON)
+    minio_file_name = Column(String)
+
+
+class IntegrationPdf(Base):
+    __tablename__ = Tablenames.INTEGRATION_PDF.value
+    __table_args__ = {"schema": "integration"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=False,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=False,
+        nullable=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    file_path = Column(String)
+    page = Column(Integer)
+    total_pages = Column(Integer)
+    title = Column(String)
+
+    delta_criteria = Column(JSON)
+    minio_file_name = Column(String)
