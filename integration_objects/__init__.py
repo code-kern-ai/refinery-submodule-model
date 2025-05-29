@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 from sqlalchemy import func
 from datetime import datetime
@@ -99,7 +99,7 @@ def create(
     with_commit: bool = True,
     **metadata,
 ) -> object:
-    kwargs = __get_supported_metadata(IntegrationModel.__tablename__, **metadata)
+    kwargs = __get_supported_metadata(IntegrationModel.__tablename__, metadata)
     integration_record = IntegrationModel(
         created_by=created_by,
         integration_id=integration_id,
@@ -132,7 +132,7 @@ def update(
         integration_record.updated_at = updated_at
 
     record_updated = False
-    kwargs = __get_supported_metadata(IntegrationModel.__tablename__, **metadata)
+    kwargs = __get_supported_metadata(IntegrationModel.__tablename__, metadata)
     for key, value in kwargs.items():
         if not hasattr(integration_record, key):
             raise ValueError(
@@ -163,6 +163,21 @@ def clear_history(IntegrationModel, id: str, with_commit: bool = False) -> None:
     general.add(integration_record, with_commit)
 
 
-def __get_supported_metadata(table_name: str, **kwargs) -> None:
+def __get_supported_metadata(
+    table_name: str, metadata: Dict[str, Union[str, int, float, bool]]
+) -> None:
     supported_keys = IntegrationMetadata.from_table_name(table_name)
-    return {key: kwargs[key] for key in supported_keys.intersection(kwargs.keys())}
+    return {key: metadata[key] for key in supported_keys.intersection(metadata.keys())}
+
+
+def __rename_metadata(
+    table_name: str, metadata: Dict[str, Union[str, int, float, bool]]
+) -> Dict[str, object]:
+    rename_keys = {
+        "id": f"{table_name}_id",
+        "created_by": f"{table_name}_created_by",
+        "created_at": f"{table_name}_created_at",
+        "updated_by": f"{table_name}_updated_by",
+        "updated_at": f"{table_name}_updated_at",
+    }
+    return {rename_keys.get(key, key): value for key, value in metadata.items()}
