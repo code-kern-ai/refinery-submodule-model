@@ -939,7 +939,22 @@ class IntegrationMetadata(Enum):
     GITHUB_FILE = {"path", "sha", "code_language"}
     GITHUB_ISSUE = {"url", "state", "number", "assignee", "milestone"}
     PDF = {"file_path", "page", "total_pages", "title"}
-    SHAREPOINT = {}
+    SHAREPOINT = {
+        "extension",
+        "object_id",
+        "parent_path",
+        "name",
+        "web_url",
+        f"{Tablenames.INTEGRATION_SHAREPOINT.value}_created_by",
+        "modified_by",
+        "created",
+        "modified",
+        "description",
+        "size",
+        "mime_type",
+        "hashes",
+        "permissions",
+    }
 
     @staticmethod
     def from_string(value: str):

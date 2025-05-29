@@ -76,7 +76,7 @@ def get_existing_integration_records(
     }
 
 
-def get_max_running_id(IntegrationModel, integration_id: str) -> int:
+def get_running_id(IntegrationModel, integration_id: str) -> int:
     """
     Get the maximum running_id for a given integration_id.
     Returns 0 if no records are found.
