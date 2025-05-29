@@ -2147,7 +2147,7 @@ class IntegrationGithubFile(Base):
             "integration_id",
             "running_id",
             "source",
-            name="unique_source",
+            name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
     )
@@ -2187,7 +2187,7 @@ class IntegrationGithubIssue(Base):
             "integration_id",
             "running_id",
             "source",
-            name="unique_source",
+            name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
     )
@@ -2229,7 +2229,7 @@ class IntegrationPdf(Base):
             "integration_id",
             "running_id",
             "source",
-            name="unique_source",
+            name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
     )
@@ -2269,7 +2269,7 @@ class IntegrationSharepoint(Base):
             "integration_id",
             "running_id",
             "source",
-            name="unique_source",
+            name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
     )
