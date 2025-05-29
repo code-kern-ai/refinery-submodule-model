@@ -2213,14 +2213,13 @@ class IntegrationGithubIssue(Base):
     )
     running_id = Column(Integer, index=True)
     source = Column(String, index=True)
+    minio_file_name = Column(String)
+
     url = Column(String)
     state = Column(String)
     assignee = Column(String)
     milestone = Column(String)
     number = Column(Integer)
-
-    delta_criteria = Column(JSON)
-    minio_file_name = Column(String)
 
 
 class IntegrationPdf(Base):
@@ -2255,13 +2254,12 @@ class IntegrationPdf(Base):
     )
     running_id = Column(Integer, index=True)
     source = Column(String, index=True)
+    minio_file_name = Column(String)
+
     file_path = Column(String)
     page = Column(Integer)
     total_pages = Column(Integer)
     title = Column(String)
-
-    delta_criteria = Column(JSON)
-    minio_file_name = Column(String)
 
 
 class IntegrationSharepoint(Base):
@@ -2296,6 +2294,7 @@ class IntegrationSharepoint(Base):
     )
     running_id = Column(Integer, index=True)
     source = Column(String, index=True)
+    minio_file_name = Column(String)
 
     extension = Column(String)
     object_id = Column(String)
@@ -2304,13 +2303,10 @@ class IntegrationSharepoint(Base):
     web_url = Column(String)
     sharepoint_created_by = Column(String)
     modified_by = Column(String)
-    created = Column(String)
-    modified = Column(String)
+    created = Column(DateTime, default=None)
+    modified = Column(DateTime, default=None)
     description = Column(String)
-    size = Column(String)
+    size = Column(Integer)
     mime_type = Column(String)
     hashes = Column(JSON)
     permissions = Column(JSON)
-
-    delta_criteria = Column(JSON)
-    minio_file_name = Column(String)
