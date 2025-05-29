@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict
-from datetime import datetime
+import datetime
 from fastapi import HTTPException
 from sqlalchemy import func
 
@@ -65,8 +65,9 @@ def create(
     integration_config: Dict,
     llm_config: Dict,
     with_commit: bool = True,
-    created_at: Optional[datetime] = None,
-    finished_at: Optional[datetime] = None,
+    started_at: Optional[datetime.datetime] = None,
+    created_at: Optional[datetime.datetime] = None,
+    finished_at: Optional[datetime.datetime] = None,
     id: Optional[str] = None,
     project_id: Optional[str] = None,
 ) -> CognitionIntegration:
@@ -78,6 +79,7 @@ def create(
         project_id=project_id,
         created_by=user_id,
         created_at=created_at,
+        started_at=started_at,
         finished_at=finished_at,
         name=name,
         description=description,
@@ -101,8 +103,8 @@ def update(
     integration_config: Optional[int] = None,
     llm_config: Optional[Dict] = None,
     error_message: Optional[str] = None,
-    started_at: Optional[datetime] = None,
-    finished_at: Optional[datetime] = None,
+    started_at: Optional[datetime.datetime] = None,
+    finished_at: Optional[datetime.datetime] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
     integration: CognitionIntegration = get_by_id(id)

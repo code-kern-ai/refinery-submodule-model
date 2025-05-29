@@ -2142,7 +2142,15 @@ class CognitionIntegrationAccess(Base):
 
 class IntegrationGithubFile(Base):
     __tablename__ = Tablenames.INTEGRATION_GITHUB_FILE.value
-    __table_args__ = {"schema": "integration"}
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "source",
+            name="unique_source",
+        ),
+        {"schema": "integration"},
+    )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
         UUID(as_uuid=True),
@@ -2174,7 +2182,16 @@ class IntegrationGithubFile(Base):
 
 class IntegrationGithubIssue(Base):
     __tablename__ = Tablenames.INTEGRATION_GITHUB_ISSUE.value
-    __table_args__ = {"schema": "integration"}
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "source",
+            name="unique_source",
+        ),
+        {"schema": "integration"},
+    )
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
         UUID(as_uuid=True),
@@ -2208,7 +2225,15 @@ class IntegrationGithubIssue(Base):
 
 class IntegrationPdf(Base):
     __tablename__ = Tablenames.INTEGRATION_PDF.value
-    __table_args__ = {"schema": "integration"}
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "source",
+            name="unique_source",
+        ),
+        {"schema": "integration"},
+    )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
         UUID(as_uuid=True),
@@ -2241,7 +2266,15 @@ class IntegrationPdf(Base):
 
 class IntegrationSharepoint(Base):
     __tablename__ = Tablenames.INTEGRATION_SHAREPOINT.value
-    __table_args__ = {"schema": "integration"}
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "source",
+            name="unique_source",
+        ),
+        {"schema": "integration"},
+    )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
         UUID(as_uuid=True),
