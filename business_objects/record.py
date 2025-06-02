@@ -773,7 +773,7 @@ def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
     general.flush_or_commit(with_commit)
 
 
-def delete_multiple(
+def delete_many(
     project_id: str, record_ids: Iterable[str], with_commit: bool = False
 ) -> int:
     res = (
