@@ -773,6 +773,18 @@ def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
     general.flush_or_commit(with_commit)
 
 
+def delete_many(
+    project_id: str, record_ids: Iterable[str], with_commit: bool = False
+) -> int:
+    res = (
+        session.query(Record)
+        .filter(Record.project_id == project_id, Record.id.in_(record_ids))
+        .delete()
+    )
+    general.flush_or_commit(with_commit)
+    return res
+
+
 def delete_all(project_id: str, with_commit: bool = False) -> None:
     session.query(Record).filter(Record.project_id == project_id).delete()
     general.flush_or_commit(with_commit)

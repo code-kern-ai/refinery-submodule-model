@@ -4,7 +4,7 @@ from .. import CommentData
 from . import general, organization
 from .. import enums
 from ..session import session
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Union, Iterable
 from ..util import prevent_sql_injection
 
 
@@ -302,6 +302,21 @@ def change_by_id(
 
 def remove(comment_id: str, with_commit: bool = False) -> None:
     session.delete(session.query(CommentData).get(comment_id))
+    general.flush_or_commit(with_commit)
+
+
+def delete_by_type_and_xfkey(
+    project_id: str,
+    xfkeys: Iterable[str],
+    xftype: enums.CommentCategory,
+    with_commit: bool = False,
+) -> None:
+
+    session.query(CommentData).filter(
+        CommentData.project_id == project_id,
+        CommentData.xfkey.in_(xfkeys),
+        CommentData.xftype == xftype.value,
+    ).delete()
     general.flush_or_commit(with_commit)
 
 
