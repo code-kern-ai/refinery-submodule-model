@@ -125,8 +125,8 @@ def update(
         integration.error_message = error_message
     if started_at is not None:
         integration.started_at = started_at
-    if finished_at is not None:
-        integration.finished_at = finished_at
+
+    integration.finished_at = finished_at
 
     general.add(integration, with_commit)
     return integration
