@@ -31,6 +31,7 @@ def get(
     return query.order_by(CognitionIntegration.created_at).all()
 
 
+# TODO: better approach for fetching all integrations to check for updates
 def get_all(integration_type: Optional[str] = None) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration)
     if integration_type:
