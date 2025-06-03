@@ -155,7 +155,9 @@ class Tablenames(Enum):
     EVALUATION_RUN = "evaluation_run"
     PLAYGROUND_QUESTION = "playground_question"
     FULL_ADMIN_ACCESS = "full_admin_access"
-
+    GROUP = "group"  # used for group based access control
+    GROUP_MEMBER = "group_member"  # used for group based access control
+    
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
         return "".join([word.title() for word in self.value.split("_")])
