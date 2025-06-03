@@ -451,29 +451,51 @@ def get_full_record_data_for_id_group(
 
 
 def get_attribute_data(
-    project_id: str, attribute_name: str
+    project_id: str,
+    attribute_name: str,
+    only_missing: bool = False,
+    embedding_id: Optional[str] = None,
 ) -> Tuple[List[str], List[str]]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     attribute_name = prevent_sql_injection(
         attribute_name, isinstance(attribute_name, str)
     )
+    if embedding_id:
+        embedding_id = prevent_sql_injection(
+            embedding_id, isinstance(embedding_id, str)
+        )
     query = None
-    order = __get_order_by(project_id)
+    order = __get_order_by(project_id, prefix="r.")
+    join_extension, where_add = "", ""
+    if only_missing:
+        if not embedding_id:
+            raise ValueError("embedding_id must be provided if only_missing is True")
+        join_extension, where_add = (
+            f"""
+        LEFT JOIN embedding_tensor et
+            ON et.project_id = r.project_id
+            AND et.record_id = r.id
+            AND et.project_id = '{project_id}' AND et.embedding_id = '{embedding_id}'  
+        """,
+            "AND et.id IS NULL",
+        )
     if attribute.get_by_name(project_id, attribute_name).data_type == "EMBEDDING_LIST":
         query = f"""
         SELECT id::TEXT || '@' || sub_key id, att AS "{attribute_name}"
         FROM (
-            SELECT id, value as att, ordinality - 1 as sub_key
-            FROM record
-            cross join json_array_elements_text((data::JSON->'{attribute_name}')) with ordinality
-            WHERE project_id = '{project_id}'
+            SELECT r.id, value as att, ordinality - 1 as sub_key
+            FROM record r
+            {join_extension}
+            cross join json_array_elements_text((r.data::JSON->'{attribute_name}')) with ordinality
+            WHERE r.project_id = '{project_id}' {where_add}
             {order} 
         )x """
     else:
         query = f"""
-        SELECT id::TEXT, data::JSON->'{attribute_name}' AS "{attribute_name}"
-        FROM record
-        WHERE project_id = '{project_id}'
+        SELECT r.id::TEXT, r.data::JSON->'{attribute_name}' AS "{attribute_name}"
+        FROM record r
+        {join_extension}
+        WHERE r.project_id = '{project_id}' {where_add}
         {order}
         """
     result = general.execute_all(query)
@@ -483,6 +505,43 @@ def get_attribute_data(
 
 def count(project_id: str) -> int:
     return session.query(Record).filter(Record.project_id == project_id).count()
+
+
+def count_missing_delta(project_id: str, attribute_id: str) -> int:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_id = prevent_sql_injection(attribute_id, isinstance(attribute_id, str))
+    query = f"""
+    WITH n AS (
+        SELECT NAME
+        FROM attribute a
+        WHERE id = '{attribute_id}'
+    )
+    SELECT COUNT(*)
+    FROM record r, n
+    WHERE r.project_id = '{project_id}'
+    AND r.data->>n.name IS NULL
+    """
+    value = general.execute_first(query)
+    if not value or not value[0]:
+        return 0
+    return value[0]
+
+
+def get_missing_delta_record_ids(project_id: str, attribute_id: str) -> List[str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    attribute_id = prevent_sql_injection(attribute_id, isinstance(attribute_id, str))
+    query = f"""
+    WITH n AS (
+        SELECT NAME
+        FROM attribute a
+        WHERE id = '{attribute_id}'
+    )
+    SELECT r.id::TEXT
+    FROM record r, n
+    WHERE r.project_id = '{project_id}'
+    AND r.data->>n.name IS NULL
+    """
+    return [row[0] for row in general.execute_all(query)]
 
 
 def count_attribute_list_entries(project_id: str, attribute_name: str) -> int:
@@ -714,6 +773,18 @@ def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
     general.flush_or_commit(with_commit)
 
 
+def delete_many(
+    project_id: str, record_ids: Iterable[str], with_commit: bool = False
+) -> int:
+    res = (
+        session.query(Record)
+        .filter(Record.project_id == project_id, Record.id.in_(record_ids))
+        .delete()
+    )
+    general.flush_or_commit(with_commit)
+    return res
+
+
 def delete_all(project_id: str, with_commit: bool = False) -> None:
     session.query(Record).filter(Record.project_id == project_id).delete()
     general.flush_or_commit(with_commit)
@@ -809,7 +880,7 @@ def get_tokenized_records_from_db(
     )
 
 
-def __get_order_by(project_id: str, first_x: int = 3) -> str:
+def __get_order_by(project_id: str, first_x: int = 3, prefix: str = "") -> str:
     query = f"""
     SELECT name, data_type
     FROM attribute a
@@ -823,7 +894,7 @@ def __get_order_by(project_id: str, first_x: int = 3) -> str:
     for x in values:
         if order != "":
             order += ", "
-        tmp = f"data->>'{x.name}'"
+        tmp = f"{prefix}data->>'{x.name}'"
 
         r_id = attribute.get_running_id_name(project_id)
         if x.data_type == "INTEGER" and x.name == r_id:

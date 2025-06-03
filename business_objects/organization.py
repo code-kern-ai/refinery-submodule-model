@@ -4,14 +4,25 @@ from typing import List, Dict, Optional, Union
 from submodules.model import enums
 
 
-from ..session import session
+from ..session import session, request_id_ctx_var
 from ..models import Organization, Project, User
 from ..business_objects import project, user, general
 from ..util import prevent_sql_injection
+from ..db_cache import TTLCacheDecorator, CacheEnum
 
 
 def get(id: str) -> Organization:
     return session.query(Organization).get(id)
+
+
+@TTLCacheDecorator(CacheEnum.ORGANIZATION, 5, "id")
+def get_org_cached(id: str) -> Organization:
+    o = get(id)
+    if not o:
+        return None
+    general.expunge(o)
+    general.make_transient(o)
+    return o
 
 
 def get_by_name(name: str) -> Organization:
