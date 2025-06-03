@@ -76,17 +76,16 @@ def get_existing_integration_records(
     }
 
 
-def get_running_id(IntegrationModel, integration_id: str) -> int:
-    """
-    Get the maximum running_id for a given integration_id.
-    Returns 0 if no records are found.
-    """
-    max_running_id = (
-        session.query(func.coalesce(func.max(IntegrationModel.running_id), 0))
+def get_running_ids(IntegrationModel, integration_id: str) -> int:
+    return dict(
+        session.query(
+            IntegrationModel.source,
+            func.coalesce(func.max(IntegrationModel.running_id), 0),
+        )
         .filter(IntegrationModel.integration_id == integration_id)
-        .first()
+        .group_by(IntegrationModel.source)
+        .all()
     )
-    return max_running_id[0]
 
 
 def create(
