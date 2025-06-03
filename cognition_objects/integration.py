@@ -64,12 +64,12 @@ def create(
     integration_type: CognitionIntegrationType,
     integration_config: Dict,
     llm_config: Dict,
-    with_commit: bool = True,
     started_at: Optional[datetime.datetime] = None,
     created_at: Optional[datetime.datetime] = None,
     finished_at: Optional[datetime.datetime] = None,
     id: Optional[str] = None,
     project_id: Optional[str] = None,
+    with_commit: bool = True,
 ) -> CognitionIntegration:
     if state not in CognitionMarkdownFileState.all():
         raise HTTPException(status_code=400, detail=f"Invalid state: {state}")
@@ -105,6 +105,8 @@ def update(
     error_message: Optional[str] = None,
     started_at: Optional[datetime.datetime] = None,
     finished_at: Optional[datetime.datetime] = None,
+    last_synced_at: Optional[datetime.datetime] = None,
+    is_synced: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
     integration: CognitionIntegration = get_by_id(id)
@@ -125,7 +127,10 @@ def update(
         integration.error_message = error_message
     if started_at is not None:
         integration.started_at = started_at
+    if last_synced_at is not None:
+        integration.last_synced_at = last_synced_at
 
+    integration.is_synced = is_synced
     integration.finished_at = finished_at
 
     general.add(integration, with_commit)

@@ -2118,7 +2118,7 @@ class CognitionIntegration(Base):
 
     llm_config = Column(JSON)
     error_message = Column(String)
-    is_synced = Column(Boolean, default=False)
+    is_synced = Column(Boolean, nullable=True)
     last_synced_at = Column(DateTime)
 
 
