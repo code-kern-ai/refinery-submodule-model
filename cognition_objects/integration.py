@@ -31,6 +31,13 @@ def get(
     return query.order_by(CognitionIntegration.created_at).all()
 
 
+def get_all(integration_type: Optional[str] = None) -> List[CognitionIntegration]:
+    query = session.query(CognitionIntegration)
+    if integration_type:
+        query = query.filter(CognitionIntegration.type == integration_type)
+    return query.order_by(CognitionIntegration.created_at).all()
+
+
 def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
     return (
         session.query(CognitionIntegration)
