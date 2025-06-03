@@ -1949,7 +1949,7 @@ class CognitionGroupMember(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     group_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.GROUP_MEMBER.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"cognition.{Tablenames.GROUP.value}.id", ondelete="CASCADE"),
         index=True,
     )
     user_id = Column(
