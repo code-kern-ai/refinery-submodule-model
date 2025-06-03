@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Union
 from sqlalchemy import func
 from datetime import datetime
 
-from ..business_objects import general
+from ..business_objects import general, record as record_db_bo
 from ..cognition_objects import integration as integration_db_bo
 from ..session import session
 from ..enums import IntegrationMetadata
@@ -148,10 +148,24 @@ def update(
     return integration_record
 
 
-def delete_many(IntegrationModel, ids: List[str], with_commit: bool = False) -> None:
+def delete_many(
+    IntegrationModel,
+    ids: List[str],
+    project_id: Optional[str] = None,
+    with_commit: bool = False,
+) -> None:
     integration_records = session.query(IntegrationModel).filter(
         IntegrationModel.id.in_(ids)
     )
+    if project_id:
+        delete_running_ids = [
+            integration_record.running_id for integration_record in integration_records
+        ]
+        refinery_record_ids = [
+            record.id
+            for record in record_db_bo.get_all(project_id=project_id)
+            if record.data["running_id"] in delete_running_ids
+        ]
     integration_records.delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
 
