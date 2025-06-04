@@ -807,6 +807,25 @@ def delete_user_created_attribute(
     general.flush_or_commit(with_commit)
 
 
+def delete_access_management_attributes(
+    project_id: str, with_commit: bool = True
+) -> None:
+    access_groups_attribute_item = attribute.get_by_name(project_id, "__ACCESS_GROUPS")
+    access_users_attribute_item = attribute.get_by_name(project_id, "__ACCESS_USERS")
+
+    if access_users_attribute_item and access_groups_attribute_item:
+        record_items = get_all(project_id=project_id)
+        for i, record_item in enumerate(record_items):
+            if record_item.data.get(access_groups_attribute_item.name):
+                del record_item.data[access_groups_attribute_item.name]
+            if record_item.data.get(access_users_attribute_item.name):
+                del record_item.data[access_users_attribute_item.name]
+            flag_modified(record_item, "data")
+            if (i + 1) % 1000 == 0:
+                general.flush_or_commit(with_commit)
+        general.flush_or_commit(with_commit)
+
+
 def delete_duplicated_rats(with_commit: bool = False) -> None:
     # no project so run for all to prevent expensive join with record table
     query = """
