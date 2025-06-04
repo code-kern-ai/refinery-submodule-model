@@ -22,6 +22,10 @@ def get_by_group_and_user(group_id: str, user_id: str) -> CognitionGroupMember:
     )
 
 
+def get_by_user_id(user_id: str) -> list:
+    return session.query(CognitionGroupMember).filter(CognitionGroupMember.user_id == user_id).all()
+
+
 def get_all_by_group(group_id: str) -> list:
     return session.query(CognitionGroupMember).filter(CognitionGroupMember.group_id == group_id).all()
 

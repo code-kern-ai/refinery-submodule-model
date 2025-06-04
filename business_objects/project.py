@@ -162,10 +162,23 @@ def get_all_with_access_management(organization_id: str) -> List[Project]:
         .join(Attribute, Project.id == Attribute.project_id)
         .filter(
             Project.organization_id == organization_id,
-            Attribute.name.in_(["__ACCESS_GROUPS", "__ACCESS_USER"]),
+            Attribute.name.in_(["__ACCESS_GROUPS", "__ACCESS_USERS"]),
         )
         .distinct()
         .all()
+    )
+
+
+def check_access_management_active(project_id: str) -> bool:
+    return (
+        session.query(Project)
+        .join(Attribute, Project.id == Attribute.project_id)
+        .filter(
+            Project.id == project_id,
+            Attribute.name.in_(["__ACCESS_GROUPS", "__ACCESS_USERS"]),
+        )
+        .count()
+        > 0
     )
 
 
