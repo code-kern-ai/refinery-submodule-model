@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Iterable
 
 # from sqlalchemy.orm.attributes import flag_modified
 from ..enums import StrategyStepType
@@ -98,6 +98,7 @@ def get_all_existing_steps_for_template_creation(org_id: str) -> Dict[str, Any]:
         p.id AS project_id,
         jsonb_build_object(
         'project_name', p.name,
+        'created_at', p.created_at,
         'strategies',
             jsonb_object_agg(
             s.id::text,
@@ -109,7 +110,7 @@ def get_all_existing_steps_for_template_creation(org_id: str) -> Dict[str, Any]:
                     (
                     SELECT jsonb_agg(
                             jsonb_build_object(
-                                'step_id',                 ss.id,
+                                'src_step_id',             ss.id,
                                 'step_name',               ss.name,
                                 'step_description',        ss.description,
                                 'step_type',               ss.step_type,
@@ -143,6 +144,73 @@ def get_all_existing_steps_for_template_creation(org_id: str) -> Dict[str, Any]:
     return {}
 
 
+def get_step_template_progress_text_lookup_for_strategy(
+    project_id: str, strategy_id: str
+) -> Dict[str, str]:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    strategy_id = prevent_sql_injection(strategy_id, isinstance(strategy_id, str))
+    query = f"""
+   WITH base AS (
+    SELECT
+        st.config                            AS config,
+        ss.config->'variableValues'          AS variableValues,
+        ss.id step_id
+    FROM cognition.strategy_step ss
+    INNER JOIN cognition.project p
+        ON ss.project_id = p.id
+    INNER JOIN cognition.step_templates st
+        ON st.id = (ss.config->>'templateId')::UUID
+    AND st.organization_id = p.organization_id
+    WHERE
+        ss.project_id  = '{project_id}'
+        AND ss.strategy_id = '{strategy_id}'
+        AND ss.step_type   = '{StrategyStepType.TEMPLATED.value}'
+    )
+
+
+    SELECT jsonb_object_agg(step_id,progress_lookup)
+    FROM (
+        SELECT 
+            step_id,
+            array_agg(jsonb_build_object('template_key',dict_key,'progress_text',resolved_progress_text)) progress_lookup
+        FROM (
+            SELECT
+            -- Extract one step-object at a time
+            step_id,
+            (step_item ->> 'stepName')      AS step_name,
+            step_item->>'stepType'|| '@' || (step_item->>'srcStepId')::TEXT AS dict_key,
+            -- Raw progressText from the JSON
+            (step_item ->> 'progressText')  AS raw_progress_text,
+            -- If raw_progress_text matches @@var_<id>@@, replace via variableValues
+            CASE
+                WHEN (step_item ->> 'progressText') ~ '^@@var_[0-9a-fA-F\-]{{36}}@@$'
+                THEN
+                -- Extract the UUID between "var_" and "@@"
+                (
+                    SELECT variableValues ->> inner_uuid
+                    FROM (
+                    SELECT
+                        regexp_replace(step_item ->> 'progressText',
+                                    '^@@var_([0-9a-fA-F\-]{{36}})@@$',
+                                    '\\1') AS inner_uuid
+                    ) AS sub
+                )
+                ELSE
+                (step_item ->> 'progressText')
+            END AS resolved_progress_text
+            FROM base
+            -- Unnest the steps array
+            CROSS JOIN LATERAL json_array_elements(base.config->'steps') AS step_item 
+        )x
+        GROUP BY 1
+    )y
+    """
+    result = general.execute_first(query)
+    if result and result[0]:
+        return result[0]
+    return {}
+
+
 def create(
     org_id: str,
     user_id: str,
@@ -163,63 +231,19 @@ def create(
     return template
 
 
-# def update(
-#     project_id: str,
-#     strategy_step_id: str,
-#     name: Optional[str] = None,
-#     description: Optional[str] = None,
-#     position: Optional[int] = None,
-#     config: Optional[Dict] = None,
-#     progress_text: Optional[str] = None,
-#     execute_if_source_code: Optional[str] = None,
-#     with_commit: bool = True,
-# ) -> CognitionStrategyStep:
-#     strategy_step: CognitionStrategyStep = get(project_id, strategy_step_id)
-
-#     if name is not None:
-#         strategy_step.name = name
-#     if description is not None:
-#         strategy_step.description = description
-#     if position is not None:
-#         strategy_step.position = position
-#     if config is not None:
-#         if not strategy_step.config:
-#             strategy_step.config = {}
-#         for key in config:
-#             strategy_step.config[key] = config[key]
-#         flag_modified(strategy_step, "config")
-#     if progress_text is not None:
-#         strategy_step.progress_text = progress_text
-#     if execute_if_source_code is not None:
-#         strategy_step.execute_if_source_code = execute_if_source_code
-
-#     general.flush_or_commit(with_commit)
-#     return strategy_step
-
-
-# def update_or_insert_config_value(
-#     project_id: str,
-#     strategy_step_id: str,
-#     configKey: str,
-#     configValue: Any,  # also None!
-#     with_commit: bool = True,
-# ) -> CognitionStrategyStep:
-#     strategy_step: CognitionStrategyStep = get(project_id, strategy_step_id)
-#     if not strategy_step:
-#         raise ValueError(f"Strategy step with id {strategy_step_id} not found")
-
-#     if not strategy_step.config:
-#         strategy_step.config = {}
-#     strategy_step.config[configKey] = configValue
-#     flag_modified(strategy_step, "config")
-
-#     general.flush_or_commit(with_commit)
-#     return strategy_step
-
-
 def delete(org_id: str, template_id: str, with_commit: bool = True) -> None:
     session.query(StepTemplates).filter(
         StepTemplates.organization_id == org_id,
         StepTemplates.id == template_id,
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_many(
+    org_id: str, template_ids: Iterable[str], with_commit: bool = True
+) -> None:
+    session.query(StepTemplates).filter(
+        StepTemplates.organization_id == org_id,
+        StepTemplates.id.in_(template_ids),
     ).delete()
     general.flush_or_commit(with_commit)
