@@ -20,7 +20,15 @@ def get_by_id(id: str) -> CognitionIntegration:
     )
 
 
-def get(
+# TODO: better approach for fetching all integrations to check for updates
+def get_all(integration_type: Optional[str] = None) -> List[CognitionIntegration]:
+    query = session.query(CognitionIntegration)
+    if integration_type:
+        query = query.filter(CognitionIntegration.type == integration_type)
+    return query.order_by(CognitionIntegration.created_at).all()
+
+
+def get_all_in_org(
     org_id: str, integration_type: Optional[str] = None
 ) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration).filter(
@@ -31,12 +39,38 @@ def get(
     return query.order_by(CognitionIntegration.created_at).all()
 
 
-# TODO: better approach for fetching all integrations to check for updates
-def get_all(integration_type: Optional[str] = None) -> List[CognitionIntegration]:
-    query = session.query(CognitionIntegration)
+def get_all_in_org_paginated(
+    org_id: str,
+    integration_type: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 10,
+) -> List[CognitionIntegration]:
+    schema_name = CognitionIntegration.__table__.schema or "public"
+    table_name = f"{schema_name}.{CognitionIntegration.__tablename__}"
+
+    first_page = (page - 1) * page_size
+    last_page = page * page_size
+
+    sql = f"""
+    SELECT id FROM (
+        SELECT 
+            ROW_NUMBER () OVER(PARTITION BY intg.id ORDER BY intg.created_at ASC) rn,
+            intg.id
+        FROM {table_name} intg
+        WHERE intg.organization_id = '{org_id}'
+    ) pages
+    WHERE rn BETWEEN {first_page} AND {last_page}
+    """
+    integration_ids = general.execute_all(sql)
+    if not integration_ids:
+        return []
+
+    query = session.query(CognitionIntegration).filter(
+        CognitionIntegration.id.in_([row[0] for row in integration_ids])
+    )
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
-    return query.order_by(CognitionIntegration.created_at).all()
+    return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
 def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
