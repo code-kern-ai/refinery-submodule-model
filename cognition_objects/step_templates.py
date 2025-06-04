@@ -1,11 +1,11 @@
 from typing import List, Dict, Any
 
 # from sqlalchemy.orm.attributes import flag_modified
-
+from ..enums import StrategyStepType
 from ..business_objects import general
 from ..session import session
 from ..models import StepTemplates
-from ..util import prevent_sql_injection
+from ..util import prevent_sql_injection, sql_alchemy_to_dict
 
 
 def get(organization_id: str, template_id: str) -> StepTemplates:
@@ -19,15 +19,41 @@ def get(organization_id: str, template_id: str) -> StepTemplates:
     )
 
 
-def get_all_by_org_id(organization_id: str) -> List[StepTemplates]:
-    return (
-        session.query(StepTemplates)
-        .filter(
-            StepTemplates.organization_id == organization_id,
+def get_all_by_org_id(organization_id: str) -> List[Dict[str, Any]]:
+    values = [
+        sql_alchemy_to_dict(st)
+        for st in (
+            session.query(StepTemplates)
+            .filter(
+                StepTemplates.organization_id == organization_id,
+            )
+            .order_by(StepTemplates.created_at.asc())
+            .all()
         )
-        .order_by(StepTemplates.created_at.asc())
-        .all()
+    ]
+
+    query = f"""
+    SELECT jsonb_object_agg(id,C)
+    FROM (
+        SELECT ss.config->>'templateId' id, COUNT(*)c
+        FROM cognition.strategy_step ss
+        INNER JOIN cognition.project p
+            ON ss.project_id = p.id
+        WHERE p.organization_id = '{organization_id}'
+        AND ss.step_type = '{StrategyStepType.TEMPLATED.value}'
+        GROUP BY 1 
+    )X
+    """
+    template_counts = general.execute_first(query)
+    template_counts = (
+        template_counts[0] if template_counts and template_counts[0] else {}
     )
+
+    values = [
+        {**s, "usage_count": template_counts.get(str(s["id"]), 0)} for s in values
+    ]
+
+    return values
 
 
 def get_all_by_user(organization_id: str, user_id: str) -> List[StepTemplates]:
@@ -97,6 +123,7 @@ def get_all_existing_steps_for_template_creation(org_id: str) -> Dict[str, Any]:
                     FROM cognition.strategy_step ss
                     WHERE ss.project_id  = p.id
                         AND ss.strategy_id = s.id
+                        AND ss.step_type != '{StrategyStepType.TEMPLATED.value}'
                     ),
                     '[]'
                 )
@@ -106,7 +133,7 @@ def get_all_existing_steps_for_template_creation(org_id: str) -> Dict[str, Any]:
     FROM cognition.project p
     INNER JOIN cognition.strategy s
         ON s.project_id = p.id
-        WHERE p.organization_id = '{org_id}'  
+    WHERE p.organization_id = '{org_id}' 
     GROUP BY p.id, p.name
     ) AS proj;
     """
@@ -118,9 +145,9 @@ def get_all_existing_steps_for_template_creation(org_id: str) -> Dict[str, Any]:
 
 def create(
     org_id: str,
+    user_id: str,
     name: str,
     description: str,
-    user_id: str,
     config: Dict[str, Any],
     with_commit: bool = True,
 ) -> StepTemplates:
