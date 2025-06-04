@@ -10,6 +10,7 @@ class DataTypes(Enum):
     TEXT = "TEXT"
     LLM_RESPONSE = "LLM_RESPONSE"
     EMBEDDING_LIST = "EMBEDDING_LIST"  # only for embeddings & default hidden
+    PERMISSION = "PERMISSION"  # used for access control
     UNKNOWN = "UNKNOWN"
 
 
@@ -157,7 +158,8 @@ class Tablenames(Enum):
     FULL_ADMIN_ACCESS = "full_admin_access"
     GROUP = "group"  # used for group based access control
     GROUP_MEMBER = "group_member"  # used for group based access control
-    
+    PERMISSION = "permission"  # used for access control
+
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
         return "".join([word.title() for word in self.value.split("_")])
