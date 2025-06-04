@@ -321,8 +321,11 @@ def __build_payload_selector(
             if (
                 data_type != enums.DataTypes.TEXT.value
                 and data_type != enums.DataTypes.LLM_RESPONSE.value
+                and data_type != enums.DataTypes.PERMISSION.value
             ):
                 payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
+            if data_type == enums.DataTypes.PERMISSION.value:  
+                payload_selector += f"'{attr}', r.\"data\"->'{attr}'"
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
         payload_selector = f"json_build_object({payload_selector}) payload"
