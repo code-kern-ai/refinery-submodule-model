@@ -1,6 +1,6 @@
 from __future__ import with_statement
 from typing import List, Dict, Any, Optional, Tuple, Iterable
-from sqlalchemy import cast, Text
+from sqlalchemy import cast, Text, String
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy import update
@@ -925,3 +925,19 @@ def get_first_no_text_column(project_id: str, record_id: str) -> str:
     WHERE r.project_id = '{project_id}' AND r.id = '{record_id}'
     """
     return general.execute_first(query)[0]
+
+
+def get_record_ids_by_running_ids(project_id: str, running_ids: List[int]) -> List[str]:
+    return [
+        row[0]
+        for row in (
+            session.query(cast(Record.id, String))
+            .filter(
+                Record.project_id == project_id,
+                Record.data[attribute.get_running_id_name(project_id)]
+                .as_integer()
+                .in_(running_ids),
+            )
+            .all()
+        )
+    ]
