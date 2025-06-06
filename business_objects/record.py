@@ -609,7 +609,7 @@ def count_missing_tokenized_records(project_id: str) -> int:
     query = f"""
     SELECT COUNT(*)
     FROM (
-        {get_records_without_tokenization(project_id, None, query_only = True)}
+        {get_records_without_tokenization(project_id, None, query_only=True)}
     ) record_query
     """
     return general.execute_first(query)[0]

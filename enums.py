@@ -159,6 +159,14 @@ class Tablenames(Enum):
     GROUP = "group"  # used for group based access control
     GROUP_MEMBER = "group_member"  # used for group based access control
     PERMISSION = "permission"  # used for access control
+    INTEGRATION = "integration"
+    INTEGRATION_ACCESS = "integration_access"
+
+    # Individial integrations
+    INTEGRATION_GITHUB_FILE = "github_file"
+    INTEGRATION_GITHUB_ISSUE = "github_issue"
+    INTEGRATION_PDF = "pdf"
+    INTEGRATION_SHAREPOINT = "sharepoint"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -497,6 +505,7 @@ class TaskType(Enum):
     TASK_QUEUE_ACTION = "task_queue_action"
     RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
     PARSE_COGNITION_FILE = "PARSE_COGNITION_FILE"
+    INTEGRATION = "INTEGRATION"
 
 
 class TaskQueueAction(Enum):
@@ -680,6 +689,10 @@ class CognitionMarkdownFileState(Enum):
     TRANSFORMING = "TRANSFORMING"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
 
 
 class CognitionInterfaceType(Enum):
@@ -875,3 +888,88 @@ class EvaluationRunState(Enum):
     RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
+
+
+class CognitionIntegrationType(Enum):
+    # CSV = "CSV"
+    # JSON = "JSON"
+    # DOCX = "DOCX"
+    # XLSX = "XLSX"
+    # WEBPAGE = "WEBPAGE"
+    SHAREPOINT = "SHAREPOINT"
+    GITHUB_FILE = "GITHUB_FILE"
+    GITHUB_ISSUE = "GITHUB_ISSUE"
+    PDF = "PDF"
+
+    @staticmethod
+    def from_string(value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        try:
+            return CognitionIntegrationType[changed_value]
+        except KeyError:
+            raise KeyError(
+                f"Could not parse CognitionIntegrationType from string '{changed_value}'"
+            )
+
+
+class IntegrationMetadata(Enum):
+    """
+    Enum for controlling and documenting the dynamic metadata fields associated with different integration types.
+
+    The `IntegrationMetadata` enum defines which metadata keys are expected and allowed for each integration type
+    (e.g., GITHUB_FILE, GITHUB_ISSUE, PDF). Each member contains a set of keys specific to that integration, while
+    the `__DEFAULT__` member defines a set of common metadata fields (`source`, `delta_criteria`, `minio_file_name`)
+    that are always included.
+
+    During extraction (see the `extract` functions in the integration handlers), metadata is dynamically attached to
+    each document according to the rules defined here. This ensures that only the relevant and allowed metadata fields
+    are published to the database for each integration type.
+
+    The enum provides utility methods:
+      - `from_string(value: str)`: Returns the union of default and integration-specific metadata keys for a given type.
+      - `from_table_name(table_name: str)`: Looks up metadata keys based on the integration's table name.
+
+    This enum is used by the integration object logic (see `submodules/model/integration_objects/__init__.py`) to
+    validate and filter metadata before persisting it, ensuring consistency and preventing unwanted fields from being
+    stored in the database.
+
+    Example:
+        IntegrationMetadata.from_string("PDF")
+        # returns: {"source", "delta_criteria", "minio_file_name", "file_path", "page", "total_pages", "title"}
+    """
+
+    __DEFAULT__ = {"source", "delta_criteria", "minio_file_name"}
+
+    GITHUB_FILE = {"path", "sha", "code_language"}
+    GITHUB_ISSUE = {"url", "state", "number", "assignee", "milestone"}
+    PDF = {"file_path", "page", "total_pages", "title"}
+    SHAREPOINT = {
+        "extension",
+        "object_id",
+        "parent_path",
+        "name",
+        "web_url",
+        f"{Tablenames.INTEGRATION_SHAREPOINT.value}_created_by",
+        "modified_by",
+        "created",
+        "modified",
+        "description",
+        "size",
+        "mime_type",
+        "hashes",
+        "permissions",
+    }
+
+    @staticmethod
+    def from_string(value: str):
+        try:
+            metadata_keys = IntegrationMetadata[value].value
+        except KeyError:
+            raise ValueError(
+                f"Could not parse IntegrationMetadata from string '{value}'"
+            )
+        return IntegrationMetadata.__DEFAULT__.union(metadata_keys)
+
+    @staticmethod
+    def from_table_name(table_name: str):
+        return IntegrationMetadata.from_string(table_name.upper())
