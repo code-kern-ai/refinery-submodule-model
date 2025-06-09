@@ -9,15 +9,16 @@ from ..session import session
 from ..enums import IntegrationMetadata
 
 
-def get(IntegrationModel: type, id: str, integration_id: str) -> object:
-    return (
-        session.query(IntegrationModel)
-        .filter(
-            IntegrationModel.id == id,
-            IntegrationModel.integration_id == integration_id,
-        )
-        .first()
+def get(
+    IntegrationModel: type, integration_id: str, id: Optional[str] = None
+) -> object:
+    query = session.query(IntegrationModel).filter(
+        IntegrationModel.integration_id == integration_id,
     )
+    if id is not None:
+        query = query.filter(IntegrationModel.id == id)
+        return query.first()
+    return query.order_by(IntegrationModel.created_at.desc()).all()
 
 
 def get_by_id(IntegrationModel: type, id: str) -> object:
@@ -125,7 +126,7 @@ def update(
     updated_at: Optional[datetime] = None,
     **metadata,
 ) -> object:
-    integration_record = get(IntegrationModel, id, integration_id)
+    integration_record = get(IntegrationModel, integration_id, id)
     integration_record.updated_by = updated_by
 
     if running_id is not None:

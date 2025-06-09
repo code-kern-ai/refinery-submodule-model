@@ -24,7 +24,7 @@ def get_all(integration_type: Optional[str] = None) -> List[CognitionIntegration
     query = session.query(CognitionIntegration)
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
-    return query.order_by(CognitionIntegration.created_at).all()
+    return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
 def get_all_in_org(
@@ -35,7 +35,7 @@ def get_all_in_org(
     )
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
-    return query.order_by(CognitionIntegration.created_at).all()
+    return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
 def get_all_in_org_paginated(
@@ -78,7 +78,7 @@ def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
         .filter(
             CognitionIntegration.project_id == project_id,
         )
-        .order_by(CognitionIntegration.created_at.asc())
+        .order_by(CognitionIntegration.created_at.desc())
         .all()
     )
 
