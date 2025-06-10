@@ -83,7 +83,7 @@ def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
     )
 
 
-def count_org_integrations(org_id: str) -> int:
+def count_org_integrations(org_id: str) -> Dict[str, int]:
     counts = (
         session.query(CognitionIntegration.type, func.count(CognitionIntegration.id))
         .filter(
