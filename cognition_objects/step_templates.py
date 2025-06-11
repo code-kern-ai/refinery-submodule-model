@@ -145,10 +145,14 @@ def get_all_existing_steps_for_template_creation(org_id: str) -> Dict[str, Any]:
 
 
 def get_step_template_progress_text_lookup_for_strategy(
-    project_id: str, strategy_id: str
+    project_id: str, strategy_id: str, step_id: Optional[str] = None
 ) -> Dict[str, str]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     strategy_id = prevent_sql_injection(strategy_id, isinstance(strategy_id, str))
+    step_id_filter = ""
+    if step_id:
+        step_id = prevent_sql_injection(step_id, isinstance(step_id, str))
+        step_id_filter = f"AND ss.id = '{step_id}'"
     query = f"""
    WITH base AS (
     SELECT
@@ -165,6 +169,7 @@ def get_step_template_progress_text_lookup_for_strategy(
         ss.project_id  = '{project_id}'
         AND ss.strategy_id = '{strategy_id}'
         AND ss.step_type   = '{StrategyStepType.TEMPLATED.value}'
+        {step_id_filter}
     )
 
 
