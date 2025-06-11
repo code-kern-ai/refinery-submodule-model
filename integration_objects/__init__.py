@@ -9,15 +9,16 @@ from ..session import session
 from ..enums import IntegrationMetadata
 
 
-def get(IntegrationModel: type, id: str, integration_id: str) -> object:
-    return (
-        session.query(IntegrationModel)
-        .filter(
-            IntegrationModel.id == id,
-            IntegrationModel.integration_id == integration_id,
-        )
-        .first()
+def get(
+    IntegrationModel: type, integration_id: str, id: Optional[str] = None
+) -> object:
+    query = session.query(IntegrationModel).filter(
+        IntegrationModel.integration_id == integration_id,
     )
+    if id is not None:
+        query = query.filter(IntegrationModel.id == id)
+        return query.first()
+    return query.order_by(IntegrationModel.created_at.desc()).all()
 
 
 def get_by_id(IntegrationModel: type, id: str) -> object:
@@ -102,14 +103,13 @@ def create(
     with_commit: bool = True,
     **metadata,
 ) -> object:
-    kwargs = __get_supported_metadata(IntegrationModel.__tablename__, metadata)
     integration_record = IntegrationModel(
         created_by=created_by,
         integration_id=integration_id,
         running_id=running_id,
         created_at=created_at,
         id=id,
-        **kwargs,
+        **metadata,
     )
 
     general.add(integration_record, with_commit)
@@ -126,7 +126,7 @@ def update(
     updated_at: Optional[datetime] = None,
     **metadata,
 ) -> object:
-    integration_record = get(IntegrationModel, id, integration_id)
+    integration_record = get(IntegrationModel, integration_id, id)
     integration_record.updated_by = updated_by
 
     if running_id is not None:
@@ -135,8 +135,7 @@ def update(
         integration_record.updated_at = updated_at
 
     record_updated = False
-    kwargs = __get_supported_metadata(IntegrationModel.__tablename__, metadata)
-    for key, value in kwargs.items():
+    for key, value in metadata.items():
         if not hasattr(integration_record, key):
             raise ValueError(
                 f"Invalid field '{key}' for {IntegrationModel.__tablename__}"
@@ -174,7 +173,10 @@ def __get_supported_metadata(
     table_name: str, metadata: Dict[str, Union[str, int, float, bool]]
 ) -> None:
     supported_keys = IntegrationMetadata.from_table_name(table_name)
-    return {key: metadata[key] for key in supported_keys.intersection(metadata.keys())}
+    supported_metadata = {
+        key: metadata[key] for key in supported_keys.intersection(metadata.keys())
+    }
+    return __rename_metadata(table_name, supported_metadata)
 
 
 def __rename_metadata(

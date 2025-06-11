@@ -208,6 +208,13 @@ def to_camel_case(name: str):
     return "".join([name[0].lower(), name[1:]])
 
 
+def to_snake_case(name: str):
+    if not is_camel_case(name):
+        return name
+    name = sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
+
+
 def is_list_like(value: Any) -> bool:
     return (
         isinstance(value, collections_abc_Iterable)
