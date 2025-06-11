@@ -1,6 +1,6 @@
-from typing import List, Dict, Any, Iterable
+from typing import List, Dict, Any, Iterable, Optional
 
-# from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.orm.attributes import flag_modified
 from ..enums import StrategyStepType
 from ..business_objects import general
 from ..session import session
@@ -227,6 +227,33 @@ def create(
         config=config,
     )
     general.add(template, with_commit)
+
+    return template
+
+
+def update(
+    org_id: str,
+    template_id: str,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    config: Optional[Dict[str, Any]] = None,
+    with_commit: bool = True,
+) -> StepTemplates:
+    template = get(org_id, template_id)
+    if not template:
+        raise ValueError(
+            f"Template with ID {template_id} not found in organization {org_id}."
+        )
+
+    if name is not None:
+        template.name = name
+    if description is not None:
+        template.description = description
+    if config is not None:
+        template.config = config
+        flag_modified(template, "config")
+
+    general.flush_or_commit(with_commit)
 
     return template
 
