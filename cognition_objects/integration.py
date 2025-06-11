@@ -83,6 +83,18 @@ def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
     )
 
 
+def get_last_synced_at(
+    org_id: str, integration_type: Optional[str] = None
+) -> List[CognitionIntegration]:
+    query = session.query(func.max(CognitionIntegration.last_synced_at)).filter(
+        CognitionIntegration.organization_id == org_id
+    )
+    if integration_type:
+        query = query.filter(CognitionIntegration.type == integration_type)
+    result = query.first()
+    return result[0] if result else None
+
+
 def count_org_integrations(org_id: str) -> Dict[str, int]:
     counts = (
         session.query(CognitionIntegration.type, func.count(CognitionIntegration.id))
@@ -192,13 +204,6 @@ def execution_finished(id: str) -> bool:
         )
         .first()
     )
-
-
-def clear_history(id: str) -> None:
-    integration: CognitionIntegration = get_by_id(id)
-    integration.extract_history = {}
-    integration.state = CognitionMarkdownFileState.QUEUE.value
-    general.add(integration, True)
 
 
 def delete_many(
