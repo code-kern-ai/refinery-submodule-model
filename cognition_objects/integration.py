@@ -20,21 +20,35 @@ def get_by_id(id: str) -> CognitionIntegration:
     )
 
 
-def get_all(integration_type: Optional[str] = None) -> List[CognitionIntegration]:
+def get_all(
+    integration_type: Optional[str] = None,
+    exclude_failed: Optional[bool] = False,
+    only_synced: Optional[bool] = False,
+) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration)
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
+    if exclude_failed:
+        query = query.filter(
+            CognitionIntegration.state != CognitionMarkdownFileState.FAILED.value
+        )
+    if only_synced:
+        query = query.filter(CognitionIntegration.is_synced == True)
     return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
 def get_all_in_org(
-    org_id: str, integration_type: Optional[str] = None
+    org_id: str,
+    integration_type: Optional[str] = None,
+    only_synced: Optional[bool] = False,
 ) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration).filter(
         CognitionIntegration.organization_id == org_id
     )
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
+    if only_synced:
+        query = query.filter(CognitionIntegration.is_synced == True)
     return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
