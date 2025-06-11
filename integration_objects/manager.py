@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Type
 from datetime import datetime
 from sqlalchemy import func
 
@@ -29,7 +29,7 @@ from ..enums import IntegrationMetadata
 
 
 def get(
-    IntegrationModel: type, integration_id: str, id: Optional[str] = None
+    IntegrationModel: Type, integration_id: str, id: Optional[str] = None
 ) -> object:
     query = session.query(IntegrationModel).filter(
         IntegrationModel.integration_id == integration_id,
@@ -40,12 +40,12 @@ def get(
     return query.order_by(IntegrationModel.created_at.desc()).all()
 
 
-def get_by_id(IntegrationModel: type, id: str) -> object:
+def get_by_id(IntegrationModel: Type, id: str) -> object:
     return session.query(IntegrationModel).filter(IntegrationModel.id == id).first()
 
 
 def get_by_running_id(
-    IntegrationModel: type, integration_id: str, running_id: int
+    IntegrationModel: Type, integration_id: str, running_id: int
 ) -> object:
     return (
         session.query(IntegrationModel)
@@ -57,7 +57,7 @@ def get_by_running_id(
     )
 
 
-def get_by_source(IntegrationModel: type, integration_id: str, source: str) -> object:
+def get_by_source(IntegrationModel: Type, integration_id: str, source: str) -> object:
     return (
         session.query(IntegrationModel)
         .filter(
@@ -69,7 +69,7 @@ def get_by_source(IntegrationModel: type, integration_id: str, source: str) -> o
 
 
 def get_all_by_integration_id(
-    IntegrationModel: type, integration_id: str
+    IntegrationModel: Type, integration_id: str
 ) -> List[object]:
     return (
         session.query(IntegrationModel)
@@ -79,7 +79,7 @@ def get_all_by_integration_id(
     )
 
 
-def get_all_by_project_id(IntegrationModel: type, project_id: str) -> List[object]:
+def get_all_by_project_id(IntegrationModel: Type, project_id: str) -> List[object]:
     integrations = integration_db_bo.get_all_by_project_id(project_id)
     return (
         session.query(IntegrationModel)
@@ -100,7 +100,7 @@ def get_existing_integration_records(
     }
 
 
-def get_running_ids(IntegrationModel: type, integration_id: str) -> int:
+def get_running_ids(IntegrationModel: Type, integration_id: str) -> int:
     return dict(
         session.query(
             IntegrationModel.source,
@@ -113,7 +113,7 @@ def get_running_ids(IntegrationModel: type, integration_id: str) -> int:
 
 
 def create(
-    IntegrationModel: type,
+    IntegrationModel: Type,
     created_by: str,
     integration_id: str,
     running_id: int,
@@ -137,7 +137,7 @@ def create(
 
 
 def update(
-    IntegrationModel: type,
+    IntegrationModel: Type,
     id: str,
     integration_id: str,
     updated_by: str,
@@ -172,7 +172,7 @@ def update(
 
 
 def delete_many(
-    IntegrationModel: type,
+    IntegrationModel: Type,
     ids: List[str],
     with_commit: bool = False,
 ) -> None:
@@ -183,7 +183,7 @@ def delete_many(
     general.flush_or_commit(with_commit)
 
 
-def clear_history(IntegrationModel: type, id: str, with_commit: bool = False) -> None:
+def clear_history(IntegrationModel: Type, id: str, with_commit: bool = False) -> None:
     integration_record = get_by_id(IntegrationModel, id)
     integration_record.delta_criteria = None
     general.add(integration_record, with_commit)
