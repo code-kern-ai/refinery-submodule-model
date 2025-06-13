@@ -99,7 +99,7 @@ def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
 
 def get_last_synced_at(
     org_id: str, integration_type: Optional[str] = None
-) -> List[CognitionIntegration]:
+) -> datetime.datetime:
     query = session.query(func.max(CognitionIntegration.last_synced_at)).filter(
         CognitionIntegration.organization_id == org_id
     )
