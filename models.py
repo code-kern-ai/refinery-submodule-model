@@ -2120,6 +2120,7 @@ class CognitionIntegration(Base):
     error_message = Column(String)
     is_synced = Column(Boolean, nullable=True)
     last_synced_at = Column(DateTime)
+    delta_url = Column(String)
 
 
 class CognitionIntegrationAccess(Base):
@@ -2294,7 +2295,6 @@ class IntegrationSharepoint(Base):
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    delta_url = Column(String)
     running_id = Column(Integer, index=True)
     source = Column(String, index=True)
     minio_file_name = Column(String)
