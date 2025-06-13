@@ -2294,6 +2294,7 @@ class IntegrationSharepoint(Base):
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    delta_url = Column(String)
     running_id = Column(Integer, index=True)
     source = Column(String, index=True)
     minio_file_name = Column(String)
