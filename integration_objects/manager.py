@@ -143,7 +143,6 @@ def update(
     updated_by: str,
     running_id: Optional[int] = None,
     updated_at: Optional[datetime] = None,
-    delta_url: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
 ) -> object:
@@ -154,8 +153,6 @@ def update(
         integration_record.running_id = running_id
     if updated_at is not None:
         integration_record.updated_at = updated_at
-    if delta_url is not None:
-        integration_record.delta_url = delta_url
 
     record_updated = False
     for key, value in metadata.items():

@@ -174,6 +174,7 @@ def update(
     finished_at: Optional[datetime.datetime] = None,
     last_synced_at: Optional[datetime.datetime] = None,
     is_synced: Optional[bool] = None,
+    delta_url: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
     integration: CognitionIntegration = get_by_id(id)
@@ -196,6 +197,8 @@ def update(
         integration.started_at = started_at
     if last_synced_at is not None:
         integration.last_synced_at = last_synced_at
+    if delta_url is not None:
+        integration.delta_url = delta_url
 
     integration.is_synced = is_synced
     integration.finished_at = finished_at
