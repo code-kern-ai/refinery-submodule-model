@@ -20,21 +20,35 @@ def get_by_id(id: str) -> CognitionIntegration:
     )
 
 
-def get_all(integration_type: Optional[str] = None) -> List[CognitionIntegration]:
+def get_all(
+    integration_type: Optional[str] = None,
+    exclude_failed: Optional[bool] = False,
+    only_synced: Optional[bool] = False,
+) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration)
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
+    if exclude_failed:
+        query = query.filter(
+            CognitionIntegration.state != CognitionMarkdownFileState.FAILED.value
+        )
+    if only_synced:
+        query = query.filter(CognitionIntegration.is_synced == True)
     return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
 def get_all_in_org(
-    org_id: str, integration_type: Optional[str] = None
+    org_id: str,
+    integration_type: Optional[str] = None,
+    only_synced: Optional[bool] = False,
 ) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration).filter(
         CognitionIntegration.organization_id == org_id
     )
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
+    if only_synced:
+        query = query.filter(CognitionIntegration.is_synced == True)
     return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
@@ -83,6 +97,18 @@ def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
     )
 
 
+def get_last_synced_at(
+    org_id: str, integration_type: Optional[str] = None
+) -> datetime.datetime:
+    query = session.query(func.max(CognitionIntegration.last_synced_at)).filter(
+        CognitionIntegration.organization_id == org_id
+    )
+    if integration_type:
+        query = query.filter(CognitionIntegration.type == integration_type)
+    result = query.first()
+    return result[0] if result else None
+
+
 def count_org_integrations(org_id: str) -> Dict[str, int]:
     counts = (
         session.query(CognitionIntegration.type, func.count(CognitionIntegration.id))
@@ -119,6 +145,7 @@ def create(
         organization_id=org_id,
         project_id=project_id,
         created_by=user_id,
+        updated_by=user_id,
         created_at=created_at,
         started_at=started_at,
         finished_at=finished_at,
@@ -129,6 +156,7 @@ def create(
         type=integration_type.value,
         config=integration_config,
         llm_config=llm_config,
+        delta_criteria={"delta_url": None},
     )
     general.add(integration, with_commit)
 
@@ -137,6 +165,7 @@ def create(
 
 def update(
     id: str,
+    updated_by: Optional[str] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
     tokenizer: Optional[str] = None,
@@ -148,10 +177,13 @@ def update(
     finished_at: Optional[datetime.datetime] = None,
     last_synced_at: Optional[datetime.datetime] = None,
     is_synced: Optional[bool] = None,
+    delta_criteria: Optional[Dict[str, str]] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
     integration: CognitionIntegration = get_by_id(id)
 
+    if updated_by is not None:
+        integration.updated_by = updated_by
     if name is not None:
         integration.name = name
     if description is not None:
@@ -170,6 +202,8 @@ def update(
         integration.started_at = started_at
     if last_synced_at is not None:
         integration.last_synced_at = last_synced_at
+    if delta_criteria is not None:
+        integration.delta_criteria = delta_criteria
 
     integration.is_synced = is_synced
     integration.finished_at = finished_at
@@ -192,13 +226,6 @@ def execution_finished(id: str) -> bool:
         )
         .first()
     )
-
-
-def clear_history(id: str) -> None:
-    integration: CognitionIntegration = get_by_id(id)
-    integration.extract_history = {}
-    integration.state = CognitionMarkdownFileState.QUEUE.value
-    general.add(integration, True)
 
 
 def delete_many(

@@ -37,6 +37,14 @@ def get(
     )
 
 
+def get_all() -> List[CognitionIntegrationAccess]:
+    return (
+        session.query(CognitionIntegrationAccess)
+        .order_by(CognitionIntegrationAccess.created_at.desc())
+        .all()
+    )
+
+
 def create(
     org_id: str,
     user_id: str,
