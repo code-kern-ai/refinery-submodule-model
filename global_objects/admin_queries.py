@@ -15,26 +15,28 @@ PERIOD_OPTIONS = {"days", "weeks", "months"}
 
 
 def get_result_admin_query(
-    query: enums.AdminQueries, parameters: Optional[Dict[str, Any]] = None
+    query: enums.AdminQueries,
+    parameters: Optional[Dict[str, Any]] = None,
+    as_query: bool = False,
 ) -> List[Row]:
     if parameters is None:
         parameters = {}
     if query == enums.AdminQueries.USERS_TO_PROJECTS:
-        return __get_users_to_projects(**parameters)
+        return __get_users_to_projects(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.ACTIVE_USERS_GLOBAL:
-        return __get_active_users_global(**parameters)
+        return __get_active_users_global(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.ACTIVE_USERS_BY_ORG:
-        return __get_active_users_by_org(**parameters)
+        return __get_active_users_by_org(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.MESSAGES_CREATED:
-        return __get_messages_created(**parameters)
+        return __get_messages_created(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.MESSAGES_CREATED_BY_PROJECT:
-        return __get_messages_created_by_project(**parameters)
+        return __get_messages_created_by_project(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.MESSAGES_FEEDBACK_PER_PROJECT:
-        return __get_messages_feedback_by_project(**parameters)
+        return __get_messages_feedback_by_project(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.AVG_MESSAGES_PER_CONVERSATION_GLOBAL:
-        return __get_global_messages_per_conversation(**parameters)
+        return __get_global_messages_per_conversation(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.AVG_MESSAGES_PER_CONVERSATION:
-        return __get_avg_messages_per_conversation(**parameters)
+        return __get_avg_messages_per_conversation(**parameters, as_query=as_query)
     return []
 
 
@@ -42,6 +44,7 @@ def __get_avg_messages_per_conversation(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    as_query: bool = False,
 ) -> List[Row]:
 
     if period not in PERIOD_OPTIONS:
@@ -132,10 +135,14 @@ def __get_avg_messages_per_conversation(
     , params pa
     ORDER BY 1,5 DESC
 """
+    if as_query:
+        return query
     return general.execute_all(query)
 
 
-def __get_global_messages_per_conversation(organization_id: Optional[str] = None):
+def __get_global_messages_per_conversation(
+    organization_id: Optional[str] = None, as_query: bool = False
+):
     org_where = ""
     if organization_id:
         organization_id = prevent_sql_injection(
@@ -174,6 +181,8 @@ def __get_global_messages_per_conversation(organization_id: Optional[str] = None
     INNER JOIN organization o
         ON p.organization_id = o.id
     ORDER BY 1,5 DESC """
+    if as_query:
+        return query
     return general.execute_all(query)
 
 
@@ -181,6 +190,7 @@ def __get_messages_feedback_by_project(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    as_query: bool = False,
 ) -> List[Row]:
 
     if period not in PERIOD_OPTIONS:
@@ -309,6 +319,8 @@ def __get_messages_feedback_by_project(
         feedback_value,
         feedback_category;
 """
+    if as_query:
+        return query
     return general.execute_all(query)
 
 
@@ -316,6 +328,7 @@ def __get_messages_created_by_project(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    as_query: bool = False,
 ) -> List[Row]:
 
     if period not in PERIOD_OPTIONS:
@@ -368,7 +381,7 @@ def __get_messages_created_by_project(
     )
     
     SELECT 
-        o.name org_name,
+        o.name organization_name,
         p.name project_name,
         period_start,
         period_end,
@@ -392,6 +405,8 @@ def __get_messages_created_by_project(
         ON p.organization_id = o.id
     ORDER BY 1,2,3 DESC
 """
+    if as_query:
+        return query
     return general.execute_all(query)
 
 
@@ -399,6 +414,7 @@ def __get_messages_created(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    as_query: bool = False,
 ) -> List[Row]:
 
     if period not in PERIOD_OPTIONS:
@@ -413,7 +429,7 @@ def __get_messages_created(
         )
         org_where = f""" INNER JOIN cognition.project pr
             ON m.project_id = pr.id AND pr.organization_id = '{organization_id}'"""
-        org_select = f"(SELECT MAX(NAME) FROM organization WHERE id = '{organization_id}') org_name,"
+        org_select = f"(SELECT MAX(NAME) FROM organization WHERE id = '{organization_id}') organization_name,"
     query = f"""
     WITH
     params AS (
@@ -459,6 +475,8 @@ def __get_messages_created(
         ON a.period_start = pr.period_start
     ORDER BY
         pr.period_start DESC; """
+    if as_query:
+        return query
     return general.execute_all(query)
 
 
@@ -467,6 +485,7 @@ def __get_active_users_by_org(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    as_query: bool = False,
 ) -> List[Row]:
     min_msg_count = max(min(min_msg_count, 5), 1)
     if period not in PERIOD_OPTIONS:
@@ -538,6 +557,8 @@ def __get_active_users_by_org(
     , params pa
     ORDER BY 1,2 DESC
     """
+    if as_query:
+        return query
     return general.execute_all(query)
 
 
@@ -546,6 +567,7 @@ def __get_active_users_global(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    as_query: bool = False,
 ) -> List[Row]:
     # includes type check for sql injection prevention
     min_msg_count = max(min(min_msg_count, 5), 1)
@@ -560,7 +582,7 @@ def __get_active_users_global(
             organization_id, isinstance(organization_id, str)
         )
         org_where = f"AND p.organization_id = '{organization_id}'"
-        org_select = f"(SELECT MAX(NAME) FROM organization WHERE id = '{organization_id}') org_name,"
+        org_select = f"(SELECT MAX(NAME) FROM organization WHERE id = '{organization_id}') organization_name,"
 
     query = f"""
     WITH params AS (
@@ -615,12 +637,13 @@ def __get_active_users_global(
     )y	, params pa
     ORDER BY period_start DESC
 """
-
+    if as_query:
+        return query
     return general.execute_all(query)
 
 
 def __get_users_to_projects(
-    organization_id: Optional[str] = None,
+    organization_id: Optional[str] = None, as_query: bool = False
 ) -> List[Row]:
 
     org_where = "u.organization_id IS NOT NULL"
@@ -691,5 +714,6 @@ def __get_users_to_projects(
         ELSE project_or_engineers END,
         role
 """
-
+    if as_query:
+        return query
     return general.execute_all(query)
