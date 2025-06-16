@@ -2100,6 +2100,12 @@ class CognitionIntegration(Base):
         index=False,
     )
     created_at = Column(DateTime, default=sql.func.now())
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=False,
+    )
+    updated_at = Column(DateTime, onupdate=sql.func.now())
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
     name = Column(String)
@@ -2120,7 +2126,7 @@ class CognitionIntegration(Base):
     error_message = Column(String)
     is_synced = Column(Boolean, nullable=True)
     last_synced_at = Column(DateTime)
-    delta_url = Column(String)
+    delta_criteria = Column(JSON)
 
 
 class CognitionIntegrationAccess(Base):

@@ -145,6 +145,7 @@ def create(
         organization_id=org_id,
         project_id=project_id,
         created_by=user_id,
+        updated_by=user_id,
         created_at=created_at,
         started_at=started_at,
         finished_at=finished_at,
@@ -155,6 +156,7 @@ def create(
         type=integration_type.value,
         config=integration_config,
         llm_config=llm_config,
+        delta_criteria={"delta_url": None},
     )
     general.add(integration, with_commit)
 
@@ -163,6 +165,7 @@ def create(
 
 def update(
     id: str,
+    updated_by: Optional[str] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
     tokenizer: Optional[str] = None,
@@ -174,11 +177,13 @@ def update(
     finished_at: Optional[datetime.datetime] = None,
     last_synced_at: Optional[datetime.datetime] = None,
     is_synced: Optional[bool] = None,
-    delta_url: Optional[str] = None,
+    delta_criteria: Optional[Dict[str, str]] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
     integration: CognitionIntegration = get_by_id(id)
 
+    if updated_by is not None:
+        integration.updated_by = updated_by
     if name is not None:
         integration.name = name
     if description is not None:
@@ -197,8 +202,8 @@ def update(
         integration.started_at = started_at
     if last_synced_at is not None:
         integration.last_synced_at = last_synced_at
-    if delta_url is not None:
-        integration.delta_url = delta_url
+    if delta_criteria is not None:
+        integration.delta_criteria = delta_criteria
 
     integration.is_synced = is_synced
     integration.finished_at = finished_at
