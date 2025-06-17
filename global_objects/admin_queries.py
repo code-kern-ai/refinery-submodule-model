@@ -3,8 +3,6 @@ from ..util import prevent_sql_injection
 
 from ..business_objects import general
 
-# from ..session import session
-
 from sqlalchemy.engine.row import Row
 
 
