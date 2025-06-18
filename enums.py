@@ -938,7 +938,7 @@ class IntegrationMetadata(Enum):
         # returns: {"source", "minio_file_name", "file_path", "page", "total_pages", "title"}
     """
 
-    __DEFAULT__ = {"source", "minio_file_name", "running_id"}
+    __DEFAULT__ = {"source", "minio_file_name", "running_id", "delta_criteria"}
 
     GITHUB_FILE = {"path", "sha", "code_language"}
     GITHUB_ISSUE = {"url", "state", "number", "assignee", "milestone"}

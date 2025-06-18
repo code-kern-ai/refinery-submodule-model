@@ -12,6 +12,14 @@ from ..enums import (
 )
 
 
+def get_by_ids(ids: List[str]) -> List[CognitionIntegration]:
+    return (
+        session.query(CognitionIntegration)
+        .filter(CognitionIntegration.id.in_(ids))
+        .all()
+    )
+
+
 def get_by_id(id: str) -> CognitionIntegration:
     return (
         session.query(CognitionIntegration)
