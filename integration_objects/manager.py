@@ -1,26 +1,6 @@
-from typing import Optional, Type
+from typing import List, Optional, Dict, Union, Type
 from datetime import datetime
 from sqlalchemy import func
-
-import pytz
-
-from submodules.model.session import session
-from submodules.model.models import CognitionIntegration, IntegrationSharepoint
-
-
-def get_modified_since(integration: CognitionIntegration) -> Optional[datetime]:
-    modified = (
-        session.query(func.max(IntegrationSharepoint.modified))
-        .filter(IntegrationSharepoint.integration_id == integration.id)
-        .first()
-    )[0] or datetime(1970, 1, 1)
-    return pytz.UTC.localize(modified)
-
-
-from typing import List, Optional, Dict, Union
-
-from sqlalchemy import func
-from datetime import datetime
 
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
@@ -92,22 +72,24 @@ def get_all_by_project_id(IntegrationModel: Type, project_id: str) -> List[objec
 
 
 def get_existing_integration_records(
-    IntegrationModel, integration_id: str
+    IntegrationModel, integration_id: str, by: Optional[str] = "source"
 ) -> Dict[str, object]:
     return {
-        record.source: record
+        getattr(record, by, record.source): record
         for record in get_all_by_integration_id(IntegrationModel, integration_id)
     }
 
 
-def get_running_ids(IntegrationModel: Type, integration_id: str) -> int:
+def get_running_ids(
+    IntegrationModel: Type, integration_id: str, by: Optional[str] = "source"
+) -> int:
     return dict(
         session.query(
-            IntegrationModel.source,
+            getattr(IntegrationModel, by, IntegrationModel.source),
             func.coalesce(func.max(IntegrationModel.running_id), 0),
         )
         .filter(IntegrationModel.integration_id == integration_id)
-        .group_by(IntegrationModel.source)
+        .group_by(getattr(IntegrationModel, by, IntegrationModel.source))
         .all()
     )
 
