@@ -12,7 +12,10 @@ def get(group_id: str) -> CognitionGroup:
 def get_with_organization_id(organization_id: str, group_id: str) -> CognitionGroup:
     return (
         session.query(CognitionGroup)
-        .filter(CognitionGroup.organization_id == organization_id, CognitionGroup.id == group_id)
+        .filter(
+            CognitionGroup.organization_id == organization_id,
+            CognitionGroup.id == group_id,
+        )
         .first()
     )
 
@@ -33,6 +36,7 @@ def create_group(
     created_by: str,
     created_at: Optional[datetime] = None,
     with_commit: bool = False,
+    meta_data: Optional[dict] = None,
 ) -> CognitionGroup:
     group = CognitionGroup(
         organization_id=organization_id,
@@ -40,6 +44,7 @@ def create_group(
         description=description,
         created_by=created_by,
         created_at=created_at,
+        meta_data=meta_data,
     )
     general.add(group, with_commit)
     return group
