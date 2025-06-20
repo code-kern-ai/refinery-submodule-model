@@ -1948,6 +1948,7 @@ class CognitionGroup(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    meta_data = Column(JSON)
 
 
 class CognitionGroupMember(Base):
