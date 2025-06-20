@@ -273,10 +273,10 @@ def __get_messages_feedback_by_project(
     )
 
     SELECT 
-        period_start,
-        period_end,
         o.name organization_name,
         p.name project_name,
+        period_start,
+        period_end,
         feedback_value,
         feedback_category,
         cnt,
