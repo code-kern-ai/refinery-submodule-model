@@ -12,7 +12,10 @@ def get(group_id: str) -> CognitionGroup:
 def get_with_organization_id(organization_id: str, group_id: str) -> CognitionGroup:
     return (
         session.query(CognitionGroup)
-        .filter(CognitionGroup.organization_id == organization_id, CognitionGroup.id == group_id)
+        .filter(
+            CognitionGroup.organization_id == organization_id,
+            CognitionGroup.id == group_id,
+        )
         .first()
     )
 
@@ -26,6 +29,19 @@ def get_all(organization_id: str) -> List[CognitionGroup]:
     )
 
 
+def get_all_by_integration_id_permission_grouped(
+    organization_id: str, integration_id: str
+) -> List[CognitionGroup]:
+    integration_id_json = CognitionGroup.meta_data.op("->>")("integration_id")
+
+    integration_groups = session.query(CognitionGroup).filter(CognitionGroup.organization_id == organization_id, integration_id_json == integration_id).all()
+    integration_groups_by_permission = {}
+    for group in integration_groups:
+        permission_id = group.meta_data.get("permission_id")
+        integration_groups_by_permission[permission_id] = group
+    return integration_groups_by_permission
+
+
 def create_group(
     organization_id: str,
     name: str,
@@ -33,6 +49,7 @@ def create_group(
     created_by: str,
     created_at: Optional[datetime] = None,
     with_commit: bool = False,
+    meta_data: Optional[dict] = None,
 ) -> CognitionGroup:
     group = CognitionGroup(
         organization_id=organization_id,
@@ -40,6 +57,7 @@ def create_group(
         description=description,
         created_by=created_by,
         created_at=created_at,
+        meta_data=meta_data,
     )
     general.add(group, with_commit)
     return group
