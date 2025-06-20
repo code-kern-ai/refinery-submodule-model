@@ -26,6 +26,19 @@ def get_all(organization_id: str) -> List[CognitionGroup]:
     )
 
 
+def get_all_by_integration_id_permission_grouped(
+    organization_id: str, integration_id: str
+) -> List[CognitionGroup]:
+    integration_id_json = CognitionGroup.meta_data.op("->>")("integration_id")
+
+    integration_groups = session.query(CognitionGroup).filter(CognitionGroup.organization_id == organization_id, integration_id_json == integration_id).all()
+    integration_groups_by_permission = {}
+    for group in integration_groups:
+        permission_id = group.meta_data.get("permission_id")
+        integration_groups_by_permission[permission_id] = group
+    return integration_groups_by_permission
+
+
 def create_group(
     organization_id: str,
     name: str,
