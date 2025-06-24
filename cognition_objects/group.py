@@ -29,17 +29,51 @@ def get_all(organization_id: str) -> List[CognitionGroup]:
     )
 
 
+def get_all_by_integration_id(
+    organization_id: str, integration_id: str
+) -> List[CognitionGroup]:
+    integration_id_json = CognitionGroup.meta_data.op("->>")("integration_id")
+
+    return (
+        session.query(CognitionGroup)
+        .filter(
+            CognitionGroup.organization_id == organization_id,
+            integration_id_json == integration_id,
+        )
+        .order_by(CognitionGroup.name.asc())
+        .all()
+    )
+
+
 def get_all_by_integration_id_permission_grouped(
     organization_id: str, integration_id: str
 ) -> List[CognitionGroup]:
     integration_id_json = CognitionGroup.meta_data.op("->>")("integration_id")
 
-    integration_groups = session.query(CognitionGroup).filter(CognitionGroup.organization_id == organization_id, integration_id_json == integration_id).all()
+    integration_groups = (
+        session.query(CognitionGroup)
+        .filter(
+            CognitionGroup.organization_id == organization_id,
+            integration_id_json == integration_id,
+        )
+        .all()
+    )
     integration_groups_by_permission = {}
     for group in integration_groups:
         permission_id = group.meta_data.get("permission_id")
         integration_groups_by_permission[permission_id] = group
     return integration_groups_by_permission
+
+
+def get_by_name(organization_id: str, name: str):
+    return (
+        session.query(CognitionGroup)
+        .filter(
+            CognitionGroup.organization_id == organization_id,
+            CognitionGroup.name == name,
+        )
+        .first()
+    )
 
 
 def create_group(
@@ -48,7 +82,7 @@ def create_group(
     description: str,
     created_by: str,
     created_at: Optional[datetime] = None,
-    with_commit: bool = False,
+    with_commit: bool = True,
     meta_data: Optional[dict] = None,
 ) -> CognitionGroup:
     group = CognitionGroup(
@@ -67,7 +101,8 @@ def update_group(
     group_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    with_commit: bool = False,
+    with_commit: bool = True,
+    meta_data: Optional[dict] = None,
 ) -> CognitionGroup:
     group = get(group_id)
 
@@ -75,12 +110,14 @@ def update_group(
         group.name = name
     if description is not None:
         group.description = description
+    if meta_data is not None:
+        group.meta_data = meta_data
     general.flush_or_commit(with_commit)
 
     return group
 
 
-def delete(organization_id: str, group_id: str, with_commit: bool = False) -> None:
+def delete(organization_id: str, group_id: str, with_commit: bool = True) -> None:
     group = get_with_organization_id(organization_id, group_id)
     if group:
         general.delete(group, with_commit)
