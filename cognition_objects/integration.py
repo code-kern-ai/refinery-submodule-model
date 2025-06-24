@@ -2,6 +2,7 @@ from typing import List, Optional, Dict
 import datetime
 from fastapi import HTTPException
 from sqlalchemy import func
+from sqlalchemy.orm.attributes import flag_modified
 
 from ..business_objects import general
 from ..session import session
@@ -202,8 +203,10 @@ def update(
         integration.state = state.value
     if integration_config is not None:
         integration.config = integration_config
+        flag_modified(integration, "config")
     if llm_config is not None:
         integration.llm_config = llm_config
+        flag_modified(integration, "llm_config")
     if error_message is not None:
         integration.error_message = error_message
     if started_at is not None:
@@ -212,6 +215,7 @@ def update(
         integration.last_synced_at = last_synced_at
     if delta_criteria is not None:
         integration.delta_criteria = delta_criteria
+        flag_modified(integration, "delta_criteria")
 
     integration.is_synced = is_synced
     integration.finished_at = finished_at

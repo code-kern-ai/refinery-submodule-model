@@ -1,26 +1,7 @@
-from typing import Optional, Type
+from typing import List, Optional, Dict, Union, Type
 from datetime import datetime
 from sqlalchemy import func
-
-import pytz
-
-from submodules.model.session import session
-from submodules.model.models import CognitionIntegration, IntegrationSharepoint
-
-
-def get_modified_since(integration: CognitionIntegration) -> Optional[datetime]:
-    modified = (
-        session.query(func.max(IntegrationSharepoint.modified))
-        .filter(IntegrationSharepoint.integration_id == integration.id)
-        .first()
-    )[0] or datetime(1970, 1, 1)
-    return pytz.UTC.localize(modified)
-
-
-from typing import List, Optional, Dict, Union
-
-from sqlalchemy import func
-from datetime import datetime
+from sqlalchemy.orm.attributes import flag_modified
 
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
@@ -29,7 +10,9 @@ from ..enums import IntegrationMetadata
 
 
 def get(
-    IntegrationModel: Type, integration_id: str, id: Optional[str] = None
+    IntegrationModel: Type,
+    integration_id: str,
+    id: Optional[str] = None,
 ) -> object:
     query = session.query(IntegrationModel).filter(
         IntegrationModel.integration_id == integration_id,
@@ -40,12 +23,17 @@ def get(
     return query.order_by(IntegrationModel.created_at.desc()).all()
 
 
-def get_by_id(IntegrationModel: Type, id: str) -> object:
+def get_by_id(
+    IntegrationModel: Type,
+    id: str,
+) -> object:
     return session.query(IntegrationModel).filter(IntegrationModel.id == id).first()
 
 
 def get_by_running_id(
-    IntegrationModel: Type, integration_id: str, running_id: int
+    IntegrationModel: Type,
+    integration_id: str,
+    running_id: int,
 ) -> object:
     return (
         session.query(IntegrationModel)
@@ -57,7 +45,11 @@ def get_by_running_id(
     )
 
 
-def get_by_source(IntegrationModel: Type, integration_id: str, source: str) -> object:
+def get_by_source(
+    IntegrationModel: Type,
+    integration_id: str,
+    source: str,
+) -> object:
     return (
         session.query(IntegrationModel)
         .filter(
@@ -69,7 +61,8 @@ def get_by_source(IntegrationModel: Type, integration_id: str, source: str) -> o
 
 
 def get_all_by_integration_id(
-    IntegrationModel: Type, integration_id: str
+    IntegrationModel: Type,
+    integration_id: str,
 ) -> List[object]:
     return (
         session.query(IntegrationModel)
@@ -79,7 +72,10 @@ def get_all_by_integration_id(
     )
 
 
-def get_all_by_project_id(IntegrationModel: Type, project_id: str) -> List[object]:
+def get_all_by_project_id(
+    IntegrationModel: Type,
+    project_id: str,
+) -> List[object]:
     integrations = integration_db_bo.get_all_by_project_id(project_id)
     return (
         session.query(IntegrationModel)
@@ -92,22 +88,28 @@ def get_all_by_project_id(IntegrationModel: Type, project_id: str) -> List[objec
 
 
 def get_existing_integration_records(
-    IntegrationModel, integration_id: str
+    IntegrationModel: Type,
+    integration_id: str,
+    by: Optional[str] = "source",
 ) -> Dict[str, object]:
     return {
-        record.source: record
+        getattr(record, by, record.source): record
         for record in get_all_by_integration_id(IntegrationModel, integration_id)
     }
 
 
-def get_running_ids(IntegrationModel: Type, integration_id: str) -> int:
+def get_running_ids(
+    IntegrationModel: Type,
+    integration_id: str,
+    by: Optional[str] = "source",
+) -> int:
     return dict(
         session.query(
-            IntegrationModel.source,
+            getattr(IntegrationModel, by, IntegrationModel.source),
             func.coalesce(func.max(IntegrationModel.running_id), 0),
         )
         .filter(IntegrationModel.integration_id == integration_id)
-        .group_by(IntegrationModel.source)
+        .group_by(getattr(IntegrationModel, by, IntegrationModel.source))
         .all()
     )
 
@@ -163,6 +165,7 @@ def update(
         existing_value = getattr(integration_record, key, None)
         if value is not None and value != existing_value:
             setattr(integration_record, key, value)
+            flag_modified(integration_record, key)
             record_updated = True
 
     if record_updated:
@@ -183,9 +186,14 @@ def delete_many(
     general.flush_or_commit(with_commit)
 
 
-def clear_history(IntegrationModel: Type, id: str, with_commit: bool = False) -> None:
+def clear_history(
+    IntegrationModel: Type,
+    id: str,
+    with_commit: bool = False,
+) -> None:
     integration_record = get_by_id(IntegrationModel, id)
     integration_record.delta_criteria = None
+    flag_modified(integration_record, "delta_criteria")
     general.add(integration_record, with_commit)
 
 
