@@ -609,14 +609,3 @@ def get_project_by_project_id_sql(project_id: str) -> Dict[str, Any]:
         return value[0]
     else:
         return None
-
-
-def get_by_name_and_org_id(name: str, organization_id: str) -> Optional[Project]:
-    return (
-        session.query(Project)
-        .filter(
-            Project.name == name,
-            Project.organization_id == organization_id,
-        )
-        .first()
-    )
