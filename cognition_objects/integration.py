@@ -6,7 +6,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionIntegration, Project
+from ..models import CognitionIntegration
 from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
@@ -208,9 +208,16 @@ def update(
     if delta_criteria is not None:
         integration.delta_criteria = delta_criteria
         flag_modified(integration, "delta_criteria")
-
-    integration.is_synced = is_synced
-    integration.finished_at = finished_at
+    if is_synced is not None:
+        if is_synced == "NULL":
+            integration.is_synced = None
+        else:
+            integration.is_synced = is_synced
+    if finished_at is not None:
+        if finished_at == "NULL":
+            integration.finished_at = None
+        else:
+            integration.finished_at = finished_at
 
     general.add(integration, with_commit)
     return integration

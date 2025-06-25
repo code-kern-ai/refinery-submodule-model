@@ -47,7 +47,7 @@ def get_all() -> List[CognitionIntegrationAccess]:
 def create(
     org_id: str,
     user_id: str,
-    integration_types: List[str],
+    integration_types: List[CognitionIntegrationType],
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionIntegrationAccess:
@@ -55,7 +55,9 @@ def create(
         organization_id=org_id,
         created_by=user_id,
         created_at=created_at,
-        integration_types=integration_types,
+        integration_types=[
+            integration_type.value for integration_type in integration_types
+        ],
     )
     general.add(integration_access, with_commit)
 
@@ -65,14 +67,16 @@ def create(
 def update(
     id: str,
     org_id: Optional[str] = None,
-    integration_types: Optional[List[str]] = None,
+    integration_types: Optional[List[CognitionIntegrationType]] = None,
     with_commit: bool = True,
 ) -> CognitionIntegrationAccess:
     integration_access = get_by_id(id)
     if org_id:
         integration_access.organization_id = org_id
     if integration_types:
-        integration_access.integration_types = integration_types
+        integration_access.integration_types = [
+            integration_type.value for integration_type in integration_types
+        ]
     general.add(integration_access, with_commit)
     return integration_access
 
