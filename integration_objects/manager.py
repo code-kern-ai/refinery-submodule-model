@@ -90,7 +90,7 @@ def get_all_by_project_id(
 def get_existing_integration_records(
     IntegrationModel: Type,
     integration_id: str,
-    by: Optional[str] = "source",
+    by: str = "source",
 ) -> Dict[str, object]:
     return {
         getattr(record, by, record.source): record
@@ -101,8 +101,8 @@ def get_existing_integration_records(
 def get_running_ids(
     IntegrationModel: Type,
     integration_id: str,
-    by: Optional[str] = "source",
-) -> int:
+    by: str = "source",
+) -> Dict[str, int]:
     return dict(
         session.query(
             getattr(IntegrationModel, by, IntegrationModel.source),
@@ -169,7 +169,7 @@ def update(
             record_updated = True
 
     if record_updated:
-        general.add(integration_record, with_commit=with_commit)
+        general.flush_or_commit(with_commit)
 
     return integration_record
 
@@ -194,7 +194,7 @@ def clear_history(
     integration_record = get_by_id(IntegrationModel, id)
     integration_record.delta_criteria = None
     flag_modified(integration_record, "delta_criteria")
-    general.add(integration_record, with_commit)
+    general.flush_or_commit(with_commit)
 
 
 def _get_supported_metadata(
