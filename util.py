@@ -6,7 +6,7 @@ from re import sub, match, compile
 import sqlalchemy
 import decimal
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
 
 
 from sqlalchemy.sql import text as sql_text
@@ -199,6 +199,8 @@ def to_frontend_obj_raw(value: Union[List, Dict]):
 def to_json_serializable(x: Any):
     if isinstance(x, datetime):
         return x.isoformat()
+    if isinstance(x, date):
+        return str(x)
     elif isinstance(x, decimal.Decimal):
         return float(x)
     elif isinstance(x, UUID):
