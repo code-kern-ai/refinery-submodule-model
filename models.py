@@ -2172,7 +2172,7 @@ class IntegrationGithubFile(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
     integration_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
@@ -2212,7 +2212,7 @@ class IntegrationGithubIssue(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
     integration_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
@@ -2252,7 +2252,7 @@ class IntegrationPdf(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
     integration_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
@@ -2291,7 +2291,7 @@ class IntegrationSharepoint(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
     integration_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
