@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
@@ -81,7 +81,7 @@ def get_all_in_org_paginated(
     return (
         query.order_by(CognitionIntegration.created_at.desc())
         .limit(page_size)
-        .offset((page - 1) * page_size)
+        .offset(max(0, (page - 1) * page_size))
         .all()
     )
 
@@ -172,9 +172,9 @@ def update(
     llm_config: Optional[Dict] = None,
     error_message: Optional[str] = None,
     started_at: Optional[datetime.datetime] = None,
-    finished_at: Optional[datetime.datetime] = None,
+    finished_at: Optional[Union[str, datetime.datetime]] = None,
     last_synced_at: Optional[datetime.datetime] = None,
-    is_synced: Optional[bool] = None,
+    is_synced: Optional[Union[str, bool]] = None,
     delta_criteria: Optional[Dict[str, str]] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
