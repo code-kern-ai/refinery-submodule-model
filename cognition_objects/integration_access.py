@@ -24,17 +24,16 @@ def get_by_org_id(org_id: str) -> List[CognitionIntegrationAccess]:
 
 
 def get(
-    org_id: str, integration_type: CognitionIntegrationType
+    org_id: str, integration_type: Optional[CognitionIntegrationType] = None
 ) -> List[CognitionIntegrationAccess]:
-    return (
-        session.query(CognitionIntegrationAccess)
-        .filter(
-            CognitionIntegrationAccess.organization_id == org_id,
-            CognitionIntegrationAccess.integration_type == integration_type,
-        )
-        .order_by(CognitionIntegrationAccess.created_at.asc())
-        .all()
+    query = session.query(CognitionIntegrationAccess).filter(
+        CognitionIntegrationAccess.organization_id == org_id,
     )
+    if integration_type:
+        query = query.filter(
+            CognitionIntegrationAccess.integration_type == integration_type.value
+        )
+    return query.order_by(CognitionIntegrationAccess.created_at.asc()).all()
 
 
 def get_all() -> List[CognitionIntegrationAccess]:

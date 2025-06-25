@@ -887,11 +887,6 @@ class EvaluationRunState(Enum):
 
 
 class CognitionIntegrationType(Enum):
-    # CSV = "CSV"
-    # JSON = "JSON"
-    # DOCX = "DOCX"
-    # XLSX = "XLSX"
-    # WEBPAGE = "WEBPAGE"
     SHAREPOINT = "SHAREPOINT"
     GITHUB_FILE = "GITHUB_FILE"
     GITHUB_ISSUE = "GITHUB_ISSUE"
@@ -912,20 +907,13 @@ class IntegrationMetadata(Enum):
     """
     Enum for controlling and documenting the dynamic metadata fields associated with different integration types.
 
-    The `IntegrationMetadata` enum defines which metadata keys are expected and allowed for each integration type
-    (e.g., GITHUB_FILE, GITHUB_ISSUE, PDF). Each member contains a set of keys specific to that integration, while
-    the `__DEFAULT__` member defines a set of common metadata fields (`source`, `delta_criteria`, `minio_file_name`)
-    that are always included.
+    The `IntegrationMetadata` enum defines which metadata keys are expected and allowed for each integration table
+    (e.g., `integration.SHAREPOINT`, `integration.GITHUB_FILE`). Each member contains a set of keys specific to that integration, while
+    the `__DEFAULT__` (`source`, `delta_criteria`, `minio_file_name`) are always included.
 
-    During extraction (see the `extract` functions in the integration handlers), metadata is dynamically attached to
-    each document according to the rules defined here. This ensures that only the relevant and allowed metadata fields
-    are published to the database for each integration type.
+    During extraction, metadata is dynamically attached to each document according to the rules defined here.
 
-    The enum provides utility methods:
-      - `from_string(value: str)`: Returns the union of default and integration-specific metadata keys for a given type.
-      - `from_table_name(table_name: str)`: Looks up metadata keys based on the integration's table name.
-
-    This enum is used by the integration object logic (see `submodules/model/integration_objects/__init__.py`) to
+    This enum is used by the integration object logic (see `src.util.integration #delta_load`) to
     validate and filter metadata before persisting it, ensuring consistency and preventing unwanted fields from being
     stored in the database.
 
