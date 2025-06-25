@@ -1,6 +1,5 @@
 from typing import List, Optional, Dict
 import datetime
-from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -139,8 +138,6 @@ def create(
     project_id: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
-    if state not in CognitionMarkdownFileState.all():
-        raise HTTPException(status_code=400, detail=f"Invalid state: {state}")
     integration: CognitionIntegration = CognitionIntegration(
         id=id,
         organization_id=org_id,
