@@ -227,15 +227,10 @@ def execution_finished(id: str) -> bool:
     )
 
 
-def delete_many(
-    ids: List[str], delete_refinery_projects: bool = False, with_commit: bool = True
-) -> None:
-    integrations = session.query(CognitionIntegration).filter(
-        CognitionIntegration.id.in_(ids)
+def delete_many(ids: List[str], with_commit: bool = True) -> None:
+    (
+        session.query(CognitionIntegration)
+        .filter(CognitionIntegration.id.in_(ids))
+        .delete(synchronize_session=False)
     )
-    if delete_refinery_projects:
-        session.query(Project).filter(
-            Project.id.in_(filter(None, [i.project_id for i in integrations]))
-        ).delete(synchronize_session=False)
-    integrations.delete(synchronize_session=False)
     general.flush_or_commit(with_commit)

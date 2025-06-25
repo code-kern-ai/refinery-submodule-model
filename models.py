@@ -2090,9 +2090,8 @@ class CognitionIntegration(Base):
     )
     project_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
         index=True,
-        nullable=True,
     )
     created_by = Column(
         UUID(as_uuid=True),
