@@ -12,6 +12,11 @@ from ..enums import (
     CognitionIntegrationType,
 )
 
+FINISHED_STATES = [
+    CognitionMarkdownFileState.FINISHED.value,
+    CognitionMarkdownFileState.FAILED.value,
+]
+
 
 def get_by_ids(ids: List[str]) -> List[CognitionIntegration]:
     return (
@@ -31,8 +36,8 @@ def get_by_id(id: str) -> CognitionIntegration:
 
 def get_all(
     integration_type: Optional[str] = None,
-    exclude_failed: Optional[bool] = False,
-    only_synced: Optional[bool] = False,
+    exclude_failed: bool = False,
+    only_synced: bool = False,
 ) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration)
     if integration_type:
@@ -49,7 +54,7 @@ def get_all(
 def get_all_in_org(
     org_id: str,
     integration_type: Optional[str] = None,
-    only_synced: Optional[bool] = False,
+    only_synced: bool = False,
 ) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration).filter(
         CognitionIntegration.organization_id == org_id
@@ -67,9 +72,6 @@ def get_all_in_org_paginated(
     page: int = 1,
     page_size: int = 10,
 ) -> List[CognitionIntegration]:
-    schema_name = CognitionIntegration.__table__.schema or "public"
-    table_name = f"{schema_name}.{CognitionIntegration.__tablename__}"
-
     first_page = (page - 1) * page_size
     last_page = page * page_size
 
@@ -78,7 +80,7 @@ def get_all_in_org_paginated(
         SELECT 
             ROW_NUMBER () OVER(PARTITION BY intg.id ORDER BY intg.created_at ASC) rn,
             intg.id
-        FROM {table_name} intg
+        FROM cognition.{CognitionIntegration.__tablename__} intg
         WHERE intg.organization_id = '{org_id}'
     ) pages
     WHERE rn BETWEEN {first_page} AND {last_page}
@@ -229,12 +231,7 @@ def execution_finished(id: str) -> bool:
         session.query(CognitionIntegration)
         .filter(
             CognitionIntegration.id == id,
-            CognitionIntegration.state.in_(
-                [
-                    CognitionMarkdownFileState.FINISHED.value,
-                    CognitionMarkdownFileState.FAILED.value,
-                ]
-            ),
+            CognitionIntegration.state.in_(FINISHED_STATES),
         )
         .first()
     )
