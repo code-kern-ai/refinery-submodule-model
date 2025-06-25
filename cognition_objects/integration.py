@@ -196,8 +196,6 @@ def update(
     if llm_config is not None:
         integration.llm_config = llm_config
         flag_modified(integration, "llm_config")
-    if error_message is not None:
-        integration.error_message = error_message
     if started_at is not None:
         integration.started_at = started_at
     if last_synced_at is not None:
@@ -205,6 +203,11 @@ def update(
     if delta_criteria is not None:
         integration.delta_criteria = delta_criteria
         flag_modified(integration, "delta_criteria")
+    if error_message is not None:
+        if error_message == "NULL":
+            integration.error_message = None
+        else:
+            integration.error_message = error_message
     if is_synced is not None:
         if is_synced == "NULL":
             integration.is_synced = None
