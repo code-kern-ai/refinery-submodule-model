@@ -226,6 +226,7 @@ class User(Base):
     created_at = Column(DateTime, default=sql.func.now())
     metadata_public = Column(JSON)
     sso_provider = Column(String)
+    use_new_cognition_ui = Column(Boolean, default=True)
 
 
 class Team(Base):
@@ -1110,6 +1111,8 @@ class CognitionProject(Base):
     # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
     tokenizer = Column(String)
+    # options from <SVGIcon/> component - only visible with new UI selected (user setting)
+    icon = Column(String, default="IconBolt")
 
 
 class CognitionStrategy(Base):
