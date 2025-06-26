@@ -3,16 +3,16 @@ from ..enums import Tablenames
 
 DEFAULT_METADATA = {"source", "minio_file_name", "running_id"}
 TABLE_METADATA = {
-    Tablenames.INTEGRATION_GITHUB_FILE: {"path", "sha", "code_language"},
-    Tablenames.INTEGRATION_GITHUB_ISSUE: {
+    Tablenames.INTEGRATION_PDF.value: {"file_path", "page", "total_pages", "title"},
+    Tablenames.INTEGRATION_GITHUB_FILE.value: {"path", "sha", "code_language"},
+    Tablenames.INTEGRATION_GITHUB_ISSUE.value: {
         "url",
         "state",
         "number",
         "assignee",
         "milestone",
     },
-    Tablenames.INTEGRATION_PDF: {"file_path", "page", "total_pages", "title"},
-    Tablenames.INTEGRATION_SHAREPOINT: {
+    Tablenames.INTEGRATION_SHAREPOINT.value: {
         "extension",
         "object_id",
         "parent_path",
