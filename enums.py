@@ -10,6 +10,7 @@ class DataTypes(Enum):
     TEXT = "TEXT"
     LLM_RESPONSE = "LLM_RESPONSE"
     EMBEDDING_LIST = "EMBEDDING_LIST"  # only for embeddings & default hidden
+    PERMISSION = "PERMISSION"  # used for access control
     UNKNOWN = "UNKNOWN"
 
 
@@ -155,6 +156,9 @@ class Tablenames(Enum):
     EVALUATION_RUN = "evaluation_run"
     PLAYGROUND_QUESTION = "playground_question"
     FULL_ADMIN_ACCESS = "full_admin_access"
+    GROUP = "group"  # used for group based access control
+    GROUP_MEMBER = "group_member"  # used for group based access control
+    PERMISSION = "permission"  # used for access control
     INTEGRATION = "integration"
     INTEGRATION_ACCESS = "integration_access"
 
@@ -509,6 +513,7 @@ class TaskQueueAction(Enum):
     SEND_WEBSOCKET = "SEND_WEBSOCKET"
     FINISH_COGNITION_SETUP = "FINISH_COGNITION_SETUP"
     RUN_WEAK_SUPERVISION = "RUN_WEAK_SUPERVISION"
+    POSTPROCESS_INTEGRATION = "POSTPROCESS_INTEGRATION"
 
 
 class AgreementType(Enum):

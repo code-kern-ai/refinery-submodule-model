@@ -226,6 +226,7 @@ class User(Base):
     created_at = Column(DateTime, default=sql.func.now())
     metadata_public = Column(JSON)
     sso_provider = Column(String)
+    oidc_identifier = Column(String)
 
 
 class Team(Base):
@@ -1928,6 +1929,43 @@ class GraphRAGIndex(Base):
     error = Column(String)
     settings = Column(JSON)
     root_dir = Column(String)
+
+
+class CognitionGroup(Base):
+    __tablename__ = Tablenames.GROUP.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String, unique=True)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    meta_data = Column(JSON)
+
+
+class CognitionGroupMember(Base):
+    __tablename__ = Tablenames.GROUP_MEMBER.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    group_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.GROUP.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
 
 
 # =========================== Global tables ===========================

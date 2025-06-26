@@ -5,7 +5,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionIntegration
+from ..models import CognitionIntegration, CognitionGroup
 from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
@@ -234,10 +234,16 @@ def execution_finished(id: str) -> bool:
     )
 
 
-def delete_many(ids: List[str], with_commit: bool = True) -> None:
+def delete_many(
+    ids: List[str], delete_cognition_groups: bool = True, with_commit: bool = True
+) -> None:
     (
         session.query(CognitionIntegration)
         .filter(CognitionIntegration.id.in_(ids))
         .delete(synchronize_session=False)
     )
+    if delete_cognition_groups:
+        session.query(CognitionGroup).filter(
+            CognitionGroup.meta_data.op("->>")("integration_id").in_(ids)
+        ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
