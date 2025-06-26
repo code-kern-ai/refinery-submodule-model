@@ -2128,20 +2128,19 @@ class CognitionIntegration(Base):
     )
     project_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
         index=True,
-        nullable=True,
     )
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
+        index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
     updated_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
+        index=True,
     )
     updated_at = Column(DateTime, onupdate=sql.func.now())
     started_at = Column(DateTime)
@@ -2174,7 +2173,7 @@ class CognitionIntegrationAccess(Base):
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
+        index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
     organization_id = Column(
@@ -2202,16 +2201,15 @@ class IntegrationGithubFile(Base):
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
+        index=True,
     )
     updated_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
-        nullable=True,
+        index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
     integration_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
@@ -2243,16 +2241,15 @@ class IntegrationGithubIssue(Base):
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
+        index=True,
     )
     updated_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
-        nullable=True,
+        index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
     integration_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
@@ -2284,16 +2281,15 @@ class IntegrationPdf(Base):
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
+        index=True,
     )
     updated_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
-        nullable=True,
+        index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
     integration_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
@@ -2324,16 +2320,15 @@ class IntegrationSharepoint(Base):
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
+        index=True,
     )
     updated_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=False,
-        nullable=True,
+        index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    updated_at = Column(DateTime, default=None, onupdate=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
     integration_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),

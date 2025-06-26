@@ -1,6 +1,5 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 import datetime
-from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -11,6 +10,11 @@ from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
 )
+
+FINISHED_STATES = [
+    CognitionMarkdownFileState.FINISHED.value,
+    CognitionMarkdownFileState.FAILED.value,
+]
 
 
 def get_by_ids(ids: List[str]) -> List[CognitionIntegration]:
@@ -31,8 +35,8 @@ def get_by_id(id: str) -> CognitionIntegration:
 
 def get_all(
     integration_type: Optional[str] = None,
-    exclude_failed: Optional[bool] = False,
-    only_synced: Optional[bool] = False,
+    exclude_failed: bool = False,
+    only_synced: bool = False,
 ) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration)
     if integration_type:
@@ -49,7 +53,7 @@ def get_all(
 def get_all_in_org(
     org_id: str,
     integration_type: Optional[str] = None,
-    only_synced: Optional[bool] = False,
+    only_synced: bool = False,
 ) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration).filter(
         CognitionIntegration.organization_id == org_id
@@ -67,32 +71,19 @@ def get_all_in_org_paginated(
     page: int = 1,
     page_size: int = 10,
 ) -> List[CognitionIntegration]:
-    schema_name = CognitionIntegration.__table__.schema or "public"
-    table_name = f"{schema_name}.{CognitionIntegration.__tablename__}"
-
-    first_page = (page - 1) * page_size
-    last_page = page * page_size
-
-    sql = f"""
-    SELECT id FROM (
-        SELECT 
-            ROW_NUMBER () OVER(PARTITION BY intg.id ORDER BY intg.created_at ASC) rn,
-            intg.id
-        FROM {table_name} intg
-        WHERE intg.organization_id = '{org_id}'
-    ) pages
-    WHERE rn BETWEEN {first_page} AND {last_page}
-    """
-    integration_ids = general.execute_all(sql)
-    if not integration_ids:
-        return []
-
     query = session.query(CognitionIntegration).filter(
-        CognitionIntegration.id.in_([row[0] for row in integration_ids])
+        CognitionIntegration.organization_id == org_id,
     )
+
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
-    return query.order_by(CognitionIntegration.created_at.desc()).all()
+
+    return (
+        query.order_by(CognitionIntegration.created_at.desc())
+        .limit(page_size)
+        .offset(max(0, (page - 1) * page_size))
+        .all()
+    )
 
 
 def get_all_by_project_id(project_id: str) -> List[CognitionIntegration]:
@@ -147,8 +138,6 @@ def create(
     project_id: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
-    if state not in CognitionMarkdownFileState.all():
-        raise HTTPException(status_code=400, detail=f"Invalid state: {state}")
     integration: CognitionIntegration = CognitionIntegration(
         id=id,
         organization_id=org_id,
@@ -183,9 +172,9 @@ def update(
     llm_config: Optional[Dict] = None,
     error_message: Optional[str] = None,
     started_at: Optional[datetime.datetime] = None,
-    finished_at: Optional[datetime.datetime] = None,
+    finished_at: Optional[Union[str, datetime.datetime]] = None,
     last_synced_at: Optional[datetime.datetime] = None,
-    is_synced: Optional[bool] = None,
+    is_synced: Optional[Union[str, bool]] = None,
     delta_criteria: Optional[Dict[str, str]] = None,
     with_commit: bool = True,
 ) -> CognitionIntegration:
@@ -207,8 +196,6 @@ def update(
     if llm_config is not None:
         integration.llm_config = llm_config
         flag_modified(integration, "llm_config")
-    if error_message is not None:
-        integration.error_message = error_message
     if started_at is not None:
         integration.started_at = started_at
     if last_synced_at is not None:
@@ -216,9 +203,21 @@ def update(
     if delta_criteria is not None:
         integration.delta_criteria = delta_criteria
         flag_modified(integration, "delta_criteria")
-
-    integration.is_synced = is_synced
-    integration.finished_at = finished_at
+    if error_message is not None:
+        if error_message == "NULL":
+            integration.error_message = None
+        else:
+            integration.error_message = error_message
+    if is_synced is not None:
+        if is_synced == "NULL":
+            integration.is_synced = None
+        else:
+            integration.is_synced = is_synced
+    if finished_at is not None:
+        if finished_at == "NULL":
+            integration.finished_at = None
+        else:
+            integration.finished_at = finished_at
 
     general.add(integration, with_commit)
     return integration
@@ -229,18 +228,13 @@ def execution_finished(id: str) -> bool:
         session.query(CognitionIntegration)
         .filter(
             CognitionIntegration.id == id,
-            CognitionIntegration.state.in_(
-                [
-                    CognitionMarkdownFileState.FINISHED.value,
-                    CognitionMarkdownFileState.FAILED.value,
-                ]
-            ),
+            CognitionIntegration.state.in_(FINISHED_STATES),
         )
         .first()
     )
 
 
-def delete_many(
+def delete_many2(
     ids: List[str],
     delete_refinery_projects: bool = False,
     delete_cognition_groups: bool = True,
@@ -258,4 +252,12 @@ def delete_many(
             CognitionGroup.meta_data.op("->>")("integration_id").in_(ids)
         ).delete(synchronize_session=False)
     integrations.delete(synchronize_session=False)
+
+    
+def delete_many(ids: List[str], with_commit: bool = True) -> None:
+    (
+        session.query(CognitionIntegration)
+        .filter(CognitionIntegration.id.in_(ids))
+        .delete(synchronize_session=False)
+    )
     general.flush_or_commit(with_commit)

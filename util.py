@@ -6,7 +6,7 @@ from re import sub, match, compile
 import sqlalchemy
 import decimal
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
 
 
 from sqlalchemy.sql import text as sql_text
@@ -15,6 +15,10 @@ from .models import Base
 from .business_objects import general
 
 CAMEL_CASE_PATTERN = compile(r"^([a-z]+[A-Z]?)*$")
+SNAKE_CASE_PATTERNS = [
+    compile(r"(.)([A-Z][a-z]+)"),
+    compile(r"([a-z0-9])([A-Z])"),
+]
 
 
 def collect_engine_variables() -> Tuple[int, int, bool, bool]:
@@ -193,6 +197,8 @@ def to_frontend_obj_raw(value: Union[List, Dict]):
 def to_json_serializable(x: Any):
     if isinstance(x, datetime):
         return x.isoformat()
+    if isinstance(x, date):
+        return str(x)
     elif isinstance(x, decimal.Decimal):
         return float(x)
     elif isinstance(x, UUID):
@@ -209,10 +215,12 @@ def to_camel_case(name: str):
 
 
 def to_snake_case(name: str):
+    # ref: https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
     if not is_camel_case(name):
         return name
-    name = sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
-    return sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
+    for phase in SNAKE_CASE_PATTERNS:
+        name = phase.sub(r"\1_\2", name)
+    return name.lower()
 
 
 def is_list_like(value: Any) -> bool:

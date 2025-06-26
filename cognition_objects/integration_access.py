@@ -24,17 +24,16 @@ def get_by_org_id(org_id: str) -> List[CognitionIntegrationAccess]:
 
 
 def get(
-    org_id: str, integration_type: CognitionIntegrationType
+    org_id: str, integration_type: Optional[CognitionIntegrationType] = None
 ) -> List[CognitionIntegrationAccess]:
-    return (
-        session.query(CognitionIntegrationAccess)
-        .filter(
-            CognitionIntegrationAccess.organization_id == org_id,
-            CognitionIntegrationAccess.integration_type == integration_type,
-        )
-        .order_by(CognitionIntegrationAccess.created_at.asc())
-        .all()
+    query = session.query(CognitionIntegrationAccess).filter(
+        CognitionIntegrationAccess.organization_id == org_id,
     )
+    if integration_type:
+        query = query.filter(
+            CognitionIntegrationAccess.integration_type == integration_type.value
+        )
+    return query.order_by(CognitionIntegrationAccess.created_at.asc()).all()
 
 
 def get_all() -> List[CognitionIntegrationAccess]:
@@ -48,7 +47,7 @@ def get_all() -> List[CognitionIntegrationAccess]:
 def create(
     org_id: str,
     user_id: str,
-    integration_types: List[str],
+    integration_types: List[CognitionIntegrationType],
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionIntegrationAccess:
@@ -56,7 +55,9 @@ def create(
         organization_id=org_id,
         created_by=user_id,
         created_at=created_at,
-        integration_types=integration_types,
+        integration_types=[
+            integration_type.value for integration_type in integration_types
+        ],
     )
     general.add(integration_access, with_commit)
 
@@ -66,14 +67,16 @@ def create(
 def update(
     id: str,
     org_id: Optional[str] = None,
-    integration_types: Optional[List[str]] = None,
+    integration_types: Optional[List[CognitionIntegrationType]] = None,
     with_commit: bool = True,
 ) -> CognitionIntegrationAccess:
     integration_access = get_by_id(id)
     if org_id:
         integration_access.organization_id = org_id
     if integration_types:
-        integration_access.integration_types = integration_types
+        integration_access.integration_types = [
+            integration_type.value for integration_type in integration_types
+        ]
     general.add(integration_access, with_commit)
     return integration_access
 
