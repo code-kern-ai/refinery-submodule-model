@@ -2179,12 +2179,12 @@ class IntegrationGithubFile(Base):
     )
     running_id = Column(Integer, index=True)
     source = Column(String, index=True)
+    minio_file_name = Column(String)
+    error_message = Column(String)
+
     path = Column(String)
     sha = Column(String)
     code_language = Column(String)
-
-    delta_criteria = Column(JSON)
-    minio_file_name = Column(String)
 
 
 class IntegrationGithubIssue(Base):
@@ -2220,6 +2220,7 @@ class IntegrationGithubIssue(Base):
     running_id = Column(Integer, index=True)
     source = Column(String, index=True)
     minio_file_name = Column(String)
+    error_message = Column(String)
 
     url = Column(String)
     state = Column(String)
@@ -2260,6 +2261,7 @@ class IntegrationPdf(Base):
     running_id = Column(Integer, index=True)
     source = Column(String, index=True)
     minio_file_name = Column(String)
+    error_message = Column(String)
 
     file_path = Column(String)
     page = Column(Integer)
@@ -2299,6 +2301,7 @@ class IntegrationSharepoint(Base):
     running_id = Column(Integer, index=True)
     source = Column(String, index=True)
     minio_file_name = Column(String)
+    error_message = Column(String)
 
     extension = Column(String)
     object_id = Column(String)
