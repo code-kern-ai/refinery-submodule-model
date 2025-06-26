@@ -16,6 +16,12 @@ from .business_objects import general
 
 CAMEL_CASE_PATTERN = compile(r"^([a-z]+[A-Z]?)*$")
 
+STRING_TRUE_VALUES = {"true", "x", "1", "y"}
+
+
+def is_string_true_value(value: str) -> bool:
+    return value.lower() in STRING_TRUE_VALUES
+
 
 def collect_engine_variables() -> Tuple[int, int, bool, bool]:
     # amount of simultaneous connections to the database
@@ -50,7 +56,7 @@ def collect_engine_variables() -> Tuple[int, int, bool, bool]:
     os_pool_use_lifo = os.getenv("POSTGRES_POOL_USE_LIFO")
     if os_pool_use_lifo:
         try:
-            pool_use_lifo = os_pool_use_lifo.lower() in ["true", "x", "1", "y"]
+            pool_use_lifo = is_string_true_value(os_pool_use_lifo)
         except ValueError:
             print(
                 f"POSTGRES_POOL_USE_LIFO is not an boolean, using default {pool_use_lifo}",
@@ -64,7 +70,7 @@ def collect_engine_variables() -> Tuple[int, int, bool, bool]:
     os_pool_pre_ping = os.getenv("POSTGRES_POOL_PRE_PING")
     if os_pool_pre_ping:
         try:
-            pool_pre_ping = os_pool_pre_ping.lower() in ["true", "x", "1", "y"]
+            pool_pre_ping = is_string_true_value(os_pool_pre_ping)
         except ValueError:
             print(
                 f"POSTGRES_POOL_PRE_PING is not an boolean, using default {pool_pre_ping}",
