@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any, Iterable
 from ..business_objects import general, team_resource, user
 from ..cognition_objects import consumption_log, consumption_summary
-from ..session import session, request_id_ctx_var
+from ..session import session
 from ..models import CognitionProject, TeamMember, TeamResource
 from .. import enums
 from datetime import datetime
@@ -214,6 +214,7 @@ def update(
     macro_config: Optional[Dict[str, Any]] = None,
     llm_config: Optional[Dict[str, Any]] = None,
     tokenizer: Optional[str] = None,
+    icon: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -285,6 +286,8 @@ def update(
         flag_modified(project, "operator_routing_config")
     if tokenizer is not None:
         project.tokenizer = tokenizer
+    if icon is not None:
+        project.icon = icon
     general.flush_or_commit(with_commit)
     return project
 
