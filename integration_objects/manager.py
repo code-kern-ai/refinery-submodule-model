@@ -6,7 +6,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
 from ..session import session
-from ..enums import IntegrationMetadata
+from .helper import get_supported_metadata_keys
 
 
 def get(
@@ -120,6 +120,7 @@ def create(
     integration_id: str,
     running_id: int,
     created_at: Optional[datetime] = None,
+    error_message: Optional[str] = None,
     id: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
@@ -129,6 +130,7 @@ def create(
         integration_id=integration_id,
         running_id=running_id,
         created_at=created_at,
+        error_message=error_message,
         id=id,
         **metadata,
     )
@@ -145,6 +147,7 @@ def update(
     updated_by: str,
     running_id: Optional[int] = None,
     updated_at: Optional[datetime] = None,
+    error_message: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
 ) -> object:
@@ -155,6 +158,8 @@ def update(
         integration_record.running_id = running_id
     if updated_at is not None:
         integration_record.updated_at = updated_at
+    if error_message is not None:
+        integration_record.error_message = error_message
 
     record_updated = False
     for key, value in metadata.items():
@@ -197,10 +202,10 @@ def clear_history(
     general.flush_or_commit(with_commit)
 
 
-def _get_supported_metadata(
+def get_supported_metadata(
     table_name: str, metadata: Dict[str, Union[str, int, float, bool]]
 ) -> None:
-    supported_keys = IntegrationMetadata.from_table_name(table_name)
+    supported_keys = get_supported_metadata_keys(table_name)
     supported_metadata = {
         key: metadata[key] for key in supported_keys.intersection(metadata.keys())
     }
