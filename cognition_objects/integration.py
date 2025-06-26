@@ -243,7 +243,9 @@ def delete_many(
         .delete(synchronize_session=False)
     )
     if delete_cognition_groups:
-        session.query(CognitionGroup).filter(
-            CognitionGroup.meta_data.op("->>")("integration_id").in_(ids)
-        ).delete(synchronize_session=False)
+        (
+            session.query(CognitionGroup)
+            .filter(CognitionGroup.meta_data.op("->>")("integration_id").in_(ids))
+            .delete(synchronize_session=False)
+        )
     general.flush_or_commit(with_commit)
