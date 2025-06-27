@@ -15,6 +15,10 @@ from ..models import (
     Attribute,
     RecordTokenized,
 )
+from ..integration_objects.helper import (
+    REFINERY_ATTRIBUTE_ACCESS_GROUPS,
+    REFINERY_ATTRIBUTE_ACCESS_USERS,
+)
 from ..session import session
 from ..util import prevent_sql_injection
 
@@ -810,8 +814,12 @@ def delete_user_created_attribute(
 def delete_access_management_attributes(
     project_id: str, with_commit: bool = True
 ) -> None:
-    access_groups_attribute_item = attribute.get_by_name(project_id, "__ACCESS_GROUPS")
-    access_users_attribute_item = attribute.get_by_name(project_id, "__ACCESS_USERS")
+    access_groups_attribute_item = attribute.get_by_name(
+        project_id, REFINERY_ATTRIBUTE_ACCESS_GROUPS
+    )
+    access_users_attribute_item = attribute.get_by_name(
+        project_id, REFINERY_ATTRIBUTE_ACCESS_USERS
+    )
 
     if access_users_attribute_item and access_groups_attribute_item:
         record_items = get_all(project_id=project_id)

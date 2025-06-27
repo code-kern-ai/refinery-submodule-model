@@ -9,6 +9,10 @@ from . import general, attribute
 from .. import enums
 from ..session import session
 from ..models import Project, Record, Attribute
+from ..integration_objects.helper import (
+    REFINERY_ATTRIBUTE_ACCESS_GROUPS,
+    REFINERY_ATTRIBUTE_ACCESS_USERS,
+)
 from ..util import prevent_sql_injection
 
 QUEUE_PROJECT_NAME = "@@HIDDEN_QUEUE_PROJECT@@"
@@ -158,8 +162,9 @@ def get_all_with_access_management(organization_id: str) -> List[Project]:
         .join(Attribute, Project.id == Attribute.project_id)
         .filter(
             Project.organization_id == organization_id,
-            Attribute.name.in_(["__ACCESS_GROUPS", "__ACCESS_USERS"]),  #
-            Attribute.name.in_(["__ACCESS_GROUPS", "__ACCESS_USERS"]),
+            Attribute.name.in_(
+                [REFINERY_ATTRIBUTE_ACCESS_GROUPS, REFINERY_ATTRIBUTE_ACCESS_USERS]
+            ),
             Attribute.user_created == False,
             Attribute.data_type == enums.DataTypes.PERMISSION.value,
             Attribute.state == enums.AttributeState.AUTOMATICALLY_CREATED.value,
@@ -175,7 +180,9 @@ def check_access_management_active(project_id: str) -> bool:
         .join(Attribute, Project.id == Attribute.project_id)
         .filter(
             Project.id == project_id,
-            Attribute.name.in_(["__ACCESS_GROUPS", "__ACCESS_USERS"]),
+            Attribute.name.in_(
+                [REFINERY_ATTRIBUTE_ACCESS_GROUPS, REFINERY_ATTRIBUTE_ACCESS_USERS]
+            ),
             Attribute.user_created == False,
             Attribute.data_type == enums.DataTypes.PERMISSION.value,
             Attribute.state == enums.AttributeState.AUTOMATICALLY_CREATED.value,
