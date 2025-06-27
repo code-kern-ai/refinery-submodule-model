@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union, Type
+from typing import List, Optional, Dict, Union, Type, Any
 from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
@@ -204,7 +204,7 @@ def clear_history(
 
 def get_supported_metadata(
     table_name: str, metadata: Dict[str, Union[str, int, float, bool]]
-) -> None:
+) -> Dict[str, Any]:
     supported_keys = get_supported_metadata_keys(table_name)
     supported_metadata = {
         key: metadata[key] for key in supported_keys.intersection(metadata.keys())
@@ -214,7 +214,7 @@ def get_supported_metadata(
 
 def __rename_metadata(
     table_name: str, metadata: Dict[str, Union[str, int, float, bool]]
-) -> Dict[str, object]:
+) -> Dict[str, Any]:
     rename_keys = {
         "id": f"{table_name}_id",
         "created_by": f"{table_name}_created_by",

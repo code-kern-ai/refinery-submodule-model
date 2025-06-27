@@ -1,4 +1,5 @@
 from typing import Any, List, Optional
+import datetime
 from . import general
 from .. import enums
 from ..models import TaskQueue, Organization
@@ -200,12 +201,19 @@ def set_parse_cognition_file_task_to_failed(
 
 def set_integration_task_to_failed(
     integration_id: str,
-    with_commit: bool = False,
+    is_synced: bool = False,
+    error_message: Optional[str] = None,
+    with_commit: bool = True,
 ) -> None:
-    integration = integration_db_bo.get_by_id(integration_id)
-    if integration:
-        integration.state = enums.CognitionMarkdownFileState.FAILED.value
-        general.flush_or_commit(with_commit)
+    integration_db_bo.update(
+        id=integration_id,
+        state=enums.CognitionMarkdownFileState.FAILED,
+        finished_at=datetime.datetime.now(datetime.timezone.utc),
+        is_synced=is_synced,
+        error_message=error_message,
+        last_synced_at=datetime.datetime.now(datetime.timezone.utc),
+        with_commit=with_commit,
+    )
 
 
 def __select_running_information_source_payloads(

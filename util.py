@@ -213,14 +213,14 @@ def to_json_serializable(x: Any):
         return x
 
 
-def to_camel_case(name: str):
+def to_camel_case(name: str) -> str:
     if is_camel_case(name):
         return name
     name = sub(r"(_|-)+", " ", name).title().replace(" ", "")
     return "".join([name[0].lower(), name[1:]])
 
 
-def to_snake_case(name: str):
+def to_snake_case(name: str) -> str:
     # ref: https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
     if not is_camel_case(name):
         return name

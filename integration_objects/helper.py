@@ -1,3 +1,5 @@
+from typing import Set
+
 from ..enums import Tablenames
 
 
@@ -31,7 +33,7 @@ TABLE_METADATA = {
 }
 
 
-def get_supported_metadata_keys(table_name: str):
+def get_supported_metadata_keys(table_name: str) -> Set[str]:
     """
     Function for controlling and documenting the dynamic metadata fields associated with different integration types.
 
