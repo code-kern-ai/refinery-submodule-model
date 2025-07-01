@@ -165,13 +165,7 @@ def get_all_with_access_management(org_id: str) -> List[Dict[str, Any]]:
     query = f"""
     SELECT DISTINCT
             p.*,
-            CASE
-                WHEN
-                    ci.id IS NOT NULL
-                    AND (ci.config -> 'extract_kwargs' ->> 'sync_sharepoint_permissions')::text = 'true'
-                THEN TRUE
-                ELSE FALSE
-            END AS is_sharepoint_sync_active
+            COALESCE((ci.config -> 'extract_kwargs' ->> 'sync_sharepoint_permissions')::BOOLEAN,FALSE) AS is_sharepoint_sync_active
         FROM
             public.project p
         JOIN
