@@ -1,11 +1,8 @@
 from typing import List, Optional, Any, Dict, Union, Set
-from sqlalchemy.sql import func
-from sqlalchemy import cast, Integer
+from sqlalchemy.sql import func, cast
 from sqlalchemy.sql.functions import coalesce
-
-
+from sqlalchemy import Integer
 from . import general, attribute
-
 from .. import enums
 from ..session import session
 from ..models import Project, Record, Attribute
@@ -156,22 +153,42 @@ def get_all(organization_id: str) -> List[Project]:
     )
 
 
-def get_all_with_access_management(organization_id: str) -> List[Project]:
-    return (
-        session.query(Project)
-        .join(Attribute, Project.id == Attribute.project_id)
-        .filter(
-            Project.organization_id == organization_id,
-            Attribute.name.in_(
-                [REFINERY_ATTRIBUTE_ACCESS_GROUPS, REFINERY_ATTRIBUTE_ACCESS_USERS]
-            ),
-            Attribute.user_created == False,
-            Attribute.data_type == enums.DataTypes.PERMISSION.value,
-            Attribute.state == enums.AttributeState.AUTOMATICALLY_CREATED.value,
-        )
-        .distinct()
-        .all()
-    )
+def get_all_with_access_management(org_id: str) -> List[Dict[str, Any]]:
+    org_id_safe = prevent_sql_injection(org_id, isinstance(org_id, str))
+
+    hidden_status = enums.ProjectStatus.HIDDEN.value
+    permission_data_type = enums.DataTypes.PERMISSION.value
+    automatically_created_state = enums.AttributeState.AUTOMATICALLY_CREATED.value
+    access_groups_attr = REFINERY_ATTRIBUTE_ACCESS_GROUPS
+    access_users_attr = REFINERY_ATTRIBUTE_ACCESS_USERS
+
+    query = f"""
+    SELECT DISTINCT
+            p.*,
+            CASE
+                WHEN
+                    ci.id IS NOT NULL
+                    AND (ci.config -> 'extract_kwargs' ->> 'sync_sharepoint_permissions')::text = 'true'
+                THEN TRUE
+                ELSE FALSE
+            END AS is_sharepoint_sync_active
+        FROM
+            public.project p
+        JOIN
+            public.attribute a ON p.id = a.project_id
+        LEFT JOIN
+            cognition.integration ci ON p.id = ci.project_id
+        WHERE
+            p.organization_id = '{org_id_safe}'
+            AND p.status != '{hidden_status}'
+            AND a.name IN ('{access_groups_attr}', '{access_users_attr}')
+            AND a.user_created = FALSE
+            AND a.data_type = '{permission_data_type}'
+            AND a.state = '{automatically_created_state}';
+    """
+
+    values = general.execute_all(query)
+    return values
 
 
 def check_access_management_active(project_id: str) -> bool:
