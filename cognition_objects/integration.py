@@ -224,6 +224,8 @@ def update(
 
 
 def execution_finished(id: str) -> bool:
+    if not get_by_id(id):
+        return True
     return bool(
         session.query(CognitionIntegration)
         .filter(
