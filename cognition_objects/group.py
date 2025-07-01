@@ -65,12 +65,14 @@ def get_all_by_integration_id_permission_grouped(
     return integration_groups_by_permission
 
 
-def get_by_name(organization_id: str, name: str):
+def get_by_name_and_integration(organization_id: str, integration_id: str, name: str):
+    integration_id_json = CognitionGroup.meta_data.op("->>")("integration_id")
     return (
         session.query(CognitionGroup)
         .filter(
             CognitionGroup.organization_id == organization_id,
             CognitionGroup.name == name,
+            integration_id_json == integration_id,
         )
         .first()
     )
