@@ -65,7 +65,9 @@ def get_all_by_integration_id_permission_grouped(
     return integration_groups_by_permission
 
 
-def get_by_name_and_integration(organization_id: str, integration_id: str, name: str):
+def get_by_name_and_integration(
+    organization_id: str, integration_id: str, name: str
+) -> CognitionGroup:
     integration_id_json = CognitionGroup.meta_data.op("->>")("integration_id")
     return (
         session.query(CognitionGroup)

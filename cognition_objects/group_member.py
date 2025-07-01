@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from ..business_objects import general, user
 from . import group
 from ..session import session
 from ..models import CognitionGroupMember
 
 
-def get(group_id: str, id: str):
+def get(group_id: str, id: str) -> CognitionGroupMember:
     return (
         session.query(CognitionGroupMember)
         .filter(
@@ -27,7 +27,7 @@ def get_by_group_and_user(group_id: str, user_id: str) -> CognitionGroupMember:
     )
 
 
-def get_by_user_id(user_id: str) -> list:
+def get_by_user_id(user_id: str) -> List[CognitionGroupMember]:
     return (
         session.query(CognitionGroupMember)
         .filter(CognitionGroupMember.user_id == user_id)
@@ -35,7 +35,7 @@ def get_by_user_id(user_id: str) -> list:
     )
 
 
-def get_all_by_group(group_id: str) -> list:
+def get_all_by_group(group_id: str) -> List[CognitionGroupMember]:
     return (
         session.query(CognitionGroupMember)
         .filter(CognitionGroupMember.group_id == group_id)
