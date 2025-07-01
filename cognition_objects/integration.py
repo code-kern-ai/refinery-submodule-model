@@ -177,8 +177,10 @@ def update(
     is_synced: Optional[Union[str, bool]] = None,
     delta_criteria: Optional[Dict[str, str]] = None,
     with_commit: bool = True,
-) -> CognitionIntegration:
+) -> Optional[CognitionIntegration]:
     integration: CognitionIntegration = get_by_id(id)
+    if not integration:
+        return None
 
     if updated_by is not None:
         integration.updated_by = updated_by

@@ -124,7 +124,12 @@ def create(
     id: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
-) -> object:
+) -> Optional[object]:
+    if not integration_db_bo.get_by_id(integration_id):
+        # If the integration does not exist,
+        # it was likely deleted during runtime
+        print(f"Integration with id '{integration_id}' not found", flush=True)
+        return
     integration_record = IntegrationModel(
         created_by=created_by,
         integration_id=integration_id,
@@ -150,7 +155,12 @@ def update(
     error_message: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
-) -> object:
+) -> Optional[object]:
+    if not integration_db_bo.get_by_id(integration_id):
+        # If the integration does not exist,
+        # it was likely deleted during runtime
+        print(f"Integration with id '{integration_id}' not found", flush=True)
+        return
     integration_record = get(IntegrationModel, integration_id, id)
     integration_record.updated_by = updated_by
 
