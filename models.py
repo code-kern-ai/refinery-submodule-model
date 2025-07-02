@@ -1965,7 +1965,14 @@ class StepTemplates(Base):
 
 class CognitionGroup(Base):
     __tablename__ = Tablenames.GROUP.value
-    name = Column(String)
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String, unique=True)
     description = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
