@@ -31,7 +31,7 @@ def get_all_by_org_id(organization_id: str) -> List[Dict[str, Any]]:
             .all()
         )
     ]
-
+    organization_id = prevent_sql_injection(organization_id, isinstance(organization_id, str))
     query = f"""
     SELECT jsonb_object_agg(id,C)
     FROM (
