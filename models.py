@@ -1934,16 +1934,31 @@ class GraphRAGIndex(Base):
     root_dir = Column(String)
 
 
-class CognitionGroup(Base):
-    __tablename__ = Tablenames.GROUP.value
+class StepTemplates(Base):
+    __tablename__ = Tablenames.STEP_TEMPLATES.value
     __table_args__ = {"schema": "cognition"}
+    name = Column(String, unique=True)
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    name = Column(String, unique=True)
+    config = Column(JSON)  # JSON schema for the step template
+    # config contains all step configurations in an array & variable fields to be changed on useage
+    # e.g.
+    # {
+    #     "variables": [
+    # {"name": "Env var", "path": "[0].config.llmConfig.environmentVariable", "hasDefault": True, "defaultValue": "OpenAI Leo"},
+    # {"name": "System Prompt", "path": "[0].config.templatePrompt", "hasDefault": False},
+    # ],
+    #     "steps": [{...},{...}]
+    # }
+
+
+class CognitionGroup(Base):
+    __tablename__ = Tablenames.GROUP.value
+    name = Column(String)
     description = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
