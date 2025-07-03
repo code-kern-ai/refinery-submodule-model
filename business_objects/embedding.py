@@ -9,6 +9,7 @@ from ..session import session
 from .. import enums
 
 from ..util import prevent_sql_injection
+from sqlalchemy import distinct, func
 
 
 ALL_EMBEDDINGS_WHITELIST = {
@@ -587,6 +588,15 @@ def get_tensor_count(embedding_id: str) -> EmbeddingTensor:
     )
 
 
+def get_record_ids_count(embedding_id: str) -> int:
+    # note that this is not the same as tensors since e.g. embedding lists are stored with sub_key
+    return (
+        session.query(func.count(distinct(models.EmbeddingTensor.record_id)))
+        .filter(models.EmbeddingTensor.embedding_id == embedding_id)
+        .scalar()
+    )
+
+
 def get_tensor(
     embedding_id: str, record_id: Optional[str] = None, sub_key: Optional[int] = None
 ) -> EmbeddingTensor:
@@ -779,6 +789,22 @@ def delete(project_id: str, embedding_id: str, with_commit: bool = False) -> Non
 
 def delete_tensors(embedding_id: str, with_commit: bool = False) -> None:
     session.query(EmbeddingTensor).filter(EmbeddingTensor.id == embedding_id).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_tensors_by_record_ids(
+    project_id: str,
+    record_ids: List[str],
+    embedding_id: Optional[str] = None,
+    with_commit: bool = False,
+) -> None:
+    query = session.query(EmbeddingTensor).filter(
+        EmbeddingTensor.project_id == project_id,
+        EmbeddingTensor.record_id.in_(record_ids),
+    )
+    if embedding_id:
+        query = query.filter(EmbeddingTensor.embedding_id == embedding_id)
+    query.delete()
     general.flush_or_commit(with_commit)
 
 

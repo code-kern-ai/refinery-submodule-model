@@ -2,11 +2,11 @@ import os
 from typing import Tuple, Any, Union, List, Dict, Optional, Iterable
 from pydantic import BaseModel
 from collections.abc import Iterable as collections_abc_Iterable
-from re import sub, match, compile
+from re import sub, match, compile, IGNORECASE
 import sqlalchemy
 import decimal
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
 
 
 from sqlalchemy.sql import text as sql_text
@@ -15,6 +15,16 @@ from .models import Base
 from .business_objects import general
 
 CAMEL_CASE_PATTERN = compile(r"^([a-z]+[A-Z]?)*$")
+UUID_REGEX_PATTERN = compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    IGNORECASE,
+)
+
+STRING_TRUE_VALUES = {"true", "x", "1", "y"}
+
+
+def is_string_true_value(value: str) -> bool:
+    return value.lower() in STRING_TRUE_VALUES
 
 
 def collect_engine_variables() -> Tuple[int, int, bool, bool]:
@@ -50,7 +60,7 @@ def collect_engine_variables() -> Tuple[int, int, bool, bool]:
     os_pool_use_lifo = os.getenv("POSTGRES_POOL_USE_LIFO")
     if os_pool_use_lifo:
         try:
-            pool_use_lifo = os_pool_use_lifo.lower() in ["true", "x", "1", "y"]
+            pool_use_lifo = is_string_true_value(os_pool_use_lifo)
         except ValueError:
             print(
                 f"POSTGRES_POOL_USE_LIFO is not an boolean, using default {pool_use_lifo}",
@@ -64,7 +74,7 @@ def collect_engine_variables() -> Tuple[int, int, bool, bool]:
     os_pool_pre_ping = os.getenv("POSTGRES_POOL_PRE_PING")
     if os_pool_pre_ping:
         try:
-            pool_pre_ping = os_pool_pre_ping.lower() in ["true", "x", "1", "y"]
+            pool_pre_ping = is_string_true_value(os_pool_pre_ping)
         except ValueError:
             print(
                 f"POSTGRES_POOL_PRE_PING is not an boolean, using default {pool_pre_ping}",
@@ -99,12 +109,13 @@ def sql_alchemy_to_dict(
     column_whitelist: Optional[Iterable[str]] = None,
     column_blacklist: Optional[Iterable[str]] = None,
     column_rename_map: Optional[Dict[str, str]] = None,
+    dont_wrap_uuids: bool = True,
 ):
     result = __sql_alchemy_to_dict(
         sql_alchemy_object, column_whitelist, column_blacklist, column_rename_map
     )
     if for_frontend:
-        return to_frontend_obj(result)
+        return to_frontend_obj(result, dont_wrap_uuids=dont_wrap_uuids)
     return result
 
 
@@ -165,18 +176,29 @@ def __sql_alchemy_to_dict(
         return sql_alchemy_object
 
 
-def to_frontend_obj(value: Union[List, Dict], blacklist_keys: List[str] = []):
+def to_frontend_obj(
+    value: Union[List, Dict],
+    blacklist_keys: List[str] = [],
+    dont_wrap_uuids: bool = True,
+):
     if isinstance(value, dict):
         return {
-            to_camel_case(k): (
-                to_frontend_obj(v, blacklist_keys=blacklist_keys)
+            to_camel_case(k, dont_wrap_uuids=dont_wrap_uuids): (
+                to_frontend_obj(
+                    v, blacklist_keys=blacklist_keys, dont_wrap_uuids=dont_wrap_uuids
+                )
                 if k not in blacklist_keys
                 else v
             )
             for k, v in value.items()
         }
     elif is_list_like(value):
-        return [to_frontend_obj(x, blacklist_keys=blacklist_keys) for x in value]
+        return [
+            to_frontend_obj(
+                x, blacklist_keys=blacklist_keys, dont_wrap_uuids=dont_wrap_uuids
+            )
+            for x in value
+        ]
     else:
         return to_json_serializable(value)
 
@@ -193,6 +215,8 @@ def to_frontend_obj_raw(value: Union[List, Dict]):
 def to_json_serializable(x: Any):
     if isinstance(x, datetime):
         return x.isoformat()
+    if isinstance(x, date):
+        return str(x)
     elif isinstance(x, decimal.Decimal):
         return float(x)
     elif isinstance(x, UUID):
@@ -201,8 +225,10 @@ def to_json_serializable(x: Any):
         return x
 
 
-def to_camel_case(name: str):
+def to_camel_case(name: str, dont_wrap_uuids: bool = True):
     if is_camel_case(name):
+        return name
+    if dont_wrap_uuids and is_uuid(name):
         return name
     name = sub(r"(_|-)+", " ", name).title().replace(" ", "")
     return "".join([name[0].lower(), name[1:]])
@@ -223,6 +249,16 @@ def is_camel_case(text: str) -> bool:
         return True
     else:
         return False
+
+
+def is_uuid(value: Union[str, UUID]) -> bool:
+    if isinstance(value, UUID):
+        return True
+    elif isinstance(value, str):
+        if UUID_REGEX_PATTERN.fullmatch(value):
+            return True
+        return False
+    return False
 
 
 # str is expected but depending on the attack vector e.g. the type hints don't mean anything so an int could still receive a string

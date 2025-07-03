@@ -1,6 +1,8 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Iterable, Tuple
 from datetime import datetime
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy import tuple_
+
 
 from ..business_objects import general
 from ..session import session
@@ -16,6 +18,23 @@ def get(project_id: str, strategy_step_id: str) -> CognitionStrategyStep:
             CognitionStrategyStep.id == strategy_step_id,
         )
         .first()
+    )
+
+
+def get_all_by_project_and_ids(
+    project_step_tuple: Iterable[Tuple[str, str]],
+) -> List[CognitionStrategyStep]:
+    if not project_step_tuple:
+        return []
+
+    return (
+        session.query(CognitionStrategyStep)
+        .filter(
+            tuple_(CognitionStrategyStep.project_id, CognitionStrategyStep.id).in_(
+                project_step_tuple
+            )
+        )
+        .all()
     )
 
 

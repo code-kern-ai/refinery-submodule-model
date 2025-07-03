@@ -5,12 +5,24 @@ from ..session import session
 from typing import List, Optional
 from sqlalchemy import sql
 
+from ..db_cache import TTLCacheDecorator, CacheEnum
 
 from ..util import prevent_sql_injection
 
 
 def get(user_id: str) -> User:
     return session.query(User).get(user_id)
+
+
+@TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
+def get_user_cached(user_id: str) -> User:
+    user = get(user_id)
+    if not user:
+        return None
+
+    general.expunge(user)
+    general.make_transient(user)
+    return user
 
 
 def get_by_id_list(user_ids: List[str]) -> List[User]:
@@ -165,6 +177,8 @@ def get_active_users_after_filter(
     if last_interaction_range:
         query += f"\nAND last_interaction >= '{last_interaction_range}'"
     if sort_key:
+        if sort_key == "organization":
+            sort_key = "organization_name"
         sort_direction = "DESC" if sort_direction == -1 else "ASC"
         query += f"\nORDER BY {sort_key} {sort_direction}"
     if offset:

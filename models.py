@@ -226,6 +226,7 @@ class User(Base):
     created_at = Column(DateTime, default=sql.func.now())
     metadata_public = Column(JSON)
     sso_provider = Column(String)
+    use_new_cognition_ui = Column(Boolean, default=True)
 
 
 class Team(Base):
@@ -807,6 +808,13 @@ class Embedding(Base):
     )
     additional_data = Column(JSON)
 
+    # threshold indicates when the embedding should be completely recalculated
+    delta_full_recalculation_threshold = Column(Float, default=0.5)
+    # holds the current number of records that were caluclated with the previous PCA if new records + current delta > threshold we recreate completely
+    # note that this number can be higher than expected because of updated records being recalculated as well
+    # meaning in theory if someone updates the same record over and over again at some point the full recalculation will be triggered
+    current_delta_record_count = Column(Integer, default=0)
+
 
 class EmbeddingTensor(Base):
     __tablename__ = Tablenames.EMBEDDING_TENSOR.value
@@ -1103,6 +1111,8 @@ class CognitionProject(Base):
     # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
     tokenizer = Column(String)
+    # options from <SVGIcon/> component - only visible with new UI selected (user setting)
+    icon = Column(String, default="IconBolt")
 
 
 class CognitionStrategy(Base):
@@ -1921,6 +1931,35 @@ class GraphRAGIndex(Base):
     error = Column(String)
     settings = Column(JSON)
     root_dir = Column(String)
+
+
+class StepTemplates(Base):
+    __tablename__ = Tablenames.STEP_TEMPLATES.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    config = Column(JSON)  # JSON schema for the step template
+    # config contains all step configurations in an array & variable fields to be changed on useage
+    # e.g.
+    # {
+    #     "variables": [
+    # {"name": "Env var", "path": "[0].config.llmConfig.environmentVariable", "hasDefault": True, "defaultValue": "OpenAI Leo"},
+    # {"name": "System Prompt", "path": "[0].config.templatePrompt", "hasDefault": False},
+    # ],
+    #     "steps": [{...},{...}]
+    # }
 
 
 # =========================== Global tables ===========================

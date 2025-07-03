@@ -8,6 +8,7 @@ from datetime import datetime
 from ..util import prevent_sql_injection
 from sqlalchemy.orm.attributes import flag_modified
 from copy import deepcopy
+from ..db_cache import TTLCacheDecorator, CacheEnum
 
 
 def get(project_id: str) -> CognitionProject:
@@ -16,6 +17,16 @@ def get(project_id: str) -> CognitionProject:
         .filter(CognitionProject.id == project_id)
         .first()
     )
+
+
+@TTLCacheDecorator(CacheEnum.PROJECT, 5, "project_id")
+def get_cached(project_id: str) -> CognitionProject:
+    p = get(project_id)
+    if not p:
+        return None
+    general.expunge(p)
+    general.make_transient(p)
+    return p
 
 
 def get_org_id(project_id: str) -> str:
@@ -40,6 +51,16 @@ def get_by_user(project_id: str, user_id: str) -> CognitionProject:
         .filter(CognitionProject.id == project_id)
         .first()
     )
+
+
+@TTLCacheDecorator(CacheEnum.PROJECT, 5, "project_id", "user_id")
+def get_by_user_cached(project_id: str, user_id: str) -> CognitionProject:
+    p = get_by_user(project_id, user_id)
+    if not p:
+        return None
+    general.expunge(p)
+    general.make_transient(p)
+    return p
 
 
 def get_all(org_id: str, order_by_name: bool = False) -> List[CognitionProject]:
@@ -193,6 +214,7 @@ def update(
     macro_config: Optional[Dict[str, Any]] = None,
     llm_config: Optional[Dict[str, Any]] = None,
     tokenizer: Optional[str] = None,
+    icon: Optional[str] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -264,6 +286,8 @@ def update(
         flag_modified(project, "operator_routing_config")
     if tokenizer is not None:
         project.tokenizer = tokenizer
+    if icon is not None:
+        project.icon = icon
     general.flush_or_commit(with_commit)
     return project
 

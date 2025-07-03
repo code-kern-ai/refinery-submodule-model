@@ -155,7 +155,7 @@ class Tablenames(Enum):
     EVALUATION_RUN = "evaluation_run"
     PLAYGROUND_QUESTION = "playground_question"
     FULL_ADMIN_ACCESS = "full_admin_access"
-    THIRD_PARTY_INTEGRATION = "third_party_integration"
+    STEP_TEMPLATES = "step_templates"  # templates for strategy steps
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -545,6 +545,7 @@ class StrategyStepType(Enum):
     NEURAL_SEARCH = "NEURAL_SEARCH"
     WEBHOOK = "WEBHOOK"
     GRAPHRAG_SEARCH = "GRAPHRAG_SEARCH"
+    TEMPLATED = "TEMPLATED"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -572,6 +573,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.CALL_OTHER_AGENT: "Retrieve results from other agents",
     StrategyStepType.WEBHOOK: "Webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "Query GraphRAG index",
+    StrategyStepType.TEMPLATED: "Templated step",
 }
 
 STEP_WHEN_TO_USE = {
@@ -589,6 +591,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.CALL_OTHER_AGENT: "When you want to call another agent",
     StrategyStepType.WEBHOOK: "When you want to run a webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "When you want to query a knowledge graph",
+    StrategyStepType.TEMPLATED: "When you want to reuse existing templates",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -607,6 +610,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.CALL_OTHER_AGENT: "Calling another agent",
     StrategyStepType.WEBHOOK: "Running webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "Querying knowledge graph",
+    StrategyStepType.TEMPLATED: "Running templated step",
 }
 
 STEP_ERRORS = {
@@ -875,16 +879,15 @@ class EvaluationRunState(Enum):
     FAILED = "FAILED"
 
 
-class CognitionThirdPartyIntegrationType(Enum):
-    # CSV = "CSV"
-    # JSON = "JSON"
-    # PDF = "PDF" TODO: how to handle ETL
-    # XLSX = "XLSX"
-    WEBPAGE = "WEBPAGE"
-    GITHUB = "GITHUB"
-
-    def all():
-        return [
-            CognitionThirdPartyIntegrationType.WEBPAGE.value,
-            CognitionThirdPartyIntegrationType.GITHUB.value,
-        ]
+class AdminQueries(Enum):
+    # default values for parameters can be found in file admin_queries.py
+    USERS_TO_PROJECTS = "USERS_TO_PROJECTS"  # parameter options: organization_id
+    ACTIVE_USERS_GLOBAL = "ACTIVE_USERS_GLOBAL"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id
+    ACTIVE_USERS_BY_ORG = "ACTIVE_USERS_BY_ORG"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id
+    MESSAGES_CREATED = "MESSAGES_CREATED"  # parameter options: period (days, weeks or months), slices, organization_id
+    MESSAGES_CREATED_BY_PROJECT = "MESSAGES_CREATED_BY_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id
+    MESSAGES_FEEDBACK_PER_PROJECT = "MESSAGES_FEEDBACK_PER_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id
+    AVG_MESSAGES_PER_CONVERSATION_GLOBAL = (
+        "AVG_MESSAGES_PER_CONVERSATION_GLOBAL"  # parameter options: organization_id
+    )
+    AVG_MESSAGES_PER_CONVERSATION = "AVG_MESSAGES_PER_CONVERSATION"  # parameter options: period (days, weeks or months), slices, organization_id
