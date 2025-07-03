@@ -2387,3 +2387,4 @@ class IntegrationSharepoint(Base):
     mime_type = Column(String)
     hashes = Column(JSON)
     permissions = Column(JSON)
+    file_properties = Column(JSON)

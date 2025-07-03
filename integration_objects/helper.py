@@ -32,6 +32,7 @@ TABLE_METADATA = {
         "mime_type",
         "hashes",
         "permissions",
+        "file_properties",
     },
 }
 
