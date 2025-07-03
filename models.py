@@ -1972,7 +1972,7 @@ class CognitionGroup(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    name = Column(String, unique=True)
+    name = Column(String)
     description = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
