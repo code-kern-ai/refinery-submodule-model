@@ -203,13 +203,15 @@ def set_integration_task_to_failed(
     integration_id: str,
     is_synced: bool = False,
     error_message: Optional[str] = None,
-    state: Optional[enums.CognitionMarkdownFileState] = None,
+    state: Optional[
+        enums.CognitionMarkdownFileState
+    ] = enums.CognitionMarkdownFileState.FAILED,
     with_commit: bool = True,
 ) -> None:
     # argument `state` is a workaround for cognition-gateway/api/routes/integrations.delete_many
     integration_db_bo.update(
         id=integration_id,
-        state=state or enums.CognitionMarkdownFileState.FAILED,
+        state=state,
         finished_at=datetime.datetime.now(datetime.timezone.utc),
         is_synced=is_synced,
         error_message=error_message,
