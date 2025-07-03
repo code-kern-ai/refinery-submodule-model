@@ -58,11 +58,8 @@ def get_all_by_integration_id_permission_grouped(
         )
         .all()
     )
-    integration_groups_by_permission = {}
-    for group in integration_groups:
-        permission_id = group.meta_data.get("permission_id")
-        integration_groups_by_permission[permission_id] = group
-    return integration_groups_by_permission
+
+    return {group.meta_data.get("permission_id"): group for group in integration_groups}
 
 
 def get_by_name_and_integration(

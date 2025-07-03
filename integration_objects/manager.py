@@ -13,7 +13,7 @@ def get(
     IntegrationModel: Type,
     integration_id: str,
     id: Optional[str] = None,
-) -> object:
+) -> Union[List[object], object]:
     query = session.query(IntegrationModel).filter(
         IntegrationModel.integration_id == integration_id,
     )
