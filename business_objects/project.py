@@ -116,12 +116,18 @@ def __build_sql_data_slices_by_project(project_id: str) -> str:
         project.id = '{project_id}'::UUID; """
 
 
-def get_dropdown_list_project_list(org_id: str) -> List[Dict[str, str]]:
+def get_dropdown_list_project_list(
+    org_id: str, project_id: Optional[str] = None
+) -> List[Dict[str, str]]:
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+    prj_filter = ""
+    if project_id:
+        project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+        prj_filter = f"AND p.id = '{project_id}'"
     query = f"""
     SELECT array_agg(jsonb_build_object('value', p.id,'name',p.NAME))
     FROM public.project p
-    WHERE p.organization_id = '{org_id}' AND p.status != '{enums.ProjectStatus.HIDDEN.value}'
+    WHERE p.organization_id = '{org_id}' AND p.status != '{enums.ProjectStatus.HIDDEN.value}' {prj_filter}
     """
     values = general.execute_first(query)
 
