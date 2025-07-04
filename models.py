@@ -226,6 +226,7 @@ class User(Base):
     created_at = Column(DateTime, default=sql.func.now())
     metadata_public = Column(JSON)
     sso_provider = Column(String)
+    oidc_identifier = Column(String)
     use_new_cognition_ui = Column(Boolean, default=True)
 
 
@@ -1962,6 +1963,43 @@ class StepTemplates(Base):
     # }
 
 
+class CognitionGroup(Base):
+    __tablename__ = Tablenames.GROUP.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    meta_data = Column(JSON)
+
+
+class CognitionGroupMember(Base):
+    __tablename__ = Tablenames.GROUP_MEMBER.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    group_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.GROUP.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+
+
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
@@ -2109,3 +2147,244 @@ class FullAdminAccess(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True)
     meta_info = Column(JSON)
+
+
+class CognitionIntegration(Base):
+    __tablename__ = Tablenames.INTEGRATION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+    name = Column(String)
+    description = Column(String)
+    tokenizer = Column(String)
+    state = Column(String)  # of type enums.CognitionMarkdownFileState.*.value
+    type = Column(String)  # of type enums.CognitionIntegrationType.*.value
+    config = Column(JSON)
+    """JSON object that contains the configuration for the integration type.
+    Examples:
+        - For a webhook integration, it might contain the URL and headers.
+        - For an API integration, it might contain the API key and endpoint.
+        - For a database integration, it might contain the connection string and credentials.
+
+    """
+
+    llm_config = Column(JSON)
+    error_message = Column(String)
+    is_synced = Column(Boolean, nullable=True)
+    last_synced_at = Column(DateTime)
+    delta_criteria = Column(JSON)
+
+
+class CognitionIntegrationAccess(Base):
+    __tablename__ = Tablenames.INTEGRATION_ACCESS.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    integration_types = Column(
+        ARRAY(String)
+    )  # of type enums.CognitionIntegrationType.*.value
+
+
+class IntegrationGithubFile(Base):
+    __tablename__ = Tablenames.INTEGRATION_GITHUB_FILE.value
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "source",
+            name=f"unique_{__tablename__}_source",
+        ),
+        {"schema": "integration"},
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    minio_file_name = Column(String)
+    error_message = Column(String)
+
+    path = Column(String)
+    sha = Column(String)
+    code_language = Column(String)
+
+
+class IntegrationGithubIssue(Base):
+    __tablename__ = Tablenames.INTEGRATION_GITHUB_ISSUE.value
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "source",
+            name=f"unique_{__tablename__}_source",
+        ),
+        {"schema": "integration"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    minio_file_name = Column(String)
+    error_message = Column(String)
+
+    url = Column(String)
+    state = Column(String)
+    assignee = Column(String)
+    milestone = Column(String)
+    number = Column(Integer)
+
+
+class IntegrationPdf(Base):
+    __tablename__ = Tablenames.INTEGRATION_PDF.value
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "source",
+            name=f"unique_{__tablename__}_source",
+        ),
+        {"schema": "integration"},
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    minio_file_name = Column(String)
+    error_message = Column(String)
+
+    file_path = Column(String)
+    page = Column(Integer)
+    total_pages = Column(Integer)
+    title = Column(String)
+
+
+class IntegrationSharepoint(Base):
+    __tablename__ = Tablenames.INTEGRATION_SHAREPOINT.value
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "source",
+            name=f"unique_{__tablename__}_source",
+        ),
+        {"schema": "integration"},
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    minio_file_name = Column(String)
+    error_message = Column(String)
+
+    extension = Column(String)
+    object_id = Column(String)
+    parent_path = Column(String)
+    name = Column(String)
+    web_url = Column(String)
+    sharepoint_created_by = Column(String)
+    modified_by = Column(String)
+    created = Column(DateTime, default=None)
+    modified = Column(DateTime, default=None)
+    description = Column(String)
+    size = Column(Integer)
+    mime_type = Column(String)
+    hashes = Column(JSON)
+    permissions = Column(JSON)
+    file_properties = Column(JSON)

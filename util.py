@@ -15,6 +15,10 @@ from .models import Base
 from .business_objects import general
 
 CAMEL_CASE_PATTERN = compile(r"^([a-z]+[A-Z]?)*$")
+SNAKE_CASE_PATTERNS = [
+    compile(r"(.)([A-Z][a-z]+)"),
+    compile(r"([a-z0-9])([A-Z])"),
+]
 UUID_REGEX_PATTERN = compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
     IGNORECASE,
@@ -232,6 +236,15 @@ def to_camel_case(name: str, dont_wrap_uuids: bool = True):
         return name
     name = sub(r"(_|-)+", " ", name).title().replace(" ", "")
     return "".join([name[0].lower(), name[1:]])
+
+
+def to_snake_case(name: str) -> str:
+    # ref: https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
+    if not is_camel_case(name):
+        return name
+    for phase in SNAKE_CASE_PATTERNS:
+        name = phase.sub(r"\1_\2", name)
+    return name.lower()
 
 
 def is_list_like(value: Any) -> bool:

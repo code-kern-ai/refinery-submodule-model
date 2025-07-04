@@ -1,6 +1,6 @@
 from __future__ import with_statement
 from typing import List, Dict, Any, Optional, Tuple, Iterable
-from sqlalchemy import cast, Text
+from sqlalchemy import cast, Text, String
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
 from sqlalchemy import update
@@ -14,6 +14,10 @@ from ..models import (
     RecordAttributeTokenStatistics,
     Attribute,
     RecordTokenized,
+)
+from ..integration_objects.helper import (
+    REFINERY_ATTRIBUTE_ACCESS_GROUPS,
+    REFINERY_ATTRIBUTE_ACCESS_USERS,
 )
 from ..session import session
 from ..util import prevent_sql_injection
@@ -609,7 +613,7 @@ def count_missing_tokenized_records(project_id: str) -> int:
     query = f"""
     SELECT COUNT(*)
     FROM (
-        {get_records_without_tokenization(project_id, None, query_only = True)}
+        {get_records_without_tokenization(project_id, None, query_only=True)}
     ) record_query
     """
     return general.execute_first(query)[0]
@@ -807,6 +811,29 @@ def delete_user_created_attribute(
     general.flush_or_commit(with_commit)
 
 
+def delete_access_management_attributes(
+    project_id: str, with_commit: bool = True
+) -> None:
+    access_groups_attribute_item = attribute.get_by_name(
+        project_id, REFINERY_ATTRIBUTE_ACCESS_GROUPS
+    )
+    access_users_attribute_item = attribute.get_by_name(
+        project_id, REFINERY_ATTRIBUTE_ACCESS_USERS
+    )
+
+    if access_users_attribute_item and access_groups_attribute_item:
+        record_items = get_all(project_id=project_id)
+        for i, record_item in enumerate(record_items):
+            if record_item.data.get(access_groups_attribute_item.name):
+                del record_item.data[access_groups_attribute_item.name]
+            if record_item.data.get(access_users_attribute_item.name):
+                del record_item.data[access_users_attribute_item.name]
+            flag_modified(record_item, "data")
+            if (i + 1) % 1000 == 0:
+                general.flush_or_commit(with_commit)
+        general.flush_or_commit(with_commit)
+
+
 def delete_duplicated_rats(with_commit: bool = False) -> None:
     # no project so run for all to prevent expensive join with record table
     query = """
@@ -925,3 +952,19 @@ def get_first_no_text_column(project_id: str, record_id: str) -> str:
     WHERE r.project_id = '{project_id}' AND r.id = '{record_id}'
     """
     return general.execute_first(query)[0]
+
+
+def get_record_ids_by_running_ids(project_id: str, running_ids: List[int]) -> List[str]:
+    return [
+        row[0]
+        for row in (
+            session.query(cast(Record.id, String))
+            .filter(
+                Record.project_id == project_id,
+                Record.data[attribute.get_running_id_name(project_id)]
+                .as_integer()
+                .in_(running_ids),
+            )
+            .all()
+        )
+    ]

@@ -321,8 +321,11 @@ def __build_payload_selector(
             if (
                 data_type != enums.DataTypes.TEXT.value
                 and data_type != enums.DataTypes.LLM_RESPONSE.value
+                and data_type != enums.DataTypes.PERMISSION.value
             ):
                 payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
+            if data_type == enums.DataTypes.PERMISSION.value:
+                payload_selector += f"'{attr}', r.\"data\"->'{attr}'"
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
         payload_selector = f"json_build_object({payload_selector}) payload"
@@ -391,7 +394,8 @@ def get_tensors_and_attributes_for_qdrant(
     WHERE et.project_id = '{project_id}' AND et.embedding_id = '{embedding_id}'
     """
     if record_ids:
-        query += f" AND r.id IN ('{','.join(record_ids)}')"
+        _record_ids = "','".join(record_ids)
+        query += f" AND r.id IN ('{_record_ids}')"
 
     return general.execute_all(query)
 

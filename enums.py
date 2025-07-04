@@ -10,6 +10,7 @@ class DataTypes(Enum):
     TEXT = "TEXT"
     LLM_RESPONSE = "LLM_RESPONSE"
     EMBEDDING_LIST = "EMBEDDING_LIST"  # only for embeddings & default hidden
+    PERMISSION = "PERMISSION"  # used for access control
     UNKNOWN = "UNKNOWN"
 
 
@@ -155,6 +156,17 @@ class Tablenames(Enum):
     EVALUATION_RUN = "evaluation_run"
     PLAYGROUND_QUESTION = "playground_question"
     FULL_ADMIN_ACCESS = "full_admin_access"
+    GROUP = "group"  # used for group based access control
+    GROUP_MEMBER = "group_member"  # used for group based access control
+    PERMISSION = "permission"  # used for access control
+    INTEGRATION = "integration"
+    INTEGRATION_ACCESS = "integration_access"
+
+    # Individial integrations
+    INTEGRATION_GITHUB_FILE = "github_file"
+    INTEGRATION_GITHUB_ISSUE = "github_issue"
+    INTEGRATION_PDF = "pdf"
+    INTEGRATION_SHAREPOINT = "sharepoint"
     STEP_TEMPLATES = "step_templates"  # templates for strategy steps
 
     def snake_case_to_pascal_case(self):
@@ -494,6 +506,7 @@ class TaskType(Enum):
     TASK_QUEUE_ACTION = "task_queue_action"
     RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
     PARSE_COGNITION_FILE = "PARSE_COGNITION_FILE"
+    EXECUTE_INTEGRATION = "EXECUTE_INTEGRATION"
 
 
 class TaskQueueAction(Enum):
@@ -501,6 +514,7 @@ class TaskQueueAction(Enum):
     SEND_WEBSOCKET = "SEND_WEBSOCKET"
     FINISH_COGNITION_SETUP = "FINISH_COGNITION_SETUP"
     RUN_WEAK_SUPERVISION = "RUN_WEAK_SUPERVISION"
+    POSTPROCESS_INTEGRATION = "POSTPROCESS_INTEGRATION"
 
 
 class AgreementType(Enum):
@@ -681,6 +695,10 @@ class CognitionMarkdownFileState(Enum):
     TRANSFORMING = "TRANSFORMING"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
 
 
 class CognitionInterfaceType(Enum):
@@ -890,3 +908,20 @@ class AdminQueries(Enum):
         "AVG_MESSAGES_PER_CONVERSATION_GLOBAL"  # parameter options: organization_id
     )
     AVG_MESSAGES_PER_CONVERSATION = "AVG_MESSAGES_PER_CONVERSATION"  # parameter options: period (days, weeks or months), slices, organization_id
+
+
+class CognitionIntegrationType(Enum):
+    SHAREPOINT = "SHAREPOINT"
+    GITHUB_FILE = "GITHUB_FILE"
+    GITHUB_ISSUE = "GITHUB_ISSUE"
+    PDF = "PDF"
+
+    @staticmethod
+    def from_string(value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        try:
+            return CognitionIntegrationType[changed_value]
+        except KeyError:
+            raise KeyError(
+                f"Could not parse CognitionIntegrationType from string '{changed_value}'"
+            )

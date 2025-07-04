@@ -1,16 +1,14 @@
 from typing import List, Optional, Any, Dict, Union, Set
-from sqlalchemy.sql import func
-from sqlalchemy import cast, Integer
+from sqlalchemy.sql import func, cast
 from sqlalchemy.sql.functions import coalesce
-
-
+from sqlalchemy import Integer
 from . import general, attribute
-
 from .. import enums
 from ..session import session
-from ..models import (
-    Project,
-    Record,
+from ..models import Project, Record, Attribute
+from ..integration_objects.helper import (
+    REFINERY_ATTRIBUTE_ACCESS_GROUPS,
+    REFINERY_ATTRIBUTE_ACCESS_USERS,
 )
 from ..util import prevent_sql_injection
 
@@ -118,12 +116,18 @@ def __build_sql_data_slices_by_project(project_id: str) -> str:
         project.id = '{project_id}'::UUID; """
 
 
-def get_dropdown_list_project_list(org_id: str) -> List[Dict[str, str]]:
+def get_dropdown_list_project_list(
+    org_id: str, project_id: Optional[str] = None
+) -> List[Dict[str, str]]:
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+    prj_filter = ""
+    if project_id:
+        project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+        prj_filter = f"AND p.id = '{project_id}'"
     query = f"""
     SELECT array_agg(jsonb_build_object('value', p.id,'name',p.NAME))
     FROM public.project p
-    WHERE p.organization_id = '{org_id}' AND p.status != '{enums.ProjectStatus.HIDDEN.value}'
+    WHERE p.organization_id = '{org_id}' AND p.status != '{enums.ProjectStatus.HIDDEN.value}' {prj_filter}
     """
     values = general.execute_first(query)
 
@@ -152,6 +156,56 @@ def get_with_organization_id(organization_id: str, project_id: str) -> Project:
 def get_all(organization_id: str) -> List[Project]:
     return (
         session.query(Project).filter(Project.organization_id == organization_id).all()
+    )
+
+
+def get_all_with_access_management(org_id: str) -> List[Dict[str, Any]]:
+    org_id_safe = prevent_sql_injection(org_id, isinstance(org_id, str))
+
+    hidden_status = enums.ProjectStatus.HIDDEN.value
+    permission_data_type = enums.DataTypes.PERMISSION.value
+    automatically_created_state = enums.AttributeState.AUTOMATICALLY_CREATED.value
+    access_groups_attr = REFINERY_ATTRIBUTE_ACCESS_GROUPS
+    access_users_attr = REFINERY_ATTRIBUTE_ACCESS_USERS
+
+    query = f"""
+    SELECT DISTINCT
+            p.*,
+            COALESCE((ci.config -> 'extract_kwargs' ->> 'sync_sharepoint_permissions')::BOOLEAN,FALSE) AS is_sharepoint_sync_active
+        FROM
+            public.project p
+        JOIN
+            public.attribute a ON p.id = a.project_id
+        LEFT JOIN
+            cognition.integration ci ON p.id = ci.project_id
+        WHERE
+            p.organization_id = '{org_id_safe}'
+            AND p.status != '{hidden_status}'
+            AND a.name IN ('{access_groups_attr}', '{access_users_attr}')
+            AND a.user_created = FALSE
+            AND a.data_type = '{permission_data_type}'
+            AND a.state = '{automatically_created_state}';
+    """
+
+    values = general.execute_all(query)
+    return values
+
+
+def check_access_management_active(project_id: str) -> bool:
+    return (
+        session.query(Project)
+        .join(Attribute, Project.id == Attribute.project_id)
+        .filter(
+            Project.id == project_id,
+            Attribute.name.in_(
+                [REFINERY_ATTRIBUTE_ACCESS_GROUPS, REFINERY_ATTRIBUTE_ACCESS_USERS]
+            ),
+            Attribute.user_created == False,
+            Attribute.data_type == enums.DataTypes.PERMISSION.value,
+            Attribute.state == enums.AttributeState.AUTOMATICALLY_CREATED.value,
+        )
+        .count()
+        > 0
     )
 
 

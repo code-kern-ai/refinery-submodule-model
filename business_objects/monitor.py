@@ -1,4 +1,5 @@
 from typing import Any, List, Optional
+import datetime
 from . import general
 from .. import enums
 from ..models import TaskQueue, Organization
@@ -9,6 +10,7 @@ from submodules.model.cognition_objects import (
     markdown_file as markdown_file_db_bo,
     file_extraction as file_extraction_db_bo,
     file_transformation as file_transformation_db_bo,
+    integration as integration_db_bo,
 )
 
 FILE_CACHING_IN_PROGRESS_STATES = [
@@ -195,6 +197,27 @@ def set_parse_cognition_file_task_to_failed(
             if file_transformation.state in FILE_CACHING_IN_PROGRESS_STATES:
                 file_transformation.state = enums.FileCachingState.CANCELED.value
     general.commit()
+
+
+def set_integration_task_to_failed(
+    integration_id: str,
+    is_synced: bool = False,
+    error_message: Optional[str] = None,
+    state: Optional[
+        enums.CognitionMarkdownFileState
+    ] = enums.CognitionMarkdownFileState.FAILED,
+    with_commit: bool = True,
+) -> None:
+    # argument `state` is a workaround for cognition-gateway/api/routes/integrations.delete_many
+    integration_db_bo.update(
+        id=integration_id,
+        state=state,
+        finished_at=datetime.datetime.now(datetime.timezone.utc),
+        is_synced=is_synced,
+        error_message=error_message,
+        last_synced_at=datetime.datetime.now(datetime.timezone.utc),
+        with_commit=with_commit,
+    )
 
 
 def __select_running_information_source_payloads(
