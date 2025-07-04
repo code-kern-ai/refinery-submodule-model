@@ -358,7 +358,8 @@ def get_attributes_for_qdrant(
     WHERE r.project_id = '{project_id}'
     """
     if record_ids:
-        query += f" AND r.id IN ('{','.join(record_ids)}')"
+        _record_ids = "','".join(record_ids)
+        query += f" AND r.id IN ('{_record_ids}')"
     return general.execute_all(query)
 
 
