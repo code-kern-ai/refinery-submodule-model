@@ -830,7 +830,7 @@ def delete_by_record_ids(
 def delete_by_record_ids_and_sub_keys(
     project_id: str,
     embedding_id: str,
-    to_del: Iterable[Tuple[str, str]],
+    to_del: Iterable[Tuple[str, Any]],
     with_commit: bool = False,
 ) -> None:
     # deletes entries based on record_id and sub_key tuples for record changes
@@ -843,7 +843,11 @@ def delete_by_record_ids_and_sub_keys(
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     embedding_id = prevent_sql_injection(embedding_id, isinstance(embedding_id, str))
     query_adds = [
-        (prevent_sql_injection(r), prevent_sql_injection(s)) for r, s in to_del
+        (
+            prevent_sql_injection(r, isinstance(r, str)),
+            prevent_sql_injection(s, isinstance(s, int)),
+        )
+        for r, s in to_del
     ]
 
     query_adds = [
