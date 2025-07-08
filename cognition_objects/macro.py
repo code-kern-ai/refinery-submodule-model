@@ -77,6 +77,13 @@ def get_overview_for_all_for_me(
     return final_list
 
 
+def get_execution_group(execution_group_id: str) -> CognitionMacro:
+    query = session.query(CognitionMacroExecution).filter(
+        CognitionMacroExecution.execution_group_id == execution_group_id,
+    )
+    return query.first()
+
+
 def get_all_macro_executions(
     macro_id: str,
     execution_group_id: str,
