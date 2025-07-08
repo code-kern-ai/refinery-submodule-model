@@ -908,6 +908,10 @@ class AdminQueries(Enum):
         "AVG_MESSAGES_PER_CONVERSATION_GLOBAL"  # parameter options: organization_id
     )
     AVG_MESSAGES_PER_CONVERSATION = "AVG_MESSAGES_PER_CONVERSATION"  # parameter options: period (days, weeks or months), slices, organization_id
+    MACRO_EXECUTIONS = "MACRO_EXECUTIONS"  # parameter options: period (days, weeks or months), slices, organization_id
+    FOLDER_MACRO_EXECUTION_SUMMARY = (
+        "FOLDER_MACRO_EXECUTION_SUMMARY"  # parameter options: organization_id
+    )
 
 
 class CognitionIntegrationType(Enum):
