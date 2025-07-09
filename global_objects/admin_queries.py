@@ -35,7 +35,162 @@ def get_result_admin_query(
         return __get_global_messages_per_conversation(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.AVG_MESSAGES_PER_CONVERSATION:
         return __get_avg_messages_per_conversation(**parameters, as_query=as_query)
+    elif query == enums.AdminQueries.MACRO_EXECUTIONS:
+        return __get_macro_executions(**parameters, as_query=as_query)
+    elif query == enums.AdminQueries.FOLDER_MACRO_EXECUTION_SUMMARY:
+        return __get_folder_macro_execution_summary(**parameters, as_query=as_query)
     return []
+
+
+def __get_folder_macro_execution_summary(
+    slices: int = 7,  # how many chunks are relevant
+    organization_id: Optional[str] = None,
+    as_query: bool = False,
+) -> List[Row]:
+
+    slices = max(min(slices, 30), 1)
+
+    org_where = ""
+    if organization_id:
+        organization_id = prevent_sql_injection(
+            organization_id, isinstance(organization_id, str)
+        )
+        org_where = f""" WHERE me.organization_id = '{organization_id}'"""
+
+    query = f"""
+    WITH params AS (
+        SELECT
+        'months'   ::text AS period, -- sum table so fixed to months
+        {slices}         ::int  AS n     -- ← how many of those periods you want
+    ),
+
+    -- 1) build the list of period-start dates
+    periods AS (
+        SELECT
+        (generate_series(
+            date_trunc(p.period, CURRENT_DATE)
+            - (p.n - 1) * ( '1 ' || p.period )::interval,
+            date_trunc(p.period, CURRENT_DATE),
+            ( '1 ' || p.period )::interval
+        ))::date AS period_start,
+        p.period
+        FROM params p
+    ),
+    filtered AS (
+        SELECT
+            me.organization_id,
+            date_trunc(p.period, me.creation_month)::date AS period_start,
+            execution_count,
+            processed_files_count
+        FROM cognition.macro_execution_summary me
+        INNER JOIN params p
+            ON me.creation_month >= (
+                SELECT MIN(period_start)
+                FROM periods
+                )
+            AND me.creation_month < (
+                SELECT MAX(period_start) + ( '1 ' || p.period )::interval
+                FROM periods, params
+                )
+        {org_where}
+    )
+
+
+    SELECT 
+        o.name organization_name,
+        period_start,
+        (period_start + ( '1 ' || pa.period  )::INTERVAL  - '1 day'::interval  )::date AS period_end,
+        execution_count,
+        processed_files_count
+    FROM filtered m
+    INNER JOIN organization o
+        ON m.organization_id = o.id
+    , params pa
+    ORDER BY 1,2 DESC
+"""
+    if as_query:
+        return query
+    return general.execute_all(query)
+
+
+def __get_macro_executions(
+    period: str = "days",  # options: days, weeks, months
+    slices: int = 7,  # how many chunks are relevant
+    organization_id: Optional[str] = None,
+    as_query: bool = False,
+) -> List[Row]:
+
+    if period not in PERIOD_OPTIONS:
+        raise ValueError(f"Invalid period: {period}. Must be one of {PERIOD_OPTIONS}.")
+    slices = max(min(slices, 30), 1)
+
+    org_where = ""
+    if organization_id:
+        organization_id = prevent_sql_injection(
+            organization_id, isinstance(organization_id, str)
+        )
+        org_where = f""" WHERE me.organization_id = '{organization_id}'"""
+
+    query = f"""
+    WITH params AS (
+        SELECT
+        '{period}'   ::text AS period,   -- ← 'days' | 'weeks' | 'months'
+        {slices}         ::int  AS n     -- ← how many of those periods you want
+    ),
+
+    -- 1) build the list of period-start dates
+    periods AS (
+        SELECT
+        (generate_series(
+            date_trunc(p.period, CURRENT_DATE)
+            - (p.n - 1) * ( '1 ' || p.period )::interval,
+            date_trunc(p.period, CURRENT_DATE),
+            ( '1 ' || p.period )::interval
+        ))::date AS period_start,
+        p.period
+        FROM params p
+    ),
+    filtered AS (
+        SELECT
+            me.organization_id,
+            date_trunc(p.period, me.created_at)::date AS period_start
+        FROM cognition.macro_execution me
+        INNER JOIN params p
+            ON me.created_at >= (
+                SELECT MIN(period_start)
+                FROM periods
+                )
+            AND me.created_at < (
+                SELECT MAX(period_start) + ( '1 ' || p.period )::interval
+                FROM periods, params
+                )
+        {org_where}
+    )
+
+
+    SELECT 
+        o.name organization_name,
+        period_start,
+        (period_start + ( '1 ' || pa.period  )::INTERVAL  - '1 day'::interval  )::date AS period_end,
+        macro_executions
+    FROM (
+        SELECT 
+                organization_id,
+                period_start,
+                COUNT(*) macro_executions
+            FROM filtered M
+        GROUP BY 
+            m.organization_id,
+            period_start
+    )y
+    INNER JOIN organization o
+        ON y.organization_id = o.id
+    , params pa
+    ORDER BY 1,2 DESC
+"""
+    if as_query:
+        return query
+    return general.execute_all(query)
 
 
 def __get_avg_messages_per_conversation(
@@ -131,7 +286,7 @@ def __get_avg_messages_per_conversation(
     INNER JOIN organization o
         ON p.organization_id = o.id
     , params pa
-    ORDER BY 1,5 DESC
+    ORDER BY 1,3 DESC
 """
     if as_query:
         return query
