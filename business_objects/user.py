@@ -16,7 +16,7 @@ def get(user_id: str) -> User:
 
 def get_user_cached_if_not_admin(user_id: str) -> Optional[User]:
     user = get_user_cached(user_id)
-    if user.email.endswith("@kern.ai") and user.verified:
+    if (user.email or "").endswith("@kern.ai") and user.verified:
         # for admins this could result in two db requests shortly after each other
         # but it's better than having the jumping users without the correct org id
         return get(user_id)
