@@ -312,7 +312,6 @@ def __build_payload_selector(
 ) -> str:
     # empty json object to extend by label data later
     payload_selector = "jsonb_build_object()"
-
     if attributes_to_include and len(attributes_to_include) > 0:
         payload_selector = ""
         for attr, data_type in attributes_to_include.items():
@@ -324,7 +323,7 @@ def __build_payload_selector(
                 and data_type != enums.DataTypes.PERMISSION.value
             ):
                 payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
-            if data_type == enums.DataTypes.PERMISSION.value:
+            elif data_type == enums.DataTypes.PERMISSION.value:
                 payload_selector += f"'{attr}', r.\"data\"->'{attr}'"
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
