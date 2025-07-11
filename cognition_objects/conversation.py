@@ -25,6 +25,18 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
     )
 
 
+def exists(project_id: str, conversation_id: str) -> bool:
+    return (
+        session.query(CognitionConversation)
+        .filter(
+            CognitionConversation.project_id == project_id,
+            CognitionConversation.id == conversation_id,
+        )
+        .first()
+        is not None
+    )
+
+
 def get_conversations_to_clean_up() -> List[Tuple[str, str, str]]:
     query = """
     SELECT cc.id, cc.project_id, o.id organization_id
@@ -283,6 +295,23 @@ def has_error(project_id: str, conversation_id: str) -> bool:
     if result and result[0] == True:
         return True
     return False
+
+
+def create_and_get_id(
+    project_id: str,
+    user_id: str,
+    has_tmp_files: bool = False,
+    with_commit: bool = True,
+    created_at: Optional[datetime] = None,
+) -> CognitionConversation:
+    created_conversation = create(
+        project_id=project_id,
+        user_id=user_id,
+        has_tmp_files=has_tmp_files,
+        with_commit=with_commit,
+        created_at=created_at,
+    )
+    return str(created_conversation.id)
 
 
 def create(
