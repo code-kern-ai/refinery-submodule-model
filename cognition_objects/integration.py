@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union
+from typing import List, Optional, Dict, Union, Any
 import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
@@ -10,6 +10,7 @@ from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
 )
+from ..util import prevent_sql_injection
 
 FINISHED_STATES = [
     CognitionMarkdownFileState.FINISHED.value,
@@ -258,3 +259,22 @@ def delete_many(
             .delete(synchronize_session=False)
         )
     general.flush_or_commit(with_commit)
+
+
+def get_sharepoint_permissions_by_integration_id(
+    integration_id: str,
+) -> Dict[str, Any]:
+    integration_id = prevent_sql_injection(
+        integration_id, isinstance(integration_id, str)
+    )
+    query = f"""SELECT permission_id, object_id
+    FROM (
+    SELECT json_array_elements_text(permissions) permission_id, MAX(id::TEXT)::UUID id
+    FROM integration.sharepoint
+    WHERE integration_id = '{integration_id}'
+    GROUP BY 1 
+    )x
+    INNER JOIN integration.sharepoint s
+        ON x.id = s.id
+    """
+    return session.execute(query).all()

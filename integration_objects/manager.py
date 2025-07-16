@@ -7,7 +7,6 @@ from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
 from ..session import session
 from .helper import get_supported_metadata_keys
-from ..util import prevent_sql_injection
 
 
 def get(
@@ -234,22 +233,3 @@ def __rename_metadata(
         "updated_at": f"{table_name}_updated_at",
     }
     return {rename_keys.get(key, key): value for key, value in metadata.items()}
-
-
-def get_sharepoint_permissions_by_integration_id(
-    integration_id: str,
-) -> Dict[str, Any]:
-    integration_id = prevent_sql_injection(
-        integration_id, isinstance(integration_id, str)
-    )
-    query = f"""SELECT permission_id, object_id
-    FROM (
-    SELECT json_array_elements_text(permissions) permission_id, MAX(id::TEXT)::UUID id
-    FROM integration.sharepoint
-    WHERE integration_id = '{integration_id}'
-    GROUP BY 1 
-    )x
-    INNER JOIN integration.sharepoint s
-        ON x.id = s.id
-    """
-    return session.execute(query).all()
