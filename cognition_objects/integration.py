@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union
+from typing import List, Optional, Dict, Union, Any
 import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
@@ -10,6 +10,7 @@ from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
 )
+from ..util import prevent_sql_injection
 
 FINISHED_STATES = [
     CognitionMarkdownFileState.FINISHED.value,
@@ -54,6 +55,7 @@ def get_all_in_org(
     org_id: str,
     integration_type: Optional[str] = None,
     only_synced: bool = False,
+    exclude_failed: bool = False,
 ) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration).filter(
         CognitionIntegration.organization_id == org_id
@@ -62,6 +64,10 @@ def get_all_in_org(
         query = query.filter(CognitionIntegration.type == integration_type)
     if only_synced:
         query = query.filter(CognitionIntegration.is_synced == True)
+    if exclude_failed:
+        query = query.filter(
+            CognitionIntegration.state != CognitionMarkdownFileState.FAILED.value
+        )
     return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
@@ -253,3 +259,22 @@ def delete_many(
             .delete(synchronize_session=False)
         )
     general.flush_or_commit(with_commit)
+
+
+def get_sharepoint_permissions_by_integration_id(
+    integration_id: str,
+) -> Dict[str, Any]:
+    integration_id = prevent_sql_injection(
+        integration_id, isinstance(integration_id, str)
+    )
+    query = f"""SELECT permission_id, object_id
+    FROM (
+    SELECT json_array_elements_text(permissions) permission_id, MAX(id::TEXT)::UUID id
+    FROM integration.sharepoint
+    WHERE integration_id = '{integration_id}'
+    GROUP BY 1 
+    )x
+    INNER JOIN integration.sharepoint s
+        ON x.id = s.id
+    """
+    return session.execute(query).all()
