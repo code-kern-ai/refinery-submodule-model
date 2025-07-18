@@ -21,6 +21,8 @@ def get_result_admin_query(
         parameters = {}
     if query == enums.AdminQueries.USERS_TO_PROJECTS:
         return __get_users_to_projects(**parameters, as_query=as_query)
+    if query == enums.AdminQueries.USERS_BY_ORG:
+        return __get_users_by_org(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.ACTIVE_USERS_GLOBAL:
         return __get_active_users_global(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.ACTIVE_USERS_BY_ORG:
@@ -789,6 +791,30 @@ def __get_active_users_global(
         GROUP BY 1
     )y	, params pa
     ORDER BY period_start DESC
+"""
+    if as_query:
+        return query
+    return general.execute_all(query)
+
+
+def __get_users_by_org(
+    organization_id: Optional[str] = None, as_query: bool = False
+) -> List[Row]:
+    where_add = ""
+
+    if organization_id:
+        organization_id = prevent_sql_injection(
+            organization_id, isinstance(organization_id, str)
+        )
+        where_add = f"WHERE o.id = '{organization_id}'"
+
+    query = f"""
+    SELECT o.name, u.role, COUNT(*)
+    FROM PUBLIC.user u
+    INNER JOIN organization o
+        ON u.organization_id = o.id
+    {where_add}
+    GROUP BY 1,2
 """
     if as_query:
         return query
