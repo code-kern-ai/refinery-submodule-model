@@ -671,7 +671,7 @@ class LLMProvider(Enum):
     OPENAI = "Open AI"
     AZURE = "Azure"
     AZURE_FOUNDRY = "Azure Foundry"
-    PRIVATEMODE_AI = "Private Mode AI"
+    PRIVATEMODE_AI = "Privatemode AI"
 
     @staticmethod
     def from_string(value: str):
