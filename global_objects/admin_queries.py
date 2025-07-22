@@ -861,7 +861,6 @@ def __get_active_users_global(
     )y	, params pa
     ORDER BY period_start DESC
 """
-    print(query, flush=True)
     if as_query:
         return query
     return general.execute_all(query)
