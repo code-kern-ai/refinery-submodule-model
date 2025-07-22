@@ -119,6 +119,7 @@ def __get_macro_executions(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
 
@@ -132,6 +133,13 @@ def __get_macro_executions(
             organization_id, isinstance(organization_id, str)
         )
         org_where = f""" WHERE me.organization_id = '{organization_id}'"""
+
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON me.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+        """
 
     query = f"""
     WITH params AS (
@@ -157,6 +165,7 @@ def __get_macro_executions(
             me.organization_id,
             date_trunc(p.period, me.created_at)::date AS period_start
         FROM cognition.macro_execution me
+        {filter_join}
         INNER JOIN params p
             ON me.created_at >= (
                 SELECT MIN(period_start)
@@ -199,6 +208,7 @@ def __get_avg_messages_per_conversation(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
 
@@ -213,7 +223,12 @@ def __get_avg_messages_per_conversation(
         )
         org_where = f""" INNER JOIN cognition.project pr
             ON m.project_id = pr.id AND pr.organization_id = '{organization_id}'"""
-
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+        """
     query = f"""
     WITH params AS (
         SELECT
@@ -239,6 +254,7 @@ def __get_avg_messages_per_conversation(
             date_trunc(p.period, c.created_at)::date AS period_start,
             m.conversation_id
         FROM cognition.message m
+        {filter_join}
         {org_where}
         INNER JOIN cognition.conversation c
             ON m.conversation_id = c.id
@@ -296,7 +312,9 @@ def __get_avg_messages_per_conversation(
 
 
 def __get_global_messages_per_conversation(
-    organization_id: Optional[str] = None, as_query: bool = False
+    organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
+    as_query: bool = False,
 ):
     org_where = ""
     if organization_id:
@@ -305,6 +323,14 @@ def __get_global_messages_per_conversation(
         )
         org_where = f""" INNER JOIN cognition.project pr
             ON m.project_id = pr.id AND pr.organization_id = '{organization_id}'"""
+
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+        """
+
     query = f"""
     SELECT 
         o.name organization_name,
@@ -324,6 +350,7 @@ def __get_global_messages_per_conversation(
                 conversation_id,
                 COUNT(*) cnt
             FROM cognition.message M
+            {filter_join}
             {org_where}
         GROUP BY 
             m.project_id,
@@ -345,6 +372,7 @@ def __get_messages_feedback_by_project(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
 
@@ -360,6 +388,12 @@ def __get_messages_feedback_by_project(
         org_where = f""" INNER JOIN cognition.project pr
             ON m.project_id = pr.id AND pr.organization_id = '{organization_id}'"""
 
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+        """
     query = f"""
     WITH params AS (
         SELECT
@@ -388,6 +422,7 @@ def __get_messages_feedback_by_project(
             m.feedback_category,
             m.feedback_value
         FROM cognition.message m
+        {filter_join}
         {org_where}
         INNER JOIN params p
             ON m.created_at >= (SELECT MIN(period_start) FROM periods )
@@ -483,6 +518,7 @@ def __get_messages_created_by_project(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
 
@@ -498,6 +534,12 @@ def __get_messages_created_by_project(
         org_where = f""" INNER JOIN cognition.project pr
             ON m.project_id = pr.id AND pr.organization_id = '{organization_id}'"""
 
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+        """
     query = f"""
     WITH params AS (
         SELECT
@@ -520,6 +562,7 @@ def __get_messages_created_by_project(
             m.project_id,
             m.created_at
         FROM cognition.message m
+        {filter_join}
         {org_where}
         INNER JOIN params p
         ON  m.created_at >= (SELECT MIN(period_start) FROM periods)
@@ -569,6 +612,7 @@ def __get_messages_created(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
 
@@ -585,6 +629,13 @@ def __get_messages_created(
         org_where = f""" INNER JOIN cognition.project pr
             ON m.project_id = pr.id AND pr.organization_id = '{organization_id}'"""
         org_select = f"(SELECT MAX(NAME) FROM organization WHERE id = '{organization_id}') organization_name,"
+
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+        """
     query = f"""
     WITH
     params AS (
@@ -607,6 +658,7 @@ def __get_messages_created(
         SELECT
             m.created_at
         FROM cognition.message m
+        {filter_join}
         {org_where}
         INNER JOIN params p
             ON  m.created_at >= (SELECT MIN(period_start) FROM periods)
@@ -640,6 +692,7 @@ def __get_active_users_by_org(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
     min_msg_count = max(min(min_msg_count, 5), 1)
@@ -653,6 +706,12 @@ def __get_active_users_by_org(
             organization_id, isinstance(organization_id, str)
         )
         org_where = f"AND p.organization_id = '{organization_id}'"
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+        """
 
     query = f"""
     WITH params AS (
@@ -678,6 +737,7 @@ def __get_active_users_by_org(
             m.created_by,
             date_trunc(pa.period, m.created_at)::date AS period_start
         FROM cognition.message m
+        {filter_join}
         INNER JOIN cognition.project p
             ON m.project_id = p.id {org_where}
         INNER JOIN params pa
@@ -722,6 +782,7 @@ def __get_active_users_global(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
     organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
     # includes type check for sql injection prevention
@@ -738,6 +799,13 @@ def __get_active_users_global(
         )
         org_where = f"AND p.organization_id = '{organization_id}'"
         org_select = f"(SELECT MAX(NAME) FROM organization WHERE id = '{organization_id}') organization_name,"
+
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+        """
 
     query = f"""
     WITH params AS (
@@ -763,6 +831,7 @@ def __get_active_users_global(
             m.created_by,
             date_trunc(pa.period, m.created_at)::date AS period_start
         FROM cognition.message m
+        {filter_join}
         INNER JOIN cognition.project p
             ON m.project_id = p.id {org_where}
         INNER JOIN params pa
@@ -792,13 +861,16 @@ def __get_active_users_global(
     )y	, params pa
     ORDER BY period_start DESC
 """
+    print(query, flush=True)
     if as_query:
         return query
     return general.execute_all(query)
 
 
 def __get_users_by_org(
-    organization_id: Optional[str] = None, as_query: bool = False
+    organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
+    as_query: bool = False,
 ) -> List[Row]:
     where_add = ""
 
@@ -807,6 +879,12 @@ def __get_users_by_org(
             organization_id, isinstance(organization_id, str)
         )
         where_add = f"WHERE o.id = '{organization_id}'"
+    if without_kern_email:
+        if where_add:
+            where_add += " AND"
+        else:
+            where_add = "WHERE"
+        where_add += " u.email NOT LIKE '%@kern.ai'"
 
     query = f"""
     SELECT o.name, u.role, COUNT(*)
@@ -822,7 +900,9 @@ def __get_users_by_org(
 
 
 def __get_users_to_projects(
-    organization_id: Optional[str] = None, as_query: bool = False
+    organization_id: Optional[str] = None,
+    without_kern_email: bool = False,
+    as_query: bool = False,
 ) -> List[Row]:
 
     org_where = "u.organization_id IS NOT NULL"
@@ -834,6 +914,10 @@ def __get_users_to_projects(
         )
         org_where = f"u.organization_id = '{organization_id}'"
         where_add = f"WHERE o.id = '{organization_id}'"
+
+    user_where = ""
+    if without_kern_email:
+        user_where = "AND u.email NOT LIKE '%@kern.ai'"
 
     query = f"""
     WITH user_lookup AS (
@@ -860,6 +944,7 @@ def __get_users_to_projects(
         WHERE NOT (t.project_id IS NULL AND u.role = '{enums.UserRoles.ANNOTATOR.value}')
         AND NOT u.role = '{enums.UserRoles.EXPERT.value}'
         AND {org_where}
+        {user_where}
         GROUP BY 1,2,3
     )
 
