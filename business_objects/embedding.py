@@ -321,6 +321,7 @@ def __build_payload_selector(
                 data_type != enums.DataTypes.TEXT.value
                 and data_type != enums.DataTypes.LLM_RESPONSE.value
                 and data_type != enums.DataTypes.PERMISSION.value
+                and data_type != enums.DataTypes.TEXT_LIST.value
             ):
                 payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
             elif (
