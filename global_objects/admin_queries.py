@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from ..util import prevent_sql_injection
 
 from ..business_objects import general
@@ -14,7 +14,7 @@ PERIOD_OPTIONS = {"days", "weeks", "months"}
 
 def get_result_admin_query(
     query: enums.AdminQueries,
-    parameters: Optional[Dict[str, Any]] = None,
+    parameters: Dict[str, Any],
     as_query: bool = False,
 ) -> List[Row]:
     if parameters is None:
@@ -46,7 +46,7 @@ def get_result_admin_query(
 
 def __get_folder_macro_execution_summary(
     slices: int = 7,  # how many chunks are relevant
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     as_query: bool = False,
 ) -> List[Row]:
 
@@ -118,7 +118,7 @@ def __get_folder_macro_execution_summary(
 def __get_macro_executions(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
@@ -207,7 +207,7 @@ def __get_macro_executions(
 def __get_avg_messages_per_conversation(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
@@ -312,7 +312,7 @@ def __get_avg_messages_per_conversation(
 
 
 def __get_global_messages_per_conversation(
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ):
@@ -371,7 +371,7 @@ def __get_global_messages_per_conversation(
 def __get_messages_feedback_by_project(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
@@ -517,7 +517,7 @@ def __get_messages_feedback_by_project(
 def __get_messages_created_by_project(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
@@ -611,7 +611,7 @@ def __get_messages_created_by_project(
 def __get_messages_created(
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
@@ -691,7 +691,7 @@ def __get_active_users_by_org(
     min_msg_count: int = 1,  # minimum number of messages to be considered active
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
@@ -781,7 +781,7 @@ def __get_active_users_global(
     min_msg_count: int = 1,  # minimum number of messages to be considered active
     period: str = "days",  # options: days, weeks, months
     slices: int = 7,  # how many chunks are relevant
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
@@ -867,7 +867,7 @@ def __get_active_users_global(
 
 
 def __get_users_by_org(
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
@@ -899,7 +899,7 @@ def __get_users_by_org(
 
 
 def __get_users_to_projects(
-    organization_id: Optional[str] = None,
+    organization_id: str = "",
     without_kern_email: bool = False,
     as_query: bool = False,
 ) -> List[Row]:
