@@ -11,6 +11,7 @@ class DataTypes(Enum):
     LLM_RESPONSE = "LLM_RESPONSE"
     EMBEDDING_LIST = "EMBEDDING_LIST"  # only for embeddings & default hidden
     PERMISSION = "PERMISSION"  # used for access control
+    TEXT_LIST = "TEXT_LIST"
     UNKNOWN = "UNKNOWN"
 
 

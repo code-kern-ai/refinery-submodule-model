@@ -323,7 +323,10 @@ def __build_payload_selector(
                 and data_type != enums.DataTypes.PERMISSION.value
             ):
                 payload_selector += f"'{attr}', (r.\"data\"->>'{attr}')::{data_type}"
-            elif data_type == enums.DataTypes.PERMISSION.value:
+            elif (
+                data_type == enums.DataTypes.PERMISSION.value
+                or data_type == enums.DataTypes.TEXT_LIST.value
+            ):
                 payload_selector += f"'{attr}', r.\"data\"->'{attr}'"
             else:
                 payload_selector += f"'{attr}', r.\"data\"->>'{attr}'"
