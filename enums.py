@@ -898,17 +898,20 @@ class EvaluationRunState(Enum):
 
 class AdminQueries(Enum):
     # default values for parameters can be found in file admin_queries.py
-    USERS_TO_PROJECTS = "USERS_TO_PROJECTS"  # parameter options: organization_id
-    ACTIVE_USERS_GLOBAL = "ACTIVE_USERS_GLOBAL"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id
-    ACTIVE_USERS_BY_ORG = "ACTIVE_USERS_BY_ORG"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id
-    MESSAGES_CREATED = "MESSAGES_CREATED"  # parameter options: period (days, weeks or months), slices, organization_id
-    MESSAGES_CREATED_BY_PROJECT = "MESSAGES_CREATED_BY_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id
-    MESSAGES_FEEDBACK_PER_PROJECT = "MESSAGES_FEEDBACK_PER_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id
-    AVG_MESSAGES_PER_CONVERSATION_GLOBAL = (
-        "AVG_MESSAGES_PER_CONVERSATION_GLOBAL"  # parameter options: organization_id
+    USERS_TO_PROJECTS = (
+        "USERS_TO_PROJECTS"  # parameter options: organization_id, without_kern_email
     )
-    AVG_MESSAGES_PER_CONVERSATION = "AVG_MESSAGES_PER_CONVERSATION"  # parameter options: period (days, weeks or months), slices, organization_id
-    MACRO_EXECUTIONS = "MACRO_EXECUTIONS"  # parameter options: period (days, weeks or months), slices, organization_id
+    USERS_BY_ORG = (
+        "USERS_BY_ORG"  # parameter options: organization_id, without_kern_email
+    )
+    ACTIVE_USERS_GLOBAL = "ACTIVE_USERS_GLOBAL"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id, without_kern_email
+    ACTIVE_USERS_BY_ORG = "ACTIVE_USERS_BY_ORG"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id, without_kern_email
+    MESSAGES_CREATED = "MESSAGES_CREATED"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
+    MESSAGES_CREATED_BY_PROJECT = "MESSAGES_CREATED_BY_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
+    MESSAGES_FEEDBACK_PER_PROJECT = "MESSAGES_FEEDBACK_PER_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
+    AVG_MESSAGES_PER_CONVERSATION_GLOBAL = "AVG_MESSAGES_PER_CONVERSATION_GLOBAL"  # parameter options: organization_id, without_kern_email
+    AVG_MESSAGES_PER_CONVERSATION = "AVG_MESSAGES_PER_CONVERSATION"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
+    MACRO_EXECUTIONS = "MACRO_EXECUTIONS"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
     FOLDER_MACRO_EXECUTION_SUMMARY = (
         "FOLDER_MACRO_EXECUTION_SUMMARY"  # parameter options: organization_id
     )
