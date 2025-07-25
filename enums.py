@@ -522,9 +522,7 @@ class AgreementType(Enum):
 
 
 class EmbeddingPlatform(Enum):
-    PYTHON = "python"
     HUGGINGFACE = "huggingface"
-    COHERE = "cohere"
     OPENAI = "openai"
     AZURE = "azure"
 
