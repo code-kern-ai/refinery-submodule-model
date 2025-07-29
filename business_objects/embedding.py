@@ -459,7 +459,7 @@ def get_match_record_ids_to_qdrant_ids_with_max_score(
     query = f"""
     {__generate_with_table_union_query(qdrant_results)}
 
-    SELECT et.record_id::TEXT id, MAX(s.score) score
+    SELECT et.record_id::TEXT id, MIN(s.score) score
     FROM  embedding_tensor et
     INNER JOIN scores s
         ON et.id = s.id
