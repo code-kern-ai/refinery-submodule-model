@@ -2392,6 +2392,7 @@ class IntegrationSharepoint(Base):
 
 class IntegrationSharepointPropertySync(Base):
     __tablename__ = Tablenames.INTEGRATION_SHAREPOINT_PROPERTY_SYNC.value
+    __table_args__ = (UniqueConstraint("integration_id"), {"schema": "integration"})
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_by = Column(
         UUID(as_uuid=True),
