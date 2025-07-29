@@ -169,6 +169,7 @@ class Tablenames(Enum):
     INTEGRATION_PDF = "pdf"
     INTEGRATION_SHAREPOINT = "sharepoint"
     STEP_TEMPLATES = "step_templates"  # templates for strategy steps
+    INTEGRATION_SHAREPOINT_PROPERTY_SYNC = "sharepoint_property_sync"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs

@@ -2388,3 +2388,23 @@ class IntegrationSharepoint(Base):
     hashes = Column(JSON)
     permissions = Column(JSON)
     file_properties = Column(JSON)
+
+
+class IntegrationSharepointPropertySync(Base):
+    __tablename__ = Tablenames.INTEGRATION_SHAREPOINT_PROPERTY_SYNC.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    config = Column(JSON)  # JSON object containing the rules for property sync
+    logs = Column(ARRAY(String))
+    state = Column(String)
