@@ -1,4 +1,4 @@
-from models import IntegrationSharepointPropertySync
+from submodules.model import IntegrationSharepointPropertySync
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm.attributes import flag_modified
 from ..business_objects import general
