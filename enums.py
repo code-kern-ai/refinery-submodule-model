@@ -931,3 +931,10 @@ class CognitionIntegrationType(Enum):
             raise KeyError(
                 f"Could not parse CognitionIntegrationType from string '{changed_value}'"
             )
+
+
+class SharepointPropertySyncState(Enum):
+    CREATED = "CREATED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
