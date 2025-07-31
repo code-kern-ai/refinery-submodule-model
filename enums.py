@@ -525,6 +525,7 @@ class EmbeddingPlatform(Enum):
     HUGGINGFACE = "huggingface"
     OPENAI = "openai"
     AZURE = "azure"
+    PRIVATEMODE_AI = "privatemode-ai"
 
 
 class SampleProjectType(Enum):
