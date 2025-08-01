@@ -968,3 +968,16 @@ def get_record_ids_by_running_ids(project_id: str, running_ids: List[int]) -> Li
             .all()
         )
     ]
+
+
+def get_records_by_running_ids(project_id: str, running_ids: List[int]) -> List[str]:
+    return (
+        session.query(Record)
+        .filter(
+            Record.project_id == project_id,
+            Record.data[attribute.get_running_id_name(project_id)]
+            .as_integer()
+            .in_(running_ids),
+        )
+        .all()
+    )
