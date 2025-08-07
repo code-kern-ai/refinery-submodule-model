@@ -525,6 +525,7 @@ class EmbeddingPlatform(Enum):
     HUGGINGFACE = "huggingface"
     OPENAI = "openai"
     AZURE = "azure"
+    PRIVATEMODE_AI = "privatemode-ai"
 
 
 class SampleProjectType(Enum):
@@ -669,6 +670,7 @@ class LLMProvider(Enum):
     OPENAI = "Open AI"
     AZURE = "Azure"
     AZURE_FOUNDRY = "Azure Foundry"
+    PRIVATEMODE_AI = "Privatemode AI"
 
     @staticmethod
     def from_string(value: str):
@@ -679,6 +681,8 @@ class LLMProvider(Enum):
             return LLMProvider.AZURE
         elif changed_value == "AZURE_FOUNDRY":
             return LLMProvider.AZURE_FOUNDRY
+        elif changed_value == "PRIVATEMODE_AI":
+            return LLMProvider.PRIVATEMODE_AI
         raise ValueError("Could not parse LLMProvider from string")
 
     def as_key(self):
