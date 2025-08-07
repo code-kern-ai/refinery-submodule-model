@@ -36,7 +36,7 @@ def get_all_relevant(user_id: str, project_id: str):
             or_(
                 # global_tag is boolean true
                 CognitionConversationTag.config["global_tag"].astext.cast(Boolean),
-                # use_for_projects contains project_id
+                # use_for_projects contains  project_id
                 CognitionConversationTag.config["use_for_projects"].contains(
                     [project_id]
                 ),
