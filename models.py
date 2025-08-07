@@ -2402,7 +2402,7 @@ class CognitionConversationTag(Base):
     name = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     config = Column(JSON)
-    # JSON schema for the tag configuration, e.g. hide for projects, maybe at some point color, sort_by (conv creation, last message creation, tag creation, conv header)
+    # JSON schema for the tag configuration, e.g. global tag, use for projects, maybe at some point color, sort_by (conv creation, last message creation, tag creation, conv header)
 
 
 class CognitionConversationTagAssociation(Base):

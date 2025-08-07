@@ -4,6 +4,8 @@ from ..business_objects import general
 from ..session import session
 from ..models import CognitionConversationTag, CognitionConversationTagAssociation
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.types import Boolean
+from sqlalchemy import or_
 
 
 def get(tag_id: str) -> CognitionConversationTag:
@@ -21,6 +23,24 @@ def get_all_by_user(user_id: str) -> List[CognitionConversationTag]:
         session.query(CognitionConversationTag)
         .filter(
             CognitionConversationTag.created_by == user_id,
+        )
+        .all()
+    )
+
+
+def get_all_relevant(user_id: str, project_id: str):
+    return (
+        session.query(CognitionConversationTag)
+        .filter(
+            CognitionConversationTag.created_by == user_id,
+            or_(
+                # global_tag is boolean true
+                CognitionConversationTag.config["global_tag"].astext.cast(Boolean),
+                # use_for_projects contains project_id
+                CognitionConversationTag.config["use_for_projects"].contains(
+                    [project_id]
+                ),
+            ),
         )
         .all()
     )
