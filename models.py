@@ -2388,3 +2388,37 @@ class IntegrationSharepoint(Base):
     hashes = Column(JSON)
     permissions = Column(JSON)
     file_properties = Column(JSON)
+
+
+class CognitionConversationTag(Base):
+    __tablename__ = Tablenames.CONVERSATION_TAG.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    config = Column(JSON)
+    # JSON schema for the tag configuration, e.g. hide for projects, maybe at some point color, sort_by (conv creation, last message creation, tag creation, conv header)
+
+
+class CognitionConversationTagAssociation(Base):
+    __tablename__ = Tablenames.CONVERSATION_TAG_ASSOCIATION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    tag_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.CONVERSATION_TAG.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())

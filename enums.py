@@ -168,6 +168,10 @@ class Tablenames(Enum):
     INTEGRATION_PDF = "pdf"
     INTEGRATION_SHAREPOINT = "sharepoint"
     STEP_TEMPLATES = "step_templates"  # templates for strategy steps
+    CONVERSATION_TAG = "conversation_tag"  # config of tags used in conversations
+    CONVERSATION_TAG_ASSOCIATION = (
+        "conversation_tag_association"  # association between conversation and tags
+    )
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
