@@ -3,9 +3,13 @@ from typing import Dict, List, Optional, Any
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionConversationTag, CognitionConversationTagAssociation
+from ..util import sql_alchemy_to_dict
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.types import Boolean
 from sqlalchemy import or_
+
+
+BLACKLIST_CONVERSATION_TAG_ASSOCIATION = {"id", "conversation_id"}
 
 
 def get(tag_id: str) -> CognitionConversationTag:
@@ -71,7 +75,7 @@ def update(
     tag_entity = get(tag_id)
     if tag_entity is None:
         return
-    if tag_entity.created_by != user_id:
+    if str(tag_entity.created_by) != user_id:
         raise ValueError("You are not allowed to update this tag.")
     if name is not None:
         tag_entity.name = name
@@ -122,3 +126,26 @@ def delete_association(
         CognitionConversationTagAssociation.tag_id == tag_id,
     ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
+
+
+def get_lookup_by_conversation_ids(
+    conversation_ids: List[str],
+) -> Dict[str, List[Dict[str, Any]]]:
+    associations = (
+        session.query(CognitionConversationTagAssociation)
+        .filter(
+            CognitionConversationTagAssociation.conversation_id.in_(conversation_ids)
+        )
+        .all()
+    )
+    tag_lookup: Dict[str, List[Dict[str, Any]]] = {}
+
+    for association in associations:
+        if str(association.conversation_id) not in tag_lookup:
+            tag_lookup[str(association.conversation_id)] = []
+        tag_lookup[str(association.conversation_id)].append(
+            sql_alchemy_to_dict(
+                association, column_blacklist=BLACKLIST_CONVERSATION_TAG_ASSOCIATION
+            )
+        )
+    return tag_lookup
