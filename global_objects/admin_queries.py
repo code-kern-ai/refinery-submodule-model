@@ -41,7 +41,135 @@ def get_result_admin_query(
         return __get_macro_executions(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.FOLDER_MACRO_EXECUTION_SUMMARY:
         return __get_folder_macro_execution_summary(**parameters, as_query=as_query)
+    elif query == enums.AdminQueries.CREATED_TAGS_PER_ORG:
+        return __get_created_tags_per_org(**parameters, as_query=as_query)
+    elif query == enums.AdminQueries.CONVERSATIONS_PER_TAG:
+        return __get_conversations_per_tag(**parameters, as_query=as_query)
+    elif query == enums.AdminQueries.MULTITAGGED_CONVERSATIONS:
+        return __get_multitagged_conversations(**parameters, as_query=as_query)
+
     return []
+
+
+def __get_multitagged_conversations(
+    organization_id: str = "",
+    without_kern_email: bool = False,
+    as_query: bool = False,
+):
+
+    org_join = ""
+    if organization_id:
+        organization_id = prevent_sql_injection(
+            organization_id, isinstance(organization_id, str)
+        )
+        org_join = f""" INNER JOIN cognition.project p 
+            ON c.project_id = p.id AND p.organization_id = '{organization_id}'"""
+
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON c.created_by = u.id AND u.email NOT LIKE '%@kern.ai'"""
+
+    query = f"""
+        SELECT o.name organization_name, p.name project_name, COUNT(*) conv_with_gr_1_tag
+    FROM (
+        SELECT c.project_id, conversation_id
+        FROM cognition.conversation C
+        {filter_join}
+        INNER JOIN cognition.conversation_tag_association cta
+            ON	c.id = cta.conversation_id
+        {org_join}
+        group BY 1, 2
+        HAVING COUNT(*) > 1 
+    ) x
+    INNER JOIN cognition.project p
+        ON x.project_id = p.id
+    INNER JOIN organization o
+        ON p.organization_id = o.id
+    group BY 1,2
+    """
+    if as_query:
+        return query
+    return general.execute_all(query)
+
+
+def __get_conversations_per_tag(
+    organization_id: str = "",
+    without_kern_email: bool = False,
+    distinct_conversations: bool = False,
+    as_query: bool = False,
+):
+
+    org_where = ""
+    if organization_id:
+        organization_id = prevent_sql_injection(
+            organization_id, isinstance(organization_id, str)
+        )
+        org_where = f""" WHERE o.id = '{organization_id}'"""
+
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """
+        INNER JOIN PUBLIC.user u
+            ON c.created_by = u.id AND u.email NOT LIKE '%@kern.ai'"""
+
+    count_query = "*"
+    if distinct_conversations:
+        count_query = "DISTINCT c.id"
+
+    query = f"""
+    SELECT o.name organization_name, p.name project_name, COUNT({count_query}) tags_created
+    FROM cognition.conversation_tag_association cta
+    INNER JOIN cognition.conversation c
+        ON c.id = cta.conversation_id
+    {filter_join}
+    INNER JOIN cognition.project p
+        ON c.project_id = p.id
+    INNER JOIN organization o
+        ON p.organization_id = o.id
+    {org_where}
+    GROUP BY 1,2
+    """
+
+    if as_query:
+        return query
+    return general.execute_all(query)
+
+
+def __get_created_tags_per_org(
+    organization_id: str = "",
+    without_kern_email: bool = False,
+    as_query: bool = False,
+):
+
+    org_where = ""
+    if organization_id:
+        organization_id = prevent_sql_injection(
+            organization_id, isinstance(organization_id, str)
+        )
+        org_where = f""" WHERE o.id = '{organization_id}'"""
+
+    filter_join = ""
+    if without_kern_email:
+        filter_join = """AND u.email NOT LIKE '%@kern.ai'"""
+
+    query = f"""
+    SELECT 
+        o.name organization_name, COUNT(*)
+    FROM organization o
+    INNER JOIN PUBLIC.user u
+        ON o.id = u.organization_id {filter_join}
+    INNER JOIN cognition.conversation_tag ct
+        ON u.id = ct.created_by
+    {org_where}
+    GROUP BY 1
+    ORDER BY 1
+    """
+
+    if as_query:
+        return query
+    return general.execute_all(query)
 
 
 def __get_folder_macro_execution_summary(
