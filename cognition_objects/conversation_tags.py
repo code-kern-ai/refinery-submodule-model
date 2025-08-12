@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Any
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionConversationTag, CognitionConversationTagAssociation
-from ..util import sql_alchemy_to_dict
+from ..util import sql_alchemy_to_dict, prevent_sql_injection
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.types import Boolean
 from sqlalchemy import or_
@@ -149,3 +149,25 @@ def get_lookup_by_conversation_ids(
             )
         )
     return tag_lookup
+
+
+def get_tag_counts(project_id: str, user_id: str) -> Dict[str, int]:
+
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
+
+    query = f"""
+    SELECT json_object_agg(tid,t_count)
+    FROM (
+        SELECT COALESCE(cta.tag_id::TEXT,'<untagged>') tid, COUNT(*) t_count
+        FROM cognition.conversation C
+        LEFT JOIN cognition.conversation_tag_association cta
+            ON c.id = cta.conversation_id
+        WHERE c.project_id = '{project_id}' AND c.created_by = '{user_id}'
+        group BY cta.tag_id 
+    ) x """
+
+    value = general.execute_first(query)
+    if value and value[0]:
+        return value[0]
+    return {}
