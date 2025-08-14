@@ -91,7 +91,10 @@ def update(
     with_commit: bool = True,
 ) -> FileExtraction:
     file_extraction = get_by_id(org_id, file_extraction_id)
-    if file_extraction.state == enums.FileCachingState.CANCELED.value:
+    if (
+        not file_extraction
+        or file_extraction.state == enums.FileCachingState.CANCELED.value
+    ):
         return
     if minio_path is not None:
         file_extraction.minio_path = minio_path
