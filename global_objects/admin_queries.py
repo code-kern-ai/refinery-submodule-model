@@ -47,8 +47,65 @@ def get_result_admin_query(
         return __get_conversations_per_tag(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.MULTITAGGED_CONVERSATIONS:
         return __get_multitagged_conversations(**parameters, as_query=as_query)
-
+    elif query == enums.AdminQueries.TEMPLATE_USAGE:
+        return __get_template_usage(**parameters, as_query=as_query)
+    elif query == enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME:
+        return __get_privatemode_use_over_time(**parameters, as_query=as_query)
     return []
+
+
+def __get_template_usage(organization_id: str = "", as_query: bool = False):
+
+    org_where = ""
+    if organization_id:
+        org_where = f"WHERE o.id = '{organization_id}'"
+
+    query = f"""
+    SELECT o.name organization_name, COUNT(st.id) created_templates, COUNT(c.template_id) templates_in_use, SUM(c.uses) template_uses
+    FROM cognition.step_templates st
+    LEFT JOIN (
+        SELECT (ss.config->>'templateId')::UUID template_id, COUNT(*) uses
+        FROM cognition.strategy_step ss
+        WHERE ss.step_type = 'TEMPLATED'
+        group BY 1
+    )C
+        ON st.id = c.template_id
+    INNER JOIN organization o
+        ON st.organization_id = o.id
+    {org_where}
+    group BY 1"""
+    if as_query:
+        return query
+    return general.execute_all(query)
+
+
+def __get_privatemode_use_over_time(
+    organization_id: str = "", without_kern_email: bool = False, as_query: bool = False
+):
+    org_where = ""
+    if organization_id:
+        org_where = f"AND t.organization_id = '{organization_id}'"
+
+    kern_where = ""
+    if without_kern_email:
+        kern_where = "AND t.is_kern_user = FALSE"
+
+    query = f"""
+    SELECT 
+        st.data->>'counted_for' date,
+        t.organization_name,
+        t.project_name,
+        SUM(t.count)
+    FROM GLOBAL.sums_table st,
+        json_to_recordset( (st.data->'values') ) 
+            AS t(organization_id uuid, organization_name TEXT, project_id uuid, project_name TEXT, is_kern_user BOOLEAN, COUNT int )
+    WHERE st.sum_key = '{enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME.value}'
+    {org_where} {kern_where}
+    GROUP BY 1,2,3
+"""
+    if as_query:
+        return query
+    return general.execute_all(query)
 
 
 def __get_multitagged_conversations(
