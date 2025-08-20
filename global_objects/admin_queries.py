@@ -61,7 +61,7 @@ def __get_template_usage(organization_id: str = "", as_query: bool = False):
         org_where = f"WHERE o.id = '{organization_id}'"
 
     query = f"""
-    SELECT o.name organization_name, COUNT(st.id) created_templates, COUNT(c.template_id) templates_in_use, SUM(c.uses) template_uses
+    SELECT o.name organization_name, COUNT(st.id) created_templates, COUNT(c.template_id) templates_in_use, COALESCE(SUM(c.uses),0) template_uses
     FROM cognition.step_templates st
     LEFT JOIN (
         SELECT (ss.config->>'templateId')::UUID template_id, COUNT(*) uses
@@ -91,17 +91,29 @@ def __get_privatemode_use_over_time(
         kern_where = "AND t.is_kern_user = FALSE"
 
     query = f"""
-    SELECT 
-        st.data->>'counted_for' date,
-        t.organization_name,
-        t.project_name,
-        SUM(t.count)
-    FROM GLOBAL.sums_table st,
-        json_to_recordset( (st.data->'values') ) 
-            AS t(organization_id uuid, organization_name TEXT, project_id uuid, project_name TEXT, is_kern_user BOOLEAN, COUNT int )
-    WHERE st.sum_key = '{enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME.value}'
-    {org_where} {kern_where}
-    GROUP BY 1,2,3
+    SELECT *
+    FROM (
+        SELECT
+            st.data->>'counted_for' date,
+            t.organization_name,
+            t.project_name,
+            SUM(t.count)
+        FROM GLOBAL.sums_table st,
+            json_to_recordset( (st.data->'values') )
+                AS t(organization_id uuid, organization_name TEXT, project_id uuid, project_name TEXT, is_kern_user BOOLEAN, COUNT int)
+        WHERE st.sum_key = '{enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME.value}' AND st.data->>'values' IS NOT NULL
+        {org_where} {kern_where}
+        GROUP BY 1,2,3        
+        UNION ALL
+        SELECT
+            st.data->>'counted_for' date,
+            '<no values>',
+            '<no values>',
+            0
+        FROM GLOBAL.sums_table st
+        WHERE st.sum_key = '{enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME.value}' AND st.data->>'values' IS NULL
+    )x
+    ORDER BY 1
 """
     if as_query:
         return query
