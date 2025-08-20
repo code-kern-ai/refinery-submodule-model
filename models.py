@@ -2422,3 +2422,12 @@ class CognitionConversationTagAssociation(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+
+
+class SumsTable(Base):
+    __tablename__ = Tablenames.SUMS_TABLE.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    sum_key = Column(String, index=True)  # e.g. enums.AdminQueries
+    created_at = Column(DateTime, default=sql.func.now())
+    data = Column(JSON)

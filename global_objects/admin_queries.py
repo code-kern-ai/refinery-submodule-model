@@ -7,6 +7,7 @@ from sqlalchemy.engine.row import Row
 
 
 from .. import enums
+from ..global_objects import sums_table as sums_table_db_go
 
 ENGINEERING_TEAM_INDICATOR = "ENGINEERING_TEAM"
 PERIOD_OPTIONS = {"days", "weeks", "months"}
@@ -47,8 +48,85 @@ def get_result_admin_query(
         return __get_conversations_per_tag(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.MULTITAGGED_CONVERSATIONS:
         return __get_multitagged_conversations(**parameters, as_query=as_query)
-
+    elif query == enums.AdminQueries.TEMPLATE_USAGE:
+        return __get_template_usage(**parameters, as_query=as_query)
+    elif query == enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME:
+        return __get_privatemode_use_over_time(**parameters, as_query=as_query)
     return []
+
+
+def __get_template_usage(organization_id: str = "", as_query: bool = False):
+
+    org_where = ""
+    if organization_id:
+        org_where = f"WHERE o.id = '{organization_id}'"
+
+    query = f"""
+    SELECT o.name organization_name, COUNT(st.id) created_templates, COUNT(c.template_id) templates_in_use, COALESCE(SUM(c.uses),0) template_uses
+    FROM cognition.step_templates st
+    LEFT JOIN (
+        SELECT (ss.config->>'templateId')::UUID template_id, COUNT(*) uses
+        FROM cognition.strategy_step ss
+        WHERE ss.step_type = 'TEMPLATED'
+        group BY 1
+    )C
+        ON st.id = c.template_id
+    INNER JOIN organization o
+        ON st.organization_id = o.id
+    {org_where}
+    group BY 1"""
+    if as_query:
+        return query
+    return general.execute_all(query)
+
+
+def __get_privatemode_use_over_time(
+    organization_id: str = "", without_kern_email: bool = False, as_query: bool = False
+):
+    org_where = ""
+    if organization_id:
+        org_where = f"AND t.organization_id = '{organization_id}'"
+
+    kern_where = ""
+    if without_kern_email:
+        kern_where = "AND t.is_kern_user = FALSE"
+
+    query = f"""
+    WITH full_sums AS (
+        SELECT st.data
+        FROM GLOBAL.sums_table st
+        WHERE st.sum_key = '{enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME.value}'
+        UNION ALL
+        {sums_table_db_go.get_privatemode_sum_snapshot(as_query=True).replace(" - INTERVAL '1 day'", "")}
+    )
+
+    SELECT *
+    FROM (
+        SELECT
+            st.data->>'counted_for' date,
+            t.organization_name,
+            t.project_name,
+            SUM(t.count)
+        FROM full_sums st,
+            json_to_recordset( (st.data->'values') )
+                AS t(organization_id uuid, organization_name TEXT, project_id uuid, project_name TEXT, is_kern_user BOOLEAN, COUNT int)
+        WHERE st.data->>'values' IS NOT NULL
+        {org_where} {kern_where}
+        GROUP BY 1,2,3        
+        UNION ALL
+        SELECT
+            st.data->>'counted_for' date,
+            '<no values>',
+            '<no values>',
+            0
+        FROM full_sums st
+        WHERE st.data->>'values' IS NULL
+    )x
+    ORDER BY 1 DESC
+"""
+    if as_query:
+        return query
+    return general.execute_all(query)
 
 
 def __get_multitagged_conversations(

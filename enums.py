@@ -172,6 +172,7 @@ class Tablenames(Enum):
     CONVERSATION_TAG_ASSOCIATION = (
         "conversation_tag_association"  # association between conversation and tags
     )
+    SUMS_TABLE = "sums_table"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -926,6 +927,8 @@ class AdminQueries(Enum):
     )
     CONVERSATIONS_PER_TAG = "CONVERSATIONS_PER_TAG"  # parameter options: organization_id, without_kern_email, distinct_conversations
     MULTITAGGED_CONVERSATIONS = "MULTITAGGED_CONVERSATIONS"  # parameter options: organization_id, without_kern_email
+    TEMPLATE_USAGE = "TEMPLATE_USAGE"  # parameter options:  organization_id
+    PRIVATEMODE_USE_OVER_TIME = "PRIVATEMODE_USE_OVER_TIME"  # parameter options: organization_id, without_kern_email
 
 
 class CognitionIntegrationType(Enum):
