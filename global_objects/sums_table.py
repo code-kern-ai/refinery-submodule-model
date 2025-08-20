@@ -41,7 +41,7 @@ def get_last_execution_by_key(sum_key: str) -> datetime:
     return None
 
 
-def get_privatemode_sum_snapshot() -> Dict[str, Any]:
+def get_privatemode_sum_snapshot(as_query: bool = False) -> Dict[str, Any]:
     ## counts messages created with something related to privatemode
     ## this means either tmp_doc, llm or templated values
     ## the messages are count distinct for the previous day to understand when and how much it's used
@@ -90,6 +90,8 @@ def get_privatemode_sum_snapshot() -> Dict[str, Any]:
             ON p.organization_id = o.id
         group BY o.id, p.id,is_kern_user
     ) y """
+    if as_query:
+        return query
     result = general.execute_first(query)
     if result and result[0]:
         return result[0]

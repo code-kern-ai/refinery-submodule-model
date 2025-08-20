@@ -7,6 +7,7 @@ from sqlalchemy.engine.row import Row
 
 
 from .. import enums
+from ..global_objects import sums_table as sums_table_db_go
 
 ENGINEERING_TEAM_INDICATOR = "ENGINEERING_TEAM"
 PERIOD_OPTIONS = {"days", "weeks", "months"}
@@ -91,6 +92,14 @@ def __get_privatemode_use_over_time(
         kern_where = "AND t.is_kern_user = FALSE"
 
     query = f"""
+    WITH full_sums AS (
+        SELECT st.data
+        FROM GLOBAL.sums_table st
+        WHERE st.sum_key = '{enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME.value}'
+        UNION ALL
+        {sums_table_db_go.get_privatemode_sum_snapshot(as_query=True).replace(" - INTERVAL '1 day'", "")}
+    )
+
     SELECT *
     FROM (
         SELECT
@@ -98,10 +107,10 @@ def __get_privatemode_use_over_time(
             t.organization_name,
             t.project_name,
             SUM(t.count)
-        FROM GLOBAL.sums_table st,
+        FROM full_sums st,
             json_to_recordset( (st.data->'values') )
                 AS t(organization_id uuid, organization_name TEXT, project_id uuid, project_name TEXT, is_kern_user BOOLEAN, COUNT int)
-        WHERE st.sum_key = '{enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME.value}' AND st.data->>'values' IS NOT NULL
+        WHERE st.data->>'values' IS NOT NULL
         {org_where} {kern_where}
         GROUP BY 1,2,3        
         UNION ALL
@@ -110,10 +119,10 @@ def __get_privatemode_use_over_time(
             '<no values>',
             '<no values>',
             0
-        FROM GLOBAL.sums_table st
-        WHERE st.sum_key = '{enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME.value}' AND st.data->>'values' IS NULL
+        FROM full_sums st
+        WHERE st.data->>'values' IS NULL
     )x
-    ORDER BY 1
+    ORDER BY 1 DESC
 """
     if as_query:
         return query
