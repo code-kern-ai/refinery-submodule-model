@@ -5,7 +5,11 @@ from datetime import datetime
 from ..cognition_objects import message
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionConversation, CognitionMessage
+from ..models import (
+    CognitionConversation,
+    CognitionMessage,
+    CognitionConversationTagAssociation,
+)
 from ..util import prevent_sql_injection
 from sqlalchemy.sql.expression import Subquery
 from sqlalchemy import or_
@@ -198,6 +202,28 @@ def get_all_paginated_by_project_id(
     else:
         paginated_result = []
     return total_count, num_pages, paginated_result
+
+
+def get_missing_tagged_conversations(
+    project_id: str, user_id: str, tag_id: str, not_needed_conversations: List[str]
+) -> List[CognitionConversation]:
+    missing = (
+        session.query(CognitionConversation)
+        .join(
+            CognitionConversationTagAssociation,
+            (
+                CognitionConversationTagAssociation.conversation_id
+                == CognitionConversation.id
+            ),
+        )
+        .filter(
+            CognitionConversationTagAssociation.tag_id == tag_id,
+            CognitionConversation.id.notin_(not_needed_conversations),
+            CognitionConversation.project_id == project_id,
+            CognitionConversation.created_by == user_id,
+        )
+    ).all()
+    return missing
 
 
 def __get_conversation_ids_by_filter(

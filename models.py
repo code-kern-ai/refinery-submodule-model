@@ -2409,3 +2409,46 @@ class IntegrationSharepointPropertySync(Base):
     config = Column(JSON)  # JSON object containing the rules for property sync
     logs = Column(ARRAY(String))
     state = Column(String)
+
+
+class CognitionConversationTag(Base):
+    __tablename__ = Tablenames.CONVERSATION_TAG.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    config = Column(JSON)
+    # JSON schema for the tag configuration, e.g. global tag, use for projects, maybe at some point color, sort_by (conv creation, last message creation, tag creation, conv header)
+
+
+class CognitionConversationTagAssociation(Base):
+    __tablename__ = Tablenames.CONVERSATION_TAG_ASSOCIATION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    tag_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.CONVERSATION_TAG.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+class SumsTable(Base):
+    __tablename__ = Tablenames.SUMS_TABLE.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    sum_key = Column(String, index=True)  # e.g. enums.AdminQueries
+    created_at = Column(DateTime, default=sql.func.now())
+    data = Column(JSON)

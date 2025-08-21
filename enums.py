@@ -170,6 +170,11 @@ class Tablenames(Enum):
     INTEGRATION_SHAREPOINT = "sharepoint"
     STEP_TEMPLATES = "step_templates"  # templates for strategy steps
     INTEGRATION_SHAREPOINT_PROPERTY_SYNC = "sharepoint_property_sync"
+    CONVERSATION_TAG = "conversation_tag"  # config of tags used in conversations
+    CONVERSATION_TAG_ASSOCIATION = (
+        "conversation_tag_association"  # association between conversation and tags
+    )
+    SUMS_TABLE = "sums_table"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -524,11 +529,10 @@ class AgreementType(Enum):
 
 
 class EmbeddingPlatform(Enum):
-    PYTHON = "python"
     HUGGINGFACE = "huggingface"
-    COHERE = "cohere"
     OPENAI = "openai"
     AZURE = "azure"
+    PRIVATEMODE_AI = "privatemode-ai"
 
 
 class SampleProjectType(Enum):
@@ -673,6 +677,7 @@ class LLMProvider(Enum):
     OPENAI = "Open AI"
     AZURE = "Azure"
     AZURE_FOUNDRY = "Azure Foundry"
+    PRIVATEMODE_AI = "Privatemode AI"
 
     @staticmethod
     def from_string(value: str):
@@ -683,6 +688,8 @@ class LLMProvider(Enum):
             return LLMProvider.AZURE
         elif changed_value == "AZURE_FOUNDRY":
             return LLMProvider.AZURE_FOUNDRY
+        elif changed_value == "PRIVATEMODE_AI":
+            return LLMProvider.PRIVATEMODE_AI
         raise ValueError("Could not parse LLMProvider from string")
 
     def as_key(self):
@@ -900,20 +907,30 @@ class EvaluationRunState(Enum):
 
 class AdminQueries(Enum):
     # default values for parameters can be found in file admin_queries.py
-    USERS_TO_PROJECTS = "USERS_TO_PROJECTS"  # parameter options: organization_id
-    ACTIVE_USERS_GLOBAL = "ACTIVE_USERS_GLOBAL"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id
-    ACTIVE_USERS_BY_ORG = "ACTIVE_USERS_BY_ORG"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id
-    MESSAGES_CREATED = "MESSAGES_CREATED"  # parameter options: period (days, weeks or months), slices, organization_id
-    MESSAGES_CREATED_BY_PROJECT = "MESSAGES_CREATED_BY_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id
-    MESSAGES_FEEDBACK_PER_PROJECT = "MESSAGES_FEEDBACK_PER_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id
-    AVG_MESSAGES_PER_CONVERSATION_GLOBAL = (
-        "AVG_MESSAGES_PER_CONVERSATION_GLOBAL"  # parameter options: organization_id
+    USERS_TO_PROJECTS = (
+        "USERS_TO_PROJECTS"  # parameter options: organization_id, without_kern_email
     )
-    AVG_MESSAGES_PER_CONVERSATION = "AVG_MESSAGES_PER_CONVERSATION"  # parameter options: period (days, weeks or months), slices, organization_id
-    MACRO_EXECUTIONS = "MACRO_EXECUTIONS"  # parameter options: period (days, weeks or months), slices, organization_id
+    USERS_BY_ORG = (
+        "USERS_BY_ORG"  # parameter options: organization_id, without_kern_email
+    )
+    ACTIVE_USERS_GLOBAL = "ACTIVE_USERS_GLOBAL"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id, without_kern_email
+    ACTIVE_USERS_BY_ORG = "ACTIVE_USERS_BY_ORG"  # parameter options: min_msg_count, period (days, weeks or months), slices, organization_id, without_kern_email
+    MESSAGES_CREATED = "MESSAGES_CREATED"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
+    MESSAGES_CREATED_BY_PROJECT = "MESSAGES_CREATED_BY_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
+    MESSAGES_FEEDBACK_PER_PROJECT = "MESSAGES_FEEDBACK_PER_PROJECT"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
+    AVG_MESSAGES_PER_CONVERSATION_GLOBAL = "AVG_MESSAGES_PER_CONVERSATION_GLOBAL"  # parameter options: organization_id, without_kern_email
+    AVG_MESSAGES_PER_CONVERSATION = "AVG_MESSAGES_PER_CONVERSATION"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
+    MACRO_EXECUTIONS = "MACRO_EXECUTIONS"  # parameter options: period (days, weeks or months), slices, organization_id, without_kern_email
     FOLDER_MACRO_EXECUTION_SUMMARY = (
         "FOLDER_MACRO_EXECUTION_SUMMARY"  # parameter options: organization_id
     )
+    CREATED_TAGS_PER_ORG = (
+        "CREATED_TAGS_PER_ORG"  # parameter options: organization_id, without_kern_email
+    )
+    CONVERSATIONS_PER_TAG = "CONVERSATIONS_PER_TAG"  # parameter options: organization_id, without_kern_email, distinct_conversations
+    MULTITAGGED_CONVERSATIONS = "MULTITAGGED_CONVERSATIONS"  # parameter options: organization_id, without_kern_email
+    TEMPLATE_USAGE = "TEMPLATE_USAGE"  # parameter options:  organization_id
+    PRIVATEMODE_USE_OVER_TIME = "PRIVATEMODE_USE_OVER_TIME"  # parameter options: organization_id, without_kern_email
 
 
 class CognitionIntegrationType(Enum):
