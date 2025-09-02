@@ -1,8 +1,8 @@
-from models import IntegrationSharepointPropertySync
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm.attributes import flag_modified
 from ..business_objects import general
 from ..session import session
+from ..models import IntegrationSharepointPropertySync
 
 
 def get_by_integration_id(
