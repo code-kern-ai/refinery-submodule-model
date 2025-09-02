@@ -15,6 +15,22 @@ def get_by_integration_id(
     )
 
 
+def create(
+    integration_id: str,
+    config: Optional[Dict[str, Any]] = None,
+    logs: Optional[List[Dict[str, Any]]] = None,
+    with_commit: bool = True,
+) -> IntegrationSharepointPropertySync:
+    integration_sync = IntegrationSharepointPropertySync(
+        integration_id=integration_id,
+        config=config or {},
+        logs=logs or [],
+    )
+    session.add(integration_sync)
+    general.flush_or_commit(with_commit)
+    return integration_sync
+
+
 def update(
     integration_id: str,
     config: Optional[Dict[str, Any]] = None,
