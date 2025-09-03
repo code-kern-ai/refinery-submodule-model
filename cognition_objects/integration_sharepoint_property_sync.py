@@ -1,13 +1,20 @@
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm.attributes import flag_modified
+from ..models import IntegrationSharepointPropertySync
+from ..enums import SharepointPropertySyncState
 from ..business_objects import general
 from ..session import session
-from ..models import IntegrationSharepointPropertySync
+
+
+FINISHED_STATES = [
+    SharepointPropertySyncState.COMPLETED.value,
+    SharepointPropertySyncState.FAILED.value,
+]
 
 
 def get_by_integration_id(
     integration_id: str,
-) -> List[IntegrationSharepointPropertySync]:
+) -> IntegrationSharepointPropertySync:
     return (
         session.query(IntegrationSharepointPropertySync)
         .filter(IntegrationSharepointPropertySync.integration_id == integration_id)
@@ -46,3 +53,10 @@ def update(
         flag_modified(integration_sync, "logs")
     general.flush_or_commit(with_commit)
     return integration_sync
+
+
+def sync_finished(integration_id: str) -> bool:
+    integration_sync = get_by_integration_id(integration_id)
+    if integration_sync is None:
+        return True
+    return integration_sync.state in FINISHED_STATES
