@@ -2383,7 +2383,7 @@ class IntegrationSharepoint(Base):
     created = Column(DateTime, default=None)
     modified = Column(DateTime, default=None)
     description = Column(String)
-    size = Column(Integer)
+    size = Column(BigInteger)
     mime_type = Column(String)
     hashes = Column(JSON)
     permissions = Column(JSON)
