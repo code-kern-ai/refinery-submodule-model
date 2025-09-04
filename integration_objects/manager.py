@@ -92,6 +92,8 @@ def get_existing_integration_records(
     integration_id: str,
     by: str = "source",
 ) -> Dict[str, object]:
+    # TODO(extension): make return type Dict[str, List[object]]
+    # once an object_id can reference multiple different integration records
     return {
         getattr(record, by, record.source): record
         for record in get_all_by_integration_id(IntegrationModel, integration_id)

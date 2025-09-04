@@ -11,6 +11,7 @@ class DataTypes(Enum):
     LLM_RESPONSE = "LLM_RESPONSE"
     EMBEDDING_LIST = "EMBEDDING_LIST"  # only for embeddings & default hidden
     PERMISSION = "PERMISSION"  # used for access control
+    TEXT_LIST = "TEXT_LIST"
     UNKNOWN = "UNKNOWN"
 
 
@@ -168,6 +169,7 @@ class Tablenames(Enum):
     INTEGRATION_PDF = "pdf"
     INTEGRATION_SHAREPOINT = "sharepoint"
     STEP_TEMPLATES = "step_templates"  # templates for strategy steps
+    INTEGRATION_SHAREPOINT_PROPERTY_SYNC = "sharepoint_property_sync"
     CONVERSATION_TAG = "conversation_tag"  # config of tags used in conversations
     CONVERSATION_TAG_ASSOCIATION = (
         "conversation_tag_association"  # association between conversation and tags
@@ -946,3 +948,10 @@ class CognitionIntegrationType(Enum):
             raise KeyError(
                 f"Could not parse CognitionIntegrationType from string '{changed_value}'"
             )
+
+
+class SharepointPropertySyncState(Enum):
+    CREATED = "CREATED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"

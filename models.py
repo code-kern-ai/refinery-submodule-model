@@ -2390,6 +2390,27 @@ class IntegrationSharepoint(Base):
     file_properties = Column(JSON)
 
 
+class IntegrationSharepointPropertySync(Base):
+    __tablename__ = Tablenames.INTEGRATION_SHAREPOINT_PROPERTY_SYNC.value
+    __table_args__ = (UniqueConstraint("integration_id"), {"schema": "integration"})
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    config = Column(JSON)  # JSON object containing the rules for property sync
+    logs = Column(ARRAY(String))
+    state = Column(String)
+
+
 class CognitionConversationTag(Base):
     __tablename__ = Tablenames.CONVERSATION_TAG.value
     __table_args__ = {"schema": "cognition"}

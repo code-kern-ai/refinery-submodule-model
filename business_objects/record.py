@@ -943,7 +943,7 @@ def get_first_no_text_column(project_id: str, record_id: str) -> str:
     (
         SELECT a.name
         FROM attribute a 
-        WHERE data_type NOT IN('{enums.DataTypes.TEXT.value}' , '{enums.DataTypes.CATEGORY.value}', '{enums.DataTypes.LLM_RESPONSE.value}')
+        WHERE data_type NOT IN('{enums.DataTypes.TEXT.value}', '{enums.DataTypes.CATEGORY.value}', '{enums.DataTypes.LLM_RESPONSE.value}', '{enums.DataTypes.TEXT_LIST.value}')
             AND a.state IN ('{enums.AttributeState.AUTOMATICALLY_CREATED.value}','{enums.AttributeState.UPLOADED.value}','{enums.AttributeState.USABLE.value}')
             AND a.project_id = '{project_id}'
         ORDER BY a.relative_position
@@ -968,3 +968,16 @@ def get_record_ids_by_running_ids(project_id: str, running_ids: List[int]) -> Li
             .all()
         )
     ]
+
+
+def get_records_by_running_ids(project_id: str, running_ids: List[int]) -> List[str]:
+    return (
+        session.query(Record)
+        .filter(
+            Record.project_id == project_id,
+            Record.data[attribute.get_running_id_name(project_id)]
+            .as_integer()
+            .in_(running_ids),
+        )
+        .all()
+    )
