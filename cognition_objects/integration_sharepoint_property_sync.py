@@ -6,12 +6,6 @@ from ..business_objects import general
 from ..session import session
 
 
-FINISHED_STATES = [
-    SharepointPropertySyncState.COMPLETED.value,
-    SharepointPropertySyncState.FAILED.value,
-]
-
-
 def get_by_integration_id(
     integration_id: str,
 ) -> IntegrationSharepointPropertySync:
