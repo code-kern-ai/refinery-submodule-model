@@ -53,10 +53,3 @@ def update(
         flag_modified(integration_sync, "logs")
     general.flush_or_commit(with_commit)
     return integration_sync
-
-
-def sync_finished(integration_id: str) -> bool:
-    integration_sync = get_by_integration_id(integration_id)
-    if integration_sync is None:
-        return True
-    return integration_sync.state in FINISHED_STATES
