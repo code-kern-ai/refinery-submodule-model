@@ -101,7 +101,7 @@ def start_session_cleanup_thread():
 def __start_session_cleanup():
     while True:
         with session_lock:
-            sessions = general.get_session_lookup(exclude_last_x_seconds=20 * 60)
+            sessions = general.get_session_lookup(exclude_last_x_seconds=30 * 60)
             for session in sessions:
                 try:
                     general.force_remove_and_refresh_session_by_id(
