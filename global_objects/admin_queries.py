@@ -74,7 +74,9 @@ def __get_template_usage(organization_id: str = "", as_query: bool = False):
     INNER JOIN organization o
         ON st.organization_id = o.id
     {org_where}
-    group BY 1"""
+    group BY 1
+    ORDER BY 1
+    """
     if as_query:
         return query
     return general.execute_all(query)
@@ -1098,6 +1100,7 @@ def __get_users_by_org(
         ON u.organization_id = o.id
     {where_add}
     GROUP BY 1,2
+    ORDER BY 1,2
 """
     if as_query:
         return query
