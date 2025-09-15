@@ -278,3 +278,20 @@ def get_sharepoint_permissions_by_integration_id(
         ON x.id = s.id
     """
     return session.execute(query).all()
+
+
+def get_distinct_item_ids_for_all_permissions(
+    integration_id: str,
+) -> List[str]:
+    integration_id = prevent_sql_injection(
+        integration_id, isinstance(integration_id, str)
+    )
+    query = f"""SELECT DISTINCT x.object_id
+    FROM (
+        SELECT json_array_elements_text(permissions) permission_id, MAX(object_id::TEXT) object_id
+        FROM integration.sharepoint
+        WHERE integration_id = '{integration_id}'
+        GROUP BY 1
+    ) x;"""
+    results = session.execute(query).all()
+    return [row[0] for row in results]
