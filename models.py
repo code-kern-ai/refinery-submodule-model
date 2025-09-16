@@ -48,6 +48,7 @@ from sqlalchemy.types import ARRAY
 
 Base = declarative_base()
 metadata = Base.metadata
+DELETED_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 # 1:N
