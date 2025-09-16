@@ -48,6 +48,8 @@ from sqlalchemy.types import ARRAY
 
 Base = declarative_base()
 metadata = Base.metadata
+DELETED_USER_ID = "00000000-0000-0000-0000-000000000000"
+DELETED_USER_EMAIL = "deleted.user@kern.ai"
 
 
 # 1:N
