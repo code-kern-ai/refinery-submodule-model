@@ -36,12 +36,15 @@ def get(
     return query.order_by(CognitionIntegrationAccess.created_at.asc()).all()
 
 
-def get_all() -> List[CognitionIntegrationAccess]:
-    return (
-        session.query(CognitionIntegrationAccess)
-        .order_by(CognitionIntegrationAccess.created_at.desc())
-        .all()
-    )
+def get_all(
+    integration_type: Optional[CognitionIntegrationType] = None,
+) -> List[CognitionIntegrationAccess]:
+    query = session.query(CognitionIntegrationAccess)
+    if integration_type:
+        query = query.filter(
+            CognitionIntegrationAccess.integration_type == integration_type.value
+        )
+    return query.order_by(CognitionIntegrationAccess.created_at.desc()).all()
 
 
 def create(
