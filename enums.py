@@ -955,3 +955,9 @@ class SharepointPropertySyncState(Enum):
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+
+
+class MessageInitiationType(Enum):
+    UI = "UI"
+    API = "API"
+    MACRO = "MACRO"

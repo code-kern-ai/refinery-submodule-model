@@ -1285,6 +1285,7 @@ class CognitionMessage(Base):
         ),
         index=True,
     )
+    initiated_via = Column(String)  # of type enums.MessageInitiationType.*.value
 
 
 class CognitionPipelineLogs(Base):
