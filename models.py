@@ -2470,7 +2470,7 @@ class AdminQueryMessageSummary(Base):
     day = Column(Date, nullable=False)
     organization_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="SET NULL"),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
     )
     project_id = Column(
         UUID(as_uuid=True),
