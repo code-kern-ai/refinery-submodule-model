@@ -364,6 +364,7 @@ def add_message(
     conversation_id: str,
     user_id: str,
     question: str,
+    initiated_via: str,
     with_commit: bool = True,
 ) -> CognitionConversation:
     message_entity = message.create(
@@ -371,6 +372,7 @@ def add_message(
         project_id=project_id,
         user_id=user_id,
         question=question,
+        initiated_via=initiated_via,
         with_commit=with_commit,
     )
 
