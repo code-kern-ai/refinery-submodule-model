@@ -565,6 +565,7 @@ class StrategyStepType(Enum):
     WEBHOOK = "WEBHOOK"
     GRAPHRAG_SEARCH = "GRAPHRAG_SEARCH"
     TEMPLATED = "TEMPLATED"
+    RERANKER = "RERANKER"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -593,6 +594,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.WEBHOOK: "Webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "Query GraphRAG index",
     StrategyStepType.TEMPLATED: "Templated step",
+    StrategyStepType.RERANKER: "Reranker",
 }
 
 STEP_WHEN_TO_USE = {
@@ -611,6 +613,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.WEBHOOK: "When you want to run a webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "When you want to query a knowledge graph",
     StrategyStepType.TEMPLATED: "When you want to reuse existing templates",
+    StrategyStepType.RERANKER: "When you want to rerank results",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -630,6 +633,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.WEBHOOK: "Running webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "Querying knowledge graph",
     StrategyStepType.TEMPLATED: "Running templated step",
+    StrategyStepType.RERANKER: "Running reranker",
 }
 
 STEP_ERRORS = {
@@ -963,7 +967,9 @@ class CognitionPrivateUsage(Enum):
         "KERN_EXTERNAL_RESOURCE"  # e.g. reranker, distinct from external
     )
     WEBHOOK_NO_DATA = "WEBHOOK_NO_DATA"  # webhook only sending conversation id
-    WEBHOOK_WITH_DATA = "WEBHOOK_WITH_DATA"  # webhook with data
+    DATA_SEND_EXTERNALLY = (
+        "DATA_SEND_EXTERNALLY"  # e.g. webhook with data or reranker outside kern
+    )
     AZURE = "AZURE"  # e.g. BYOK from customers
     AZURE_KERN = "AZURE_KERN"  # e.g. sponsorship azure resources or e.g. mistral with key specific key
     OPEN_AI = "OPEN_AI"  # hosted by openai
@@ -973,7 +979,7 @@ class CognitionPrivateUsage(Enum):
         "KERN_INTERNAL": 1.0,
         "KERN_EXTERNAL_RESOURCE": 0.95,
         "WEBHOOK_NO_DATA": 0.9,
-        "WEBHOOK_WITH_DATA": 0.3,
+        "DATA_SEND_EXTERNALLY": 0.3,
         "AZURE": 0.5,
         "AZURE_KERN": 0.85,
         "OPEN_AI": 0.3,
