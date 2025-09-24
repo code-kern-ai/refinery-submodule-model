@@ -1,5 +1,7 @@
-import time
 from typing import Tuple
+
+import time
+import os
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -19,6 +21,8 @@ from starlette.responses import Response
 from starlette.routing import Match
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 from starlette.types import ASGIApp
+
+ENABLE_TELEMETRY = os.getenv("ENABLE_TELEMETRY", "false") == "true"
 
 INFO = Gauge("fastapi_app_info", "FastAPI application information.", ["app_name"])
 REQUESTS = Counter(
