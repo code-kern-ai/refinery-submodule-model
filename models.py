@@ -2477,5 +2477,6 @@ class AdminQueryMessageSummary(Base):
     messages_via_macro = Column(Integer, default=0)
     confidential_messages = Column(Integer, default=0)
     kern_user_messages = Column(Integer, default=0)
-    deleted_messages = Column(Integer, default=0)
+    deleted_messages_by_user = Column(Integer, default=0)
+    deleted_messages_by_system = Column(Integer, default=0)
     incognito_messages = Column(Integer, default=0)
