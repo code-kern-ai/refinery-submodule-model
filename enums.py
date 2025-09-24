@@ -175,6 +175,7 @@ class Tablenames(Enum):
         "conversation_tag_association"  # association between conversation and tags
     )
     SUMS_TABLE = "sums_table"
+    ADMIN_QUERY_MESSAGE_SUMMARY = "admin_query_message_summary"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs

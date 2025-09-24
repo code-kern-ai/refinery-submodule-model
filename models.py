@@ -2453,3 +2453,29 @@ class SumsTable(Base):
     sum_key = Column(String, index=True)  # e.g. enums.AdminQueries
     created_at = Column(DateTime, default=sql.func.now())
     data = Column(JSON)
+
+
+class AdminQueryMessageSummary(Base):
+    __tablename__ = Tablenames.ADMIN_QUERY_MESSAGE_SUMMARY.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "project_id",
+            "day",
+            name="unique_admin_query_msg_activity_summary",
+        ),
+        {"schema": "cognition"},
+    )
+    day = Column(Date, primary_key=True, nullable=False)
+    organization_id = Column(UUID(as_uuid=True), primary_key=True, nullable=False)
+    project_id = Column(UUID(as_uuid=True), primary_key=True, nullable=False)
+
+    total_conversations = Column(Integer, default=0)
+    total_messages = Column(Integer, default=0)
+    messages_via_api = Column(Integer, default=0)
+    messages_via_ui = Column(Integer, default=0)
+    messages_via_macro = Column(Integer, default=0)
+    confidential_messages = Column(Integer, default=0)
+    kern_user_messages = Column(Integer, default=0)
+    deleted_messages = Column(Integer, default=0)
+    incognito_messages = Column(Integer, default=0)
