@@ -2466,9 +2466,16 @@ class AdminQueryMessageSummary(Base):
         ),
         {"schema": "cognition"},
     )
-    day = Column(Date, primary_key=True, nullable=False)
-    organization_id = Column(UUID(as_uuid=True), primary_key=True, nullable=False)
-    project_id = Column(UUID(as_uuid=True), primary_key=True, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    day = Column(Date, nullable=False)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="SET NULL"),
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
+    )
 
     total_conversations = Column(Integer, default=0)
     total_messages = Column(Integer, default=0)
