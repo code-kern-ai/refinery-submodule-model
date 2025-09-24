@@ -955,3 +955,32 @@ class SharepointPropertySyncState(Enum):
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+
+
+class CognitionPrivateUsage(Enum):
+    KERN_INTERNAL = "KERN_INTERNAL"  # same server no connection outside VM & DB
+    KERN_EXTERNAL_RESOURCE = (
+        "KERN_EXTERNAL_RESOURCE"  # e.g. reranker, distinct from external
+    )
+    WEBHOOK_NO_DATA = "WEBHOOK_NO_DATA"  # webhook only sending conversation id
+    WEBHOOK_WITH_DATA = "WEBHOOK_WITH_DATA"  # webhook with data
+    AZURE = "AZURE"  # e.g. BYOK from customers
+    AZURE_KERN = "AZURE_KERN"  # e.g. sponsorship azure resources or e.g. mistral with key specific key
+    OPEN_AI = "OPEN_AI"  # hosted by openai
+    PRIVATEMODE_AI = "PRIVATEMODE_AI"  # encrypted and hosted by privatemode.ai
+    REQUESTS_USED = "REQUESTS_USED"  # special case, is set handled separately => only for final result set
+    __SCORES = {
+        "KERN_INTERNAL": 1.0,
+        "KERN_EXTERNAL_RESOURCE": 0.95,
+        "WEBHOOK_NO_DATA": 0.9,
+        "WEBHOOK_WITH_DATA": 0.3,
+        "AZURE": 0.5,
+        "AZURE_KERN": 0.85,
+        "OPEN_AI": 0.3,
+        "PRIVATEMODE_AI": 0.95,
+        "REQUESTS_USED": 0.0,
+    }
+
+    @property
+    def score(self) -> float:
+        return self.__SCORES[self.value]

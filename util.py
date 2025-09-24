@@ -7,6 +7,7 @@ import sqlalchemy
 import decimal
 from uuid import UUID
 from datetime import datetime, date
+from enum import Enum
 
 
 from sqlalchemy.sql import text as sql_text
@@ -225,6 +226,8 @@ def to_json_serializable(x: Any):
         return float(x)
     elif isinstance(x, UUID):
         return str(x)
+    elif isinstance(x, Enum):
+        return x.value
     else:
         return x
 
