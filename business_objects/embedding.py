@@ -772,18 +772,31 @@ def update_embedding_state_failed(
 
 
 def update_embedding_state_waiting(
-    project_id: str, embedding_id: str, with_commit: bool = False
+    project_id: str,
+    embedding_id: str,
+    with_commit: bool = False,
+    force_update: bool = False,
 ) -> None:
     __update_embedding_state(
-        project_id, embedding_id, enums.EmbeddingState.WAITING.value, with_commit
+        project_id,
+        embedding_id,
+        enums.EmbeddingState.WAITING.value,
+        with_commit,
+        force_update,
     )
 
 
 def __update_embedding_state(
-    project_id: str, embedding_id: str, state: str, with_commit=False
+    project_id: str,
+    embedding_id: str,
+    state: str,
+    with_commit: bool = False,
+    force_update: bool = False,
 ) -> None:
     embedding_item = get(project_id, embedding_id)
-    if embedding_item and not embedding_item.state == enums.EmbeddingState.FAILED.value:
+    if embedding_item and (
+        not embedding_item.state == enums.EmbeddingState.FAILED.value or force_update
+    ):
         embedding_item.state = state
         general.flush_or_commit(with_commit)
 
