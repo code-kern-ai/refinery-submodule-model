@@ -294,4 +294,7 @@ def get_distinct_item_ids_for_all_permissions(
         GROUP BY 1
     ) x;"""
     results = session.execute(query).all()
-    return [row[0] for row in results]
+    if not results:
+        return []
+
+    return [row[0] for row in results if row and row[0]]
