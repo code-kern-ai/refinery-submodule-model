@@ -273,6 +273,7 @@ def create(
     project_id: str,
     user_id: str,
     question: str,
+    initiated_via: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionMessage:
@@ -288,6 +289,7 @@ def create(
         question=question,
         facts=[],
         version_id=version_id,
+        initiated_via=initiated_via,
     )
 
     general.add(message, with_commit)
@@ -532,3 +534,13 @@ def update_version_id_for_messages(
     )
     if with_commit:
         general.commit()
+
+
+def get_count_by_project_id(project_id: str) -> int:
+    return (
+        session.query(CognitionMessage)
+        .filter(
+            CognitionMessage.project_id == project_id,
+        )
+        .count()
+    )
