@@ -307,6 +307,7 @@ def get_show_shield_dict_by_conversation_ids(
         WHERE c.project_id  = '{project_id}' AND c.id IN {conversation_id_filter}
     GROUP BY c.id
     ) t;"""
+
     show_shield_dict = general.execute_first(query)
     if show_shield_dict and show_shield_dict[0]:
         return show_shield_dict[0]
