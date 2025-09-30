@@ -228,6 +228,7 @@ class User(Base):
     sso_provider = Column(String)
     oidc_identifier = Column(String)
     use_new_cognition_ui = Column(Boolean, default=True)
+    auto_logout_minutes = Column(Integer)
 
 
 class Team(Base):
