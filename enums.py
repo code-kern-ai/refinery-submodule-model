@@ -984,7 +984,7 @@ class CognitionPrivateUsage(Enum):
         "AZURE_KERN": 0.85,
         "OPEN_AI": 0.3,
         "PRIVATEMODE_AI": 0.95,
-        "REQUESTS_USED": 0.0,
+        "REQUESTS_USED": 0.9,  # final project multiplier
     }
 
     @property
