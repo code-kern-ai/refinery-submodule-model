@@ -43,8 +43,7 @@ def log_admin_query_message_summary(
         for col, value in counters.items():
             if hasattr(message_summary, col):
                 setattr(message_summary, col, value)
-        if with_commit:
-            general.add(message_summary, with_commit)
+        general.add(message_summary, with_commit)
         return message_summary
 
     if with_commit:
