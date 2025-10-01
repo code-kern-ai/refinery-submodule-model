@@ -2488,3 +2488,17 @@ class AdminQueryMessageSummary(Base):
     deleted_messages_by_user = Column(Integer, default=0)
     deleted_messages_by_system = Column(Integer, default=0)
     incognito_messages = Column(Integer, default=0)
+
+
+class ReleaseNotification(Base):
+    __tablename__ = Tablenames.RELEASE_NOTIFICATION.value
+    __table_args__ = {"schema": "global"}
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    link = Column(String, nullable=False)
+    config = Column(JSON)  # e.g. {"en": {"headline":"", "description":""}, "de": {...}}
