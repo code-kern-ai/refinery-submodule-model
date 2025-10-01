@@ -5,6 +5,7 @@ from ..session import session
 from ..models import CognitionMessage
 from ..util import prevent_sql_injection
 from .pipeline_version import get_current_version
+from sqlalchemy.orm.attributes import flag_modified
 
 
 DEFAULT_TIME_ELAPSED = {
@@ -268,6 +269,51 @@ def get_message_feedback_overview(
     return general.execute_all(query)
 
 
+def get_show_shield_dict_by_conversation_ids(
+    project_id: str, conversation_ids: List[str]
+) -> Dict[str, bool]:
+    if not conversation_ids or not project_id:
+        return {}
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    conversation_ids = [
+        prevent_sql_injection(conversation_id, isinstance(conversation_id, str))
+        for conversation_id in conversation_ids
+    ]
+    conversation_id_filter = "('" + "','".join(conversation_ids) + "')"
+    query = f"""
+    SELECT jsonb_object_agg(t.conversation_id::text, t.show_shield_icon) AS convo_shields
+    FROM (
+    SELECT
+        c.id AS conversation_id,
+        COALESCE(
+        bool_and(
+            COALESCE(
+            (m.additional_data->'privacy_report'->>'is_private') IN ('A+','A','A-'),
+            false
+            )
+        )
+        AND
+        bool_and(
+            COALESCE(
+            (m.additional_data->'privacy_report'->>'any_privatemode_ai')::boolean,
+            false
+            )
+        ),
+        false
+        ) AS show_shield_icon
+    FROM cognition.conversation c
+    LEFT JOIN cognition.message m 
+        ON c.project_id = m.project_id AND m.conversation_id = c.id
+        WHERE c.project_id  = '{project_id}' AND c.id IN {conversation_id_filter}
+    GROUP BY c.id
+    ) t;"""
+
+    show_shield_dict = general.execute_first(query)
+    if show_shield_dict and show_shield_dict[0]:
+        return show_shield_dict[0]
+    return {}
+
+
 def create(
     conversation_id: str,
     project_id: str,
@@ -276,6 +322,7 @@ def create(
     initiated_via: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
+    additional_data: Optional[Dict[str, Any]] = None,
 ) -> CognitionMessage:
     version_id = None
     current_version = get_current_version(project_id)
@@ -289,6 +336,7 @@ def create(
         question=question,
         facts=[],
         version_id=version_id,
+        additional_data=additional_data or {},
         initiated_via=initiated_via,
     )
 
@@ -306,6 +354,7 @@ def update(
     feedback_value: Optional[str] = None,
     feedback_category: Optional[str] = None,
     feedback_message: Optional[str] = None,
+    additional_data: Optional[Union[Dict[str, Any], str]] = None,
     with_commit: bool = True,
 ) -> CognitionMessage:
     message = get(project_id, message_id)
@@ -321,6 +370,14 @@ def update(
         message.feedback_category = feedback_category
     if feedback_message is not None:
         message.feedback_message = feedback_message
+    if additional_data is not None:
+        if additional_data == "NULL":
+            message.additional_data = {}
+        if message.additional_data is None:
+            message.additional_data = {}
+        for key, value in additional_data.items():
+            message.additional_data[key] = value
+        flag_modified(message, "additional_data")
 
     general.flush_or_commit(with_commit)
 

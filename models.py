@@ -1286,6 +1286,8 @@ class CognitionMessage(Base):
         ),
         index=True,
     )
+    # holds e.g. the project privacy report rating (high level) at message creation
+    additional_data = Column(JSON)
     initiated_via = Column(String)  # of type enums.MessageInitiationType.*.value
 
 
