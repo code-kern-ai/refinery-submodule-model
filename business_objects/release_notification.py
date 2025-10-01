@@ -13,8 +13,8 @@ def get(message_id: str) -> ReleaseNotification:
     )
 
 
-def get_all(limit: int = 100) -> List[ReleaseNotification]:
-    return session.query(ReleaseNotification).filter().limit(limit).all()
+def get_all() -> List[ReleaseNotification]:
+    return session.query(ReleaseNotification).filter().all()
 
 
 def create(
@@ -23,6 +23,8 @@ def create(
     created_by: str,
     with_commit: bool = False,
 ) -> ReleaseNotification:
-    message = ReleaseNotification(link=link, config=config, created_by=created_by)
+    message = ReleaseNotification(
+        link=link, config=config, created_by=created_by, created_at=datetime.utcnow()
+    )
     general.add(message, with_commit)
     return message
