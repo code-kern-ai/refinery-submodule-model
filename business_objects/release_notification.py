@@ -28,3 +28,30 @@ def create(
     )
     general.add(message, with_commit)
     return message
+
+
+def update(
+    notification_id: str,
+    link: str,
+    config: str,
+    with_commit: bool = False,
+) -> ReleaseNotification:
+    release_notification = get(notification_id)
+
+    if release_notification is None:
+        return
+
+    if link is not None:
+        release_notification.link = link
+    if config is not None:
+        release_notification.config = config
+
+    general.flush_or_commit(with_commit)
+    return release_notification
+
+
+def delete(notification_id: str, with_commit: bool = False) -> None:
+    release_notification = get(notification_id)
+    general.delete(release_notification, with_commit)
+    general.flush_or_commit(with_commit)
+    return None
