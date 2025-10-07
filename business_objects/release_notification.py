@@ -14,7 +14,12 @@ def get(message_id: str) -> ReleaseNotification:
 
 
 def get_all() -> List[ReleaseNotification]:
-    return session.query(ReleaseNotification).filter().all()
+    return (
+        session.query(ReleaseNotification)
+        .filter()
+        .order_by(ReleaseNotification.created_at.desc())
+        .all()
+    )
 
 
 def create(
