@@ -5,10 +5,10 @@ from ..session import session
 from datetime import datetime
 
 
-def get(message_id: str) -> ReleaseNotification:
+def get(release_notification_id: str) -> ReleaseNotification:
     return (
         session.query(ReleaseNotification)
-        .filter(ReleaseNotification.id == message_id)
+        .filter(ReleaseNotification.id == release_notification_id)
         .first()
     )
 
@@ -16,7 +16,6 @@ def get(message_id: str) -> ReleaseNotification:
 def get_all() -> List[ReleaseNotification]:
     return (
         session.query(ReleaseNotification)
-        .filter()
         .order_by(ReleaseNotification.created_at.desc())
         .all()
     )
@@ -28,11 +27,11 @@ def create(
     created_by: str,
     with_commit: bool = False,
 ) -> ReleaseNotification:
-    message = ReleaseNotification(
-        link=link, config=config, created_by=created_by, created_at=datetime.utcnow()
+    release_notification = ReleaseNotification(
+        link=link, config=config, created_by=created_by
     )
-    general.add(message, with_commit)
-    return message
+    general.add(release_notification, with_commit)
+    return release_notification
 
 
 def update(
@@ -55,8 +54,7 @@ def update(
     return release_notification
 
 
-def delete(notification_id: str, with_commit: bool = False) -> None:
+def delete(notification_id: str, with_commit: bool = False):
     release_notification = get(notification_id)
     general.delete(release_notification, with_commit)
     general.flush_or_commit(with_commit)
-    return None
