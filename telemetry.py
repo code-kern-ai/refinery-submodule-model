@@ -127,7 +127,9 @@ def setting_otlp(
 ) -> None:
     # Setting OpenTelemetry
     # set the service name to show in traces
-    resource = Resource.create(attributes={"service.name": app_name})
+    resource = Resource.create(
+        attributes={"service.name": app_name, "compose_service": app_name}
+    )
 
     # set the tracer provider
     tracer = TracerProvider(resource=resource)
