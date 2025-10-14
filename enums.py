@@ -176,6 +176,7 @@ class Tablenames(Enum):
     )
     SUMS_TABLE = "sums_table"
     ADMIN_QUERY_MESSAGE_SUMMARY = "admin_query_message_summary"
+    RELEASE_NOTIFICATION = "release_notification"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -567,6 +568,7 @@ class StrategyStepType(Enum):
     GRAPHRAG_SEARCH = "GRAPHRAG_SEARCH"
     TEMPLATED = "TEMPLATED"
     RERANKER = "RERANKER"
+    FULL_TEXT_SEARCH = "FULL_TEXT_SEARCH"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -596,6 +598,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.GRAPHRAG_SEARCH: "Query GraphRAG index",
     StrategyStepType.TEMPLATED: "Templated step",
     StrategyStepType.RERANKER: "Reranker",
+    StrategyStepType.FULL_TEXT_SEARCH: "Full text search",
 }
 
 STEP_WHEN_TO_USE = {
@@ -615,6 +618,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.GRAPHRAG_SEARCH: "When you want to query a knowledge graph",
     StrategyStepType.TEMPLATED: "When you want to reuse existing templates",
     StrategyStepType.RERANKER: "When you want to rerank results",
+    StrategyStepType.FULL_TEXT_SEARCH: "When you want to perform a full text search",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -635,6 +639,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.GRAPHRAG_SEARCH: "Querying knowledge graph",
     StrategyStepType.TEMPLATED: "Running templated step",
     StrategyStepType.RERANKER: "Running reranker",
+    StrategyStepType.FULL_TEXT_SEARCH: "Running full text search",
 }
 
 STEP_ERRORS = {
