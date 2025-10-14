@@ -51,6 +51,37 @@ def get_all(
     return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
+def get_all_all_overview(
+    integration_type: Optional[CognitionIntegrationType] = None,
+) -> Dict[str, Any]:
+    add_filter = ""
+    if integration_type:
+        add_filter = f" WHERE type = '{integration_type.value}' "
+    query = f"""
+    SELECT jsonb_object_agg(org_id::text, integrations)
+    FROM (
+        SELECT 
+            organization_id AS org_id,
+            jsonb_object_agg(
+                id::text,
+                jsonb_build_object(
+                    'name', name,
+                    'state', state,
+                    'error_message', error_message,
+                    'is_synced', is_synced,
+                    'last_synced_at', last_synced_at
+                )
+            ) AS integrations
+        FROM cognition.integration i
+        {add_filter}
+        GROUP BY organization_id
+    ) sub """
+    value = general.execute_first(query)
+    if value and value[0]:
+        return value[0]
+    return {}
+
+
 def get_all_in_org(
     org_id: str,
     integration_type: Optional[str] = None,
