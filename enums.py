@@ -175,6 +175,8 @@ class Tablenames(Enum):
         "conversation_tag_association"  # association between conversation and tags
     )
     SUMS_TABLE = "sums_table"
+    ADMIN_QUERY_MESSAGE_SUMMARY = "admin_query_message_summary"
+    RELEASE_NOTIFICATION = "release_notification"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -565,6 +567,8 @@ class StrategyStepType(Enum):
     WEBHOOK = "WEBHOOK"
     GRAPHRAG_SEARCH = "GRAPHRAG_SEARCH"
     TEMPLATED = "TEMPLATED"
+    RERANKER = "RERANKER"
+    FULL_TEXT_SEARCH = "FULL_TEXT_SEARCH"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -593,6 +597,8 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.WEBHOOK: "Webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "Query GraphRAG index",
     StrategyStepType.TEMPLATED: "Templated step",
+    StrategyStepType.RERANKER: "Reranker",
+    StrategyStepType.FULL_TEXT_SEARCH: "Full text search",
 }
 
 STEP_WHEN_TO_USE = {
@@ -611,6 +617,8 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.WEBHOOK: "When you want to run a webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "When you want to query a knowledge graph",
     StrategyStepType.TEMPLATED: "When you want to reuse existing templates",
+    StrategyStepType.RERANKER: "When you want to rerank results",
+    StrategyStepType.FULL_TEXT_SEARCH: "When you want to perform a full text search",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -630,6 +638,8 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.WEBHOOK: "Running webhook",
     StrategyStepType.GRAPHRAG_SEARCH: "Querying knowledge graph",
     StrategyStepType.TEMPLATED: "Running templated step",
+    StrategyStepType.RERANKER: "Running reranker",
+    StrategyStepType.FULL_TEXT_SEARCH: "Running full text search",
 }
 
 STEP_ERRORS = {
@@ -955,3 +965,40 @@ class SharepointPropertySyncState(Enum):
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+
+
+class CognitionPrivateUsage(Enum):
+    KERN_INTERNAL = "KERN_INTERNAL"  # same server no connection outside VM & DB
+    KERN_EXTERNAL_RESOURCE = (
+        "KERN_EXTERNAL_RESOURCE"  # e.g. reranker, distinct from external
+    )
+    WEBHOOK_NO_DATA = "WEBHOOK_NO_DATA"  # webhook only sending conversation id
+    DATA_SEND_EXTERNALLY = (
+        "DATA_SEND_EXTERNALLY"  # e.g. webhook with data or reranker outside kern
+    )
+    AZURE = "AZURE"  # e.g. BYOK from customers
+    AZURE_KERN = "AZURE_KERN"  # e.g. sponsorship azure resources or e.g. mistral with key specific key
+    OPEN_AI = "OPEN_AI"  # hosted by openai
+    PRIVATEMODE_AI = "PRIVATEMODE_AI"  # encrypted and hosted by privatemode.ai
+    REQUESTS_USED = "REQUESTS_USED"  # special case, is set handled separately => only for final result set
+    __SCORES = {
+        "KERN_INTERNAL": 1.0,
+        "KERN_EXTERNAL_RESOURCE": 0.95,
+        "WEBHOOK_NO_DATA": 0.9,
+        "DATA_SEND_EXTERNALLY": 0.3,
+        "AZURE": 0.5,
+        "AZURE_KERN": 0.85,
+        "OPEN_AI": 0.3,
+        "PRIVATEMODE_AI": 0.95,
+        "REQUESTS_USED": 0.9,  # final project multiplier
+    }
+
+    @property
+    def score(self) -> float:
+        return self.__SCORES[self.value]
+
+
+class MessageInitiationType(Enum):
+    UI = "UI"
+    API = "API"
+    MACRO = "MACRO"

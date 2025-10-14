@@ -981,3 +981,28 @@ def get_records_by_running_ids(project_id: str, running_ids: List[int]) -> List[
         )
         .all()
     )
+
+
+def get_record_data_by_sanitized_where(
+    refinery_project_id: str,
+    sanitized_where: str,
+    limit: int,
+    order_by: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    ## only to be used in cognition and with sql_validator check!!
+    refinery_project_id = prevent_sql_injection(
+        refinery_project_id, isinstance(refinery_project_id, str)
+    )
+    final_order = ""
+    if order_by:
+        order_by = prevent_sql_injection(order_by, isinstance(order_by, str))
+        final_order = f" ORDER BY {order_by} "
+    query = f"""
+    SELECT r.data::JSON
+    FROM public.record r
+    WHERE project_id = '{refinery_project_id}' AND ({sanitized_where})
+    {final_order}
+    LIMIT {limit}
+    """
+    data = general.execute_all(query)
+    return [row[0] for row in data] if data else []
