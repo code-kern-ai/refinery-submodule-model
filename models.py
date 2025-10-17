@@ -1240,6 +1240,7 @@ class CognitionConversation(Base):
     error = Column(String)
     has_tmp_files = Column(Boolean, default=False)
     archived = Column(Boolean, default=False)
+    incognito_mode = Column(Boolean, default=False)
 
 
 class CognitionMessage(Base):
