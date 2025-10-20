@@ -137,7 +137,7 @@ def delete(user_id: str, with_commit: bool = False) -> None:
 
 def get_missing_users(user_ids: List[str]):
     query = f"""
-    SELECT jsonb_object_agg(u.id, u.last_interaction)
+    SELECT jsonb_object_agg(u.id, jsonb_build_object('last_interaction', u.last_interaction,'messages_created_this_month', u.messages_created_this_month))
     FROM public.user u
     WHERE id IN ({','.join([f"'{user_id}'" for user_id in user_ids])})
     """
