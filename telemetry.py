@@ -22,6 +22,8 @@ from starlette.routing import Match
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 from starlette.types import ASGIApp
 
+
+APP_NAME = os.getenv("APP_NAME")
 ENABLE_TELEMETRY = os.getenv("ENABLE_TELEMETRY", "false") == "true"
 
 INFO = Gauge("fastapi_app_info", "FastAPI application information.", ["app_name"])
@@ -49,6 +51,21 @@ REQUESTS_IN_PROGRESS = Gauge(
     "fastapi_requests_in_progress",
     "Gauge of requests by method and path currently being processed",
     ["method", "path", "app_name"],
+)
+TASK_RUNNING = Gauge(
+    "cognition_task_running",
+    "Indicates if the task master thread is running (1) or not (0)",
+    ["task_name", "app_name"],
+)
+TASK_PROCESSED = Counter(
+    "cognition_task_processed_total",
+    "Total items processed by the task",
+    ["task_name", "app_name"],
+)
+TASK_ERRORS = Counter(
+    "cognition_task_errors_total",
+    "Total errors encountered by the task",
+    ["task_name", "app_name"],
 )
 
 
@@ -120,6 +137,12 @@ def metrics(request: Request) -> Response:
     return Response(
         generate_latest(REGISTRY), headers={"Content-Type": CONTENT_TYPE_LATEST}
     )
+
+
+def setting_app_name(app_name: str) -> None:
+    global APP_NAME
+    if APP_NAME is None:
+        APP_NAME = app_name
 
 
 def setting_otlp(

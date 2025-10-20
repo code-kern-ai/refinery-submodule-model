@@ -1,10 +1,10 @@
 from typing import Any, List, Optional
 import datetime
 from . import general
-from .. import enums
-from ..models import TaskQueue, Organization
-from ..util import prevent_sql_injection
-from ..session import session
+from submodules.model import enums, telemetry
+from submodules.model.models import TaskQueue, Organization
+from submodules.model.util import prevent_sql_injection
+from submodules.model.session import session
 from submodules.model.cognition_objects import (
     macro as macro_db_bo,
     markdown_file as markdown_file_db_bo,
@@ -218,6 +218,14 @@ def set_integration_task_to_failed(
         last_synced_at=datetime.datetime.now(datetime.timezone.utc),
         with_commit=with_commit,
     )
+    telemetry.TASK_RUNNING.labels(
+        task_name=enums.TaskType.EXECUTE_INTEGRATION.value,
+        app_name=telemetry.APP_NAME,
+    ).set(0)
+    telemetry.TASK_ERRORS.labels(
+        task_name=enums.TaskType.EXECUTE_INTEGRATION.value,
+        app_name=telemetry.APP_NAME,
+    ).inc()
 
 
 def __select_running_information_source_payloads(
