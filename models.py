@@ -168,7 +168,6 @@ class Organization(Base):
             TokenLimit.FILE_UPLOAD_INTERVAL.lowercase(): 3600,
         },
     )  # per hour
-    track_user_message_count = Column(Boolean, default=False)
 
 
 class User(Base):
