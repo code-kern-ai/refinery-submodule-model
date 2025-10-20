@@ -177,6 +177,8 @@ class Tablenames(Enum):
     SUMS_TABLE = "sums_table"
     ADMIN_QUERY_MESSAGE_SUMMARY = "admin_query_message_summary"
     RELEASE_NOTIFICATION = "release_notification"
+    CONVERSATION_SHARE = "conversation_share"
+    CONVERSATION_GLOBAL_SHARE = "conversation_global_share"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs

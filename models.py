@@ -2504,3 +2504,55 @@ class ReleaseNotification(Base):
     )
     link = Column(String, nullable=False)
     config = Column(JSON)  # e.g. {"en": {"headline":"", "description":""}, "de": {...}}
+
+
+class ConversationShare(Base):
+    __tablename__ = Tablenames.CONVERSATION_SHARE.value
+    __table_args__ = {"schema": "cognition"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    shared_with = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    shared_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    can_copy = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+class ConversationGlobalShare(Base):
+    __tablename__ = Tablenames.CONVERSATION_GLOBAL_SHARE.value
+    __table_args__ = {"schema": "cognition"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    public_token = Column(String, unique=True, nullable=False)  # {xyz id} in URL
+    is_active = Column(Boolean, default=True)
+    shared_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    created_at = Column(DateTime, default=sql.func.now())
+    warning_acknowledged = Column(Boolean, default=False)
