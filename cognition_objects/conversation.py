@@ -159,10 +159,15 @@ def get_all_paginated_by_project_id(
     order_asc: bool = True,
     user_id: Optional[str] = None,
     filter_dict: Optional[Dict[str, Any]] = None,
+    filter_incognito: bool = False,
 ) -> Tuple[int, int, List[CognitionConversation]]:
     total_count_query = session.query(CognitionConversation.id).filter(
         CognitionConversation.project_id == project_id
     )
+    if filter_incognito:
+        total_count_query = total_count_query.filter(
+            CognitionConversation.incognito_mode == False
+        )
     subquery = None
     if filter_dict is not None:
         subquery = __get_conversation_ids_by_filter(project_id, **filter_dict)
@@ -190,6 +195,8 @@ def get_all_paginated_by_project_id(
         query = session.query(CognitionConversation).filter(
             CognitionConversation.project_id == project_id
         )
+        if filter_incognito:
+            query = query.filter(CognitionConversation.incognito_mode == False)
         if user_id is not None:
             query = query.filter(CognitionConversation.created_by == user_id)
         if subquery is not None:
@@ -344,6 +351,7 @@ def create(
     project_id: str,
     user_id: str,
     has_tmp_files: bool = False,
+    is_incognito: bool = False,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionConversation:
@@ -353,6 +361,7 @@ def create(
         created_at=created_at,
         has_tmp_files=has_tmp_files,
         scope_dict={},
+        incognito_mode=is_incognito,
     )
     general.add(conversation, with_commit)
     return conversation
