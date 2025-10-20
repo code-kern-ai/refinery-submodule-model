@@ -168,6 +168,7 @@ class Organization(Base):
             TokenLimit.FILE_UPLOAD_INTERVAL.lowercase(): 3600,
         },
     )  # per hour
+    track_user_message_count = Column(Boolean, default=False)
 
 
 class User(Base):
@@ -229,6 +230,7 @@ class User(Base):
     oidc_identifier = Column(String)
     use_new_cognition_ui = Column(Boolean, default=True)
     auto_logout_minutes = Column(Integer)
+    messages_created_this_month = Column(BigInteger, default=0)
 
 
 class Team(Base):
@@ -2504,3 +2506,10 @@ class ReleaseNotification(Base):
     )
     link = Column(String, nullable=False)
     config = Column(JSON)  # e.g. {"en": {"headline":"", "description":""}, "de": {...}}
+
+
+class TimedExecutions(Base):
+    __tablename__ = Tablenames.TIMED_EXECUTIONS.value
+    __table_args__ = {"schema": "global"}
+    time_key = Column(String, unique=True, primary_key=True)  # enums.TimedExecutionKey
+    last_executed_at = Column(DateTime)
