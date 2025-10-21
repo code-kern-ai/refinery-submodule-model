@@ -373,6 +373,7 @@ def update(
     scope_dict: Optional[Dict[str, Any]] = None,
     header: Optional[str] = None,
     error: Optional[str] = None,
+    incognito_mode: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity = get(project_id, conversation_id)
@@ -382,6 +383,8 @@ def update(
         conversation_entity.header = header
     if error is not None:
         conversation_entity.error = error
+    if incognito_mode is not None:
+        conversation_entity.incognito_mode = incognito_mode
     general.flush_or_commit(with_commit)
     return conversation_entity
 
