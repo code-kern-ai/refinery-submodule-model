@@ -52,20 +52,30 @@ REQUESTS_IN_PROGRESS = Gauge(
     "Gauge of requests by method and path currently being processed",
     ["method", "path", "app_name"],
 )
-TASK_RUNNING = Gauge(
-    "cognition_task_running",
+TASKS_IN_PROGRESS = Gauge(
+    "cognition_tasks_in_progress",
     "Indicates if the task master thread is running (1) or not (0)",
     ["task_name", "app_name"],
 )
-TASK_PROCESSED = Counter(
+TASKS_PROCESSED = Counter(
     "cognition_task_processed_total",
     "Total items processed by the task",
     ["task_name", "app_name"],
 )
-TASK_ERRORS = Counter(
+TASKS_ERRORS = Counter(
     "cognition_task_errors_total",
     "Total errors encountered by the task",
     ["task_name", "app_name"],
+)
+WEBSOCKET_SUCCESS = Counter(
+    "cognition_websocket_success_total",
+    "Total successful websocket connections",
+    ["app_name"],
+)
+WEBSOCKET_FAILURE = Counter(
+    "cognition_websocket_failure_total",
+    "Total failed websocket connections",
+    ["app_name"],
 )
 
 

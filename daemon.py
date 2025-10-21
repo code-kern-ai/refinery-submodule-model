@@ -12,7 +12,7 @@ def run_without_db_token(target, *args, **kwargs):
     fn_name = f"{target.__module__}.{target.__name__}"
 
     def wrapper():
-        telemetry.TASK_RUNNING.labels(
+        telemetry.TASKS_IN_PROGRESS.labels(
             app_name=telemetry.APP_NAME,
             task_name=fn_name,
         ).inc()
@@ -20,7 +20,7 @@ def run_without_db_token(target, *args, **kwargs):
         try:
             target(*args, **kwargs)
         except Exception:
-            telemetry.TASK_ERRORS.labels(
+            telemetry.TASKS_ERRORS.labels(
                 app_name=telemetry.APP_NAME,
                 task_name=fn_name,
             ).inc()
@@ -28,12 +28,12 @@ def run_without_db_token(target, *args, **kwargs):
             print(traceback.format_exc(), flush=True)
             print("===========================", flush=True)
         else:
-            telemetry.TASK_PROCESSED.labels(
+            telemetry.TASKS_PROCESSED.labels(
                 app_name=telemetry.APP_NAME,
                 task_name=fn_name,
             ).inc()
         finally:
-            telemetry.TASK_RUNNING.labels(
+            telemetry.TASKS_IN_PROGRESS.labels(
                 app_name=telemetry.APP_NAME,
                 task_name=fn_name,
             ).dec()
@@ -54,7 +54,7 @@ def run_with_db_token(target, *args, **kwargs):
     # this is a workaround to set the token in the actual thread context
     def wrapper():
         general.get_ctx_token()
-        telemetry.TASK_RUNNING.labels(
+        telemetry.TASKS_IN_PROGRESS.labels(
             app_name=telemetry.APP_NAME,
             task_name=fn_name,
         ).inc()
@@ -62,7 +62,7 @@ def run_with_db_token(target, *args, **kwargs):
         try:
             target(*args, **kwargs)
         except Exception:
-            telemetry.TASK_ERRORS.labels(
+            telemetry.TASKS_ERRORS.labels(
                 app_name=telemetry.APP_NAME,
                 task_name=fn_name,
             ).inc()
@@ -70,13 +70,13 @@ def run_with_db_token(target, *args, **kwargs):
             print(traceback.format_exc(), flush=True)
             print("===========================", flush=True)
         else:
-            telemetry.TASK_PROCESSED.labels(
+            telemetry.TASKS_PROCESSED.labels(
                 app_name=telemetry.APP_NAME,
                 task_name=fn_name,
             ).inc()
         finally:
             general.remove_and_refresh_session()
-            telemetry.TASK_RUNNING.labels(
+            telemetry.TASKS_IN_PROGRESS.labels(
                 app_name=telemetry.APP_NAME,
                 task_name=fn_name,
             ).dec()
