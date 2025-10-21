@@ -1,10 +1,10 @@
 from typing import Any, List, Optional
 import datetime
 from . import general
-from .. import enums
-from ..models import TaskQueue, Organization
-from ..util import prevent_sql_injection
-from ..session import session
+from submodules.model import enums, telemetry
+from submodules.model.models import TaskQueue, Organization
+from submodules.model.util import prevent_sql_injection
+from submodules.model.session import session
 from submodules.model.cognition_objects import (
     macro as macro_db_bo,
     markdown_file as markdown_file_db_bo,
