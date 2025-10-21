@@ -52,6 +52,11 @@ REQUESTS_IN_PROGRESS = Gauge(
     "Gauge of requests by method and path currently being processed",
     ["method", "path", "app_name"],
 )
+TASKS_IN_PROGRESS_TOTAL = Gauge(
+    "cognition_tasks_in_progress_total",
+    "Indicates the total number of active daemon tasks",
+    ["app_name"],
+)
 TASKS_IN_PROGRESS = Gauge(
     "cognition_tasks_in_progress",
     "Indicates if the task master thread is running (1) or not (0)",
@@ -67,15 +72,25 @@ TASKS_ERRORS = Counter(
     "Total errors encountered by the task",
     ["task_name", "app_name"],
 )
-WEBSOCKET_SUCCESS = Counter(
-    "cognition_websocket_success_total",
-    "Total successful websocket connections",
-    ["app_name"],
+WEBSOCKET_EXTERNAL_SUCCESS = Counter(
+    "cognition_websocket_external_success_total",
+    "Total successful external websocket connections",
+    ["app_name", "org_id", "project_id"],
 )
-WEBSOCKET_FAILURE = Counter(
-    "cognition_websocket_failure_total",
-    "Total failed websocket connections",
-    ["app_name"],
+WEBSOCKET_EXTERNAL_FAILURE = Counter(
+    "cognition_websocket_external_failure_total",
+    "Total failed external websocket connections",
+    ["app_name", "org_id", "project_id"],
+)
+WEBSOCKET_INTERNAL_SUCCESS = Counter(
+    "cognition_websocket_internal_success_total",
+    "Total successful internal websocket connections",
+    ["app_name", "org_id", "project_id"],
+)
+WEBSOCKET_INTERNAL_FAILURE = Counter(
+    "cognition_websocket_internal_failure_total",
+    "Total failed internal websocket connections",
+    ["app_name", "org_id", "project_id"],
 )
 
 
