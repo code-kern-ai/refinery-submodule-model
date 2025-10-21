@@ -70,6 +70,18 @@ def get_conversation_files_to_clean_up() -> List[Tuple[str, str, str]]:
     return general.execute_all(query)
 
 
+def get_conversations_older_than_24_hours() -> List[Tuple[str, str, str]]:
+    query = """
+    SELECT cc.id, cc.project_id, o.id organization_id
+    FROM cognition.conversation cc
+    INNER JOIN cognition.project cp
+        ON cc.project_id = cp.id
+    INNER JOIN PUBLIC.organization o
+        ON cp.organization_id = o.id
+    WHERE cc.created_at <= NOW() - INTERVAL '24 HOURS' AND cc.incognito_mode = TRUE"""
+    return general.execute_all(query)
+
+
 def get_scoped(project_id: str, conversation_id: str, user_id) -> CognitionConversation:
     return (
         session.query(CognitionConversation)
