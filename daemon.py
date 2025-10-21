@@ -16,7 +16,6 @@ def run_without_db_token(target, *args, **kwargs):
             app_name=telemetry.APP_NAME,
             task_name=fn_name,
         ).inc()
-        telemetry.TASKS_IN_PROGRESS_TOTAL.labels(app_name=telemetry.APP_NAME).inc()
 
         try:
             target(*args, **kwargs)
@@ -38,7 +37,6 @@ def run_without_db_token(target, *args, **kwargs):
                 app_name=telemetry.APP_NAME,
                 task_name=fn_name,
             ).dec()
-            telemetry.TASKS_IN_PROGRESS_TOTAL.labels(app_name=telemetry.APP_NAME).dec()
 
     threading.Thread(
         target=wrapper,

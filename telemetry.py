@@ -52,11 +52,6 @@ REQUESTS_IN_PROGRESS = Gauge(
     "Gauge of requests by method and path currently being processed",
     ["method", "path", "app_name"],
 )
-TASKS_IN_PROGRESS_TOTAL = Gauge(
-    "cognition_tasks_in_progress_total",
-    "Indicates the total number of active daemon tasks",
-    ["app_name"],
-)
 TASKS_IN_PROGRESS = Gauge(
     "cognition_tasks_in_progress",
     "Indicates if the task master thread is running (1) or not (0)",
