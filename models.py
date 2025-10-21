@@ -2544,8 +2544,10 @@ class ConversationGlobalShare(Base):
         nullable=False,
         index=True,
     )
-
-    public_token = Column(String, unique=True, nullable=False)  # {xyz id} in URL
+    # indexed for easy lookup when accessing a shared conversation via public link
+    public_token = Column(
+        String, unique=True, nullable=False, index=True
+    )  # {xyz id} in URL
     is_active = Column(Boolean, default=True)
     shared_by = Column(
         UUID(as_uuid=True),
