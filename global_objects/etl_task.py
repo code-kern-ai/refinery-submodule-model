@@ -78,6 +78,7 @@ def get_all_in_org_paginated(
 def create(
     org_id: str,
     user_id: str,
+    file_path: str,
     extract_config: Dict,
     transform_config: Dict,
     load_config: Dict,
@@ -94,6 +95,7 @@ def create(
         created_by=user_id,
         markdown_file_id=markdown_file_id,
         sharepoint_file_id=sharepoint_file_id,
+        file_path=file_path,
         extract_config=extract_config,
         transform_config=transform_config,
         load_config=load_config,
