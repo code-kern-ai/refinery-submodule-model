@@ -2504,3 +2504,48 @@ class ReleaseNotification(Base):
     )
     link = Column(String, nullable=False)
     config = Column(JSON)  # e.g. {"en": {"headline":"", "description":""}, "de": {...}}
+
+
+class EtlTaskQueue(Base):
+    __tablename__ = Tablenames.ETL_TASK.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    markdown_file_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.MARKDOWN_FILE.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+        nullable=True,
+    )
+    sharepoint_file_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"integration.{Tablenames.INTEGRATION_SHAREPOINT.value}.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+        nullable=True,
+    )
+
+    extract_config = Column(JSON)  # schema depends on the file type
+    transform_config = Column(
+        JSON
+    )  # {"split_strategy": {"type": enums.ETLFileSplitType}, "summarize": "true", "cleanse": true, "text-to-table": true}
+    load_config = Column(JSON)  # {"refinery_project": false, "markdown_file": true}
+    notify_config = Column(
+        JSON
+    )  # {"http": {"url": "http://cognition-gateway:80/etl/complete/{task_id}", "method": "POST"}}
+
+    priority = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=False)
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+    state = Column(String)  # of type enums.CognitionMarkdownFileState
+    error_message = Column(String)
