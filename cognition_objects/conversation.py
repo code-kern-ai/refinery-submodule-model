@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Tuple, Any, Union
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from ..cognition_objects import message
 from ..business_objects import general
@@ -67,18 +67,6 @@ def get_conversation_files_to_clean_up() -> List[Tuple[str, str, str]]:
     ) o
         ON cp.organization_id = o.id AND cc.created_at <= o.file_delete_by
     WHERE NOT cc.archived AND cc.has_tmp_files """
-    return general.execute_all(query)
-
-
-def get_conversations_older_than_24_hours() -> List[Tuple[str, str, str]]:
-    query = """
-    SELECT cc.id, cc.project_id, o.id organization_id
-    FROM cognition.conversation cc
-    INNER JOIN cognition.project cp
-        ON cc.project_id = cp.id
-    INNER JOIN PUBLIC.organization o
-        ON cp.organization_id = o.id
-    WHERE cc.created_at <= NOW() - INTERVAL '24 HOURS' AND cc.incognito_mode = TRUE"""
     return general.execute_all(query)
 
 
@@ -459,3 +447,12 @@ def delete_many(
         CognitionConversation.id.in_(conversation_ids),
     ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
+
+
+def delete_incognito_conversations_older_than_24_hours() -> None:
+    time_to_delete = datetime.now() - timedelta(hours=24)
+    session.query(CognitionConversation).filter(
+        CognitionConversation.incognito_mode == True,
+        CognitionConversation.created_at <= time_to_delete,
+    ).delete(synchronize_session=False)
+    general.flush_or_commit(True)
