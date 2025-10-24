@@ -1019,3 +1019,9 @@ class MessageInitiationType(Enum):
 class ETLFileSplitType(Enum):
     SECTION = "SECTION"
     SHRINK = "SHRINK"
+
+
+class ETLFileType(Enum):
+    PDF = "PDF"
+    WORD = "WORD"
+    MD = "MD"

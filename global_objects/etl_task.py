@@ -78,12 +78,12 @@ def get_all_in_org_paginated(
 def create(
     org_id: str,
     user_id: str,
-    file_path: str,
     extract_config: Dict,
     transform_config: Dict,
     load_config: Dict,
     notify_config: Dict,
     llm_config: Dict,
+    file_path: Optional[str] = None,
     markdown_file_id: Optional[str] = None,
     sharepoint_file_id: Optional[str] = None,
     id: Optional[str] = None,
@@ -108,8 +108,10 @@ def create(
 
 
 def update(
-    id: str,
+    id: Optional[str] = None,
+    etl_task: Optional[EtlTask] = None,
     updated_by: Optional[str] = None,
+    file_path: Optional[str] = None,
     extract_config: Optional[Dict] = None,
     transform_config: Optional[Dict] = None,
     load_config: Optional[Dict] = None,
@@ -123,12 +125,22 @@ def update(
     error_message: Optional[str] = None,
     with_commit: bool = True,
 ) -> Optional[EtlTask]:
-    etl_task: EtlTask = get_by_id(id)
+    if not id and not etl_task:
+        return None
+    if id:
+        etl_task: EtlTask = get_by_id(id)
     if not etl_task:
         return None
 
     if updated_by is not None:
         etl_task.updated_by = updated_by
+    if file_path is not None and etl_task.file_path is None:
+        etl_task.file_path = file_path
+    else:
+        print(
+            "WARNING: ETL Task file_path update attempted but file_path is already set",
+            flush=True,
+        )
     if extract_config is not None:
         etl_task.extract_config = extract_config
         flag_modified(etl_task, "config")
