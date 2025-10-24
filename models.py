@@ -2542,6 +2542,7 @@ class EtlTaskQueue(Base):
     notify_config = Column(
         JSON
     )  # {"http": {"url": "http://cognition-gateway:80/etl/complete/{task_id}", "method": "POST"}}
+    llm_config = Column(JSON)
 
     priority = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
