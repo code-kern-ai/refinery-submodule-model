@@ -2506,10 +2506,15 @@ class ReleaseNotification(Base):
     config = Column(JSON)  # e.g. {"en": {"headline":"", "description":""}, "de": {...}}
 
 
-class EtlTaskQueue(Base):
+class EtlTask(Base):
     __tablename__ = Tablenames.ETL_TASK.value
     __table_args__ = {"schema": "global"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
@@ -2544,9 +2549,9 @@ class EtlTaskQueue(Base):
     )  # {"http": {"url": "http://cognition-gateway:80/etl/complete/{task_id}", "method": "POST"}}
     llm_config = Column(JSON)
 
-    priority = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=False)
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
     state = Column(String)  # of type enums.CognitionMarkdownFileState
+    is_active = Column(Boolean, default=False)
+    priority = Column(Integer, default=0)
     error_message = Column(String)
