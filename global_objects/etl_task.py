@@ -78,13 +78,13 @@ def get_all_in_org_paginated(
 def create(
     org_id: str,
     user_id: str,
-    markdown_file_id: str,
-    sharepoint_file_id: str,
     extract_config: Dict,
     transform_config: Dict,
     load_config: Dict,
     notify_config: Dict,
     llm_config: Dict,
+    markdown_file_id: Optional[str] = None,
+    sharepoint_file_id: Optional[str] = None,
     id: Optional[str] = None,
     with_commit: bool = True,
 ) -> EtlTask:
