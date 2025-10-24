@@ -20,6 +20,7 @@ from .enums import (
     TokenSubject,
     UploadStates,
     UserRoles,
+    CognitionMarkdownFileState,
 )
 from sqlalchemy import (
     BigInteger,
@@ -2542,7 +2543,7 @@ class EtlTask(Base):
     extract_config = Column(JSON)  # schema depends on the file type
     transform_config = Column(
         JSON
-    )  # {"split_strategy": {"type": enums.ETLFileSplitType}, "summarize": "true", "cleanse": true, "text-to-table": true}
+    )  # {"split_strategy": {"type": enums.ETLFileSplitType}, "summarize": true, "cleanse": true, "text-to-table": true}
     load_config = Column(JSON)  # {"refinery_project": false, "markdown_file": true}
     notify_config = Column(
         JSON
@@ -2551,7 +2552,9 @@ class EtlTask(Base):
 
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
-    state = Column(String)  # of type enums.CognitionMarkdownFileState
+    state = Column(
+        String, default=CognitionMarkdownFileState.QUEUE.value
+    )  # of type enums.CognitionMarkdownFileState
     is_active = Column(Boolean, default=False)
     priority = Column(Integer, default=0)
     error_message = Column(String)
