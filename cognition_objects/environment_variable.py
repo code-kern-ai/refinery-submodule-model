@@ -64,6 +64,22 @@ def get_by_name_and_org_id(
     )
 
 
+def get_by_id_and_org_id(
+    org_id: str,
+    id: str,
+) -> CognitionEnvironmentVariable:
+
+    return (
+        session.query(CognitionEnvironmentVariable)
+        .filter(
+            CognitionEnvironmentVariable.organization_id == org_id,
+            CognitionEnvironmentVariable.project_id == None,
+            CognitionEnvironmentVariable.id == id,
+        )
+        .first()
+    )
+
+
 def get_dataset_env_var_value(
     dataset_id: str, org_id: str, scope: Literal["extraction", "transformation"]
 ) -> Union[str, None]:

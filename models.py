@@ -2540,6 +2540,7 @@ class EtlTask(Base):
         nullable=True,
     )
     file_path = Column(String)
+    file_size_bytes = Column(BigInteger)
     tokenizer = Column(String)
 
     extract_config = Column(JSON)  # schema depends on the file type

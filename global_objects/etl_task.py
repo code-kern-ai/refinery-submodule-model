@@ -78,12 +78,13 @@ def get_all_in_org_paginated(
 def create(
     org_id: str,
     user_id: str,
-    tokenizer: str,
+    file_size_bytes: int,
     extract_config: Dict,
     transform_config: Dict,
     load_config: Dict,
     notify_config: Dict,
     llm_config: Dict,
+    tokenizer: str,
     file_path: Optional[str] = None,
     markdown_file_id: Optional[str] = None,
     sharepoint_file_id: Optional[str] = None,
@@ -97,12 +98,13 @@ def create(
         markdown_file_id=markdown_file_id,
         sharepoint_file_id=sharepoint_file_id,
         file_path=file_path,
-        tokenizer=tokenizer,
+        file_size_bytes=file_size_bytes,
         extract_config=extract_config,
         transform_config=transform_config,
         load_config=load_config,
         notify_config=notify_config,
         llm_config=llm_config,
+        tokenizer=tokenizer,
     )
     general.add(etl_task, with_commit)
 
@@ -114,6 +116,7 @@ def update(
     etl_task: Optional[EtlTask] = None,
     updated_by: Optional[str] = None,
     file_path: Optional[str] = None,
+    file_size_bytes: Optional[int] = None,
     extract_config: Optional[Dict] = None,
     transform_config: Optional[Dict] = None,
     load_config: Optional[Dict] = None,
@@ -138,11 +141,8 @@ def update(
         etl_task.updated_by = updated_by
     if file_path is not None and etl_task.file_path is None:
         etl_task.file_path = file_path
-    else:
-        print(
-            "WARNING: ETL Task file_path update attempted but file_path is already set",
-            flush=True,
-        )
+    if file_size_bytes is not None and etl_task.file_size_bytes is None:
+        etl_task.file_size_bytes = file_size_bytes
     if extract_config is not None:
         etl_task.extract_config = extract_config
         flag_modified(etl_task, "config")
