@@ -1052,9 +1052,8 @@ class ETLExtractorPDF(Enum):
             return ETLExtractorPDF.VISION
         elif changed_value == "AZURE_DI":
             return ETLExtractorPDF.AZURE_DI
-        elif changed_value == "PDF2MD":
+        else:
             return ETLExtractorPDF.PDF2MD
-        raise ValueError("ERROR:  Could not parse ETLExtractorPDF from string")
 
 
 class ETLExtractorMD(Enum):
