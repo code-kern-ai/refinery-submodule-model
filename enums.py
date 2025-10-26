@@ -1020,6 +1020,21 @@ class ETLFileType(Enum):
     WORD = "WORD"
     MD = "MD"
 
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
+
+    @staticmethod
+    def from_string(value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        if changed_value == "PDF":
+            return ETLFileType.PDF
+        elif changed_value == "WORD":
+            return ETLFileType.WORD
+        elif changed_value == "MD":
+            return ETLFileType.MD
+        raise ValueError("ERROR:  Could not parse ETLFileType from string")
+
 
 class ETLExtractorPDF(Enum):
     VISION = "VISION"

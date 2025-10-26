@@ -80,6 +80,7 @@ def create(
     user_id: str,
     file_size_bytes: int,
     extract_config: Dict,
+    split_config: Dict,
     transform_config: Dict,
     load_config: Dict,
     notify_config: Dict,
@@ -100,6 +101,7 @@ def create(
         file_path=file_path,
         file_size_bytes=file_size_bytes,
         extract_config=extract_config,
+        split_config=split_config,
         transform_config=transform_config,
         load_config=load_config,
         notify_config=notify_config,
@@ -118,6 +120,7 @@ def update(
     file_path: Optional[str] = None,
     file_size_bytes: Optional[int] = None,
     extract_config: Optional[Dict] = None,
+    split_config: Optional[Dict] = None,
     transform_config: Optional[Dict] = None,
     load_config: Optional[Dict] = None,
     notify_config: Optional[Dict] = None,
@@ -145,7 +148,10 @@ def update(
         etl_task.file_size_bytes = file_size_bytes
     if extract_config is not None:
         etl_task.extract_config = extract_config
-        flag_modified(etl_task, "config")
+        flag_modified(etl_task, "extract_config")
+    if split_config is not None:
+        etl_task.split_config = split_config
+        flag_modified(etl_task, "split_config")
     if transform_config is not None:
         etl_task.transform_config = transform_config
         flag_modified(etl_task, "transform_config")
