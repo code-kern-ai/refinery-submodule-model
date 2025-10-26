@@ -470,22 +470,18 @@ class TokenScope(Enum):
     READ = "READ"
     READ_WRITE = "READ_WRITE"
 
-    def all():
-        return [
-            TokenScope.READ.value,
-            TokenScope.READ_WRITE.value,
-        ]
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
 
 
 class TokenSubject(Enum):
     PROJECT = Tablenames.PROJECT.value.upper()
     MARKDOWN_DATASET = Tablenames.MARKDOWN_DATASET.value.upper()
 
-    def all():
-        return [
-            TokenSubject.PROJECT.value,
-            TokenSubject.MARKDOWN_DATASET.value,
-        ]
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
 
 
 class TokenizationTaskTypes(Enum):
@@ -808,11 +804,9 @@ class MacroType(Enum):
     DOCUMENT_MESSAGE_QUEUE = "DOCUMENT_MESSAGE_QUEUE"
     FOLDER_MESSAGE_QUEUE = "FOLDER_MESSAGE_QUEUE"
 
-    def all():
-        return [
-            MacroType.DOCUMENT_MESSAGE_QUEUE.value,
-            MacroType.FOLDER_MESSAGE_QUEUE.value,
-        ]
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
 
 
 # currently only one option, but could be extended in the future
@@ -1025,3 +1019,39 @@ class ETLFileType(Enum):
     PDF = "PDF"
     WORD = "WORD"
     MD = "MD"
+
+
+class ETLExtractorPDF(Enum):
+    VISION = "VISION"
+    AZURE_DI = "AZURE_DI"
+    PDF2MD = "PDF2MD"
+
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
+
+    @staticmethod
+    def from_string(value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        if changed_value == "VISION":
+            return ETLExtractorPDF.VISION
+        elif changed_value == "AZURE_DI":
+            return ETLExtractorPDF.AZURE_DI
+        elif changed_value == "PDF2MD":
+            return ETLExtractorPDF.PDF2MD
+        raise ValueError("ERROR:  Could not parse ETLExtractorPDF from string")
+
+
+class ETLExtractorMD(Enum):
+    FILESYSTEM = "FILESYSTEM"
+
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
+
+    @staticmethod
+    def from_string(value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        if changed_value == "FILESYSTEM":
+            return ETLExtractorMD.FILESYSTEM
+        raise ValueError("ERROR:  Could not parse ETLExtractorMD from string")

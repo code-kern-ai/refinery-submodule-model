@@ -2544,9 +2544,10 @@ class EtlTask(Base):
     tokenizer = Column(String)
 
     extract_config = Column(JSON)  # schema depends on the file type
+    split_config = Column(JSON)  # {"chunk": true, "shrink": false}
     transform_config = Column(
         JSON
-    )  # {"split_strategy": {"type": enums.ETLFileSplitType}, "summarize": true, "cleanse": true, "text-to-table": true}
+    )  # {"summarize": true, "cleanse": true, "text_to_table": true}
     load_config = Column(JSON)  # {"refinery_project": false, "markdown_file": true}
     notify_config = Column(
         JSON
