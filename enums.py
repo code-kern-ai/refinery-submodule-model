@@ -1010,7 +1010,7 @@ class MessageInitiationType(Enum):
     MACRO = "MACRO"
 
 
-class ETLFileSplitType(Enum):
+class ETLSplitStrategy(Enum):
     CHUNK = "CHUNK"
     SHRINK = "SHRINK"
 
