@@ -1011,7 +1011,7 @@ class MessageInitiationType(Enum):
 
 
 class ETLFileSplitType(Enum):
-    SECTION = "SECTION"
+    CHUNK = "CHUNK"
     SHRINK = "SHRINK"
 
 
