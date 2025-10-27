@@ -120,7 +120,7 @@ def get_overview_list(
     FROM (
         SELECT id, project_id, created_at, error IS NOT NULL has_error
         FROM cognition.conversation c
-        WHERE c.project_id = '{project_id}' {basic_where_add}
+        WHERE c.project_id = '{project_id}' {basic_where_add} AND c.incognito_mode = FALSE
         ORDER BY c.created_at {order_key}
         {pagination_add}
     ) x
