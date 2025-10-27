@@ -30,6 +30,17 @@ def get_by_id(
     return session.query(IntegrationModel).filter(IntegrationModel.id == id).first()
 
 
+def get_by_etl_task_id(
+    IntegrationModel: Type,
+    etl_task_id: str,
+) -> object:
+    return (
+        session.query(IntegrationModel)
+        .filter(IntegrationModel.etl_task_id == etl_task_id)
+        .first()
+    )
+
+
 def get_by_running_id(
     IntegrationModel: Type,
     integration_id: str,

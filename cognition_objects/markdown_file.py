@@ -19,6 +19,17 @@ def get(org_id: str, md_file_id: str) -> CognitionMarkdownFile:
     )
 
 
+def get_by_etl_task_id(org_id: str, etl_task_id: str) -> CognitionMarkdownFile:
+    return (
+        session.query(CognitionMarkdownFile)
+        .filter(
+            CognitionMarkdownFile.organization_id == org_id,
+            CognitionMarkdownFile.etl_task_id == etl_task_id,
+        )
+        .first()
+    )
+
+
 def get_enriched(org_id: str, md_file_id: str) -> Dict[str, Any]:
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     md_file_id = prevent_sql_injection(md_file_id, isinstance(org_id, str))
@@ -147,6 +158,7 @@ def create(
     meta_data: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
+    etl_task_id: Optional[str] = None,
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = CognitionMarkdownFile(
         organization_id=org_id,
@@ -159,6 +171,7 @@ def create(
         category_origin=category_origin,
         state=enums.CognitionMarkdownFileState.QUEUE.value,
         meta_data=meta_data,
+        etl_task_id=etl_task_id,
     )
     general.add(markdown_file, with_commit)
 

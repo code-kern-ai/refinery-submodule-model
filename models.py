@@ -1562,7 +1562,14 @@ class CognitionMarkdownDataset(Base):
 
 class CognitionMarkdownFile(Base):
     __tablename__ = Tablenames.MARKDOWN_FILE.value
-    __table_args__ = {"schema": "cognition"}
+    __table_args__ = (
+        UniqueConstraint(
+            "id",
+            "etl_task_id",
+            name=f"unique_{__tablename__}_etl_task_id",
+        ),
+        {"schema": "cognition"},
+    )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(
         UUID(as_uuid=True),
@@ -1591,6 +1598,12 @@ class CognitionMarkdownFile(Base):
     state = Column(String)
     is_reviewed = Column(Boolean, default=False)
     meta_data = Column(JSON)
+
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
 
 
 class FileTransformationLLMLogs(Base):
@@ -2230,6 +2243,7 @@ class IntegrationGithubFile(Base):
             "integration_id",
             "running_id",
             "source",
+            "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
@@ -2261,6 +2275,12 @@ class IntegrationGithubFile(Base):
     sha = Column(String)
     code_language = Column(String)
 
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
 
 class IntegrationGithubIssue(Base):
     __tablename__ = Tablenames.INTEGRATION_GITHUB_ISSUE.value
@@ -2269,6 +2289,7 @@ class IntegrationGithubIssue(Base):
             "integration_id",
             "running_id",
             "source",
+            "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
@@ -2303,6 +2324,12 @@ class IntegrationGithubIssue(Base):
     milestone = Column(String)
     number = Column(Integer)
 
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
 
 class IntegrationPdf(Base):
     __tablename__ = Tablenames.INTEGRATION_PDF.value
@@ -2311,6 +2338,7 @@ class IntegrationPdf(Base):
             "integration_id",
             "running_id",
             "source",
+            "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
@@ -2343,6 +2371,12 @@ class IntegrationPdf(Base):
     total_pages = Column(Integer)
     title = Column(String)
 
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
 
 class IntegrationSharepoint(Base):
     __tablename__ = Tablenames.INTEGRATION_SHAREPOINT.value
@@ -2351,6 +2385,7 @@ class IntegrationSharepoint(Base):
             "integration_id",
             "running_id",
             "source",
+            "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
@@ -2393,6 +2428,12 @@ class IntegrationSharepoint(Base):
     hashes = Column(JSON)
     permissions = Column(JSON)
     file_properties = Column(JSON)
+
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
 
 
 class IntegrationSharepointPropertySync(Base):
@@ -2521,23 +2562,6 @@ class EtlTask(Base):
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
-    )
-    markdown_file_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.MARKDOWN_FILE.value}.id", ondelete="CASCADE"
-        ),
-        index=True,
-        nullable=True,
-    )
-    sharepoint_file_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"integration.{Tablenames.INTEGRATION_SHAREPOINT.value}.id",
-            ondelete="CASCADE",
-        ),
-        index=True,
-        nullable=True,
     )
     file_path = Column(String)
     file_size_bytes = Column(BigInteger)
