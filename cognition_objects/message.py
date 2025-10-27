@@ -246,7 +246,7 @@ def get_message_feedback_overview(
             FROM cognition.conversation C
             INNER JOIN cognition.message mi
                 ON c.project_id = mi.project_id AND c.id = mi.conversation_id
-            WHERE C.project_id = '{project_id}'
+            WHERE C.project_id = '{project_id}' AND C.incognito_mode = FALSE
         ) x
         GROUP BY project_id, conversation_id
     ) x
@@ -402,7 +402,7 @@ def get_response_time_messages(project_id: str) -> List[Dict[str, Any]]:
         SELECT m.id, SUM(pl.time_elapsed)
         FROM cognition.message m
         INNER JOIN cognition.conversation c 
-            ON c.id = m.conversation_id AND c.project_id = m.project_id
+            ON c.id = m.conversation_id AND c.project_id = m.project_id AND c.incognito_mode = FALSE
         INNER JOIN cognition.pipeline_logs pl 
             ON m.id = pl.message_id 
         WHERE m.project_id = '{project_id}'
@@ -426,12 +426,13 @@ def get_conversations_messages_count(project_id: str) -> List[Dict[str, Any]]:
         FROM (
             SELECT conversation_id, COUNT(*) num_messages
             FROM cognition.message as m
-            WHERE m.project_id = '{project_id}'
+                JOIN cognition.conversation con ON con.id = m.conversation_id
+            WHERE m.project_id = '{project_id}' AND con.incognito_mode = FALSE
             GROUP BY conversation_id
         ) x
         GROUP BY num_messages 
     )x,
-    (SELECT COUNT(*)::FLOAT c FROM cognition.conversation WHERE project_id = '{project_id}') conv_count
+    (SELECT COUNT(*)::FLOAT c FROM cognition.conversation WHERE project_id = '{project_id}' AND incognito_mode = FALSE) conv_count
     ORDER BY 1
     """
     return general.execute_all(query)
@@ -445,13 +446,13 @@ def get_feedback_distribution(
     if start_date and end_date:
         start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
         end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
-        where_add += f"AND created_at BETWEEN '{start_date}' AND '{end_date}'"
+        where_add += f"AND m.created_at BETWEEN '{start_date}' AND '{end_date}'"
     elif start_date:
         start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
-        where_add += f"AND created_at >= '{start_date}'"
+        where_add += f"AND m.created_at >= '{start_date}'"
     elif end_date:
         end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
-        where_add += f"AND created_at <= '{end_date}'"
+        where_add += f"AND m.created_at <= '{end_date}'"
 
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     query = f"""
@@ -463,12 +464,13 @@ def get_feedback_distribution(
             SELECT COUNT(*) feedbacks, feedback_value
             FROM (
                 SELECT feedback_value
-                FROM cognition.message
-                WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL {where_add}
+                FROM cognition.message m
+                    JOIN cognition.conversation con ON con.id = m.conversation_id
+                WHERE m.project_id = '{project_id}' AND m.feedback_value IS NOT NULL {where_add} AND con.incognito_mode = FALSE
     )x
     GROUP BY feedback_value
     )x,
-    (SELECT COUNT(*)::FLOAT c FROM cognition.message WHERE project_id = '{project_id}' AND feedback_value IS NOT NULL {where_add} ) percentage_count
+    (SELECT COUNT(*)::FLOAT c FROM cognition.message m JOIN cognition.conversation con ON con.id = m.conversation_id WHERE m.project_id = '{project_id}' AND m.feedback_value IS NOT NULL {where_add} AND con.incognito_mode = FALSE) percentage_count
     """
     return general.execute_all(query)
 
@@ -515,13 +517,15 @@ def get_feedback_line_chart_data(
     query = f"""
     WITH base_select AS (
         SELECT
-            date_trunc('{group_size}', created_at) time_group,
+            date_trunc('{group_size}', M.created_at) time_group,
             feedback_value,
             COUNT(*) c
         FROM cognition.message M
-        WHERE project_id = '{project_id}'
-        AND created_at >= CURRENT_TIMESTAMP - INTERVAL '{interval}'
+            JOIN cognition.conversation con ON con.id = M.conversation_id
+        WHERE M.project_id = '{project_id}'
+        AND M.created_at >= CURRENT_TIMESTAMP - INTERVAL '{interval}'
         AND feedback_value IS NOT NULL
+        AND con.incognito_mode = FALSE
         GROUP BY 1,2
     )
     SELECT jsonb_object_agg(time_group, vals)
