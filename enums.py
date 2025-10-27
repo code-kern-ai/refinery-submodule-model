@@ -1069,3 +1069,24 @@ class ETLExtractorMD(Enum):
         if changed_value == "FILESYSTEM":
             return ETLExtractorMD.FILESYSTEM
         raise ValueError("ERROR:  Could not parse ETLExtractorMD from string")
+
+
+class ETLTransformer(Enum):
+    SUMMARIZE = "SUMMARIZE"
+    CLEANSE = "CLEANSE"
+    TEXT_TO_TABLE = "TEXT_TO_TABLE"
+
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
+
+    @staticmethod
+    def from_string(value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        if changed_value == "SUMMARIZE":
+            return ETLTransformer.SUMMARIZE
+        elif changed_value == "CLEANSE":
+            return ETLTransformer.CLEANSE
+        elif changed_value == "TEXT_TO_TABLE":
+            return ETLTransformer.TEXT_TO_TABLE
+        raise ValueError("ERROR:  Could not parse ETLTransformer from string")
