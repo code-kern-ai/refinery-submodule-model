@@ -2544,17 +2544,10 @@ class ConversationGlobalShare(Base):
         nullable=False,
         index=True,
     )
-    # indexed for easy lookup when accessing a shared conversation via public link
-    public_token = Column(
-        String, unique=True, nullable=False, index=True
-    )  # {xyz id} in URL
-    is_active = Column(Boolean, default=True)
     shared_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-
     created_at = Column(DateTime, default=sql.func.now())
-    warning_acknowledged = Column(Boolean, default=False)
