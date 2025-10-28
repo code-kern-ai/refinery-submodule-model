@@ -166,6 +166,7 @@ def update(
     running_id: Optional[int] = None,
     updated_at: Optional[datetime] = None,
     error_message: Optional[str] = None,
+    etl_task_id: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
 ) -> Optional[object]:
@@ -183,6 +184,8 @@ def update(
         integration_record.updated_at = updated_at
     if error_message is not None:
         integration_record.error_message = error_message
+    if etl_task_id is not None and integration_record.etl_task_id is None:
+        integration_record.etl_task_id = etl_task_id
 
     record_updated = False
     for key, value in metadata.items():
