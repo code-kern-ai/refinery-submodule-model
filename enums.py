@@ -2,6 +2,20 @@ from enum import Enum
 from typing import Any
 
 
+class EnumKern(Enum):
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
+
+    @classmethod
+    def from_string(cls, value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        for member in cls:
+            if member.value == changed_value:
+                return member
+        raise ValueError(f"ERROR: Unknown enum {cls.__name__}: {value}")
+
+
 class DataTypes(Enum):
     INTEGER = "INTEGER"
     FLOAT = "FLOAT"
@@ -1015,78 +1029,41 @@ class ETLSplitStrategy(Enum):
     SHRINK = "SHRINK"
 
 
-class ETLFileType(Enum):
+class ETLFileType(EnumKern):
     PDF = "PDF"
     WORD = "WORD"
     MD = "MD"
-
-    @classmethod
-    def all(cls):
-        return [e.value for e in cls]
-
-    @staticmethod
-    def from_string(value: str):
-        changed_value = value.upper().replace(" ", "_").replace("-", "_")
-        if changed_value == "PDF":
-            return ETLFileType.PDF
-        elif changed_value == "WORD":
-            return ETLFileType.WORD
-        elif changed_value == "MD":
-            return ETLFileType.MD
-        raise ValueError("ERROR:  Could not parse ETLFileType from string")
-
-
-class ETLExtractorPDF(Enum):
-    VISION = "VISION"
-    AZURE_DI = "AZURE_DI"
-    PDF2MD = "PDF2MD"
-
-    @classmethod
-    def all(cls):
-        return [e.value for e in cls]
-
-    @staticmethod
-    def from_string(value: str):
-        changed_value = value.upper().replace(" ", "_").replace("-", "_")
-        if changed_value == "VISION":
-            return ETLExtractorPDF.VISION
-        elif changed_value == "AZURE_DI":
-            return ETLExtractorPDF.AZURE_DI
-        else:
-            return ETLExtractorPDF.PDF2MD
 
 
 class ETLExtractorMD(Enum):
     FILESYSTEM = "FILESYSTEM"
 
+
+class ETLExtractorPDF(EnumKern):
+    VISION = "VISION"
+    AZURE_DI = "AZURE_DI"
+    PDF2MD = "PDF2MD"
+
+
+class ETLExtractorWord(Enum):
+    FILESYSTEM = "FILESYSTEM"
+
+
+class ETLExtractor:
+    MD = ETLExtractorMD
+    PDF = ETLExtractorPDF
+    WORD = ETLExtractorWord
+
     @classmethod
-    def all(cls):
-        return [e.value for e in cls]
-
-    @staticmethod
-    def from_string(value: str):
+    def from_string(cls, value: str):
         changed_value = value.upper().replace(" ", "_").replace("-", "_")
-        if changed_value == "FILESYSTEM":
-            return ETLExtractorMD.FILESYSTEM
-        raise ValueError("ERROR:  Could not parse ETLExtractorMD from string")
+        for member in cls:
+            if member.name == changed_value:
+                return member
+        raise ValueError(f"ERROR: Unknown enum {cls.__name__}: {value}")
 
 
-class ETLTransformer(Enum):
+class ETLTransformer(EnumKern):
     SUMMARIZE = "SUMMARIZE"
     CLEANSE = "CLEANSE"
     TEXT_TO_TABLE = "TEXT_TO_TABLE"
-
-    @classmethod
-    def all(cls):
-        return [e.value for e in cls]
-
-    @staticmethod
-    def from_string(value: str):
-        changed_value = value.upper().replace(" ", "_").replace("-", "_")
-        if changed_value == "SUMMARIZE":
-            return ETLTransformer.SUMMARIZE
-        elif changed_value == "CLEANSE":
-            return ETLTransformer.CLEANSE
-        elif changed_value == "TEXT_TO_TABLE":
-            return ETLTransformer.TEXT_TO_TABLE
-        raise ValueError("ERROR:  Could not parse ETLTransformer from string")
