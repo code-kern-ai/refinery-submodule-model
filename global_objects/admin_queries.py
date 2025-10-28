@@ -158,7 +158,7 @@ def __get_multitagged_conversations(
         FROM cognition.conversation C
         {filter_join}
         INNER JOIN cognition.conversation_tag_association cta
-            ON	c.id = cta.conversation_id
+            ON	c.id = cta.conversation_id AND c.incognito_mode = FALSE
         {org_join}
         group BY 1, 2
         HAVING COUNT(*) > 1 
@@ -202,7 +202,7 @@ def __get_conversations_per_tag(
     SELECT o.name organization_name, p.name project_name, COUNT({count_query}) tags_created
     FROM cognition.conversation_tag_association cta
     INNER JOIN cognition.conversation c
-        ON c.id = cta.conversation_id
+        ON c.id = cta.conversation_id AND c.incognito_mode = FALSE
     {filter_join}
     INNER JOIN cognition.project p
         ON c.project_id = p.id
@@ -465,7 +465,7 @@ def __get_avg_messages_per_conversation(
         {filter_join}
         {org_where}
         INNER JOIN cognition.conversation c
-            ON m.conversation_id = c.id
+            ON m.conversation_id = c.id AND c.incognito_mode = FALSE
         INNER JOIN params p
         ON c.created_at >= (
             SELECT MIN(period_start)
@@ -539,6 +539,10 @@ def __get_global_messages_per_conversation(
             ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
         """
 
+    incognito_join = """INNER JOIN cognition.conversation c
+        ON m.conversation_id = c.id AND c.incognito_mode = FALSE
+    """
+
     query = f"""
     SELECT 
         o.name organization_name,
@@ -554,12 +558,13 @@ def __get_global_messages_per_conversation(
             ROUND(AVG(cnt),2) avg_messages_per_conv
         FROM (
             SELECT 
-                project_id,
+                m.project_id,
                 conversation_id,
                 COUNT(*) cnt
             FROM cognition.message M
             {filter_join}
             {org_where}
+            {incognito_join}
         GROUP BY 
             m.project_id,
             m.conversation_id 
@@ -638,7 +643,8 @@ def __get_messages_feedback_by_project(
                 SELECT MAX(period_start) + ( '1 ' || p.period )::interval
                 FROM periods, params
                 )
-        WHERE  m.feedback_value IS NOT NULL
+        JOIN cognition.conversation c ON m.conversation_id = c.id
+        WHERE  m.feedback_value IS NOT NULL AND c.incognito_mode = FALSE
     ),
 
     agg AS (
@@ -776,6 +782,9 @@ def __get_messages_created_by_project(
         ON  m.created_at >= (SELECT MIN(period_start) FROM periods)
         AND m.created_at <  (SELECT MAX(period_start) + ( '1 ' || p.period )::interval
                                 FROM periods, params)
+        JOIN cognition.conversation c ON m.conversation_id = c.id
+            WHERE c.incognito_mode = FALSE
+        
     ),
     aggregated AS (
         SELECT
@@ -872,6 +881,8 @@ def __get_messages_created(
             ON  m.created_at >= (SELECT MIN(period_start) FROM periods)
             AND m.created_at <  (SELECT MAX(period_start) + ( '1 ' || p.period )::interval
                                 FROM periods, params)
+        JOIN cognition.conversation c ON m.conversation_id = c.id
+            WHERE c.incognito_mode = FALSE
     ),
     aggregated AS (
         SELECT
