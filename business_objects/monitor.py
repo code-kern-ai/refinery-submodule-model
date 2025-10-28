@@ -5,6 +5,7 @@ from submodules.model import enums, telemetry
 from submodules.model.models import TaskQueue, Organization
 from submodules.model.util import prevent_sql_injection
 from submodules.model.session import session
+from submodules.model.global_objects import etl_task as etl_task_db_bo
 from submodules.model.cognition_objects import (
     macro as macro_db_bo,
     markdown_file as markdown_file_db_bo,
@@ -216,6 +217,26 @@ def set_integration_task_to_failed(
         is_synced=is_synced,
         error_message=error_message,
         last_synced_at=datetime.datetime.now(datetime.timezone.utc),
+        with_commit=with_commit,
+    )
+
+
+def set_etl_task_to_failed(
+    id: str,
+    is_active: bool = False,
+    error_message: Optional[str] = None,
+    state: Optional[
+        enums.CognitionMarkdownFileState
+    ] = enums.CognitionMarkdownFileState.FAILED,
+    with_commit: bool = True,
+) -> None:
+    # argument `state` is a workaround for cognition-gateway/api/routes/integrations.delete_many
+    etl_task_db_bo.update(
+        id=id,
+        state=state,
+        finished_at=datetime.datetime.now(datetime.timezone.utc),
+        is_active=is_active,
+        error_message=error_message,
         with_commit=with_commit,
     )
 
