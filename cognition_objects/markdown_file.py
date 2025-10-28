@@ -158,7 +158,6 @@ def create(
     meta_data: Optional[Dict[str, Any]] = None,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
-    etl_task_id: Optional[str] = None,
 ) -> CognitionMarkdownFile:
     markdown_file: CognitionMarkdownFile = CognitionMarkdownFile(
         organization_id=org_id,
@@ -171,7 +170,6 @@ def create(
         category_origin=category_origin,
         state=enums.CognitionMarkdownFileState.QUEUE.value,
         meta_data=meta_data,
-        etl_task_id=etl_task_id,
     )
     general.add(markdown_file, with_commit)
 
@@ -188,6 +186,7 @@ def update(
     finished_at: Optional[datetime] = None,
     error: Optional[str] = None,
     meta_data: Optional[Dict[str, Any]] = None,
+    etl_task_id: Optional[Dict[str, Any]] = None,
     overwrite_meta_data: bool = True,
     with_commit: bool = True,
 ) -> CognitionMarkdownFile:
@@ -212,6 +211,8 @@ def update(
             markdown_file.meta_data = meta_data
         else:
             markdown_file.meta_data = {**markdown_file.meta_data, **meta_data}
+    if etl_task_id is not None and markdown_file.etl_task_id is None:
+        markdown_file.etl_task_id = etl_task_id
     general.flush_or_commit(with_commit)
 
     return markdown_file

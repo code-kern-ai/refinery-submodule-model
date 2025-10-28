@@ -87,8 +87,6 @@ def create(
     llm_config: Dict,
     tokenizer: str,
     file_path: Optional[str] = None,
-    markdown_file_id: Optional[str] = None,
-    sharepoint_file_id: Optional[str] = None,
     id: Optional[str] = None,
     with_commit: bool = True,
 ) -> EtlTask:
@@ -96,8 +94,6 @@ def create(
         id=id,
         organization_id=org_id,
         created_by=user_id,
-        markdown_file_id=markdown_file_id,
-        sharepoint_file_id=sharepoint_file_id,
         file_path=file_path,
         file_size_bytes=file_size_bytes,
         extract_config=extract_config,
