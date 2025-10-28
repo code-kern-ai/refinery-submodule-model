@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional, Union, Tuple
 from datetime import datetime
+
+from submodules.model.enums import MessageType
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMessage
@@ -605,3 +607,39 @@ def get_count_by_project_id(project_id: str) -> int:
         )
         .count()
     )
+
+
+def get_last_chat_messages(
+    organization_id: str,
+    project_id: str,
+    message_type: str,
+    starting_from: str,
+) -> List[Any]:
+
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    organization_id = prevent_sql_injection(
+        organization_id, isinstance(organization_id, str)
+    )
+    message_type = prevent_sql_injection(message_type, isinstance(message_type, str))
+    starting_from = prevent_sql_injection(starting_from, isinstance(starting_from, str))
+
+    message_type_filter = ""
+
+    if message_type == MessageType.WITH_ERROR.value:
+        message_type_filter = "AND c.error IS NOT NULL"
+    elif message_type == MessageType.WITHOUT_ERROR.value:
+        message_type_filter = "AND c.error IS NULL"
+
+    query = f"""
+    SELECT m.created_at, m.created_by, m.question, m.answer, m.initiated_via, c.error
+    FROM cognition.message m
+    JOIN cognition.conversation c on c.id = m.conversation_id
+    JOIN "user" u on m.created_by = u.id 
+    WHERE m.project_id = '{project_id}'
+    AND m.created_at >= '{starting_from}'
+    AND u.organization_id = '{organization_id}'
+    {message_type_filter}
+    """
+    print(query)
+
+    return general.execute_all(query)

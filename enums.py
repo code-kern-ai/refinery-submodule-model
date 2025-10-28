@@ -1012,3 +1012,9 @@ class MessageInitiationType(Enum):
     UI = "UI"
     API = "API"
     MACRO = "MACRO"
+
+
+class MessageType(Enum):
+    WITH_ERROR = "WITH_ERROR"
+    WITHOUT_ERROR = "WITHOUT_ERROR"
+    ALL = "ALL"
