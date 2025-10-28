@@ -631,15 +631,15 @@ def get_last_chat_messages(
         message_type_filter = "AND c.error IS NULL"
 
     query = f"""
-    SELECT m.created_at, m.created_by, m.question, m.answer, m.initiated_via, c.error
+    SELECT m.created_at, m.created_by, m.question, m.initiated_via, c.error
     FROM cognition.message m
-    JOIN cognition.conversation c on c.id = m.conversation_id
-    JOIN "user" u on m.created_by = u.id 
+        JOIN cognition.conversation c on c.id = m.conversation_id
+        JOIN cognition.project cp on cp.id = m.project_id
     WHERE m.project_id = '{project_id}'
-    AND m.created_at >= '{starting_from}'
-    AND u.organization_id = '{organization_id}'
-    {message_type_filter}
+        AND m.created_at >= '{starting_from}'
+        AND cp.organization_id = '{organization_id}'
+        {message_type_filter}
+    ORDER BY m.created_at DESC
+    LIMIT 10
     """
-    print(query)
-
     return general.execute_all(query)
