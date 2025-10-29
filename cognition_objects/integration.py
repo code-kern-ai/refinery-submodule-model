@@ -200,6 +200,7 @@ def create(
 
 def update(
     id: str,
+    project_id: Optional[str] = None,
     updated_by: Optional[str] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -219,6 +220,8 @@ def update(
     if not integration:
         return None
 
+    if project_id is not None and integration.project_id is None:
+        integration.project_id = project_id
     if updated_by is not None:
         integration.updated_by = updated_by
     if name is not None:
