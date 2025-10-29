@@ -1024,7 +1024,7 @@ class MessageInitiationType(Enum):
     MACRO = "MACRO"
 
 
-class ETLSplitStrategy(Enum):
+class ETLSplitStrategy(EnumKern):
     CHUNK = "CHUNK"
     SHRINK = "SHRINK"
 
@@ -1035,7 +1035,7 @@ class ETLFileType(EnumKern):
     MD = "MD"
 
 
-class ETLExtractorMD(Enum):
+class ETLExtractorMD(EnumKern):
     FILESYSTEM = "FILESYSTEM"
 
 
@@ -1045,7 +1045,7 @@ class ETLExtractorPDF(EnumKern):
     PDF2MD = "PDF2MD"
 
 
-class ETLExtractorWord(Enum):
+class ETLExtractorWord(EnumKern):
     FILESYSTEM = "FILESYSTEM"
 
 
