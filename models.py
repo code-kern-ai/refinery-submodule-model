@@ -226,7 +226,6 @@ class User(Base):
     created_at = Column(DateTime, default=sql.func.now())
     metadata_public = Column(JSON)
     sso_provider = Column(String)
-    oidc_identifier = Column(String)
     use_new_cognition_ui = Column(Boolean, default=True)
     auto_logout_minutes = Column(Integer)
     messages_created_this_month = Column(BigInteger, default=0)
