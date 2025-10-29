@@ -4,6 +4,7 @@ from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
 from ..business_objects import general
+from ..integration_objects import manager as integration_manager_db_bo
 from ..session import session
 from ..models import CognitionIntegration, CognitionGroup
 from ..enums import (
@@ -281,6 +282,16 @@ def execution_finished(id: str) -> bool:
 def delete_many(
     ids: List[str], delete_cognition_groups: bool = True, with_commit: bool = True
 ) -> None:
+    integration_record_ids = []
+    for id in ids:
+        integration_model = set()
+        recs = integration_manager_db_bo.get_all_by_integration_id(id)
+        integration_model.update([type(rec) for rec in recs])
+        integration_record_ids.extend([rec.id for rec in recs])
+        integration_manager_db_bo.delete_many(
+            integration_model.pop(), ids=integration_record_ids, with_commit=True
+        )
+
     (
         session.query(CognitionIntegration)
         .filter(CognitionIntegration.id.in_(ids))

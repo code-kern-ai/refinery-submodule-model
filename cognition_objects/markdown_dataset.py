@@ -3,9 +3,10 @@ from datetime import datetime
 
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionMarkdownDataset, Project
+from ..models import CognitionMarkdownDataset, CognitionMarkdownFile, Project
 from ..enums import Tablenames, MarkdownFileCategoryOrigin
 from ..util import prevent_sql_injection
+from .markdown_file import delete_many as delete_many_md_files
 
 
 def get(org_id: str, id: str) -> CognitionMarkdownDataset:
@@ -183,6 +184,21 @@ def delete_many(org_id: str, dataset_ids: List[str], with_commit: bool = True) -
             )
         ),
     ).delete(synchronize_session=False)
+
+    md_file_ids = (
+        session.query(CognitionMarkdownFile.id)
+        .filter(
+            CognitionMarkdownFile.organization_id == org_id,
+            CognitionMarkdownFile.dataset_id.in_(dataset_ids),
+        )
+        .all()
+    )
+
+    delete_many_md_files(
+        org_id=org_id,
+        md_file_ids=[md_file_id for (md_file_id,) in md_file_ids],
+        with_commit=True,
+    )
 
     session.query(CognitionMarkdownDataset).filter(
         CognitionMarkdownDataset.organization_id == org_id,

@@ -4,7 +4,7 @@ from datetime import datetime
 from .. import enums
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionMarkdownFile
+from ..models import CognitionMarkdownFile, EtlTask
 from ..util import prevent_sql_injection
 
 
@@ -82,8 +82,12 @@ def __get_enriched_query(
         )
     else:
         mf_select = "mf.*"
+    et_state = "et.state"
+    mf_state = "mf.state"
 
-    query = f"""SELECT {mf_select} FROM cognition.markdown_file mf
+    query = f"""SELECT {mf_select}, COALESCE({et_state}, {mf_state}) AS etl_state
+    FROM cognition.markdown_file mf
+    LEFT JOIN global.etl_task et ON mf.etl_task_id = et.id
     """
     query += f"WHERE mf.organization_id = '{org_id}' {where_add}"
     query += query_add
@@ -219,16 +223,25 @@ def update(
 
 
 def delete(org_id: str, md_file_id: str, with_commit: bool = True) -> None:
-    session.query(CognitionMarkdownFile).filter(
+    md_file = session.query(CognitionMarkdownFile).filter(
         CognitionMarkdownFile.organization_id == org_id,
         CognitionMarkdownFile.id == md_file_id,
+    )
+    session.query(EtlTask).filter(
+        EtlTask.organization_id == org_id, EtlTask.id == md_file.etl_task_id
     ).delete()
+    md_file.delete()
     general.flush_or_commit(with_commit)
 
 
 def delete_many(org_id: str, md_file_ids: List[str], with_commit: bool = True) -> None:
-    session.query(CognitionMarkdownFile).filter(
+    md_files = session.query(CognitionMarkdownFile).filter(
         CognitionMarkdownFile.organization_id == org_id,
         CognitionMarkdownFile.id.in_(md_file_ids),
+    )
+    session.query(EtlTask).filter(
+        EtlTask.organization_id == org_id,
+        EtlTask.id.in_([mf.etl_task_id for mf in md_files]),
     ).delete(synchronize_session=False)
+    md_files.delete(synchronize_session=False)
     general.flush_or_commit(with_commit)

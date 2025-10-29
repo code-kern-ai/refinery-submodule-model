@@ -3,10 +3,18 @@ from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
+from ..enums import CognitionIntegrationType
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
+from ..global_objects import etl_task as etl_task_db_bo
 from ..session import session
 from .helper import get_supported_metadata_keys
+from ..models import (
+    IntegrationSharepoint,
+    IntegrationPdf,
+    IntegrationGithubIssue,
+    IntegrationGithubFile,
+)
 
 
 def get(
@@ -72,9 +80,17 @@ def get_by_source(
 
 
 def get_all_by_integration_id(
-    IntegrationModel: Type,
     integration_id: str,
 ) -> List[object]:
+    integration = integration_db_bo.get_by_id(integration_id)
+    if integration.type == CognitionIntegrationType.SHAREPOINT.value:
+        IntegrationModel = IntegrationSharepoint
+    elif integration.type == CognitionIntegrationType.PDF.value:
+        IntegrationModel = IntegrationPdf
+    elif integration.type == CognitionIntegrationType.GITHUB_FILE.value:
+        IntegrationModel = IntegrationGithubFile
+    elif integration.type == CognitionIntegrationType.GITHUB_ISSUE.value:
+        IntegrationModel = IntegrationGithubIssue
     return (
         session.query(IntegrationModel)
         .filter(IntegrationModel.integration_id == integration_id)
@@ -212,6 +228,9 @@ def delete_many(
 ) -> None:
     integration_records = session.query(IntegrationModel).filter(
         IntegrationModel.id.in_(ids)
+    )
+    etl_task_db_bo.delete_many(
+        ids=[record.etl_task_id for record in integration_records]
     )
     integration_records.delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
