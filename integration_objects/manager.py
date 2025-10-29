@@ -99,6 +99,20 @@ def get_all_by_integration_id(
     )
 
 
+def integration_model(integration_id: str) -> Type:
+    integration = integration_db_bo.get_by_id(integration_id)
+    if integration.type == CognitionIntegrationType.SHAREPOINT.value:
+        return IntegrationSharepoint
+    elif integration.type == CognitionIntegrationType.PDF.value:
+        return IntegrationPdf
+    elif integration.type == CognitionIntegrationType.GITHUB_FILE.value:
+        return IntegrationGithubFile
+    elif integration.type == CognitionIntegrationType.GITHUB_ISSUE.value:
+        return IntegrationGithubIssue
+    else:
+        raise ValueError(f"Unsupported integration type: {integration.type}")
+
+
 def get_all_by_project_id(
     IntegrationModel: Type,
     project_id: str,
@@ -115,7 +129,6 @@ def get_all_by_project_id(
 
 
 def get_existing_integration_records(
-    IntegrationModel: Type,
     integration_id: str,
     by: str = "source",
 ) -> Dict[str, object]:
@@ -123,15 +136,15 @@ def get_existing_integration_records(
     # once an object_id can reference multiple different integration records
     return {
         getattr(record, by, record.source): record
-        for record in get_all_by_integration_id(IntegrationModel, integration_id)
+        for record in get_all_by_integration_id(integration_id)
     }
 
 
 def get_running_ids(
-    IntegrationModel: Type,
     integration_id: str,
     by: str = "source",
 ) -> Dict[str, int]:
+    IntegrationModel = integration_model(integration_id)
     return dict(
         session.query(
             getattr(IntegrationModel, by, IntegrationModel.source),
