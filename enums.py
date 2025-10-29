@@ -571,6 +571,8 @@ class StrategyStepType(Enum):
     TEMPLATED = "TEMPLATED"
     RERANKER = "RERANKER"
     FULL_TEXT_SEARCH = "FULL_TEXT_SEARCH"
+    CURRENT_TIME = "CURRENT_TIME"
+    COMPLIANT_WEBSEARCH = "COMPLIANT_WEBSEARCH"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -601,6 +603,8 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.TEMPLATED: "Templated step",
     StrategyStepType.RERANKER: "Reranker",
     StrategyStepType.FULL_TEXT_SEARCH: "Full text search",
+    StrategyStepType.CURRENT_TIME: "Get current time",
+    StrategyStepType.COMPLIANT_WEBSEARCH: "Web search",
 }
 
 STEP_WHEN_TO_USE = {
@@ -621,6 +625,8 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.TEMPLATED: "When you want to reuse existing templates",
     StrategyStepType.RERANKER: "When you want to rerank results",
     StrategyStepType.FULL_TEXT_SEARCH: "When you want to perform a full text search",
+    StrategyStepType.CURRENT_TIME: "When you want to get the current time",
+    StrategyStepType.COMPLIANT_WEBSEARCH: "When you want to perform a web search",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -642,6 +648,8 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.TEMPLATED: "Running templated step",
     StrategyStepType.RERANKER: "Running reranker",
     StrategyStepType.FULL_TEXT_SEARCH: "Running full text search",
+    StrategyStepType.CURRENT_TIME: "Getting current time",
+    StrategyStepType.COMPLIANT_WEBSEARCH: "Searching the web",
 }
 
 STEP_ERRORS = {
@@ -983,6 +991,7 @@ class CognitionPrivateUsage(Enum):
     OPEN_AI = "OPEN_AI"  # hosted by openai
     PRIVATEMODE_AI = "PRIVATEMODE_AI"  # encrypted and hosted by privatemode.ai
     REQUESTS_USED = "REQUESTS_USED"  # special case, is set handled separately => only for final result set
+    COMPLIANT_WEBSEARCH_PROVIDER = "COMPLIANT_WEBSEARCH_PROVIDER"  # e.g. staan.ai
     __SCORES = {
         "KERN_INTERNAL": 1.0,
         "KERN_EXTERNAL_RESOURCE": 0.95,
@@ -992,6 +1001,7 @@ class CognitionPrivateUsage(Enum):
         "AZURE_KERN": 0.85,
         "OPEN_AI": 0.3,
         "PRIVATEMODE_AI": 0.95,
+        "COMPLIANT_WEBSEARCH_PROVIDER": 0.85,
         "REQUESTS_USED": 0.9,  # final project multiplier
     }
 
