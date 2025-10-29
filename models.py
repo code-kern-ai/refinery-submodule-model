@@ -2567,6 +2567,9 @@ class EtlTask(Base):
     file_size_bytes = Column(BigInteger)
     tokenizer = Column(String)
 
+    cache_config = Column(
+        JSON
+    )  # {"use_file_cache": true, "use_extraction_cache": false, "use_transformation_cache": true}
     extract_config = Column(JSON)  # schema depends on the file type
     split_config = Column(JSON)  # {"chunk": true, "shrink": false}
     transform_config = Column(
