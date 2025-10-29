@@ -28,6 +28,51 @@ def get_all_by_conversation(conversation_id: str) -> List[ConversationShare]:
     )
 
 
+def update_by_conversation(
+    conversation_id: str,
+    user_id: str,
+    shared_with: List[str],
+    can_copy: Optional[bool] = None,
+    with_commit: bool = True,
+) -> List[ConversationShare]:
+    existing_shares = (
+        session.query(ConversationShare)
+        .filter(ConversationShare.conversation_id == conversation_id)
+        .filter(ConversationShare.shared_by == user_id)
+        .all()
+    )
+
+    existing_shared_with = {share.shared_with: share for share in existing_shares}
+    shared_with_set = set(shared_with)
+
+    for share in existing_shares:
+        if share.shared_with not in shared_with_set:
+            session.delete(share)
+
+    for sharing_user_id in shared_with:
+        if sharing_user_id not in existing_shared_with:
+            share = ConversationShare(
+                conversation_id=conversation_id,
+                shared_with=sharing_user_id,
+                shared_by=user_id,
+                can_copy=can_copy if can_copy is not None else False,
+            )
+            general.add(share, with_commit=False)
+        else:
+            if can_copy is not None:
+                existing_shared_with[sharing_user_id].can_copy = can_copy
+
+    general.flush_or_commit(with_commit)
+
+    updated_shares = (
+        session.query(ConversationShare)
+        .filter(ConversationShare.conversation_id == conversation_id)
+        .filter(ConversationShare.shared_by == user_id)
+        .all()
+    )
+    return updated_shares
+
+
 def get_all_shared_by_or_for_user(
     project_id: str, user_id: str, with_header: bool = True
 ) -> List[ConversationShare]:
