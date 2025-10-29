@@ -86,6 +86,7 @@ def create(
     notify_config: Dict,
     llm_config: Dict,
     tokenizer: str,
+    priority: Optional[int] = -1,
     file_path: Optional[str] = None,
     id: Optional[str] = None,
     with_commit: bool = True,
@@ -103,6 +104,7 @@ def create(
         notify_config=notify_config,
         llm_config=llm_config,
         tokenizer=tokenizer,
+        priority=priority,
     )
     general.add(etl_task, with_commit)
 

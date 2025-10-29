@@ -1039,10 +1039,20 @@ class ETLExtractorMD(EnumKern):
     FILESYSTEM = "FILESYSTEM"
 
 
-class ETLExtractorPDF(EnumKern):
+class ETLExtractorPDF(Enum):
     VISION = "VISION"
     AZURE_DI = "AZURE_DI"
     PDF2MD = "PDF2MD"
+
+    @classmethod
+    def from_string(cls, value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        for member in cls:
+            if member.value == changed_value:
+                return member
+        if changed_value == "PDF2MARKDOWN":
+            return cls.PDF2MD
+        raise ValueError(f"ERROR: Unknown enum {cls.__name__}: {value}")
 
 
 class ETLExtractorWord(EnumKern):
