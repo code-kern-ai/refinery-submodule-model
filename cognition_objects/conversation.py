@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Tuple, Any, Union
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from ..cognition_objects import message
 from ..business_objects import general
@@ -120,7 +120,7 @@ def get_overview_list(
     FROM (
         SELECT id, project_id, created_at, error IS NOT NULL has_error
         FROM cognition.conversation c
-        WHERE c.project_id = '{project_id}' {basic_where_add}
+        WHERE c.project_id = '{project_id}' {basic_where_add} AND c.incognito_mode = FALSE
         ORDER BY c.created_at {order_key}
         {pagination_add}
     ) x
@@ -159,10 +159,15 @@ def get_all_paginated_by_project_id(
     order_asc: bool = True,
     user_id: Optional[str] = None,
     filter_dict: Optional[Dict[str, Any]] = None,
+    filter_incognito: bool = False,
 ) -> Tuple[int, int, List[CognitionConversation]]:
     total_count_query = session.query(CognitionConversation.id).filter(
         CognitionConversation.project_id == project_id
     )
+    if filter_incognito:
+        total_count_query = total_count_query.filter(
+            CognitionConversation.incognito_mode == False
+        )
     subquery = None
     if filter_dict is not None:
         subquery = __get_conversation_ids_by_filter(project_id, **filter_dict)
@@ -190,6 +195,8 @@ def get_all_paginated_by_project_id(
         query = session.query(CognitionConversation).filter(
             CognitionConversation.project_id == project_id
         )
+        if filter_incognito:
+            query = query.filter(CognitionConversation.incognito_mode == False)
         if user_id is not None:
             query = query.filter(CognitionConversation.created_by == user_id)
         if subquery is not None:
@@ -344,6 +351,7 @@ def create(
     project_id: str,
     user_id: str,
     has_tmp_files: bool = False,
+    is_incognito: bool = False,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
 ) -> CognitionConversation:
@@ -353,6 +361,7 @@ def create(
         created_at=created_at,
         has_tmp_files=has_tmp_files,
         scope_dict={},
+        incognito_mode=is_incognito,
     )
     general.add(conversation, with_commit)
     return conversation
@@ -364,6 +373,7 @@ def update(
     scope_dict: Optional[Dict[str, Any]] = None,
     header: Optional[str] = None,
     error: Optional[str] = None,
+    incognito_mode: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionConversation:
     conversation_entity = get(project_id, conversation_id)
@@ -373,6 +383,8 @@ def update(
         conversation_entity.header = header
     if error is not None:
         conversation_entity.error = error
+    if incognito_mode is not None:
+        conversation_entity.incognito_mode = incognito_mode
     general.flush_or_commit(with_commit)
     return conversation_entity
 
@@ -435,3 +447,12 @@ def delete_many(
         CognitionConversation.id.in_(conversation_ids),
     ).delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
+
+
+def delete_incognito_conversations_older_than_24_hours() -> None:
+    time_to_delete = datetime.now() - timedelta(hours=24)
+    session.query(CognitionConversation).filter(
+        CognitionConversation.incognito_mode == True,
+        CognitionConversation.created_at <= time_to_delete,
+    ).delete(synchronize_session=False)
+    general.flush_or_commit(True)
