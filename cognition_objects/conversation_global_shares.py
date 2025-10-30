@@ -2,7 +2,7 @@ from operator import or_
 from typing import List, Optional
 from ..business_objects import general
 from ..session import session
-from ..models import ConversationGlobalShare
+from ..models import CognitionConversation, ConversationGlobalShare
 from submodules.model.util import sql_alchemy_to_dict
 
 
@@ -39,3 +39,22 @@ def delete_by_conversation(
     )
     if with_commit:
         session.commit()
+
+
+def get_by_user(project_id: str, user_id: str) -> List[ConversationGlobalShare]:
+    conversation_global_shares = (
+        session.query(ConversationGlobalShare, CognitionConversation.header)
+        .join(
+            CognitionConversation,
+            ConversationGlobalShare.conversation_id == CognitionConversation.id,
+        )
+        .filter(ConversationGlobalShare.shared_by == user_id)
+        .filter(CognitionConversation.project_id == project_id)
+        .all()
+    )
+    conversation_global_shares_dict = []
+    for share_obj, header in conversation_global_shares:
+        share_dict = sql_alchemy_to_dict(share_obj)
+        share_dict["conversation_header"] = header
+        conversation_global_shares_dict.append(share_dict)
+    return conversation_global_shares_dict
