@@ -1098,6 +1098,7 @@ class ETLTransformer(EnumKern):
 
 
 class ETLCacheKeys(EnumKern):
+    FILE_CACHE = "use_file_cache"
     EXTRACTION = "use_extraction_cache"
     SPLITTING = "use_splitting_cache"
     TRANSFORMATION = "use_transformation_cache"
