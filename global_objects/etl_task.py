@@ -116,7 +116,7 @@ def get_or_create_markdown_file_etl_task(
     ):
         return etl_task
 
-    file_type = enums.ETLFileType.from_string(file_reference.category_origin)
+    file_type = enums.ETLFileType.from_string(markdown_file.category_origin)
     extractor = enums.ETLExtractorPDF.from_string(extractor)
     fallback_extractors = list(
         filter(
