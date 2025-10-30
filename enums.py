@@ -1090,3 +1090,9 @@ class ETLTransformer(EnumKern):
     SUMMARIZE = "SUMMARIZE"
     CLEANSE = "CLEANSE"
     TEXT_TO_TABLE = "TEXT_TO_TABLE"
+
+
+class ETLCacheKeys(EnumKern):
+    EXTRACTION = "use_extraction_cache"
+    SPLITTING = "use_splitting_cache"
+    TRANSFORMATION = "use_transformation_cache"
