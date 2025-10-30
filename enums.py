@@ -1053,7 +1053,7 @@ class ETLExtractorPDF(Enum):
                 return member
         if changed_value == "PDF2MARKDOWN":
             return cls.PDF2MD
-        raise ValueError(f"ERROR: Unknown enum {cls.__name__}: {value}")
+        return cls.VISION
 
 
 class ETLExtractorWord(EnumKern):

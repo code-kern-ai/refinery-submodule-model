@@ -3,15 +3,33 @@ from sqlalchemy.orm.attributes import flag_modified
 
 import datetime
 
-from ..business_objects import general
-from ..session import session
-from ..models import EtlTask
-from ..enums import CognitionMarkdownFileState
+from submodules.model import enums
+from submodules.model.session import session
+from submodules.model.business_objects import general
+from submodules.model.models import (
+    EtlTask,
+    FileReference,
+    CognitionMarkdownFile,
+    CognitionMarkdownDataset,
+)
 
 FINISHED_STATES = [
-    CognitionMarkdownFileState.FINISHED.value,
-    CognitionMarkdownFileState.FAILED.value,
+    enums.CognitionMarkdownFileState.FINISHED.value,
+    enums.CognitionMarkdownFileState.FAILED.value,
 ]
+DEFAULT_FILE_TYPE = enums.ETLFileType.PDF
+DEFAULT_EXTRACTORS = {
+    enums.ETLFileType.MD: enums.ETLExtractorMD.FILESYSTEM,
+    enums.ETLFileType.PDF: enums.ETLExtractorPDF.PDF2MD,
+}
+
+DEFAULT_FALLBACK_EXTRACTORS = {
+    enums.ETLFileType.MD: [],
+    enums.ETLFileType.PDF: [
+        enums.ETLExtractorPDF.PDF2MD,
+        enums.ETLExtractorPDF.VISION,
+    ],
+}
 
 
 def get_by_ids(ids: List[str]) -> List[EtlTask]:
@@ -39,7 +57,9 @@ def get_all(
         query = query.filter(EtlTask.sharepoint_file_id == sharepoint_file_id)
 
     if exclude_failed:
-        query = query.filter(EtlTask.state != CognitionMarkdownFileState.FAILED.value)
+        query = query.filter(
+            EtlTask.state != enums.CognitionMarkdownFileState.FAILED.value
+        )
     if only_active:
         query = query.filter(EtlTask.is_active == True)
     return query.order_by(EtlTask.created_at.desc()).all()
@@ -54,7 +74,9 @@ def get_all_in_org(
     if only_active:
         query = query.filter(EtlTask.is_active == True)
     if exclude_failed:
-        query = query.filter(EtlTask.state != CognitionMarkdownFileState.FAILED.value)
+        query = query.filter(
+            EtlTask.state != enums.CognitionMarkdownFileState.FAILED.value
+        )
     return query.order_by(EtlTask.created_at.desc()).all()
 
 
@@ -72,6 +94,56 @@ def get_all_in_org_paginated(
         .limit(page_size)
         .offset(max(0, (page - 1) * page_size))
         .all()
+    )
+
+
+def get_or_create_markdown_file_etl_task(
+    org_id: str,
+    file_reference: FileReference,
+    markdown_file: CognitionMarkdownFile,
+    markdown_dataset: CognitionMarkdownDataset,
+    extractor: str,
+    cache_config: Dict,
+    split_config: Dict,
+    transform_config: Dict,
+    load_config: Dict,
+    notify_config: Dict,
+    priority: Optional[int] = -1,
+    fallback_extractors: Optional[list[enums.ETLExtractorPDF]] = [],
+) -> EtlTask:
+    if etl_task := (
+        session.query(EtlTask).filter(EtlTask.id == markdown_file.etl_task_id).first()
+    ):
+        return etl_task
+
+    file_type = enums.ETLFileType.from_string(file_reference.category_origin)
+    extractor = enums.ETLExtractorPDF.from_string(extractor)
+    fallback_extractors = list(
+        filter(
+            lambda x: x != extractor,
+            (fallback_extractors or DEFAULT_FALLBACK_EXTRACTORS.get(file_type, [])),
+        )
+    )
+
+    return create(
+        org_id=org_id,
+        user_id=markdown_file.created_by,
+        file_size_bytes=file_reference.file_size_bytes,
+        cache_config=cache_config,
+        extract_config={
+            "file_type": file_type.value,
+            "extractor": extractor.value,
+            "fallback_extractors": [fe.value for fe in fallback_extractors],
+            "minio_path": file_reference.minio_path,
+            "original_file_name": file_reference.original_file_name,
+        },
+        split_config=split_config,
+        transform_config=transform_config,
+        load_config=load_config,
+        notify_config=notify_config,
+        llm_config=markdown_dataset.llm_config,
+        tokenizer=markdown_dataset.tokenizer,
+        priority=priority,
     )
 
 
@@ -128,7 +200,7 @@ def update(
     llm_config: Optional[Dict] = None,
     started_at: Optional[datetime.datetime] = None,
     finished_at: Optional[Union[str, datetime.datetime]] = None,
-    state: Optional[CognitionMarkdownFileState] = None,
+    state: Optional[enums.CognitionMarkdownFileState] = None,
     is_active: Optional[bool] = None,
     priority: Optional[int] = None,
     error_message: Optional[str] = None,
@@ -205,6 +277,7 @@ def execution_finished(id: str) -> bool:
 
 
 def delete_many(ids: List[str], with_commit: bool = True) -> None:
+    # TODO: cascade delete cached files
     (
         session.query(EtlTask)
         .filter(EtlTask.id.in_(ids))
