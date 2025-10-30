@@ -1030,10 +1030,22 @@ class ETLSplitStrategy(EnumKern):
     SHRINK = "SHRINK"
 
 
-class ETLFileType(EnumKern):
+class ETLFileType(Enum):
     PDF = "PDF"
     WORD = "WORD"
     MD = "MD"
+
+    @classmethod
+    def from_string(cls, value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        for member in cls:
+            if member.value == changed_value:
+                return member
+        print(
+            f"WARNING:  unknown enum {cls.__name__}: {value}, defaulting to {cls.__name__}.MD",
+            flush=True,
+        )
+        return cls.MD
 
 
 class ETLExtractorMD(EnumKern):

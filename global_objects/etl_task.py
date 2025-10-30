@@ -11,6 +11,8 @@ from submodules.model.models import (
     FileReference,
     CognitionMarkdownFile,
     CognitionMarkdownDataset,
+    CognitionIntegration,
+    IntegrationSharepoint,
 )
 
 FINISHED_STATES = [
@@ -143,6 +145,68 @@ def get_or_create_markdown_file_etl_task(
         notify_config=notify_config,
         llm_config=markdown_dataset.llm_config,
         tokenizer=markdown_dataset.tokenizer,
+        priority=priority,
+    )
+
+
+def get_or_create_integration_etl_task(
+    org_id: str,
+    integration: CognitionIntegration,
+    record: IntegrationSharepoint,
+    file_path: str,
+    extractor: Optional[str],
+    cache_config: Dict,
+    split_config: Dict,
+    transform_config: Dict,
+    load_config: Dict,
+    notify_config: Dict,
+    priority: Optional[int] = -1,
+    fallback_extractors: Optional[list[enums.ETLExtractorPDF]] = [],
+) -> EtlTask:
+    if etl_task := (
+        session.query(EtlTask).filter(EtlTask.id == record.etl_task_id).first()
+    ):
+        return etl_task
+
+    if record.extension.replace(".", "") == "FOLDER":
+        _file_type = "md"
+        file_size_bytes = 0
+    else:
+        _file_type = record.extension.replace(".", "")
+        file_size_bytes = record.size
+
+    file_type = enums.ETLFileType.from_string(_file_type)
+    extractor = extractor or DEFAULT_EXTRACTORS.get(
+        file_type, enums.ETLExtractorMD.FILESYSTEM
+    )
+
+    if fallback_extractors is None:
+        fallback_extractors = []
+    else:
+        fallback_extractors = list(
+            filter(
+                lambda x: x != extractor,
+                (fallback_extractors or DEFAULT_FALLBACK_EXTRACTORS.get(file_type, [])),
+            )
+        )
+
+    return create(
+        org_id=org_id,
+        user_id=integration.created_by,
+        file_path=file_path,
+        file_size_bytes=file_size_bytes,
+        cache_config=cache_config,
+        extract_config={
+            "file_type": file_type.value,
+            "extractor": extractor.value,
+            "fallback_extractors": [fe.value for fe in fallback_extractors],
+        },
+        split_config=split_config,
+        transform_config=transform_config,
+        load_config=load_config,
+        notify_config=notify_config,
+        llm_config=integration.llm_config,
+        tokenizer=integration.tokenizer,
         priority=priority,
     )
 

@@ -134,10 +134,8 @@ def get_existing_integration_records(
 ) -> Dict[str, object]:
     # TODO(extension): make return type Dict[str, List[object]]
     # once an object_id can reference multiple different integration records
-    return {
-        getattr(record, by, record.source): record
-        for record in get_all_by_integration_id(integration_id)
-    }
+    _, records = get_all_by_integration_id(integration_id)
+    return {getattr(record, by, record.source): record for record in records}
 
 
 def get_running_ids(
