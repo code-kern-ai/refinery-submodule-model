@@ -159,7 +159,7 @@ def get_or_create_integration_etl_task(
     split_config: Dict,
     transform_config: Dict,
     load_config: Dict,
-    notify_config: Dict,
+    notify_config: Optional[Dict] = None,
     priority: Optional[int] = -1,
     fallback_extractors: Optional[list[enums.ETLExtractorPDF]] = [],
 ) -> EtlTask:

@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union, Type, Any
+from typing import List, Optional, Dict, Tuple, Union, Type, Any
 from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
@@ -14,6 +14,7 @@ from ..models import (
     IntegrationPdf,
     IntegrationGithubIssue,
     IntegrationGithubFile,
+    EtlTask,
 )
 
 
@@ -81,21 +82,16 @@ def get_by_source(
 
 def get_all_by_integration_id(
     integration_id: str,
-) -> List[object]:
-    integration = integration_db_bo.get_by_id(integration_id)
-    if integration.type == CognitionIntegrationType.SHAREPOINT.value:
-        IntegrationModel = IntegrationSharepoint
-    elif integration.type == CognitionIntegrationType.PDF.value:
-        IntegrationModel = IntegrationPdf
-    elif integration.type == CognitionIntegrationType.GITHUB_FILE.value:
-        IntegrationModel = IntegrationGithubFile
-    elif integration.type == CognitionIntegrationType.GITHUB_ISSUE.value:
-        IntegrationModel = IntegrationGithubIssue
-    return IntegrationModel, (
-        session.query(IntegrationModel)
-        .filter(IntegrationModel.integration_id == integration_id)
-        .order_by(IntegrationModel.created_at)
-        .all()
+) -> Tuple[List[object], Type]:
+    IntegrationModel = integration_model(integration_id)
+    return (
+        (
+            session.query(IntegrationModel)
+            .filter(IntegrationModel.integration_id == integration_id)
+            .order_by(IntegrationModel.created_at)
+            .all()
+        ),
+        IntegrationModel,
     )
 
 
@@ -134,8 +130,26 @@ def get_existing_integration_records(
 ) -> Dict[str, object]:
     # TODO(extension): make return type Dict[str, List[object]]
     # once an object_id can reference multiple different integration records
-    _, records = get_all_by_integration_id(integration_id)
+    records, _ = get_all_by_integration_id(integration_id)
     return {getattr(record, by, record.source): record for record in records}
+
+
+def get_active_integration_records(
+    integration_id: str,
+) -> Dict[str, object]:
+    IntegrationModel = integration_model(integration_id)
+    return (
+        session.query(IntegrationModel)
+        .join(
+            EtlTask,
+            IntegrationModel.etl_task_id == EtlTask.id,
+        )
+        .filter(
+            IntegrationModel.integration_id == integration_id,
+            EtlTask.is_active == True,
+        )
+        .all()
+    )
 
 
 def get_running_ids(

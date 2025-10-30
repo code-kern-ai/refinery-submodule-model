@@ -3,6 +3,8 @@ import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
+from src.util.o365 import ETL_DIR
+
 from ..business_objects import general
 from ..integration_objects import manager as integration_manager_db_bo
 from ..session import session
@@ -283,7 +285,7 @@ def delete_many(
     ids: List[str], delete_cognition_groups: bool = True, with_commit: bool = True
 ) -> None:
     for id in ids:
-        IntegrationModel, integration_records = (
+        integration_records, IntegrationModel = (
             integration_manager_db_bo.get_all_by_integration_id(id)
         )
         integration_manager_db_bo.delete_many(
@@ -303,6 +305,7 @@ def delete_many(
             .filter(CognitionGroup.meta_data.op("->>")("integration_id").in_(ids))
             .delete(synchronize_session=False)
         )
+
     general.flush_or_commit(with_commit)
 
 
