@@ -177,6 +177,7 @@ class Tablenames(Enum):
     SUMS_TABLE = "sums_table"
     ADMIN_QUERY_MESSAGE_SUMMARY = "admin_query_message_summary"
     RELEASE_NOTIFICATION = "release_notification"
+    TIMED_EXECUTIONS = "timed_executions"
     CONVERSATION_SHARE = "conversation_share"
     CONVERSATION_GLOBAL_SHARE = "conversation_global_share"
 
@@ -1014,3 +1015,7 @@ class MessageInitiationType(Enum):
     UI = "UI"
     API = "API"
     MACRO = "MACRO"
+
+
+class TimedExecutionKey(Enum):
+    LAST_RESET_USER_MESSAGE_COUNT = "LAST_RESET_USER_MESSAGE_COUNT"
