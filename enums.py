@@ -177,6 +177,7 @@ class Tablenames(Enum):
     SUMS_TABLE = "sums_table"
     ADMIN_QUERY_MESSAGE_SUMMARY = "admin_query_message_summary"
     RELEASE_NOTIFICATION = "release_notification"
+    TIMED_EXECUTIONS = "timed_executions"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -1012,3 +1013,7 @@ class MessageInitiationType(Enum):
     UI = "UI"
     API = "API"
     MACRO = "MACRO"
+
+
+class TimedExecutionKey(Enum):
+    LAST_RESET_USER_MESSAGE_COUNT = "LAST_RESET_USER_MESSAGE_COUNT"
