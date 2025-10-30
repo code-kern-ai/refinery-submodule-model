@@ -215,7 +215,7 @@ def update(
             markdown_file.meta_data = meta_data
         else:
             markdown_file.meta_data = {**markdown_file.meta_data, **meta_data}
-    if etl_task_id is not None and markdown_file.etl_task_id is None:
+    if etl_task_id is not None:
         markdown_file.etl_task_id = etl_task_id
     general.flush_or_commit(with_commit)
 

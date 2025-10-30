@@ -91,7 +91,7 @@ def get_all_by_integration_id(
         IntegrationModel = IntegrationGithubFile
     elif integration.type == CognitionIntegrationType.GITHUB_ISSUE.value:
         IntegrationModel = IntegrationGithubIssue
-    return (
+    return IntegrationModel, (
         session.query(IntegrationModel)
         .filter(IntegrationModel.integration_id == integration_id)
         .order_by(IntegrationModel.created_at)
