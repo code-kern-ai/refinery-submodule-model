@@ -128,6 +128,18 @@ def delete_association(
     general.flush_or_commit(with_commit)
 
 
+def delete_associations_by_conversation(
+    conversation_id: str,
+    with_commit: bool = True,
+) -> None:
+
+    session.query(CognitionConversationTagAssociation).filter(
+        CognitionConversationTagAssociation.conversation_id == conversation_id,
+    ).delete(synchronize_session=False)
+
+    general.flush_or_commit(with_commit)
+
+
 def get_lookup_by_conversation_ids(
     conversation_ids: List[str],
 ) -> Dict[str, List[Dict[str, Any]]]:
