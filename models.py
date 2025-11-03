@@ -1115,6 +1115,8 @@ class CognitionProject(Base):
     tokenizer = Column(String)
     # options from <SVGIcon/> component - only visible with new UI selected (user setting)
     icon = Column(String, default="IconBolt")
+    allow_conversation_sharing_organization = Column(Boolean, default=False)
+    allow_conversation_sharing_global = Column(Boolean, default=False)
 
 
 class CognitionStrategy(Base):
