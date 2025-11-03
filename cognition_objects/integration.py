@@ -334,69 +334,93 @@ def get_distinct_item_ids_for_all_permissions(
 def get_last_integrations_tasks() -> List[Dict[str, Any]]:
     query = f"""
     WITH embedding_agg AS (
-    SELECT 
-        project_id,
-        jsonb_agg(
-            jsonb_build_object(
-                'createdBy', e.created_by,
-                'finishedAt', e.finished_at,
-                'id', e.id,
-                'name', e.name,
-                'startedAt', e.started_at,
-                'state', e.state
-            )
-        ) AS embeddings
-    FROM embedding e
-    GROUP BY project_id
+        SELECT 
+            project_id,
+            jsonb_agg(
+                jsonb_build_object(
+                    'createdBy', e.created_by,
+                    'finishedAt', e.finished_at,
+                    'id', e.id,
+                    'name', e.name,
+                    'startedAt', e.started_at,
+                    'state', e.state
+                ) ORDER BY e.started_at DESC
+            ) AS embeddings
+        FROM embedding e
+        GROUP BY project_id
     ),
 
     attribute_agg AS (
-    SELECT 
-        project_id,
-        jsonb_agg(
-            jsonb_build_object(
-                'dataType', a.data_type,
-                'finishedAt', a.finished_at,
-                'id', a.id,
-                'name', a.name,
-                'startedAt', a.started_at,
-                'state', a.state
-            )
-        ) AS attributes
-    FROM "attribute" a
-    GROUP BY project_id
+        SELECT 
+            project_id,
+            jsonb_agg(
+                jsonb_build_object(
+                    'dataType', a.data_type,
+                    'finishedAt', a.finished_at,
+                    'id', a.id,
+                    'name', a.name,
+                    'startedAt', a.started_at,
+                    'state', a.state
+                ) ORDER BY a.started_at DESC
+            ) AS attributes
+        FROM "attribute" a
+        GROUP BY project_id
     ),
 
     record_tokenization_task_agg AS (
-    SELECT 
-        project_id,
-        jsonb_agg(
+        SELECT 
+            project_id,
+            jsonb_agg(
+                jsonb_build_object(
+                    'finishedAt', rtt.finished_at,
+                    'id', rtt.id,
+                    'startedAt', rtt.started_at,
+                    'state', rtt.state,
+                    'type', rtt.type
+                ) ORDER BY rtt.started_at DESC
+            ) AS record_tokenization_tasks
+        FROM record_tokenization_task rtt
+        GROUP BY project_id
+    ),
+
+    integration_data AS (
+        SELECT 
+            i.id AS integration_id,
+            i.name AS integration_name,
+            i.error_message,
+            i.started_at,
+            i.finished_at,
+            i.state,
+            i.organization_id,
             jsonb_build_object(
-                'finishedAt', rtt.finished_at,
-                'id', rtt.id,
-                'startedAt', rtt.started_at,
-                'state', rtt.state,
-                'type', rtt.type
-            )
-        ) AS record_tokenization_tasks
-    FROM record_tokenization_task rtt
-    GROUP BY project_id
+                'embeddings', coalesce(ea.embeddings, '[]'::jsonb),
+                'attributes', coalesce(aa.attributes, '[]'::jsonb),
+                'record_tokenization_tasks', coalesce(rtt.record_tokenization_tasks, '[]'::jsonb)
+            ) AS full_data
+        FROM cognition.integration i
+        LEFT JOIN embedding_agg ea ON ea.project_id = i.project_id
+        LEFT JOIN attribute_agg aa ON aa.project_id = i.project_id
+        LEFT JOIN record_tokenization_task_agg rtt ON rtt.project_id = i.project_id
     )
 
     SELECT 
-    i.id AS integration_id, i.name AS integration_name, i.error_message, i.started_at, i.finished_at, i.state,
-    o.id AS organization_id,
-    o.name AS organization_name,
-    jsonb_build_object(
-        'embeddings', coalesce(ea.embeddings, '[]'::jsonb),
-        'attributes', coalesce(aa.attributes, '[]'::jsonb),
-        'record_tokenization_tasks', coalesce(rtt.record_tokenization_tasks, '[]'::jsonb)
-    ) AS full_data
-    FROM cognition.integration i
-    LEFT JOIN embedding_agg ea ON ea.project_id = i.project_id
-    LEFT JOIN attribute_agg aa ON aa.project_id = i.project_id
-    LEFT JOIN record_tokenization_task_agg rtt ON rtt.project_id = i.project_id
-    LEFT JOIN organization o ON o.id = i.organization_id
+        o.id AS organization_id,
+        o.name AS organization_name,
+        jsonb_agg(
+            jsonb_build_object(
+                'id', integration_id,
+                'name', integration_name,
+                'error_message', error_message,
+                'started_at', i.started_at,
+                'finished_at', finished_at,
+                'state', state,
+                'fullData', full_data
+            ) ORDER BY i.started_at DESC
+        ) AS integrations
+    FROM organization o
+    LEFT JOIN integration_data i ON i.organization_id = o.id
+    GROUP BY o.id, o.name
+
     """
 
     return general.execute_all(query)
