@@ -329,3 +329,16 @@ def get_distinct_item_ids_for_all_permissions(
         return []
 
     return [row[0] for row in results if row and row[0]]
+
+
+def get_last_integrations_tasks() -> List[Dict[str, Any]]:
+    query = f"""
+    SELECT * 
+    FROM cognition.integration i
+        JOIN project p ON p.id = i.project_id
+        JOIN embedding e ON e.project_id = p.id
+        JOIN "attribute" a ON a.project_id = p.id
+        JOIN record_tokenized rt ON rt.project_id = p.id
+    """
+
+    return general.execute_all(query)
