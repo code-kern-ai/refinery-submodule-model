@@ -3,7 +3,6 @@ import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
-from src.util.o365 import ETL_DIR
 
 from ..business_objects import general
 from ..integration_objects import manager as integration_manager_db_bo

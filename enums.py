@@ -194,6 +194,7 @@ class Tablenames(Enum):
     RELEASE_NOTIFICATION = "release_notification"
     TIMED_EXECUTIONS = "timed_executions"
     ETL_TASK = "etl_task"
+    ETL_CONFIG_PRESET = "etl_config_preset"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs

@@ -2019,6 +2019,33 @@ class CognitionGroupMember(Base):
     created_at = Column(DateTime, default=sql.func.now())
 
 
+class ETLConfigPresets(Base):
+    __tablename__ = Tablenames.ETL_CONFIG_PRESET.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,  # future proofing for organization-wide presets/etl page presets
+    )
+    name = Column(String, unique=True)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    etl_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
+    add_config = Column(JSON)  # additional config for e.g. setting scope dict values
+
+
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
