@@ -333,12 +333,70 @@ def get_distinct_item_ids_for_all_permissions(
 
 def get_last_integrations_tasks() -> List[Dict[str, Any]]:
     query = f"""
-    SELECT * 
+    WITH embedding_agg AS (
+    SELECT 
+        project_id,
+        jsonb_agg(
+            jsonb_build_object(
+                'createdBy', e.created_by,
+                'finishedAt', e.finished_at,
+                'id', e.id,
+                'name', e.name,
+                'startedAt', e.started_at,
+                'state', e.state
+            )
+        ) AS embeddings
+    FROM embedding e
+    GROUP BY project_id
+    ),
+
+    attribute_agg AS (
+    SELECT 
+        project_id,
+        jsonb_agg(
+            jsonb_build_object(
+                'dataType', a.data_type,
+                'finishedAt', a.finished_at,
+                'id', a.id,
+                'name', a.name,
+                'startedAt', a.started_at,
+                'state', a.state
+            )
+        ) AS attributes
+    FROM "attribute" a
+    GROUP BY project_id
+    ),
+
+    record_tokenization_task_agg AS (
+    SELECT 
+        project_id,
+        jsonb_agg(
+            jsonb_build_object(
+                'finishedAt', rtt.finished_at,
+                'id', rtt.id,
+                'startedAt', rtt.started_at,
+                'state', rtt.state,
+                'type', rtt.type
+            )
+        ) AS record_tokenization_tasks
+    FROM record_tokenization_task rtt
+    GROUP BY project_id
+    )
+
+    SELECT 
+    i.id AS integration_id, i.name AS integration_name, i.error_message, i.started_at, i.finished_at, i.state,
+    o.id AS organization_id,
+    o.name AS organization_name,
+    jsonb_build_object(
+        'embeddings', coalesce(ea.embeddings, '[]'::jsonb),
+        'attributes', coalesce(aa.attributes, '[]'::jsonb),
+        'record_tokenization_tasks', coalesce(rtt.record_tokenization_tasks, '[]'::jsonb)
+    ) AS full_data
     FROM cognition.integration i
-        JOIN project p ON p.id = i.project_id
-        JOIN embedding e ON e.project_id = p.id
-        JOIN "attribute" a ON a.project_id = p.id
-        JOIN record_tokenized rt ON rt.project_id = p.id
+    LEFT JOIN embedding_agg ea ON ea.project_id = i.project_id
+    LEFT JOIN attribute_agg aa ON aa.project_id = i.project_id
+    LEFT JOIN record_tokenization_task_agg rtt ON rtt.project_id = i.project_id
+    LEFT JOIN organization o ON o.id = i.organization_id
     """
 
     return general.execute_all(query)
