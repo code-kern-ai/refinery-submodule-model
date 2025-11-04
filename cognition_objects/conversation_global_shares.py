@@ -6,6 +6,14 @@ from ..models import CognitionConversation, ConversationGlobalShare
 from submodules.model.util import sql_alchemy_to_dict
 
 
+def get(conversation_global_share_id: str) -> Optional[ConversationGlobalShare]:
+    return (
+        session.query(ConversationGlobalShare)
+        .filter(ConversationGlobalShare.id == conversation_global_share_id)
+        .first()
+    )
+
+
 def get_by_conversation(conversation_id: str) -> List[ConversationGlobalShare]:
     return (
         session.query(ConversationGlobalShare)
