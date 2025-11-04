@@ -1,5 +1,7 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 from datetime import datetime
+
+from submodules.model.util import prevent_sql_injection
 
 from ..business_objects import general
 from ..session import session
@@ -107,3 +109,41 @@ def delete_all_by_project_id(project_id: str, with_commit: bool = True) -> None:
         CognitionStrategy.project_id == project_id
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def get_strategies_info(
+    step_types: List[str],
+    created_at_from: str,
+    created_at_to: Optional[str] = None,
+) -> List[Any]:
+
+    step_types = prevent_sql_injection(step_types, isinstance(step_types, list))
+    created_at_from = prevent_sql_injection(
+        created_at_from, isinstance(created_at_from, str)
+    )
+    if created_at_to:
+        created_at_to = prevent_sql_injection(
+            created_at_to, isinstance(created_at_to, str)
+        )
+    created_at_to_filter = ""
+
+    if created_at_to:
+        created_at_to_filter = f"AND ss.created_at <= '{created_at_to}'"
+
+    query = f"""
+    SELECT 
+        s.id as strategy_id, s.name as strategy_name, 
+        ss.id as step_id, ss.created_by, ss.created_at, ss.name as step_name, ss.step_type , 
+        p.name as project_name, p.id as project_id,
+        o.name as organization_name, o.id as organization_id
+    FROM cognition.strategy s 
+    JOIN cognition.strategy_step ss on ss.strategy_id = s.id
+    JOIN cognition.project p on p.id = s.project_id 
+    JOIN organization o on o.id = p.organization_id 
+    WHERE ss.created_at >= '{created_at_from}' 
+    AND ss.step_type IN ({', '.join(f"'{step_type}'" for step_type in step_types)})
+    {created_at_to_filter}
+    ORDER BY s.id, ss.created_at DESC
+    """
+
+    return general.execute_all(query)
