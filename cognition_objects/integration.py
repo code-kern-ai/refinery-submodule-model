@@ -343,10 +343,12 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
                     'id', e.id,
                     'name', e.name,
                     'startedAt', e.started_at,
-                    'state', e.state
+                    'state', e.state,
+                    'projectName', p.name
                 ) ORDER BY e.started_at DESC
             ) AS embeddings
         FROM embedding e
+        LEFT JOIN project p ON p.id = e.project_id
         GROUP BY project_id
     ),
 
@@ -360,10 +362,12 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
                     'id', a.id,
                     'name', a.name,
                     'startedAt', a.started_at,
-                    'state', a.state
+                    'state', a.state,
+                    'projectName', p.name
                 ) ORDER BY a.started_at DESC
             ) AS attributes
         FROM "attribute" a
+        LEFT JOIN project p ON p.id = a.project_id
         GROUP BY project_id
     ),
 
@@ -376,10 +380,12 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
                     'id', rtt.id,
                     'startedAt', rtt.started_at,
                     'state', rtt.state,
-                    'type', rtt.type
+                    'type', rtt.type,
+                    'projectName', p.name
                 ) ORDER BY rtt.started_at DESC
             ) AS record_tokenization_tasks
         FROM record_tokenization_task rtt
+        LEFT JOIN project p ON p.id = rtt.project_id
         GROUP BY project_id
     ),
 
@@ -392,6 +398,7 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
             i.finished_at,
             i.state,
             i.organization_id,
+            i.project_id,
             jsonb_build_object(
                 'embeddings', coalesce(ea.embeddings, '[]'::jsonb),
                 'attributes', coalesce(aa.attributes, '[]'::jsonb),
@@ -414,13 +421,14 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
                 'started_at', i.started_at,
                 'finished_at', finished_at,
                 'state', state,
-                'fullData', full_data
+                'fullData', full_data,
+                'projectName', p.name
             ) ORDER BY i.started_at DESC
         ) AS integrations
     FROM organization o
     LEFT JOIN integration_data i ON i.organization_id = o.id
-    GROUP BY o.id, o.name
-
+    LEFT JOIN project p ON p.id = i.project_id
+    GROUP BY o.id, o.name, p.name
     """
 
     return general.execute_all(query)
