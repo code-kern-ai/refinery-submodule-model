@@ -492,7 +492,7 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
         i.type,
         p.name AS project_name
     FROM organization o
-    LEFT JOIN integration_data i ON i.organization_id = o.id
+    JOIN integration_data i ON i.organization_id = o.id
     LEFT JOIN project p ON p.id = i.project_id
     ORDER BY o.id, i.started_at DESC
     """

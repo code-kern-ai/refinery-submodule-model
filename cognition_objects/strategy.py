@@ -6,7 +6,7 @@ from submodules.model.util import prevent_sql_injection
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionStrategy
-from ..enums import StrategyComplexity
+from ..enums import StrategyComplexity, StrategyStepType
 
 
 def get(project_id: str, strategy_id: str) -> CognitionStrategy:
@@ -130,20 +130,55 @@ def get_strategies_info(
     if created_at_to:
         created_at_to_filter = f"AND ss.created_at <= '{created_at_to}'"
 
+    step_types_sql = ", ".join([f"'{st}'" for st in step_types])
+
     query = f"""
-    SELECT 
-        s.id as strategy_id, s.name as strategy_name, 
-        ss.id as step_id, ss.created_by, ss.created_at, ss.name as step_name, ss.step_type , 
-        p.name as project_name, p.id as project_id,
-        o.name as organization_name, o.id as organization_id
-    FROM cognition.strategy s 
-    JOIN cognition.strategy_step ss on ss.strategy_id = s.id
-    JOIN cognition.project p on p.id = s.project_id 
-    JOIN organization o on o.id = p.organization_id 
-    WHERE ss.created_at >= '{created_at_from}' 
-    AND ss.step_type IN ({', '.join(f"'{step_type}'" for step_type in step_types)})
-    {created_at_to_filter}
-    ORDER BY s.id, ss.created_at DESC
+    WITH step_data AS (
+        SELECT 
+            s.id AS strategy_id, s.name AS strategy_name,
+            ss.id AS step_id, ss.created_by,ss.created_at, ss.name AS step_name, ss.step_type,
+            p.name AS project_name, p.id AS project_id,
+            o.name AS organization_name,o.id AS organization_id,
+            st.config::jsonb AS template_config
+        FROM cognition.strategy s
+        JOIN cognition.strategy_step ss ON ss.strategy_id = s.id
+        JOIN cognition.project p ON p.id = s.project_id
+        JOIN organization o ON o.id = p.organization_id
+        LEFT JOIN cognition.step_templates st ON st.id = (ss.config->>'templateId')::uuid
+        WHERE ss.created_at >= '{created_at_from}'
+        {created_at_to_filter}
+    )
+    SELECT strategy_id, strategy_name, step_id, created_by, created_at, step_name, step_type, project_name,project_id, organization_name,organization_id,
+        CASE
+            WHEN step_type = '{StrategyStepType.TEMPLATED.value}'
+                AND EXISTS (
+                    SELECT 1
+                    FROM jsonb_array_elements(template_config->'steps') t
+                    WHERE t->>'stepType' IN ({step_types_sql})
+                )
+            THEN (
+                SELECT array_agg((t->>'stepType') || ':' || (t->>'stepName'))
+                FROM jsonb_array_elements(template_config->'steps') t
+            )
+            WHEN step_type IN ({step_types_sql})
+            THEN ARRAY[(step_type || ':' || step_name)]
+            ELSE NULL
+        END AS templated_step_names
+    FROM step_data
+    WHERE 
+        step_type IN ({step_types_sql})
+        OR (
+            step_type = '{StrategyStepType.TEMPLATED.value}'
+            AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(template_config->'steps') t
+                WHERE t->>'stepType' IN ({step_types_sql})
+            )
+        )
+    ORDER BY strategy_id, created_at DESC
     """
+
+    if len(step_types) == 0:
+        return []
 
     return general.execute_all(query)
