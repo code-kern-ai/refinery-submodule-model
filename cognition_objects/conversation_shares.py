@@ -47,7 +47,7 @@ def update_by_conversation(
 
     for share in existing_shares:
         if share.shared_with not in shared_with_set:
-            session.delete(share)
+            general.delete(share, with_commit=False)
 
     for sharing_user_id in shared_with:
         if sharing_user_id not in existing_shared_with:
@@ -133,19 +133,16 @@ def create_many(
     with_commit: bool = True,
 ) -> List[ConversationShare]:
 
-    shares = []
-
-    for user_id in shared_with_user_ids:
-        share = ConversationShare(
+    shares = [
+        ConversationShare(
             conversation_id=conversation_id,
             shared_with=user_id,
             shared_by=shared_by,
             can_copy=can_copy,
         )
-        general.add(share, with_commit=False)
-        shares.append(share)
-
-    general.flush_or_commit(with_commit)
+        for user_id in shared_with_user_ids
+    ]
+    general.add_all(shares, with_commit=True)
     return shares
 
 

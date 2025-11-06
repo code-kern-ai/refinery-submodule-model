@@ -54,8 +54,7 @@ def get_all(
 
 def get_all_team_members_by_project(project_id: str) -> List[User]:
     query = (
-        session.query(User)
-        .join(TeamMember, TeamMember.user_id == User.id)
+        session.query(TeamMember)
         .join(Team, Team.id == TeamMember.team_id)
         .join(TeamResource, TeamResource.team_id == Team.id)
         .filter(TeamResource.resource_id == project_id)

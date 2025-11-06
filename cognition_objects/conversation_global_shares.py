@@ -1,5 +1,5 @@
 from operator import or_
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionConversation, ConversationGlobalShare
@@ -46,10 +46,10 @@ def delete_by_conversation(
         .delete()
     )
     if with_commit:
-        session.commit()
+        general.flush_or_commit(with_commit)
 
 
-def get_by_user(project_id: str, user_id: str) -> List[ConversationGlobalShare]:
+def get_by_user(project_id: str, user_id: str) -> List[Dict[str, Any]]:
     conversation_global_shares = (
         session.query(ConversationGlobalShare, CognitionConversation.header)
         .join(
