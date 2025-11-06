@@ -141,15 +141,19 @@ def delete_associations_by_conversation(
 
 
 def get_lookup_by_conversation_ids(
-    conversation_ids: List[str],
+    conversation_ids: List[str], user_id: Optional[str] = None
 ) -> Dict[str, List[Dict[str, Any]]]:
-    associations = (
-        session.query(CognitionConversationTagAssociation)
-        .filter(
-            CognitionConversationTagAssociation.conversation_id.in_(conversation_ids)
-        )
-        .all()
+    query = session.query(CognitionConversationTagAssociation)
+    if user_id is not None:
+        query = query.join(
+            CognitionConversationTag,
+            CognitionConversationTag.id == CognitionConversationTagAssociation.tag_id,
+        ).filter(CognitionConversationTag.created_by == user_id)
+    query = query.filter(
+        CognitionConversationTagAssociation.conversation_id.in_(conversation_ids)
     )
+    associations = query.all()
+
     tag_lookup: Dict[str, List[Dict[str, Any]]] = {}
 
     for association in associations:
