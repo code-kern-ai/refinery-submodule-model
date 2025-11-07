@@ -610,7 +610,7 @@ def get_count_by_project_id(project_id: str) -> int:
 
 
 def get_last_chat_messages(
-    message_type: str,
+    message_type: MessageType,
     starting_from: str,
     ending_to: Optional[str] = None,
 ) -> List[Any]:
@@ -623,9 +623,9 @@ def get_last_chat_messages(
     message_type_filter = ""
     ending_to_filter = ""
 
-    if message_type == MessageType.WITH_ERROR.value:
+    if message_type == MessageType.WITH_ERROR:
         message_type_filter = "AND c.error IS NOT NULL"
-    elif message_type == MessageType.WITHOUT_ERROR.value:
+    elif message_type == MessageType.WITHOUT_ERROR:
         message_type_filter = "AND c.error IS NULL"
     if ending_to:
         ending_to_filter = f"AND m.created_at <= '{ending_to}'"

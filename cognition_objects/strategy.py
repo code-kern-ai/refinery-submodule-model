@@ -117,7 +117,10 @@ def get_strategies_info(
     created_at_to: Optional[str] = None,
 ) -> List[Any]:
 
-    step_types = prevent_sql_injection(step_types, isinstance(step_types, list))
+    step_types = [prevent_sql_injection(st, isinstance(st, str)) for st in step_types]
+    if len(step_types) == 0:
+        return []
+
     created_at_from = prevent_sql_injection(
         created_at_from, isinstance(created_at_from, str)
     )
@@ -177,8 +180,5 @@ def get_strategies_info(
         )
     ORDER BY strategy_id, created_at DESC
     """
-
-    if len(step_types) == 0:
-        return []
 
     return general.execute_all(query)

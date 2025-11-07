@@ -334,125 +334,97 @@ def get_distinct_item_ids_for_all_permissions(
 
 def get_last_integrations_tasks() -> List[Dict[str, Any]]:
     query = f"""
-    WITH embeddings_by_state AS (
+    WITH embedding_agg AS (
         SELECT
-            e.project_id,
-            e.state,
-            COUNT(*) AS count,
-            jsonb_agg(
+            project_id,
+            jsonb_object_agg(
+                state,
                 jsonb_build_object(
-                    'createdBy', e.created_by,
-                    'finishedAt', e.finished_at,
-                    'id', e.id,
-                    'name', e.name,
-                    'startedAt', e.started_at,
-                    'state', e.state
-                ) ORDER BY e.started_at DESC
-            ) AS embeddings
-        FROM embedding e
-        LEFT JOIN project p ON p.id = e.project_id
-        GROUP BY e.project_id, e.state
-    ),
-
-    embedding_agg AS (
-        SELECT
-            e.project_id,
-            (
-                SELECT jsonb_object_agg(
-                    ebs.state,
-                    jsonb_build_object(
-                        'count', ebs.count,
-                        'embeddings', ebs.embeddings
-                    )
+                    'count', count,
+                    'embeddings', embeddings
                 )
-                FROM embeddings_by_state ebs
-                WHERE ebs.project_id = e.project_id
             ) AS embeddings_by_state
-
-        FROM embedding e
-        LEFT JOIN project p ON p.id = e.project_id
-        GROUP BY e.project_id
-    ),
-
-    attribute_by_state AS (
-        SELECT
-            a.project_id,
-            a.state,
-            COUNT(*) AS count,
-            jsonb_agg(
-                jsonb_build_object(
-                    'dataType', a.data_type,
-                    'finishedAt', a.finished_at,
-                    'id', a.id,
-                    'name', a.name,
-                    'startedAt', a.started_at,
-                    'state', a.state
-                ) ORDER BY a.started_at DESC
-            ) AS attributes
-        FROM attribute a
-        LEFT JOIN project p ON p.id = a.project_id
-        WHERE a.state NOT IN ('UPLOADED','AUTOMATICALLY_CREATED')
-        GROUP BY a.project_id, a.state
+        FROM (
+            SELECT
+                e.project_id,
+                e.state,
+                COUNT(*) AS count,
+                jsonb_agg(
+                    jsonb_build_object(
+                        'createdBy', e.created_by,
+                        'finishedAt', e.finished_at,
+                        'id', e.id,
+                        'name', e.name,
+                        'startedAt', e.started_at,
+                        'state', e.state
+                    ) ORDER BY e.started_at DESC
+                ) AS embeddings
+            FROM embedding e
+            GROUP BY e.project_id, e.state
+        ) AS x
+        GROUP BY project_id
     ),
 
     attribute_agg AS (
         SELECT
-            a.project_id,
-            (
-                SELECT jsonb_object_agg(
-                    abs.state,
-                    jsonb_build_object(
-                        'count', abs.count,
-                        'attributes', abs.attributes
-                    )
-                )
-                FROM attribute_by_state abs
-                WHERE abs.project_id = a.project_id
-            ) AS attributes_by_state
-
-        FROM attribute a
-        LEFT JOIN project p ON p.id = a.project_id
-        WHERE a.state NOT IN ('UPLOADED','AUTOMATICALLY_CREATED')
-        GROUP BY a.project_id
-    ),
-
-    record_tokenization_tasks_by_state AS (
-        SELECT
-            rtt.project_id,
-            rtt.state,
-            COUNT(*) AS count,
-            jsonb_agg(
+            project_id,
+            jsonb_object_agg(
+                state,
                 jsonb_build_object(
-                    'finishedAt', rtt.finished_at,
-                    'id', rtt.id,
-                    'startedAt', rtt.started_at,
-                    'state', rtt.state,
-                    'type', rtt.type
-                ) ORDER BY rtt.started_at DESC
-            ) AS record_tokenization_tasks
-        FROM record_tokenization_task rtt
-        LEFT JOIN project p ON p.id = rtt.project_id
-        GROUP BY rtt.project_id, rtt.state
+                    'count', count,
+                    'attributes', attributes
+                )
+            ) AS attributes_by_state
+        FROM (
+            SELECT
+                a.project_id,
+                a.state,
+                COUNT(*) AS count,
+                jsonb_agg(
+                    jsonb_build_object(
+                        'dataType', a.data_type,
+                        'finishedAt', a.finished_at,
+                        'id', a.id,
+                        'name', a.name,
+                        'startedAt', a.started_at,
+                        'state', a.state
+                    ) ORDER BY a.started_at DESC
+                ) AS attributes
+            FROM attribute a
+            WHERE a.state NOT IN ('UPLOADED','AUTOMATICALLY_CREATED')
+            GROUP BY a.project_id, a.state
+        ) AS x
+        GROUP BY project_id
     ),
 
     record_tokenization_task_agg AS (
         SELECT
-            rtt.project_id,
-            (
-                SELECT jsonb_object_agg(
-                    rtts.state,
-                    jsonb_build_object(
-                        'count', rtts.count,
-                        'record_tokenization_tasks', rtts.record_tokenization_tasks
-                    )
+            project_id,
+            jsonb_object_agg(
+                state,
+                jsonb_build_object(
+                    'count', count,
+                    'record_tokenization_tasks', record_tokenization_tasks
                 )
-                FROM record_tokenization_tasks_by_state rtts
-                WHERE rtts.project_id = rtt.project_id
             ) AS record_tokenization_tasks_by_state
-
-        FROM record_tokenization_task rtt
-        LEFT JOIN project p ON p.id = rtt.project_id
-        GROUP BY rtt.project_id
+        FROM (
+            SELECT
+                rtt.project_id,
+                rtt.state,
+                COUNT(*) AS count,
+                jsonb_agg(
+                    jsonb_build_object(
+                        'finishedAt', rtt.finished_at,
+                        'id', rtt.id,
+                        'startedAt', rtt.started_at,
+                        'state', rtt.state,
+                        'type', rtt.type
+                    ) ORDER BY rtt.started_at DESC
+                ) AS record_tokenization_tasks
+            FROM record_tokenization_task rtt
+            GROUP BY rtt.project_id, rtt.state
+        ) AS x
+        GROUP BY project_id
     ),
 
     integration_data AS (
@@ -467,34 +439,41 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
             i.project_id,
             i.created_by,
             i.type,
+            o.name AS organization_name,
+            p.name AS project_name,
             jsonb_build_object(
                 'embeddingsByState', coalesce(ea.embeddings_by_state, '[]'::jsonb),
                 'attributesByState', coalesce(aa.attributes_by_state, '[]'::jsonb),
                 'recordTokenizationTasksByState', coalesce(rtt.record_tokenization_tasks_by_state, '[]'::jsonb)
             ) AS full_data
         FROM cognition.integration i
-        LEFT JOIN embedding_agg ea ON ea.project_id = i.project_id
-        LEFT JOIN attribute_agg aa ON aa.project_id = i.project_id
-        LEFT JOIN record_tokenization_task_agg rtt ON rtt.project_id = i.project_id
+        LEFT JOIN embedding_agg ea 
+        ON ea.project_id = i.project_id
+        LEFT JOIN attribute_agg aa 
+        ON aa.project_id = i.project_id
+        LEFT JOIN record_tokenization_task_agg rtt 
+        ON rtt.project_id = i.project_id
+        JOIN organization o
+        ON o.id = i.organization_id
+        JOIN project p
+        ON p.id = i.project_id
     )
 
     SELECT 
-        o.id AS organization_id,
-        o.name AS organization_name,
-        i.integration_id,
-        i.integration_name,
-        i.error_message,
-        i.started_at,
-        i.finished_at,
-        i.state,
-        i.full_data,
-        i.created_by,
-        i.type,
-        p.name AS project_name
-    FROM organization o
-    JOIN integration_data i ON i.organization_id = o.id
-    LEFT JOIN project p ON p.id = i.project_id
-    ORDER BY o.id, i.started_at DESC
+        int_data.organization_id as organization_id,
+        int_data.organization_name as organization_name,
+        int_data.integration_id,
+        int_data.integration_name,
+        int_data.error_message,
+        int_data.started_at,
+        int_data.finished_at,
+        int_data.state,
+        int_data.full_data,
+        int_data.created_by,
+        int_data.type,
+        int_data.project_name
+    FROM integration_data int_data
+    ORDER BY int_data.organization_id, int_data.started_at DESC
     """
 
     return general.execute_all(query)

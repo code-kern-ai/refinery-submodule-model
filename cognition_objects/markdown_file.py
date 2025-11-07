@@ -226,7 +226,10 @@ def get_last_etl_tasks(
     created_at_to: Optional[str] = None,
 ) -> List[Any]:
 
-    states = prevent_sql_injection(states, isinstance(states, list))
+    states = [prevent_sql_injection(st, isinstance(st, str)) for st in states]
+    if len(states) == 0:
+        return []
+
     created_at_from = prevent_sql_injection(
         created_at_from, isinstance(created_at_from, str)
     )
@@ -238,6 +241,8 @@ def get_last_etl_tasks(
 
     if created_at_to:
         created_at_to_filter = f"AND mf.created_at <= '{created_at_to}'"
+
+    states_filter_sql = ", ".join([f"'{state}'" for state in states])
 
     query = f"""
     SELECT *
@@ -252,7 +257,7 @@ def get_last_etl_tasks(
             JOIN organization o ON o.id = md.organization_id
         WHERE 
             mf.created_at >= '{created_at_from}'
-            AND mf.state IN ({', '.join(f"'{state}'" for state in states)})
+            AND mf.state IN ({states_filter_sql})
             {created_at_to_filter}
     ) sub
     WHERE rn <= 5
