@@ -141,43 +141,45 @@ def get_strategies_info(
             s.id AS strategy_id, s.name AS strategy_name,
             ss.id AS step_id, ss.created_by,ss.created_at, ss.name AS step_name, ss.step_type,
             p.name AS project_name, p.id AS project_id,
-            o.name AS organization_name,o.id AS organization_id,
-            st.config::jsonb AS template_config
+            o.name AS organization_name, o.id AS organization_id,
+            st.config::jsonb AS template_config,
+            CASE 
+                WHEN ss.step_type = '{StrategyStepType.TEMPLATED.value}' AND st.config IS NOT NULL
+                THEN ARRAY(
+                    SELECT (t->>'stepType') || ':' || (t->>'stepName')
+                    FROM jsonb_array_elements((st.config->'steps')::jsonb) t
+                )
+                ELSE NULL
+            END AS template_step_names,
+            CASE
+                WHEN ss.step_type = '{StrategyStepType.TEMPLATED.value}' AND st.config IS NOT NULL
+                THEN ARRAY(
+                    SELECT t->>'stepType'
+                    FROM jsonb_array_elements((st.config->'steps')::jsonb) t
+                )
+                ELSE NULL
+            END AS template_step_types
         FROM cognition.strategy s
-        JOIN cognition.strategy_step ss ON ss.strategy_id = s.id
-        JOIN cognition.project p ON p.id = s.project_id
-        JOIN organization o ON o.id = p.organization_id
-        LEFT JOIN cognition.step_templates st ON st.id = (ss.config->>'templateId')::uuid
+        JOIN cognition.strategy_step ss 
+        ON ss.strategy_id = s.id
+        JOIN cognition.project p 
+        ON p.id = s.project_id
+        JOIN organization o 
+        ON o.id = p.organization_id
+        LEFT JOIN cognition.step_templates st 
+        ON st.id = (ss.config->>'templateId')::uuid
         WHERE ss.created_at >= '{created_at_from}'
         {created_at_to_filter}
     )
-    SELECT strategy_id, strategy_name, step_id, created_by, created_at, step_name, step_type, project_name,project_id, organization_name,organization_id,
+    SELECT strategy_id, strategy_name, step_id, created_by, created_at, step_name, step_type, project_name, project_id, organization_name, organization_id,
         CASE
-            WHEN step_type = '{StrategyStepType.TEMPLATED.value}'
-                AND EXISTS (
-                    SELECT 1
-                    FROM jsonb_array_elements(template_config->'steps') t
-                    WHERE t->>'stepType' IN ({step_types_sql})
-                )
-            THEN (
-                SELECT array_agg((t->>'stepType') || ':' || (t->>'stepName'))
-                FROM jsonb_array_elements(template_config->'steps') t
-            )
-            WHEN step_type IN ({step_types_sql})
-            THEN ARRAY[(step_type || ':' || step_name)]
-            ELSE NULL
+            WHEN step_type = '{StrategyStepType.TEMPLATED.value}' THEN template_step_names
+            ELSE ARRAY[step_type || ':' || step_name]
         END AS templated_step_names
     FROM step_data
     WHERE 
         step_type IN ({step_types_sql})
-        OR (
-            step_type = '{StrategyStepType.TEMPLATED.value}'
-            AND EXISTS (
-                SELECT 1
-                FROM jsonb_array_elements(template_config->'steps') t
-                WHERE t->>'stepType' IN ({step_types_sql})
-            )
-        )
+        OR (step_type = '{StrategyStepType.TEMPLATED.value}' AND template_step_types && ARRAY[{step_types_sql}])
     ORDER BY strategy_id, created_at DESC
     """
 
