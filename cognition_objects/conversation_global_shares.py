@@ -45,8 +45,7 @@ def delete_by_conversation(
         )
         .delete()
     )
-    if with_commit:
-        general.flush_or_commit(with_commit)
+    general.flush_or_commit(with_commit)
 
 
 def get_by_user(project_id: str, user_id: str) -> List[Dict[str, Any]]:
