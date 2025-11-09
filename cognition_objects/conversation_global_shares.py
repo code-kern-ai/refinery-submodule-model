@@ -14,7 +14,7 @@ def get(conversation_global_share_id: str) -> Optional[ConversationGlobalShare]:
     )
 
 
-def get_by_conversation(conversation_id: str) -> List[ConversationGlobalShare]:
+def get_by_conversation(conversation_id: str) -> Optional[ConversationGlobalShare]:
     return (
         session.query(ConversationGlobalShare)
         .filter(ConversationGlobalShare.conversation_id == conversation_id)
