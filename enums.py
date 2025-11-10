@@ -1017,5 +1017,11 @@ class MessageInitiationType(Enum):
     MACRO = "MACRO"
 
 
+class MessageType(Enum):
+    WITH_ERROR = "WITH_ERROR"
+    WITHOUT_ERROR = "WITHOUT_ERROR"
+    ALL = "ALL"
+
+
 class TimedExecutionKey(Enum):
     LAST_RESET_USER_MESSAGE_COUNT = "LAST_RESET_USER_MESSAGE_COUNT"
