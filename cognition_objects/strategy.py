@@ -1,10 +1,12 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 from datetime import datetime
+
+from submodules.model.util import prevent_sql_injection
 
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionStrategy
-from ..enums import StrategyComplexity
+from ..enums import StrategyComplexity, StrategyStepType
 
 
 def get(project_id: str, strategy_id: str) -> CognitionStrategy:
@@ -107,3 +109,78 @@ def delete_all_by_project_id(project_id: str, with_commit: bool = True) -> None:
         CognitionStrategy.project_id == project_id
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def get_strategies_info(
+    step_types: List[str],
+    created_at_from: str,
+    created_at_to: Optional[str] = None,
+) -> List[Any]:
+
+    step_types = [prevent_sql_injection(st, isinstance(st, str)) for st in step_types]
+    if len(step_types) == 0:
+        return []
+
+    created_at_from = prevent_sql_injection(
+        created_at_from, isinstance(created_at_from, str)
+    )
+    if created_at_to:
+        created_at_to = prevent_sql_injection(
+            created_at_to, isinstance(created_at_to, str)
+        )
+    created_at_to_filter = ""
+
+    if created_at_to:
+        created_at_to_filter = f"AND ss.created_at <= '{created_at_to}'"
+
+    step_types_sql = ", ".join([f"'{st}'" for st in step_types])
+
+    query = f"""
+    WITH step_data AS (
+        SELECT 
+            s.id AS strategy_id, s.name AS strategy_name,
+            ss.id AS step_id, ss.created_by,ss.created_at, ss.name AS step_name, ss.step_type,
+            p.name AS project_name, p.id AS project_id,
+            o.name AS organization_name, o.id AS organization_id,
+            st.config::jsonb AS template_config,
+            CASE 
+                WHEN ss.step_type = '{StrategyStepType.TEMPLATED.value}' AND st.config IS NOT NULL
+                THEN ARRAY(
+                    SELECT (t->>'stepType') || ':' || (t->>'stepName')
+                    FROM jsonb_array_elements((st.config->'steps')::jsonb) t
+                )
+                ELSE NULL
+            END AS template_step_names,
+            CASE
+                WHEN ss.step_type = '{StrategyStepType.TEMPLATED.value}' AND st.config IS NOT NULL
+                THEN ARRAY(
+                    SELECT t->>'stepType'
+                    FROM jsonb_array_elements((st.config->'steps')::jsonb) t
+                )
+                ELSE NULL
+            END AS template_step_types
+        FROM cognition.strategy s
+        JOIN cognition.strategy_step ss 
+        ON ss.strategy_id = s.id
+        JOIN cognition.project p 
+        ON p.id = s.project_id
+        JOIN organization o 
+        ON o.id = p.organization_id
+        LEFT JOIN cognition.step_templates st 
+        ON st.id = (ss.config->>'templateId')::uuid
+        WHERE ss.created_at >= '{created_at_from}'
+        {created_at_to_filter}
+    )
+    SELECT strategy_id, strategy_name, step_id, created_by, created_at, step_name, step_type, project_name, project_id, organization_name, organization_id,
+        CASE
+            WHEN step_type = '{StrategyStepType.TEMPLATED.value}' THEN template_step_names
+            ELSE ARRAY[step_type || ':' || step_name]
+        END AS templated_step_names
+    FROM step_data
+    WHERE 
+        step_type IN ({step_types_sql})
+        OR (step_type = '{StrategyStepType.TEMPLATED.value}' AND template_step_types && ARRAY[{step_types_sql}])
+    ORDER BY strategy_id, created_at DESC
+    """
+
+    return general.execute_all(query)
