@@ -2573,23 +2573,28 @@ class InboxMail(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-    send_from = Column(String)
-    send_to = Column(JSON)
-    subject = Column(String)
-    content = Column(String)
-    mark_as_important = Column(Boolean, default=False)
-    meta_data = Column(JSON)
-    is_seen = Column(Boolean, default=False)
-    being_worked_on = Column(Boolean, default=False)
+    sender_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    recipient_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    other_recipient_ids = Column(JSON)
+    thread_id = Column(UUID(as_uuid=True), index=True, default=uuid.uuid4())
     parent_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"global.{Tablenames.INBOX_MAIL.value}.id", ondelete="SET NULL"),
-        index=True,
+        ForeignKey("global.inbox_mail.id", ondelete="SET NULL"),
         nullable=True,
-    )
-    child_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"global.{Tablenames.INBOX_MAIL.value}.id", ondelete="SET NULL"),
         index=True,
-        nullable=True,
     )
+    subject = Column(String)
+    content = Column(String)
+    meta_data = Column(JSON)
+
+    is_seen = Column(Boolean, default=False)
+    is_important = Column(Boolean, default=False)
+    being_working_on = Column(Boolean, default=False)
