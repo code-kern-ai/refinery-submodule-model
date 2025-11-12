@@ -952,6 +952,7 @@ class AdminQueries(Enum):
     MULTITAGGED_CONVERSATIONS = "MULTITAGGED_CONVERSATIONS"  # parameter options: organization_id, without_kern_email
     TEMPLATE_USAGE = "TEMPLATE_USAGE"  # parameter options:  organization_id
     PRIVATEMODE_USE_OVER_TIME = "PRIVATEMODE_USE_OVER_TIME"  # parameter options: organization_id, without_kern_email
+    INCOGNITO_USE_OVER_TIME = "INCOGNITO_USE_OVER_TIME"  # parameter options: organization_id, without_kern_email
 
 
 class CognitionIntegrationType(Enum):
