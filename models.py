@@ -2584,7 +2584,7 @@ class InboxMail(Base):
         index=True,
     )
     other_recipient_ids = Column(JSON)
-    thread_id = Column(UUID(as_uuid=True), index=True, default=uuid.uuid4())
+    thread_id = Column(UUID(as_uuid=True), index=True, unique=True, default=uuid.uuid4)
     parent_id = Column(
         UUID(as_uuid=True),
         ForeignKey("global.inbox_mail.id", ondelete="SET NULL"),

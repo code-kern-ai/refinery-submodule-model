@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Any
+from submodules.model.util import sql_alchemy_to_dict
 
 from ..session import session
 from sqlalchemy import cast, String, func, desc
@@ -51,7 +52,7 @@ def get_overview_by_threads(
         .subquery()
     )
 
-    query = (
+    latest_mails_query = (
         session.query(InboxMail)
         .join(
             subquery,
@@ -61,14 +62,33 @@ def get_overview_by_threads(
         .order_by(desc(InboxMail.created_at))
     )
 
-    total_threads = query.count()
-    mails = query.offset((page - 1) * limit).limit(limit).all()
+    total_threads = latest_mails_query.count()
+    latest_mails = latest_mails_query.offset((page - 1) * limit).limit(limit).all()
+
+    threads = []
+    for mail in latest_mails:
+        total_mails = (
+            session.query(func.count(InboxMail.id))
+            .filter(
+                InboxMail.thread_id == mail.thread_id,
+                InboxMail.organization_id == org_id,
+            )
+            .scalar()
+        )
+
+        threads.append(
+            {
+                "threadId": mail.thread_id,
+                "latestMail": sql_alchemy_to_dict(mail),
+                "totalMails": total_mails,
+            }
+        )
 
     return {
         "totalThreads": total_threads,
         "page": page,
         "limit": limit,
-        "mails": mails,
+        "threads": threads,
     }
 
 
@@ -85,7 +105,6 @@ def create_by_thread(
     with_commit: bool = True,
 ) -> List[InboxMail]:
     mail_entities: List[InboxMail] = []
-
     for rid in recipient_ids:
         other_recipient_ids = [r for r in recipient_ids if r != rid]
 
