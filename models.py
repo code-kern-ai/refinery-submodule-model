@@ -1116,6 +1116,8 @@ class CognitionProject(Base):
     tokenizer = Column(String)
     # options from <SVGIcon/> component - only visible with new UI selected (user setting)
     icon = Column(String, default="IconBolt")
+    allow_conversation_sharing_organization = Column(Boolean, default=False)
+    allow_conversation_sharing_global = Column(Boolean, default=False)
 
 
 class CognitionStrategy(Base):
@@ -2602,19 +2604,22 @@ class EtlTask(Base):
     file_size_bytes = Column(BigInteger)
     tokenizer = Column(String)
 
-    cache_config = Column(
-        JSON
-    )  # {"use_file_cache": true, "use_extraction_cache": false, "use_transformation_cache": true}
-    extract_config = Column(JSON)  # schema depends on the file type
-    split_config = Column(JSON)  # {"chunk": true, "shrink": false}
-    transform_config = Column(
-        JSON
-    )  # {"summarize": true, "cleanse": true, "text_to_table": true}
-    load_config = Column(JSON)  # {"refinery_project": false, "markdown_file": true}
-    notify_config = Column(
-        JSON
-    )  # {"http": {"url": "http://cognition-gateway:80/etl/complete/{task_id}", "method": "POST"}}
-    llm_config = Column(JSON)
+    # array of indivitual tasks to be executed including fallback etc.
+    full_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
+
+    # cache_config = Column(
+    #     JSON
+    # )  # {"use_file_cache": true, "use_extraction_cache": false, "use_transformation_cache": true}
+    # extract_config = Column(JSON)  # schema depends on the file type
+    # split_config = Column(JSON)  # {"chunk": true, "shrink": false}
+    # transform_config = Column(
+    #     JSON
+    # )  # {"summarize": true, "cleanse": true, "text_to_table": true}
+    # load_config = Column(JSON)  # {"refinery_project": false, "markdown_file": true}
+    # notify_config = Column(
+    #     JSON
+    # )  # {"http": {"url": "http://cognition-gateway:80/etl/complete/{task_id}", "method": "POST"}}
+    # llm_config = Column(JSON)
 
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
@@ -2624,3 +2629,50 @@ class EtlTask(Base):
     is_active = Column(Boolean, default=False)
     priority = Column(Integer, default=0)
     error_message = Column(String)
+
+
+class ConversationShare(Base):
+    __tablename__ = Tablenames.CONVERSATION_SHARE.value
+    __table_args__ = {"schema": "cognition"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    shared_with = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    shared_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    can_copy = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+class ConversationGlobalShare(Base):
+    __tablename__ = Tablenames.CONVERSATION_GLOBAL_SHARE.value
+    __table_args__ = {"schema": "cognition"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    shared_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())

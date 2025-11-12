@@ -245,3 +245,50 @@ def delete_many(org_id: str, md_file_ids: List[str], with_commit: bool = True) -
     ).delete(synchronize_session=False)
     md_files.delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
+
+
+def get_last_etl_tasks(
+    states: List[str],
+    created_at_from: str,
+    created_at_to: Optional[str] = None,
+) -> List[Any]:
+
+    states = [prevent_sql_injection(st, isinstance(st, str)) for st in states]
+    if len(states) == 0:
+        return []
+
+    created_at_from = prevent_sql_injection(
+        created_at_from, isinstance(created_at_from, str)
+    )
+    if created_at_to:
+        created_at_to = prevent_sql_injection(
+            created_at_to, isinstance(created_at_to, str)
+        )
+    created_at_to_filter = ""
+
+    if created_at_to:
+        created_at_to_filter = f"AND mf.created_at <= '{created_at_to}'"
+
+    states_filter_sql = ", ".join([f"'{state}'" for state in states])
+
+    query = f"""
+    SELECT *
+    FROM (
+        SELECT mf.created_at, mf.created_by, mf.started_at, mf.finished_at, mf.file_name, mf.error, mf.state, md.id AS dataset_id, md.name AS dataset_name, md.organization_id, o.name AS organization_name,
+            ROW_NUMBER() OVER (
+                PARTITION BY md.organization_id, md.id
+                ORDER BY mf.created_at DESC
+            ) AS rn
+        FROM cognition.markdown_file mf
+            JOIN cognition.markdown_dataset md ON md.id = mf.dataset_id
+            JOIN organization o ON o.id = md.organization_id
+        WHERE 
+            mf.created_at >= '{created_at_from}'
+            AND mf.state IN ({states_filter_sql})
+            {created_at_to_filter}
+    ) sub
+    WHERE rn <= 5
+    ORDER BY organization_id, dataset_id, created_at DESC
+    """
+
+    return general.execute_all(query)

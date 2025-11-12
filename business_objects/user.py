@@ -1,6 +1,6 @@
 from datetime import datetime
 from . import general, organization, team_member
-from .. import User, enums
+from .. import User, enums, Team, TeamMember, TeamResource
 from ..session import session
 from typing import List, Optional
 from sqlalchemy import sql
@@ -49,6 +49,19 @@ def get_all(
         query = query.filter(User.organization_id == organization_id)
     if user_role:
         query = query.filter(User.role == user_role.value)
+    return query.all()
+
+
+def get_all_team_members_by_project(project_id: str) -> List[User]:
+    query = (
+        session.query(TeamMember)
+        .join(Team, Team.id == TeamMember.team_id)
+        .join(TeamResource, TeamResource.team_id == Team.id)
+        .filter(TeamResource.resource_id == project_id)
+        .filter(
+            TeamResource.resource_type == enums.TeamResourceType.COGNITION_PROJECT.value
+        )
+    )
     return query.all()
 
 

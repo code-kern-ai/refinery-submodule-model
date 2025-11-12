@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional, Union, Tuple
 from datetime import datetime
+
+from submodules.model.enums import MessageType
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMessage
@@ -605,3 +607,48 @@ def get_count_by_project_id(project_id: str) -> int:
         )
         .count()
     )
+
+
+def get_last_chat_messages(
+    message_type: MessageType,
+    starting_from: str,
+    ending_to: Optional[str] = None,
+) -> List[Any]:
+
+    message_type = prevent_sql_injection(message_type, isinstance(message_type, str))
+    starting_from = prevent_sql_injection(starting_from, isinstance(starting_from, str))
+    if ending_to:
+        ending_to = prevent_sql_injection(ending_to, isinstance(ending_to, str))
+
+    message_type_filter = ""
+    ending_to_filter = ""
+
+    if message_type == MessageType.WITH_ERROR:
+        message_type_filter = "AND c.error IS NOT NULL"
+    elif message_type == MessageType.WITHOUT_ERROR:
+        message_type_filter = "AND c.error IS NULL"
+    if ending_to:
+        ending_to_filter = f"AND m.created_at <= '{ending_to}'"
+
+    query = f"""
+    SELECT *
+    FROM (
+        SELECT m.created_at, m.created_by, m.question, m.answer, m.initiated_via, c.error, cp.id AS project_id, cp.name AS project_name, cp.organization_id, o.name AS organization_name, c.id AS conversation_id,
+            ROW_NUMBER() OVER (
+                PARTITION BY cp.organization_id, cp.id 
+                ORDER BY m.created_at DESC
+            ) AS rn
+        FROM cognition.message m
+            JOIN cognition.conversation c ON c.id = m.conversation_id
+            JOIN cognition.project cp ON cp.id = m.project_id
+            JOIN organization o ON o.id = cp.organization_id
+        WHERE 
+            m.created_at >= '{starting_from}'
+            {message_type_filter}
+            {ending_to_filter}
+    ) sub
+    WHERE rn <= 5
+    ORDER BY organization_id, project_id, created_at DESC
+    """
+
+    return general.execute_all(query)

@@ -195,6 +195,8 @@ class Tablenames(Enum):
     TIMED_EXECUTIONS = "timed_executions"
     ETL_TASK = "etl_task"
     ETL_CONFIG_PRESET = "etl_config_preset"
+    CONVERSATION_SHARE = "conversation_share"
+    CONVERSATION_GLOBAL_SHARE = "conversation_global_share"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -1025,6 +1027,12 @@ class MessageInitiationType(Enum):
     UI = "UI"
     API = "API"
     MACRO = "MACRO"
+
+
+class MessageType(Enum):
+    WITH_ERROR = "WITH_ERROR"
+    WITHOUT_ERROR = "WITHOUT_ERROR"
+    ALL = "ALL"
 
 
 class TimedExecutionKey(Enum):
