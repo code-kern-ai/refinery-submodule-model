@@ -731,6 +731,7 @@ class LLMProvider(Enum):
         return self.value.replace(" ", "_").upper()
 
 
+# now also etl states!
 class CognitionMarkdownFileState(Enum):
     QUEUE = "QUEUE"
     STARTED = "STARTED"
