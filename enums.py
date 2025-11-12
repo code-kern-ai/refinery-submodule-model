@@ -733,10 +733,16 @@ class LLMProvider(Enum):
 
 class CognitionMarkdownFileState(Enum):
     QUEUE = "QUEUE"
+    STARTED = "STARTED"
     EXTRACTING = "EXTRACTING"
     TOKENIZING = "TOKENIZING"
     SPLITTING = "SPLITTING"
     TRANSFORMING = "TRANSFORMING"
+    LOADING = "LOADING"  # e.g. to file reference in db
+    CACHE_HANDLING = "CACHE_HANDLING"
+    NOTIFYING = (
+        "NOTIFYING"  # e.g. notifying that the file is ready of integration provider
+    )
     FINISHED = "FINISHED"
     FAILED = "FAILED"
 
