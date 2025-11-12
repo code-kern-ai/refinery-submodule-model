@@ -29,6 +29,14 @@ def get(project_id: str, conversation_id: str) -> CognitionConversation:
     )
 
 
+def get_by_id(conversation_id: str) -> CognitionConversation:
+    return (
+        session.query(CognitionConversation)
+        .filter(CognitionConversation.id == conversation_id)
+        .first()
+    )
+
+
 def exists(project_id: str, conversation_id: str) -> bool:
     return (
         session.query(CognitionConversation)

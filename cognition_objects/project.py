@@ -35,7 +35,7 @@ def get_org_id(project_id: str) -> str:
     raise ValueError(f"Project with id {project_id} not found")
 
 
-def get_by_user(project_id: str, user_id: str) -> CognitionProject:
+def get_by_user(project_id: str, user_id: str) -> List[Dict[str, Any]]:
     user_item = user.get(user_id)
     if user_item.role == enums.UserRoles.ENGINEER.value:
         return get(project_id)
@@ -215,6 +215,8 @@ def update(
     llm_config: Optional[Dict[str, Any]] = None,
     tokenizer: Optional[str] = None,
     icon: Optional[str] = None,
+    allow_conversation_sharing_organization: Optional[bool] = None,
+    allow_conversation_sharing_global: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -288,6 +290,12 @@ def update(
         project.tokenizer = tokenizer
     if icon is not None:
         project.icon = icon
+    if allow_conversation_sharing_organization is not None:
+        project.allow_conversation_sharing_organization = (
+            allow_conversation_sharing_organization
+        )
+    if allow_conversation_sharing_global is not None:
+        project.allow_conversation_sharing_global = allow_conversation_sharing_global
     general.flush_or_commit(with_commit)
     return project
 
