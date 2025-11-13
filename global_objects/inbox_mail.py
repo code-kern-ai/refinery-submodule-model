@@ -87,6 +87,7 @@ def create_by_thread(
     parent_id: Optional[str] = None,
     thread_id: Optional[str] = None,
     is_important: bool = False,
+    is_admin_notification: bool = False,
     with_commit: bool = True,
 ) -> List[InboxMail]:
     inbox_mail_entitiy = InboxMail(
@@ -99,6 +100,7 @@ def create_by_thread(
         parent_id=parent_id,
         thread_id=thread_id,
         is_important=is_important,
+        is_admin_notification=is_admin_notification,
     )
 
     general.add(inbox_mail_entitiy)
