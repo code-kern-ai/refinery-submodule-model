@@ -5,8 +5,9 @@ from ..session import session
 from sqlalchemy import cast, String, func, desc
 
 from submodules.model.business_objects import general
-from submodules.model.models import InboxMail
+from submodules.model.models import InboxMail, InboxMailReference
 from sqlalchemy import or_
+from enums import InboxMailReferenceScope
 
 
 def get_by_thread(
@@ -15,19 +16,19 @@ def get_by_thread(
     thread_id: str,
 ) -> List[InboxMail]:
 
-    return (
+    inbox_mail_entities = (
         session.query(InboxMail)
+        .join(InboxMailReference, InboxMail.id == InboxMailReference.inbox_mail_id)
         .filter(
             InboxMail.organization_id == org_id,
             InboxMail.thread_id == thread_id,
-            or_(
-                InboxMail.recipient_id == user_id,
-                InboxMail.sender_id == user_id,
-            ),
+            InboxMailReference.user_id == user_id,
         )
         .order_by(desc(InboxMail.created_at))
         .all()
     )
+
+    return inbox_mail_entities
 
 
 def get_overview_by_threads(
@@ -39,50 +40,30 @@ def get_overview_by_threads(
     subquery = (
         session.query(
             InboxMail.thread_id,
-            func.max(InboxMail.created_at).label("latest_mail_time"),
+            func.max(InboxMail.created_at).label("latest_created_at"),
         )
+        .join(InboxMailReference, InboxMail.id == InboxMailReference.inbox_mail_id)
         .filter(
             InboxMail.organization_id == org_id,
-            or_(
-                InboxMail.recipient_id == user_id,
-                InboxMail.sender_id == user_id,
-            ),
+            InboxMailReference.user_id == user_id,
         )
         .group_by(InboxMail.thread_id)
         .subquery()
     )
-
-    latest_mails_query = (
+    total_threads = session.query(func.count()).select_from(subquery).scalar()
+    thread_summaries = (
         session.query(InboxMail)
         .join(
             subquery,
             (InboxMail.thread_id == subquery.c.thread_id)
-            & (InboxMail.created_at == subquery.c.latest_mail_time),
+            & (InboxMail.created_at == subquery.c.latest_created_at),
         )
         .order_by(desc(InboxMail.created_at))
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
     )
-
-    total_threads = latest_mails_query.count()
-    latest_mails = latest_mails_query.offset((page - 1) * limit).limit(limit).all()
-
-    threads = []
-    for mail in latest_mails:
-        total_mails = (
-            session.query(func.count(InboxMail.id))
-            .filter(
-                InboxMail.thread_id == mail.thread_id,
-                InboxMail.organization_id == org_id,
-            )
-            .scalar()
-        )
-
-        threads.append(
-            {
-                "threadId": mail.thread_id,
-                "latestMail": sql_alchemy_to_dict(mail),
-                "totalMails": total_mails,
-            }
-        )
+    threads = [sql_alchemy_to_dict(mail) for mail in thread_summaries]
 
     return {
         "totalThreads": total_threads,
@@ -104,27 +85,40 @@ def create_by_thread(
     is_important: bool = False,
     with_commit: bool = True,
 ) -> List[InboxMail]:
-    mail_entities: List[InboxMail] = []
+    inbox_mail_entitiy = InboxMail(
+        organization_id=org_id,
+        sender_id=sender_id,
+        original_recipient_ids=recipient_ids,
+        subject=subject,
+        content=content,
+        meta_data=meta_data or {},
+        parent_id=parent_id,
+        thread_id=thread_id,
+        is_important=is_important,
+    )
+
+    inbox_mail_references = []
+
+    inbox_mail_sender_reference = InboxMailReference(
+        inbox_mail_id=inbox_mail_entitiy.id,
+        user_id=sender_id,
+        scope=InboxMailReferenceScope.SENDER.value,
+        is_seen=True,
+    )
+    inbox_mail_references.append(inbox_mail_sender_reference)
+
     for rid in recipient_ids:
-        other_recipient_ids = [r for r in recipient_ids if r != rid]
-
-        mail_entity = InboxMail(
-            organization_id=org_id,
-            sender_id=sender_id,
-            recipient_id=rid,
-            other_recipient_ids=other_recipient_ids,
-            subject=subject,
-            content=content,
-            meta_data=meta_data or {},
-            thread_id=thread_id,
-            parent_id=parent_id,
-            is_important=is_important,
+        inbox_mail_references.append(
+            InboxMailReference(
+                inbox_mail_id=inbox_mail_entitiy.id,
+                user_id=rid,
+                scope=InboxMailReferenceScope.RECIPIENT.value,
+            )
         )
+    general.add(inbox_mail_entitiy)
+    general.add_all(inbox_mail_references)
 
-        mail_entities.append(mail_entity)
-
-    general.add_all(mail_entities)
     if with_commit:
         general.commit()
 
-    return mail_entities
+    return inbox_mail_entitiy

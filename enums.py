@@ -181,6 +181,7 @@ class Tablenames(Enum):
     CONVERSATION_SHARE = "conversation_share"
     CONVERSATION_GLOBAL_SHARE = "conversation_global_share"
     INBOX_MAIL = "inbox_mail"
+    INBOX_MAIL_REFERENCE = "inbox_mail_reference"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -1026,3 +1027,8 @@ class MessageType(Enum):
 
 class TimedExecutionKey(Enum):
     LAST_RESET_USER_MESSAGE_COUNT = "LAST_RESET_USER_MESSAGE_COUNT"
+
+
+class InboxMailReferenceScope(Enum):
+    SENDER = "SENDER"
+    RECIPIENT = "RECIPIENT"
