@@ -2,12 +2,12 @@ from typing import Dict, List, Optional, Any
 from submodules.model.util import sql_alchemy_to_dict
 
 from ..session import session
-from sqlalchemy import cast, String, func, desc
+from sqlalchemy import cast, String, func, desc, asc
 
 from submodules.model.business_objects import general
 from submodules.model.models import InboxMail, InboxMailReference
 from sqlalchemy import or_
-from enums import InboxMailReferenceScope
+from submodules.model.enums import InboxMailReferenceScope
 
 
 def get_by_thread(
@@ -24,7 +24,7 @@ def get_by_thread(
             InboxMail.thread_id == thread_id,
             InboxMailReference.user_id == user_id,
         )
-        .order_by(desc(InboxMail.created_at))
+        .order_by(asc(InboxMail.created_at))
         .all()
     )
 
@@ -63,7 +63,11 @@ def get_overview_by_threads(
         .limit(limit)
         .all()
     )
-    threads = [sql_alchemy_to_dict(mail) for mail in thread_summaries]
+
+    threads = [
+        {"id": str(mail.thread_id), "latest_mail": {**sql_alchemy_to_dict(mail)}}
+        for mail in thread_summaries
+    ]
 
     return {
         "totalThreads": total_threads,
@@ -97,6 +101,8 @@ def create_by_thread(
         is_important=is_important,
     )
 
+    general.add(inbox_mail_entitiy)
+
     inbox_mail_references = []
 
     inbox_mail_sender_reference = InboxMailReference(
@@ -115,7 +121,6 @@ def create_by_thread(
                 scope=InboxMailReferenceScope.RECIPIENT.value,
             )
         )
-    general.add(inbox_mail_entitiy)
     general.add_all(inbox_mail_references)
 
     if with_commit:
