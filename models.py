@@ -2579,7 +2579,7 @@ class InboxMail(Base):
         index=True,
     )
     original_recipient_ids = Column(JSON)
-    thread_id = Column(UUID(as_uuid=True), index=True, unique=True, default=uuid.uuid4)
+    thread_id = Column(UUID(as_uuid=True), index=True, default=uuid.uuid4)
     parent_id = Column(
         UUID(as_uuid=True),
         ForeignKey("global.inbox_mail.id", ondelete="SET NULL"),
@@ -2591,6 +2591,7 @@ class InboxMail(Base):
     meta_data = Column(JSON)
     is_important = Column(Boolean, default=False)
     being_working_on = Column(Boolean, default=False)
+    is_admin_notification = Column(Boolean, default=False)
 
 
 class InboxMailReference(Base):
