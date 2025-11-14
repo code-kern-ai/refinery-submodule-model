@@ -1086,6 +1086,8 @@ class ETLExtractorPDF(Enum):
                 return member
         if changed_value == "PDF2MARKDOWN":
             return cls.PDF2MD
+        if changed_value == "GPT_4":
+            return cls.VISION
         return cls.VISION
 
 
@@ -1114,7 +1116,6 @@ class ETLTransformer(EnumKern):
 
 
 class ETLCacheKeys(EnumKern):
-    FILE_CACHE = "use_file_cache"
-    EXTRACTION = "use_extraction_cache"
-    SPLITTING = "use_splitting_cache"
-    TRANSFORMATION = "use_transformation_cache"
+    FILE_CACHE = "FILE_CACHE"  # cache in filesystem (type derived from task_type)
+    EXTRACTION = "EXTRACTION"  # file_extraction table & s3
+    TRANSFORMATION = "TRANSFORMATION"  # file_transformation table & s3

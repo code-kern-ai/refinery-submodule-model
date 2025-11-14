@@ -1,10 +1,11 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from .enums import (
     ETLFileType,
     ETLExtractorMD,
     ETLExtractorPDF,
     CognitionMarkdownFileState,
 )
+from .cognition_objects import project as project_db_co
 
 
 def create_etl_task_config() -> Dict[str, Any]:
@@ -108,10 +109,39 @@ def create_etl_config_for_tmp_doc(**kwargs) -> List[Dict[str, Any]]:
         else:
             config[config_part][key] = v
 
-    return [
-        config["extract"],
-        config["transform"],
-        config["split"],
-        config["load"],
-        config["notify"],
-    ]
+    final = []
+    if len(config["extract"]) > 1:
+        final.append(config["extract"])
+        # add notify for websocket (probably to cognition-gateway or let gateway check & send wes on complete poll)
+    if len(config["transform"]) > 1:
+        final.append(config["transform"])
+    if len(config["split"]) > 1:
+        final.append(config["split"])
+    if len(config["load"]) > 1:
+        final.append(config["load"])
+    if len(config["notify"]) > 1:
+        final.append(config["notify"])
+    return final
+
+
+def get_etl_config_from_project_id(project_id: str) -> Tuple[Dict[str, Any], str]:
+    item = project_db_co.get(project_id)
+    if not item:
+        raise ValueError(f"Project with id {project_id} not found")
+
+    extraction_config = item.llm_config.get("extraction", {})
+    transformation_config = item.llm_config.get("transformation", {})
+    if not extraction_config or not transformation_config:
+        raise ValueError(f"Project with id {project_id} has incomplete llm_config")
+
+    ## note that parts are extended to match helper method
+    to_return_dict = {}
+    to_return_dict["extract_extractor"] = ETLExtractorPDF.from_string(
+        extraction_config.get("extractor")
+    ).value
+    if to_return_dict["extract_extractor"] != ETLExtractorPDF.PDF2MD.value:
+        # without extractor but what gives
+        to_return_dict["extract_llm_config"] = extraction_config
+    # doesn't have a dedicated type yet so we can just pass all values
+    to_return_dict["transform_llm_config"] = transformation_config
+    return to_return_dict, item.tokenizer

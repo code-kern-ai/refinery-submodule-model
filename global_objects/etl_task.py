@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union
+from typing import Any, List, Optional, Dict, Union
 from sqlalchemy.orm.attributes import flag_modified
 
 import datetime
@@ -165,14 +165,8 @@ def create(
     org_id: str,
     user_id: str,
     file_size_bytes: int,
-    cache_config: Dict,
-    extract_config: Dict,
-    split_config: Dict,
-    transform_config: Dict,
-    load_config: Dict,
-    notify_config: Dict,
-    llm_config: Dict,
     tokenizer: str,
+    full_config: Dict[str, Any],
     priority: Optional[int] = -1,
     file_path: Optional[str] = None,
     id: Optional[str] = None,
@@ -184,13 +178,7 @@ def create(
         created_by=user_id,
         file_path=file_path,
         file_size_bytes=file_size_bytes,
-        cache_config=cache_config,
-        extract_config=extract_config,
-        split_config=split_config,
-        transform_config=transform_config,
-        load_config=load_config,
-        notify_config=notify_config,
-        llm_config=llm_config,
+        full_config=full_config,
         tokenizer=tokenizer,
         priority=priority,
     )
