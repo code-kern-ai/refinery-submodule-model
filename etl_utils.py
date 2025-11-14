@@ -6,83 +6,74 @@ from .enums import (
     CognitionMarkdownFileState,
 )
 from .cognition_objects import project as project_db_co
+from .models import FileReference
+from . import enums
 
 
-def create_etl_task_config() -> Dict[str, Any]:
-    # TODO: small helper to create etl task config dict fit for the etl container
-    # this method should be called from e.g. cognition etl or tmp doc
-    pass
-    # file_type = enums.ETLFileType.from_string(markdown_file.category_origin)
-    # extractor = enums.ETLExtractorPDF.from_string(extractor)
-    # fallback_extractors = list(
-    #     filter(
-    #         lambda x: x != extractor,
-    #         (fallback_extractors or DEFAULT_FALLBACK_EXTRACTORS.get(file_type, [])),
-    #     )
-    # )
-    # {
-    #         "file_type": file_type.value,
-    #         "extractor": extractor.value,
-    #         "fallback_extractors": [fe.value for fe in fallback_extractors],
-    #         "minio_path": file_reference.minio_path,
-    #         "original_file_name": file_reference.original_file_name,
-    #     }
-
-
-# def get_or_create_markdown_file_etl_task(
-#     org_id: str,
-#     file_reference: FileReference,
-#     markdown_file: CognitionMarkdownFile,
-#     markdown_dataset: CognitionMarkdownDataset,
-#     extractor: str,
-#     cache_config: Dict,
-#     split_config: Dict,
-#     transform_config: Dict,
-#     load_config: Dict,
-#     notify_config: Dict,
-#     priority: Optional[int] = -1,
-#     fallback_extractors: Optional[list[enums.ETLExtractorPDF]] = [],
-# ) -> EtlTask:
-#     if etl_task := (
-#         session.query(EtlTask).filter(EtlTask.id == markdown_file.etl_task_id).first()
-#     ):
-#         return etl_task
-
-#     file_type = enums.ETLFileType.from_string(markdown_file.category_origin)
-#     extractor = enums.ETLExtractorPDF.from_string(extractor)
-#     fallback_extractors = list(
-#         filter(
-#             lambda x: x != extractor,
-#             (fallback_extractors or DEFAULT_FALLBACK_EXTRACTORS.get(file_type, [])),
-#         )
-#     )
-
-#     return create(
-#         org_id=org_id,
-#         user_id=markdown_file.created_by,
-#         file_size_bytes=file_reference.file_size_bytes,
-#         cache_config=cache_config,
-#         extract_config={
-#             "file_type": file_type.value,
-#             "extractor": extractor.value,
-#             "fallback_extractors": [fe.value for fe in fallback_extractors],
-#             "minio_path": file_reference.minio_path,
-#             "original_file_name": file_reference.original_file_name,
-#         },
-#         split_config=split_config,
-#         transform_config=transform_config,
-#         load_config=load_config,
-#         notify_config=notify_config,
-#         llm_config=markdown_dataset.llm_config,
-#         tokenizer=markdown_dataset.tokenizer,
-#         priority=priority,
-#     )
+# helper function for existing functionality, will be replaced with better builder in the future
+def create_etl_task_config_from_file_reference_tmp_doc(
+    file_reference: FileReference,
+) -> Dict[str, Any]:
+    project_config, tokenizer = __get_etl_config_from_project_id(
+        file_reference.meta_data.get("project_id")
+    )
+    task_config = __create_etl_config_for_tmp_doc(
+        extract_config={
+            "file_type": enums.ETLFileType.PDF.value,  # fixed for tmp doc atm
+            "fallback": None,  # later filled by config of project
+            "minio_path": file_reference.minio_path,
+            "original_file_name": file_reference.original_file_name,
+            "cache_config": {
+                enums.ETLCacheKeys.FILE_CACHE.value: True,
+                enums.ETLCacheKeys.EXTRACTION.value: {
+                    "file_reference_id": str(file_reference.id)
+                    # if exists file extraction id
+                },
+            },
+        },
+        split_config={
+            "strategy": enums.ETLSplitStrategy.CHUNK.value,
+            "chunk_size": 1000,
+        },
+        transform_config={
+            "transformers": [
+                {
+                    "enabled": True,  # this transformer is disabled because it often hangs the ETL process
+                    "name": enums.ETLTransformer.CLEANSE.value,
+                },
+                {
+                    "enabled": True,
+                    "name": enums.ETLTransformer.TEXT_TO_TABLE.value,
+                },
+            ],
+            "cache_config": {
+                enums.ETLCacheKeys.FILE_CACHE.value: True,
+                enums.ETLCacheKeys.TRANSFORMATION.value: {
+                    "file_reference_id": str(file_reference.id)
+                    # if exists file extraction id
+                    # if exists file transformation id
+                },
+            },
+        },
+        **project_config,
+    )
+    task_config.extend(
+        [
+            {
+                "task_type": enums.CognitionMarkdownFileState.LOADING.value,
+                "delete_queue_marker_s3": __get_minio_path_for_deletion(file_reference),
+            },
+            {
+                "task_type": enums.CognitionMarkdownFileState.CACHE_HANDLING.value,
+                enums.ETLCacheKeys.FILE_CACHE.value: {"delete": True},
+            },
+        ]
+    )
+    return task_config, tokenizer
 
 
 ## helper function for existing functionality, will be replaced with better builder in the future
-def create_etl_config_for_tmp_doc(**kwargs) -> List[Dict[str, Any]]:
-    # # transformers is an array of dicts with name and prompt and enabled?
-    # {"transformers": [{"name": "dddd"}], "llm_config": {}}
+def __create_etl_config_for_tmp_doc(**kwargs) -> List[Dict[str, Any]]:
     config = {
         "extract": {
             "task_type": CognitionMarkdownFileState.EXTRACTING.value,
@@ -124,7 +115,7 @@ def create_etl_config_for_tmp_doc(**kwargs) -> List[Dict[str, Any]]:
     return final
 
 
-def get_etl_config_from_project_id(project_id: str) -> Tuple[Dict[str, Any], str]:
+def __get_etl_config_from_project_id(project_id: str) -> Tuple[Dict[str, Any], str]:
     item = project_db_co.get(project_id)
     if not item:
         raise ValueError(f"Project with id {project_id} not found")
@@ -145,3 +136,12 @@ def get_etl_config_from_project_id(project_id: str) -> Tuple[Dict[str, Any], str
     # doesn't have a dedicated type yet so we can just pass all values
     to_return_dict["transform_llm_config"] = transformation_config
     return to_return_dict, item.tokenizer
+
+
+def __get_minio_path_for_deletion(
+    file_reference: FileReference,
+) -> str:
+    project_id = file_reference.meta_data.get("project_id")
+    conversation_id = file_reference.meta_data.get("conversation_id")
+    original_file_name = file_reference.original_file_name
+    return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/queued/{original_file_name}.info"
