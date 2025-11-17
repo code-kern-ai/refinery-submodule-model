@@ -1,13 +1,13 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 from .enums import (
-    ETLFileType,
-    ETLExtractorMD,
     ETLExtractorPDF,
     CognitionMarkdownFileState,
 )
 from .cognition_objects import project as project_db_co
 from .models import FileReference
 from . import enums
+
+JSON_CHUNKS_ENDING = ".chunks.json"
 
 
 # helper function for existing functionality, will be replaced with better builder in the future
@@ -62,6 +62,7 @@ def create_etl_task_config_from_file_reference_tmp_doc(
             {
                 "task_type": enums.CognitionMarkdownFileState.LOADING.value,
                 "delete_queue_marker_s3": __get_minio_path_for_deletion(file_reference),
+                "copy_to_chat_files": __get_minio_path_for_copy(file_reference),
             },
             {
                 "task_type": enums.CognitionMarkdownFileState.CACHE_HANDLING.value,
@@ -103,7 +104,6 @@ def __create_etl_config_for_tmp_doc(**kwargs) -> List[Dict[str, Any]]:
     final = []
     if len(config["extract"]) > 1:
         final.append(config["extract"])
-        # add notify for websocket (probably to cognition-gateway or let gateway check & send wes on complete poll)
     if len(config["transform"]) > 1:
         final.append(config["transform"])
     if len(config["split"]) > 1:
@@ -145,3 +145,12 @@ def __get_minio_path_for_deletion(
     conversation_id = file_reference.meta_data.get("conversation_id")
     original_file_name = file_reference.original_file_name
     return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/queued/{original_file_name}.info"
+
+
+def __get_minio_path_for_copy(
+    file_reference: FileReference,
+) -> str:
+    project_id = file_reference.meta_data.get("project_id")
+    conversation_id = file_reference.meta_data.get("conversation_id")
+    original_file_name = file_reference.original_file_name
+    return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/{original_file_name}{JSON_CHUNKS_ENDING}"
