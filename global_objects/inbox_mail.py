@@ -156,12 +156,13 @@ def create_by_thread(
     thread_id: Optional[str] = None,
     is_important: bool = False,
     is_admin_support_thread: bool = False,
+    created_by: Optional[str] = None,
     with_commit: bool = True,
 ) -> List[InboxMail]:
 
     if thread_id is None:
         thread_entity = InboxMailThread(
-            created_by=sender_id,
+            created_by=sender_id if not created_by else created_by,
             organization_id=org_id,
             subject=subject,
             meta_data=meta_data or {},
@@ -212,3 +213,11 @@ def get_participant_ids_by_thread_id(thread_id: str) -> List[str]:
     )
     participant_ids = [assoc.user_id for assoc in associations]
     return participant_ids
+
+
+def update_thread_progress(
+    thread_id: str, is_in_progress: bool, with_commit: bool = True
+) -> Dict[str, Any]:
+    thread_entity = get_inbox_mail_thread_by_id(thread_id)
+    thread_entity.is_in_progress = is_in_progress
+    general.flush_or_commit(with_commit)
