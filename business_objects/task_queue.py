@@ -33,6 +33,21 @@ def get_orphan_tasks() -> List[TaskQueue]:
     )
 
 
+def get_all_queued_etl_task_for_conversation(
+    org_id: str, project_id: str, conversation_id: str
+) -> Optional[List[TaskQueue]]:
+    return (
+        session.query(TaskQueue)
+        .filter(
+            TaskQueue.organization_id == org_id,
+            TaskQueue.task_type == enums.TaskType.EXECUTE_ETL.value,
+            text(f"task_info->>'project_id' = '{project_id}'"),
+            text(f"task_info->>'conversation_id' = '{conversation_id}'"),
+        )
+        .all()
+    )
+
+
 def get_likely_failed_tasks(days: int = 1) -> List[TaskQueue]:
     return (
         session.query(TaskQueue)
