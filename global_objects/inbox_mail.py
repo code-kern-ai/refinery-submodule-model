@@ -33,7 +33,7 @@ def get_by_thread(
         query = query.filter(
             (InboxMailThread.id == thread_id)
             & (
-                (InboxMailThread.id.in_(participant_thread_ids))
+                (InboxMailThread.id.in_(participant_thread_ids.select()))
                 | (InboxMailThread.is_admin_support_thread == True)
             )
         )
@@ -71,7 +71,7 @@ def get_overview_by_threads(
             .subquery()
         )
         query = base_query.filter(
-            (InboxMailThread.id.in_(participant_thread_ids))
+            (InboxMailThread.id.in_(participant_thread_ids.select()))
             | (InboxMailThread.is_admin_support_thread == True)
         )
     else:
