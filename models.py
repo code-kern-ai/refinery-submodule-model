@@ -2581,7 +2581,7 @@ class InboxMailThread(Base):
     subject = Column(String)
     meta_data = Column(JSON)
     is_important = Column(Boolean, default=False)
-    being_working_on = Column(Boolean, default=False)
+    is_in_progress = Column(Boolean, default=False)
     is_admin_support_thread = Column(Boolean, default=False)
 
 
