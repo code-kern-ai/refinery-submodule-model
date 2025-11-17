@@ -2621,3 +2621,4 @@ class InboxMailThreadAssociation(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    unread_mail_count = Column(Integer, default=0)
