@@ -2563,52 +2563,61 @@ class ConversationGlobalShare(Base):
     created_at = Column(DateTime, default=sql.func.now())
 
 
-class InboxMail(Base):
-    __tablename__ = Tablenames.INBOX_MAIL.value
+class InboxMailThread(Base):
+    __tablename__ = Tablenames.INBOX_MAIL_THREAD.value
     __table_args__ = {"schema": "global"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     organization_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+    subject = Column(String)
+    meta_data = Column(JSON)
+    is_important = Column(Boolean, default=False)
+    being_working_on = Column(Boolean, default=False)
+    is_admin_support_thread = Column(Boolean, default=False)
+
+
+class InboxMail(Base):
+    __tablename__ = Tablenames.INBOX_MAIL.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime, default=sql.func.now())
     sender_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
-    original_recipient_ids = Column(JSON)
-    thread_id = Column(UUID(as_uuid=True), index=True, default=uuid.uuid4)
-    parent_id = Column(
+    thread_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("global.inbox_mail.id", ondelete="SET NULL"),
-        nullable=True,
+        ForeignKey(
+            f"global.{Tablenames.INBOX_MAIL_THREAD.value}.id", ondelete="CASCADE"
+        ),
         index=True,
     )
-    subject = Column(String)
     content = Column(String)
-    meta_data = Column(JSON)
-    is_important = Column(Boolean, default=False)
-    being_working_on = Column(Boolean, default=False)
-    is_admin_notification = Column(Boolean, default=False)
 
 
-class InboxMailReference(Base):
-    __tablename__ = Tablenames.INBOX_MAIL_REFERENCE.value
+class InboxMailThreadAssociation(Base):
+    __tablename__ = Tablenames.INBOX_MAIL_THREAD_ASSOCIATION.value
     __table_args__ = {"schema": "global"}
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    inbox_mail_id = Column(
+    thread_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"global.{Tablenames.INBOX_MAIL.value}.id", ondelete="CASCADE"),
+        ForeignKey(
+            f"global.{Tablenames.INBOX_MAIL_THREAD.value}.id", ondelete="CASCADE"
+        ),
         index=True,
-        nullable=False,
     )
-    scope = Column(String, nullable=False)  # enums.InboxMailReferenceScope
     user_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
-        nullable=False,
     )
-    is_seen = Column(Boolean, default=False)

@@ -26,6 +26,32 @@ def get_user_cached_if_not_admin(user_id: str) -> Optional[User]:
     return user
 
 
+# TODO use new roles form kratos
+def get_admin_users() -> List[User]:
+    kernai_admins = (
+        session.query(User)
+        .filter(User.email.ilike("%@kern.ai"), User.verified == True)
+        .all()
+    )
+
+    query = """
+    SELECT email FROM global.full_admin_access
+    """
+
+    result = general.execute_all(query)
+    full_admin_emails = [row[0].lower() for row in result] if result else []
+
+    if full_admin_emails:
+        full_admins = (
+            session.query(User).filter(User.email.in_(full_admin_emails)).all()
+        )
+    else:
+        full_admins = []
+
+    admin_users = {user.id: user for user in kernai_admins + full_admins}
+    return list(admin_users.values())
+
+
 @TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
 def get_user_cached(user_id: str) -> User:
     user = get(user_id)
