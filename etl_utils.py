@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from .enums import (
     ETLExtractorPDF,
     CognitionMarkdownFileState,
@@ -13,12 +13,19 @@ JSON_CHUNKS_ENDING = ".chunks.json"
 # helper function for existing functionality, will be replaced with better builder in the future
 def create_etl_task_config_from_file_reference_tmp_doc(
     file_reference: FileReference,
+    file_extraction_id: Optional[str] = None,
+    file_transformation_id: Optional[str] = None,
+    parse_scope: Optional[str] = None,
+    meta_data: Optional[Dict[str, Any]] = None,
+    file_name: Optional[str] = None,
 ) -> Dict[str, Any]:
     project_config, tokenizer = __get_etl_config_from_project_id(
-        file_reference.meta_data.get("project_id")
+        (meta_data or file_reference.meta_data).get("project_id")
     )
-    task_config = __create_etl_config_for_tmp_doc(
-        extract_config={
+
+    kwargs = {}
+    if parse_scope is None or "EXTRACT" in parse_scope:
+        kwargs["extract_config"] = {
             "file_type": enums.ETLFileType.PDF.value,  # fixed for tmp doc atm
             "fallback": None,  # later filled by config of project
             "minio_path": file_reference.minio_path,
@@ -26,16 +33,17 @@ def create_etl_task_config_from_file_reference_tmp_doc(
             "cache_config": {
                 enums.ETLCacheKeys.FILE_CACHE.value: True,
                 enums.ETLCacheKeys.EXTRACTION.value: {
-                    "file_reference_id": str(file_reference.id)
-                    # if exists file extraction id
+                    "file_reference_id": str(file_reference.id),
                 },
             },
-        },
-        split_config={
-            "strategy": enums.ETLSplitStrategy.CHUNK.value,
-            "chunk_size": 1000,
-        },
-        transform_config={
+        }
+        if file_extraction_id:
+            kwargs["extract_config"]["cache_config"][
+                enums.ETLCacheKeys.EXTRACTION.value
+            ]["file_extraction_id"] = file_extraction_id
+
+    if parse_scope is None or "TRANSFORM" in parse_scope:
+        kwargs["transform_config"] = {
             "transformers": [
                 {
                     "enabled": True,  # this transformer is disabled because it often hangs the ETL process
@@ -49,11 +57,25 @@ def create_etl_task_config_from_file_reference_tmp_doc(
             "cache_config": {
                 enums.ETLCacheKeys.FILE_CACHE.value: True,
                 enums.ETLCacheKeys.TRANSFORMATION.value: {
-                    "file_reference_id": str(file_reference.id)
-                    # if exists file extraction id
-                    # if exists file transformation id
+                    "file_reference_id": str(file_reference.id),
                 },
             },
+        }
+        if file_extraction_id:
+            kwargs["transform_config"]["cache_config"][
+                enums.ETLCacheKeys.TRANSFORMATION.value
+            ]["file_extraction_id"] = file_extraction_id
+
+        if file_transformation_id:
+            kwargs["transform_config"]["cache_config"][
+                enums.ETLCacheKeys.TRANSFORMATION.value
+            ]["file_transformation_id"] = file_transformation_id
+
+    task_config = __create_etl_config_for_tmp_doc(
+        **kwargs,
+        split_config={
+            "strategy": enums.ETLSplitStrategy.CHUNK.value,
+            "chunk_size": 1000,
         },
         **project_config,
     )
@@ -61,8 +83,12 @@ def create_etl_task_config_from_file_reference_tmp_doc(
         [
             {
                 "task_type": enums.CognitionMarkdownFileState.LOADING.value,
-                "delete_queue_marker_s3": __get_minio_path_for_deletion(file_reference),
-                "copy_to_chat_files": __get_minio_path_for_copy(file_reference),
+                "delete_queue_marker_s3": __get_minio_path_for_deletion(
+                    file_reference, meta_data, file_name
+                ),
+                "copy_to_chat_files": __get_minio_path_for_copy(
+                    file_reference, meta_data, file_name
+                ),
             },
             {
                 "task_type": enums.CognitionMarkdownFileState.CACHE_HANDLING.value,
@@ -140,17 +166,21 @@ def __get_etl_config_from_project_id(project_id: str) -> Tuple[Dict[str, Any], s
 
 def __get_minio_path_for_deletion(
     file_reference: FileReference,
+    meta_data: Optional[Dict[str, Any]] = None,
+    file_name: Optional[str] = None,
 ) -> str:
-    project_id = file_reference.meta_data.get("project_id")
-    conversation_id = file_reference.meta_data.get("conversation_id")
-    original_file_name = file_reference.original_file_name
+    project_id = (meta_data or file_reference.meta_data).get("project_id")
+    conversation_id = (meta_data or file_reference.meta_data).get("conversation_id")
+    original_file_name = file_name or file_reference.original_file_name
     return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/queued/{original_file_name}.info"
 
 
 def __get_minio_path_for_copy(
     file_reference: FileReference,
+    meta_data: Optional[Dict[str, Any]] = None,
+    file_name: Optional[str] = None,
 ) -> str:
-    project_id = file_reference.meta_data.get("project_id")
-    conversation_id = file_reference.meta_data.get("conversation_id")
-    original_file_name = file_reference.original_file_name
+    project_id = (meta_data or file_reference.meta_data).get("project_id")
+    conversation_id = (meta_data or file_reference.meta_data).get("conversation_id")
+    original_file_name = file_name or file_reference.original_file_name
     return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/{original_file_name}{JSON_CHUNKS_ENDING}"
