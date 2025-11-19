@@ -23,7 +23,7 @@ def create_etl_task_config_from_file_reference_tmp_doc(
     file_name: Optional[str] = None,
 ) -> Dict[str, Any]:
     project_config, tokenizer = __get_etl_config_from_project_id(
-        (meta_data or file_reference.meta_data).get("project_id")
+        (meta_data or file_reference.meta_data).get("project_id"), parse_scope
     )
 
     kwargs = {}
@@ -144,7 +144,9 @@ def __create_etl_config_for_tmp_doc(**kwargs) -> List[Dict[str, Any]]:
     return final
 
 
-def __get_etl_config_from_project_id(project_id: str) -> Tuple[Dict[str, Any], str]:
+def __get_etl_config_from_project_id(
+    project_id: str, parse_scope: Optional[str] = None
+) -> Tuple[Dict[str, Any], str]:
     item = project_db_co.get(project_id)
     if not item:
         raise ValueError(f"Project with id {project_id} not found")
@@ -156,14 +158,16 @@ def __get_etl_config_from_project_id(project_id: str) -> Tuple[Dict[str, Any], s
 
     ## note that parts are extended to match helper method
     to_return_dict = {}
-    to_return_dict["extract_extractor"] = ETLExtractorPDF.from_string(
-        extraction_config.get("extractor")
-    ).value
-    if to_return_dict["extract_extractor"] != ETLExtractorPDF.PDF2MD.value:
-        # without extractor but what gives
-        to_return_dict["extract_llm_config"] = extraction_config
+    if parse_scope is None or "EXTRACT" in parse_scope:
+        to_return_dict["extract_extractor"] = ETLExtractorPDF.from_string(
+            extraction_config.get("extractor")
+        ).value
+        if to_return_dict["extract_extractor"] != ETLExtractorPDF.PDF2MD.value:
+            # without extractor but what gives
+            to_return_dict["extract_llm_config"] = extraction_config
     # doesn't have a dedicated type yet so we can just pass all values
-    to_return_dict["transform_llm_config"] = transformation_config
+    if parse_scope is None or "TRANSFORM" in parse_scope:
+        to_return_dict["transform_llm_config"] = transformation_config
     return to_return_dict, item.tokenizer
 
 
