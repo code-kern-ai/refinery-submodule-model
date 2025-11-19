@@ -93,7 +93,6 @@ def get_by_thread(
         ).filter(
             InboxMailThreadAssociation.user_id == user_id,
             InboxMailThread.id == thread_id,
-            InboxMailThread.organization_id == org_id,
         )
 
     inbox_mail_entities = query.order_by(asc(InboxMail.created_at)).all()
@@ -142,10 +141,7 @@ def get_overview_by_threads(
         query = base_query.join(
             InboxMailThreadAssociation,
             InboxMailThreadAssociation.thread_id == InboxMailThread.id,
-        ).filter(
-            InboxMailThreadAssociation.user_id == user_id,
-            InboxMailThread.organization_id == org_id,
-        )
+        ).filter(InboxMailThreadAssociation.user_id == str(user_id))
 
     total_threads = query.count()
 
