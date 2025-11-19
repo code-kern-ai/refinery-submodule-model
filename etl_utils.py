@@ -285,4 +285,4 @@ def get_transformation_key(transformation_llm_config: Dict[str, Any]) -> str:
         api_hash = hasher.hexdigest()
         transformation_key += f"_{api_hash}"
         transformation_key += f"_{model}"
-    return transformation_key
+    return transformation_key.replace("/", "_")
