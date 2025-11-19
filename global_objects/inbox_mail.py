@@ -11,7 +11,9 @@ from submodules.model.models import (
     InboxMailThread,
     InboxMailThreadAssociation,
 )
-from sqlalchemy import or_
+from submodules.model.enums import InboxMailThreadSupportProgressState
+from controller.auth import kratos
+from sqlalchemy.orm.attributes import flag_modified
 
 
 def get(inbox_mail_id: str) -> InboxMail:
@@ -34,7 +36,7 @@ def get_new_inbox_mails(
         )
         .filter(
             InboxMailThread.organization_id == org_id,
-            InboxMailThreadAssociation.user_id == str(user_id),
+            InboxMailThreadAssociation.user_id == user_id,
         )
         .group_by(InboxMailThreadAssociation.thread_id)
     )
@@ -74,7 +76,7 @@ def get_by_thread(
     if user_is_admin:
         participant_thread_ids = (
             session.query(InboxMailThreadAssociation.thread_id)
-            .filter(InboxMailThreadAssociation.user_id == str(user_id))
+            .filter(InboxMailThreadAssociation.user_id == user_id)
             .subquery()
         )
         query = query.filter(
@@ -89,7 +91,7 @@ def get_by_thread(
             InboxMailThreadAssociation,
             InboxMailThreadAssociation.thread_id == InboxMailThread.id,
         ).filter(
-            InboxMailThreadAssociation.user_id == str(user_id),
+            InboxMailThreadAssociation.user_id == user_id,
             InboxMailThread.id == thread_id,
             InboxMailThread.organization_id == org_id,
         )
@@ -129,7 +131,7 @@ def get_overview_by_threads(
     if user_is_admin:
         participant_thread_ids = (
             session.query(InboxMailThreadAssociation.thread_id)
-            .filter(InboxMailThreadAssociation.user_id == str(user_id))
+            .filter(InboxMailThreadAssociation.user_id == user_id)
             .subquery()
         )
         query = base_query.filter(
@@ -141,7 +143,7 @@ def get_overview_by_threads(
             InboxMailThreadAssociation,
             InboxMailThreadAssociation.thread_id == InboxMailThread.id,
         ).filter(
-            InboxMailThreadAssociation.user_id == str(user_id),
+            InboxMailThreadAssociation.user_id == user_id,
             InboxMailThread.organization_id == org_id,
         )
 
@@ -176,7 +178,7 @@ def get_overview_by_threads(
         )
         .filter(
             InboxMailThreadAssociation.thread_id.in_(thread_ids),
-            InboxMailThreadAssociation.user_id == str(user_id),
+            InboxMailThreadAssociation.user_id == user_id,
         )
         .all()
     )
@@ -253,7 +255,6 @@ def create_by_thread(
     with_commit: bool = True,
 ) -> List[InboxMail]:
 
-    print(meta_data, flush=True)
     if thread_id is None:
         if is_admin_support_thread:
             meta_data = meta_data or {}
@@ -328,8 +329,18 @@ def get_participant_ids_by_thread_id(thread_id: str) -> List[str]:
 
 
 def update_thread_progress(
-    thread_id: str, is_in_progress: bool, with_commit: bool = True
+    user_id: str, thread_id: str, progress_state: str, with_commit: bool = True
 ) -> Dict[str, Any]:
     thread_entity = get_inbox_mail_thread_by_id(thread_id)
-    thread_entity.is_in_progress = is_in_progress
+    thread_entity.progress_state = progress_state
+    if progress_state == InboxMailThreadSupportProgressState.IN_PROGRESS.value:
+        thread_entity.support_owner_id = user_id
+        meta_data = thread_entity.meta_data or {}
+        meta_data["supportOwnerName"] = kratos.resolve_user_name_by_id(user_id)
+        thread_entity.meta_data = meta_data
+        flag_modified(thread_entity, "meta_data")
+
+    if progress_state == InboxMailThreadSupportProgressState.PENDING.value:
+        thread_entity.support_owner_id = None
+
     general.flush_or_commit(with_commit)

@@ -1028,3 +1028,10 @@ class MessageType(Enum):
 
 class TimedExecutionKey(Enum):
     LAST_RESET_USER_MESSAGE_COUNT = "LAST_RESET_USER_MESSAGE_COUNT"
+
+
+class InboxMailThreadSupportProgressState(Enum):
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    RESOLVED = "RESOLVED"
+    FAILED = "FAILED"
