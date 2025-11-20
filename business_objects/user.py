@@ -78,6 +78,23 @@ def get_all(
     return query.all()
 
 
+def get_all_users_by_users_team(user_id: str) -> List[User]:
+    if not user_id:
+        return []
+    teams_subquery = (
+        session.query(TeamMember.team_id)
+        .filter(TeamMember.user_id == user_id)
+        .subquery()
+    )
+    query = (
+        session.query(User)
+        .join(TeamMember, TeamMember.user_id == User.id)
+        .filter(TeamMember.team_id.in_(teams_subquery))
+        .distinct(User.id)
+    )
+    return query.all()
+
+
 def get_all_team_members_by_project(project_id: str) -> List[User]:
     query = (
         session.query(TeamMember)

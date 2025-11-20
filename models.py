@@ -2581,7 +2581,14 @@ class InboxMailThread(Base):
     subject = Column(String)
     meta_data = Column(JSON)
     is_important = Column(Boolean, default=False)
-    is_in_progress = Column(Boolean, default=False)
+    progress_state = Column(
+        String
+    )  # of type enums. InboxMailThreadSupportProgressState *.value
+    support_owner_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
     is_admin_support_thread = Column(Boolean, default=False)
 
 
