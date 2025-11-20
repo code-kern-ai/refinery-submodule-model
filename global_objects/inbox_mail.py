@@ -6,6 +6,10 @@ from ..session import session
 from sqlalchemy import cast, String, func, desc, asc
 
 from submodules.model.business_objects import general, user as user_bo
+from submodules.model.cognition_objects import (
+    project as cognition_project,
+    conversation,
+)
 from submodules.model.models import (
     InboxMail,
     InboxMailThread,
@@ -181,15 +185,14 @@ def get_overview_by_threads(
         for thread_id, unread_mail_count in unread_counts
     }
 
-    thread_dicts = [
-        {
-            **sql_alchemy_to_dict(thread),
-            "latest_mail": sql_alchemy_to_dict(get_first_in_thread(thread.id)),
-            "participant_ids": participants_map.get(str(thread.id), []),
-            "unread_mail_count": unread_count_map.get(str(thread.id), 0),
-        }
-        for thread in threads
-    ]
+    thread_dicts = []
+    for thread in threads:
+        thread_dict = __extend_thread_dict(thread, participants_map, unread_count_map)
+        if user_is_admin and thread_dict.get("is_admin_support_thread"):
+            __enrich_admin_metadata(
+                thread_dict.get("meta_data", {}),
+            )
+        thread_dicts.append(thread_dict)
 
     return {
         "total_threads": total_threads,
@@ -197,6 +200,32 @@ def get_overview_by_threads(
         "limit": limit,
         "threads": thread_dicts,
     }
+
+
+def __extend_thread_dict(thread, participants_map, unread_count_map):
+    thread_dict = sql_alchemy_to_dict(thread)
+    thread_dict["latest_mail"] = sql_alchemy_to_dict(get_first_in_thread(thread.id))
+    thread_dict["participant_ids"] = participants_map.get(str(thread.id), [])
+    thread_dict["unread_mail_count"] = unread_count_map.get(str(thread.id), 0)
+    return thread_dict
+
+
+def __enrich_admin_metadata(meta_data):
+
+    project_id = meta_data.get("projectId")
+    if project_id:
+        project_entity = cognition_project.get(project_id)
+        meta_data["projectName"] = (
+            project_entity.name if project_entity else "<unknown project>"
+        )
+        conversation_id = meta_data.get("conversationId")
+        if conversation_id:
+            conversation_entity = conversation.get(project_id, conversation_id)
+            meta_data["conversationHeader"] = (
+                conversation_entity.header
+                if conversation_entity
+                else "<unknown conversation>"
+            )
 
 
 def get_inbox_mail_thread_by_id(thread_id: str) -> InboxMailThread:
