@@ -44,7 +44,6 @@ def get_new_inbox_mails(
         total_unread_count += thread_unread_count
 
     if user_is_admin:
-        # Include admin support thread unread counts
         admin_unread_count = 0
         admin_threads = (
             session.query(InboxMailThread)
@@ -152,7 +151,6 @@ def get_overview_by_threads(
 
     thread_ids = [t.id for t in threads]
 
-    # Get participants for each thread
     participants = (
         session.query(
             InboxMailThreadAssociation.thread_id, InboxMailThreadAssociation.user_id
@@ -249,7 +247,6 @@ def create_by_thread(
     with_commit: bool = True,
 ) -> List[InboxMail]:
 
-    print(meta_data, flush=True)
     if thread_id is None:
         if is_admin_support_thread:
             meta_data = meta_data or {}
