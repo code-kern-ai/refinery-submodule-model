@@ -39,7 +39,7 @@ def get_full_config_for_tmp_doc(
                 "extractor": extractor,
                 "minio_path": file_reference.minio_path,
                 "original_file_name": file_reference.original_file_name,
-                "fallback_tasks": None,  # later filled by config of project
+                "fallback": None,  # later filled by config of project
             },
             "llm_config": extraction_config,
         },
@@ -135,7 +135,17 @@ def get_full_config_for_integration(
                 "use_cache": False,
                 "file_type": file_type.value,
                 "extractor": extractor.value,
-                "fallback_tasks": [fe.value for fe in fallback_extractors],
+                "fallback": [
+                    {
+                        "task_type": CognitionMarkdownFileState.EXTRACTING.value,
+                        "task_config": {
+                            "use_cache": False,
+                            "file_type": file_type.value,
+                            "extractor": enums.ETLExtractorPDF.VISION.value,
+                        },
+                        "llm_config": integration.llm_config,
+                    }
+                ],
             },
             "llm_config": integration.llm_config,
         },
