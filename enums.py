@@ -732,7 +732,7 @@ class LLMProvider(Enum):
 
 
 # now also etl states!
-class CognitionMarkdownFileState(Enum):
+class CognitionMarkdownFileState(EnumKern):
     QUEUE = "QUEUE"
     STARTED = "STARTED"
     EXTRACTING = "EXTRACTING"
@@ -746,10 +746,6 @@ class CognitionMarkdownFileState(Enum):
     )
     FINISHED = "FINISHED"
     FAILED = "FAILED"
-
-    @classmethod
-    def all(cls):
-        return [e.value for e in cls]
 
 
 class CognitionInterfaceType(Enum):
