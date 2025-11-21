@@ -113,20 +113,12 @@ def __get_etl_config_from_project(
 def get_full_config_for_integration(
     integration: CognitionIntegration,
     record: IntegrationSharepoint,
-    fallback_extractors: Optional[List[enums.ETLExtractorPDF]] = None,
 ):
     file_type = enums.ETLFileType.from_string(
         record.extension.replace(".", "").replace("FOLDER", "md")
     )
 
     extractor = DEFAULT_EXTRACTORS.get(file_type, enums.ETLExtractorMD.FILESYSTEM)
-
-    fallback_extractors = list(
-        filter(
-            lambda x: x != extractor,
-            (fallback_extractors or DEFAULT_FALLBACK_EXTRACTORS.get(file_type, [])),
-        )
-    )
 
     full_config = [
         {
