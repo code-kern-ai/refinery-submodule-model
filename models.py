@@ -2600,6 +2600,7 @@ class EtlTask(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    original_file_name = Column(String)
     file_path = Column(String)
     file_size_bytes = Column(BigInteger)
     tokenizer = Column(String)

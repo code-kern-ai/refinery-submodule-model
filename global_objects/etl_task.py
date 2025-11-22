@@ -97,11 +97,11 @@ def get_all_in_org_paginated(
 
 
 def get_or_create_integration_etl_task(
-    org_id: str,
-    integration: CognitionIntegration,
     record: IntegrationSharepoint,
-    file_path: str,
-    full_config: Dict[str, Any],
+    org_id: Optional[str],
+    integration: Optional[CognitionIntegration],
+    file_path: Optional[str],
+    full_config: Optional[Dict[str, Any]],
     priority: Optional[int] = -1,
 ) -> EtlTask:
     if etl_task := (
@@ -109,16 +109,11 @@ def get_or_create_integration_etl_task(
     ):
         return etl_task
 
-    if record.extension.replace(".", "") == "FOLDER":
-        file_size_bytes = 0
-    else:
-        file_size_bytes = record.size
-
     return create(
         org_id=org_id,
         user_id=integration.created_by,
         file_path=file_path,
-        file_size_bytes=file_size_bytes,
+        file_size_bytes=record.size,
         full_config=full_config,
         tokenizer=integration.tokenizer,
         priority=priority,
@@ -128,6 +123,7 @@ def get_or_create_integration_etl_task(
 def create(
     org_id: str,
     user_id: str,
+    original_file_name: str,
     file_size_bytes: int,
     tokenizer: str,
     full_config: Dict[str, Any],
@@ -140,6 +136,7 @@ def create(
         id=id,
         organization_id=org_id,
         created_by=user_id,
+        original_file_name=original_file_name,
         file_path=file_path,
         file_size_bytes=file_size_bytes,
         full_config=full_config,
@@ -155,15 +152,10 @@ def update(
     id: Optional[str] = None,
     etl_task: Optional[EtlTask] = None,
     updated_by: Optional[str] = None,
+    original_file_name: Optional[str] = None,
     file_path: Optional[str] = None,
     file_size_bytes: Optional[int] = None,
-    cache_config: Optional[Dict] = None,
-    extract_config: Optional[Dict] = None,
-    split_config: Optional[Dict] = None,
-    transform_config: Optional[Dict] = None,
-    load_config: Optional[Dict] = None,
-    notify_config: Optional[Dict] = None,
-    llm_config: Optional[Dict] = None,
+    full_config: Optional[Dict] = None,
     started_at: Optional[datetime.datetime] = None,
     finished_at: Optional[Union[str, datetime.datetime]] = None,
     state: Optional[enums.CognitionMarkdownFileState] = None,
@@ -185,27 +177,11 @@ def update(
         etl_task.file_path = file_path
     if file_size_bytes is not None and etl_task.file_size_bytes is None:
         etl_task.file_size_bytes = file_size_bytes
-    if cache_config is not None:
-        etl_task.cache_config = cache_config
-        flag_modified(etl_task, "cache_config")
-    if extract_config is not None:
-        etl_task.extract_config = extract_config
-        flag_modified(etl_task, "extract_config")
-    if split_config is not None:
-        etl_task.split_config = split_config
-        flag_modified(etl_task, "split_config")
-    if transform_config is not None:
-        etl_task.transform_config = transform_config
-        flag_modified(etl_task, "transform_config")
-    if load_config is not None:
-        etl_task.load_config = load_config
-        flag_modified(etl_task, "load_config")
-    if notify_config is not None:
-        etl_task.notify_config = notify_config
-        flag_modified(etl_task, "notify_config")
-    if llm_config is not None:
-        etl_task.llm_config = llm_config
-        flag_modified(etl_task, "llm_config")
+    if original_file_name is not None and etl_task.original_file_name is None:
+        etl_task.original_file_name = original_file_name
+    if full_config is not None:
+        etl_task.full_config = full_config
+        flag_modified(etl_task, "full_config")
     if started_at is not None:
         etl_task.started_at = started_at
     if finished_at is not None:
