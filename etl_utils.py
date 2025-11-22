@@ -1,11 +1,13 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
+from pathlib import Path
+
 from .enums import (
     ETLExtractorPDF,
     CognitionMarkdownFileState,
     LLMProvider,
     ETLExtractorPDF,
 )
-from .global_objects.etl_task import DEFAULT_EXTRACTORS, DEFAULT_FALLBACK_EXTRACTORS
+from .global_objects.etl_task import DEFAULT_EXTRACTORS
 from .models import (
     FileReference,
     CognitionIntegration,
@@ -127,6 +129,7 @@ def get_full_config_for_integration(
                 "use_cache": False,
                 "file_type": file_type.value,
                 "extractor": extractor.value,
+                "original_file_name": record.name,
                 "fallback": [
                     {
                         "task_type": CognitionMarkdownFileState.EXTRACTING.value,
@@ -134,6 +137,7 @@ def get_full_config_for_integration(
                             "use_cache": False,
                             "file_type": file_type.value,
                             "extractor": enums.ETLExtractorPDF.VISION.value,
+                            "original_file_name": record.name,
                         },
                         "llm_config": integration.llm_config,
                     }
@@ -234,74 +238,78 @@ def __get_minio_path_for_copy(
     return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/{original_file_name}{JSON_CHUNKS_ENDING}"
 
 
-def get_extraction_key(ext_method: str, extraction_llm_config: Dict[str, Any]) -> str:
+def get_download_key(
+    org_id: str, download_id: str, file_name: str, file_size: int
+) -> Path:
+    file_name_hashed = __get_hashed_string(file_name, file_size)
+    return Path(org_id, "download", download_id, file_name_hashed)
 
-    extraction_key = ext_method
+
+def get_extraction_key(
+    org_id: str, ext_method: str, extraction_llm_config: Dict[str, Any]
+) -> Path:
     ext_method = ETLExtractorPDF.from_string(ext_method)
-    if ext_method == ETLExtractorPDF.VISION and extraction_llm_config:
+    extraction_key = Path(org_id) / "extract" / ext_method.value
+
+    if ext_method == ETLExtractorPDF.AZURE_DI and extraction_llm_config:
+        azure_di_api_base = extraction_llm_config.get("azureDiApiBase")
+        api_hash = __get_hashed_string(azure_di_api_base)
+        extraction_key = extraction_key / api_hash
+    elif ext_method == ETLExtractorPDF.VISION and extraction_llm_config:
         llm_identifier = LLMProvider.from_string(
             extraction_llm_config.get("llmIdentifier")
         )
-        extraction_key += f"_{llm_identifier.as_key()}"
+        extraction_key = extraction_key / llm_identifier.as_key()
 
         if llm_identifier == LLMProvider.AZURE:
-            engine = extraction_llm_config.get("engine")
-            apiVersion = extraction_llm_config.get("apiVersion")
-            api_base = extraction_llm_config.get("apiBase")
-            hasher = hashlib.new("sha256")
-            hasher.update(f"{api_base}_{apiVersion}".encode())
-            api_hash = hasher.hexdigest()
-            extraction_key += f"_{engine}_{api_hash}"
+            engine = extraction_llm_config.get("engine", "")
+            api_base = extraction_llm_config.get("apiBase", "")
+            api_version = extraction_llm_config.get("apiVersion", "")
+            api_hash = __get_hashed_string(api_base, api_version)
+            extraction_key = extraction_key / engine / api_hash
         elif llm_identifier == LLMProvider.OPENAI:
             model = extraction_llm_config.get("model")
-            extraction_key += f"_{model}"
+            extraction_key = extraction_key / model
 
         if extraction_llm_config.get("overwriteVisionPrompt"):
-            hasher = hashlib.new("sha256")
-            hasher.update(
-                f"{extraction_llm_config.get('overwriteVisionPrompt')}".encode()
+            prompt_hash = __get_hashed_string(
+                extraction_llm_config.get("overwriteVisionPrompt", "")
             )
-            prompt_hash = hasher.hexdigest()
-            extraction_key += f"_{prompt_hash}"
+            extraction_key = extraction_key / prompt_hash
         else:
-            extraction_key += "_DEFAULT_PROMPT"
-    elif ext_method == ETLExtractorPDF.AZURE_DI and extraction_llm_config:
-        azure_di_api_base = extraction_llm_config.get("azureDiApiBase")
-        hasher = hashlib.new("sha256")
-        hasher.update(f"{azure_di_api_base}".encode())
-        api_hash = hasher.hexdigest()
-        extraction_key += f"_{api_hash}"
-
+            extraction_key = extraction_key / "DEFAULT_PROMPT"
     return extraction_key
 
 
-def get_transformation_key(transformation_llm_config: Dict[str, Any]) -> str:
-
+def get_transformation_key(
+    org_id: str, transformation_llm_config: Dict[str, Any]
+) -> Path:
     llm_identifier = LLMProvider.from_string(
         transformation_llm_config.get("llmIdentifier")
     )
-    transformation_key = f"{llm_identifier.as_key()}"
+    transformation_key = Path(org_id) / "transform" / llm_identifier.as_key()
 
     if llm_identifier == LLMProvider.AZURE:
-        engine = transformation_llm_config.get("engine")
-        apiVersion = transformation_llm_config.get("apiVersion")
-        api_base = transformation_llm_config.get("apiBase")
-        hasher = hashlib.new("sha256")
-        hasher.update(f"{api_base}_{apiVersion}".encode())
-        api_hash = hasher.hexdigest()
-        transformation_key += f"_{engine}_{api_hash}"
+        engine = transformation_llm_config.get("engine", "")
+        api_base = transformation_llm_config.get("apiBase", "")
+        api_version = transformation_llm_config.get("apiVersion", "")
+        api_hash = __get_hashed_string(api_base, api_version)
+        transformation_key = transformation_key / engine / api_hash
     elif (
         llm_identifier == LLMProvider.OPENAI
         or llm_identifier == LLMProvider.PRIVATEMODE_AI
     ):
         model = transformation_llm_config.get("model")
-        transformation_key += f"_{model}"
+        transformation_key = transformation_key / model
     elif llm_identifier == LLMProvider.AZURE_FOUNDRY:
-        model = transformation_llm_config.get("model")
-        azure_endpoint = transformation_llm_config.get("apiBase")
-        hasher = hashlib.new("sha256")
-        hasher.update(f"{azure_endpoint}".encode())
-        api_hash = hasher.hexdigest()
-        transformation_key += f"_{api_hash}"
-        transformation_key += f"_{model}"
-    return transformation_key.replace("/", "_")
+        model = transformation_llm_config.get("model", "")
+        api_hash = __get_hashed_string(transformation_llm_config.get("apiBase", ""))
+        transformation_key = transformation_key / model / api_hash
+    return transformation_key
+
+
+def __get_hashed_string(*args, delimiter: str = "_") -> str:
+    hash_string = delimiter.join(map(str, args))
+    hasher = hashlib.new("sha256")
+    hasher.update(hash_string.encode())
+    return hasher.hexdigest()
