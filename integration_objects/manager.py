@@ -134,24 +134,6 @@ def get_existing_integration_records(
     return {getattr(record, by, record.source): record for record in records}
 
 
-def get_active_integration_records(
-    integration_id: str,
-) -> Dict[str, object]:
-    IntegrationModel = integration_model(integration_id)
-    return (
-        session.query(IntegrationModel)
-        .join(
-            EtlTask,
-            IntegrationModel.etl_task_id == EtlTask.id,
-        )
-        .filter(
-            IntegrationModel.integration_id == integration_id,
-            EtlTask.is_active == True,
-        )
-        .all()
-    )
-
-
 def get_running_ids(
     integration_id: str,
     by: str = "source",
@@ -176,6 +158,7 @@ def create(
     created_at: Optional[datetime] = None,
     error_message: Optional[str] = None,
     id: Optional[str] = None,
+    content: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
 ) -> Optional[object]:
@@ -191,6 +174,7 @@ def create(
         created_at=created_at,
         error_message=error_message,
         id=id,
+        content=content,
         **metadata,
     )
 
@@ -208,6 +192,7 @@ def update(
     updated_at: Optional[datetime] = None,
     error_message: Optional[str] = None,
     etl_task_id: Optional[str] = None,
+    content: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
 ) -> Optional[object]:
@@ -225,6 +210,8 @@ def update(
         integration_record.updated_at = updated_at
     if error_message is not None:
         integration_record.error_message = error_message
+    if content is not None:
+        integration_record.content = content
     if etl_task_id is not None and integration_record.etl_task_id is None:
         integration_record.etl_task_id = etl_task_id
 

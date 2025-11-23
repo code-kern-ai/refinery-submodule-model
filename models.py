@@ -2310,6 +2310,7 @@ class IntegrationGithubFile(Base):
         ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    content = Column(String)
 
 
 class IntegrationGithubIssue(Base):
@@ -2359,6 +2360,7 @@ class IntegrationGithubIssue(Base):
         ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    content = Column(String)
 
 
 class IntegrationPdf(Base):
@@ -2406,6 +2408,7 @@ class IntegrationPdf(Base):
         ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    content = Column(String)
 
 
 class IntegrationSharepoint(Base):
@@ -2464,6 +2467,7 @@ class IntegrationSharepoint(Base):
         ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    content = Column(String)
 
 
 class IntegrationSharepointPropertySync(Base):

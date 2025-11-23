@@ -740,7 +740,7 @@ class CognitionMarkdownFileState(EnumKern):
     SPLITTING = "SPLITTING"
     TRANSFORMING = "TRANSFORMING"
     LOADING = "LOADING"  # e.g. to file reference in db
-    CACHE_HANDLING = "CACHE_HANDLING"
+    # CACHE_HANDLING = "CACHE_HANDLING"
     NOTIFYING = (
         "NOTIFYING"  # e.g. notifying that the file is ready of integration provider
     )

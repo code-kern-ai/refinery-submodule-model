@@ -40,21 +40,10 @@ def get_by_id(id: str) -> EtlTask:
 
 
 def get_all(
-    markdown_file_id: Optional[str] = None,
-    sharepoint_file_id: Optional[str] = None,
     exclude_failed: Optional[bool] = False,
     only_active: Optional[bool] = False,
 ) -> List[EtlTask]:
     query = session.query(EtlTask)
-    if markdown_file_id is not None and sharepoint_file_id is not None:
-        raise ValueError(
-            "get_all: Only one of markdown_file_id or sharepoint_file_id should be provided."
-        )
-    if markdown_file_id:
-        query = query.filter(EtlTask.markdown_file_id == markdown_file_id)
-    if sharepoint_file_id:
-        query = query.filter(EtlTask.sharepoint_file_id == sharepoint_file_id)
-
     if exclude_failed:
         query = query.filter(
             EtlTask.state != enums.CognitionMarkdownFileState.FAILED.value
@@ -100,6 +89,7 @@ def get_or_create_integration_etl_task(
     record: IntegrationSharepoint,
     org_id: Optional[str],
     integration: Optional[CognitionIntegration],
+    original_file_name: Optional[str],
     file_path: Optional[str],
     full_config: Optional[Dict[str, Any]],
     priority: Optional[int] = -1,
@@ -112,6 +102,7 @@ def get_or_create_integration_etl_task(
     return create(
         org_id=org_id,
         user_id=integration.created_by,
+        original_file_name=original_file_name,
         file_path=file_path,
         file_size_bytes=record.size,
         full_config=full_config,

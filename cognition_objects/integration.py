@@ -5,9 +5,9 @@ from sqlalchemy.orm.attributes import flag_modified
 
 
 from ..business_objects import general
-from ..integration_objects import manager as integration_manager_db_bo
+from ..integration_objects import manager as integration_records_bo
 from ..session import session
-from ..models import CognitionIntegration, CognitionGroup
+from ..models import CognitionIntegration, CognitionGroup, EtlTask
 from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
@@ -149,6 +149,37 @@ def get_last_synced_at(
     return result[0] if result else None
 
 
+def get_active_etl_tasks(
+    integration_id: str,
+) -> List[EtlTask]:
+    IntegrationModel = integration_records_bo.integration_model(integration_id)
+    return (
+        session.query(EtlTask)
+        .filter(EtlTask.is_active == True)
+        .join(
+            IntegrationModel,
+            (EtlTask.id == IntegrationModel.etl_task_id)
+            & (IntegrationModel.integration_id == integration_id),
+        )
+        .all()
+    )
+
+
+def get_all_etl_tasks(
+    integration_id: str,
+) -> List[EtlTask]:
+    IntegrationModel = integration_records_bo.integration_model(integration_id)
+    return (
+        session.query(EtlTask)
+        .join(
+            IntegrationModel,
+            (IntegrationModel.etl_task_id == EtlTask.id)
+            & (IntegrationModel.integration_id == integration_id),
+        )
+        .all()
+    )
+
+
 def count_org_integrations(org_id: str) -> Dict[str, int]:
     counts = (
         session.query(CognitionIntegration.type, func.count(CognitionIntegration.id))
@@ -286,9 +317,9 @@ def delete_many(
 ) -> None:
     for id in ids:
         integration_records, IntegrationModel = (
-            integration_manager_db_bo.get_all_by_integration_id(id)
+            integration_records_bo.get_all_by_integration_id(id)
         )
-        integration_manager_db_bo.delete_many(
+        integration_records_bo.delete_many(
             IntegrationModel,
             ids=[rec.id for rec in integration_records],
             with_commit=True,

@@ -31,6 +31,7 @@ def get_full_config_for_tmp_doc(
 
     full_config = [
         {
+            "llm_config": extraction_llm_config,
             "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
             "task_config": {
                 "use_cache": False,
@@ -39,7 +40,6 @@ def get_full_config_for_tmp_doc(
                 "minio_path": file_reference.minio_path,
                 "fallback": None,  # later filled by config of project
             },
-            "llm_config": extraction_llm_config,
         },
         {
             "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
@@ -50,6 +50,7 @@ def get_full_config_for_tmp_doc(
             },
         },
         {
+            "llm_config": transformation_llm_config,
             "task_type": enums.CognitionMarkdownFileState.TRANSFORMING.value,
             "task_config": {
                 "use_cache": False,
@@ -74,7 +75,6 @@ def get_full_config_for_tmp_doc(
                     },
                 ],
             },
-            "llm_config": transformation_llm_config,
         },
         {
             "task_type": enums.CognitionMarkdownFileState.LOADING.value,
@@ -120,6 +120,7 @@ def get_full_config_for_integration(
 
     full_config = [
         {
+            "llm_config": integration.llm_config,
             "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
             "task_config": {
                 "use_cache": False,
@@ -137,9 +138,9 @@ def get_full_config_for_integration(
                     }
                 ],
             },
-            "llm_config": integration.llm_config,
         },
         {
+            "llm_config": integration.llm_config,
             "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
             "task_config": {
                 "use_cache": False,
@@ -154,9 +155,9 @@ def get_full_config_for_integration(
                     "keep_last_n", 1
                 ),
             },
-            "llm_config": integration.llm_config,
         },
         {
+            "llm_config": integration.llm_config,
             "task_type": enums.CognitionMarkdownFileState.TRANSFORMING.value,
             "task_config": {
                 "use_cache": False,
@@ -181,14 +182,13 @@ def get_full_config_for_integration(
                     },
                 ],
             },
-            "llm_config": integration.llm_config,
         },
         {
             "task_type": enums.CognitionMarkdownFileState.LOADING.value,
             "task_config": {
-                "refinery_project": {
+                "integration_record": {
                     "enabled": True,
-                    "id": str(integration.project_id),
+                    "id": str(integration.id),
                 },
                 "markdown_file": {
                     "enabled": False,
@@ -199,10 +199,19 @@ def get_full_config_for_integration(
         {
             "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
             "task_config": {
-                "http": {
-                    "url": "http://cognition-integration-provider:80/etl/finished",
-                    "method": "POST",
-                }
+                "http": [
+                    {
+                        "url": "http://localhost:7096/etl/status",
+                        "method": "POST",
+                        "kwargs": {
+                            "json": {
+                                # etl_task_id is automatically filled in by ETL provider
+                                "integration_id": str(integration.id),
+                                "state": enums.CognitionMarkdownFileState.FINISHED.value,
+                            }
+                        },
+                    }
+                ]
             },
         },
     ]
