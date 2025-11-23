@@ -201,13 +201,13 @@ def get_full_config_for_integration(
             "task_config": {
                 "http": [
                     {
-                        "url": "http://localhost:7096/etl/status",
+                        "url": "http://cognition-integration-provider:80/etl/status",
                         "method": "POST",
                         "kwargs": {
                             "json": {
                                 # etl_task_id is automatically filled in by ETL provider
                                 "integration_id": str(integration.id),
-                                "state": enums.CognitionMarkdownFileState.FINISHED.value,
+                                # "state": enums.CognitionMarkdownFileState.FINISHED.value,
                             }
                         },
                     }
