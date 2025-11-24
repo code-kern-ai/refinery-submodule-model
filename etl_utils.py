@@ -6,6 +6,9 @@ import os
 
 from . import enums
 from .global_objects.etl_task import DEFAULT_EXTRACTORS
+from .integration_objects import manager as integration_record_bo
+from .global_objects import etl_task as etl_task_bo
+from .cognition_objects import integration as integration_bo
 from .models import (
     FileReference,
     CognitionIntegration,
@@ -26,7 +29,7 @@ def get_full_config_for_tmp_doc(
     conversation_id: str,
     chunk_size: Optional[int] = 1000,
 ) -> Dict[str, Any]:
-    extraction_llm_config, transformation_llm_config = __get_etl_config_from_project(
+    extraction_llm_config, transformation_llm_config = __get_llm_config_from_project(
         project_item
     )
     extractor = extraction_llm_config.get("extractor")
@@ -105,7 +108,7 @@ def get_full_config_for_markdown_file(
     markdown_file: CognitionMarkdownFile,
     chunk_size: Optional[int] = 1000,
 ) -> Dict[str, Any]:
-    extraction_llm_config, transformation_llm_config = __get_etl_config_from_dataset(
+    extraction_llm_config, transformation_llm_config = __get_llm_config_from_dataset(
         markdown_dataset
     )
     extractor = markdown_file.meta_data.get("extractor")
@@ -175,7 +178,7 @@ def get_full_config_for_markdown_file(
     return full_config
 
 
-def __get_etl_config_from_project(
+def __get_llm_config_from_project(
     project_item: CognitionProject,
 ) -> Tuple[Dict[str, Any], str]:
     extraction_llm_config = project_item.llm_config.get("extraction", {})
@@ -186,7 +189,7 @@ def __get_etl_config_from_project(
     return extraction_llm_config, transformation_llm_config
 
 
-def __get_etl_config_from_dataset(
+def __get_llm_config_from_dataset(
     markdown_dataset: CognitionMarkdownDataset,
 ) -> Tuple[Dict[str, Any], str]:
     extraction_llm_config = markdown_dataset.llm_config.get("extraction", {})
@@ -333,8 +336,11 @@ def __get_minio_path_for_deletion(
     conversation_id = (conversation_id or file_reference.meta_data).get(
         "conversation_id"
     )
-    original_file_name = file_reference.original_file_name
-    return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/queued/{original_file_name}.info"
+    if not project_id or not conversation_id:
+        raise ValueError(
+            "ERROR:    __get_minio_path_for_deletion - missing project_id or conversation_id"
+        )
+    return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/queued/{file_reference.original_file_name}.info"
 
 
 def __get_minio_path_for_copy(
@@ -346,8 +352,11 @@ def __get_minio_path_for_copy(
     conversation_id = (conversation_id or file_reference.meta_data).get(
         "conversation_id"
     )
-    original_file_name = file_reference.original_file_name
-    return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/{original_file_name}{JSON_CHUNKS_ENDING}"
+    if not project_id or not conversation_id:
+        raise ValueError(
+            "ERROR:    __get_minio_path_for_deletion - missing project_id or conversation_id"
+        )
+    return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/{file_reference.original_file_name}{JSON_CHUNKS_ENDING}"
 
 
 def get_download_key(org_id: str, download_id: str) -> Path:
@@ -355,13 +364,16 @@ def get_download_key(org_id: str, download_id: str) -> Path:
 
 
 def get_extraction_key(
-    org_id: str, extractor: enums.ETLExtractorPDF, llm_config: Dict[str, Any]
+    org_id: str,
+    download_id: str,
+    extractor: enums.ETLExtractorPDF,
+    llm_config: Dict[str, Any],
 ) -> Path:
-    extraction_key = Path(org_id) / "extract" / extractor.value
+    extraction_key = Path(org_id) / download_id / "extract" / extractor.value
 
     if extractor == enums.ETLExtractorPDF.AZURE_DI and llm_config:
         azure_di_api_base = llm_config.get("azureDiApiBase")
-        api_hash = __get_hashed_string(azure_di_api_base)
+        api_hash = get_hashed_string(azure_di_api_base)
         extraction_key = extraction_key / api_hash
     elif extractor == enums.ETLExtractorPDF.VISION and llm_config:
         llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
@@ -371,26 +383,28 @@ def get_extraction_key(
             engine = llm_config.get("engine", "")
             api_base = llm_config.get("apiBase", "")
             api_version = llm_config.get("apiVersion", "")
-            api_hash = __get_hashed_string(api_base, api_version)
+            api_hash = get_hashed_string(api_base, api_version)
             extraction_key = extraction_key / engine / api_hash
         elif llm_identifier == enums.LLMProvider.OPENAI:
             model = llm_config.get("model")
             extraction_key = extraction_key / model
 
         if llm_config.get("overwriteVisionPrompt"):
-            prompt_hash = __get_hashed_string(
-                llm_config.get("overwriteVisionPrompt", "")
-            )
+            prompt_hash = get_hashed_string(llm_config.get("overwriteVisionPrompt", ""))
             extraction_key = extraction_key / prompt_hash
         else:
             extraction_key = extraction_key / "DEFAULT_PROMPT"
+
     return extraction_key
 
 
 def get_splitting_key(
-    org_id: str, content: str, llm_config: Optional[Dict[str, Any]] = None
+    org_id: str,
+    download_id: str,
+    extractor: enums.ETLExtractorPDF,
+    llm_config: Optional[Dict[str, Any]] = None,
 ) -> Path:
-    extraction_key = Path(org_id) / "split"
+    extraction_key = Path(org_id) / download_id / "extract" / extractor.value / "split"
 
     if llm_config:
         llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
@@ -400,47 +414,49 @@ def get_splitting_key(
             engine = llm_config.get("engine", "")
             api_base = llm_config.get("apiBase", "")
             api_version = llm_config.get("apiVersion", "")
-            api_hash = __get_hashed_string(api_base, api_version)
+            api_hash = get_hashed_string(api_base, api_version)
             extraction_key = extraction_key / engine / api_hash
         elif llm_identifier == enums.LLMProvider.OPENAI:
             model = llm_config.get("model")
             extraction_key = extraction_key / model
 
         if llm_config.get("overwriteVisionPrompt"):
-            prompt_hash = __get_hashed_string(
-                llm_config.get("overwriteVisionPrompt", "")
-            )
+            prompt_hash = get_hashed_string(llm_config.get("overwriteVisionPrompt", ""))
             extraction_key = extraction_key / prompt_hash
         else:
             extraction_key = extraction_key / "DEFAULT_PROMPT"
-    extraction_key = extraction_key / __get_hashed_string(content)
+
     return extraction_key
 
 
-def get_transformation_key(org_id: str, llm_config: Dict[str, Any]) -> Path:
+def get_transformation_key(
+    org_id: str, download_id: str, llm_config: Dict[str, Any]
+) -> Path:
     llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
-    transformation_key = Path(org_id) / "transform" / llm_identifier.as_key()
+    transformation_key = (
+        Path(org_id) / download_id / "transform" / llm_identifier.as_key()
+    )
 
     if llm_identifier == enums.LLMProvider.AZURE:
         engine = llm_config.get("engine", "")
         api_base = llm_config.get("apiBase", "")
         api_version = llm_config.get("apiVersion", "")
-        api_hash = __get_hashed_string(api_base, api_version)
+        api_hash = get_hashed_string(api_base, api_version)
         transformation_key = transformation_key / engine / api_hash
+    elif llm_identifier == enums.LLMProvider.AZURE_FOUNDRY:
+        model = llm_config.get("model", "")
+        api_hash = get_hashed_string(llm_config.get("apiBase", ""))
+        transformation_key = transformation_key / model / api_hash
     elif (
         llm_identifier == enums.LLMProvider.OPENAI
         or llm_identifier == enums.LLMProvider.PRIVATEMODE_AI
     ):
         model = llm_config.get("model")
         transformation_key = transformation_key / model
-    elif llm_identifier == enums.LLMProvider.AZURE_FOUNDRY:
-        model = llm_config.get("model", "")
-        api_hash = __get_hashed_string(llm_config.get("apiBase", ""))
-        transformation_key = transformation_key / model / api_hash
     return transformation_key
 
 
-def __get_hashed_string(*args, delimiter: str = "_") -> str:
+def get_hashed_string(*args, delimiter: str = "_") -> str:
     hash_string = delimiter.join(map(str, args))
     hasher = hashlib.new("sha256")
     hasher.update(hash_string.encode())
