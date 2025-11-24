@@ -23,6 +23,7 @@ def get_full_config_for_tmp_doc(
     file_reference: FileReference,
     meta_data: Optional[Dict[str, Any]] = None,
     file_name: Optional[str] = None,
+    chunk_size: Optional[int] = 1000,
 ) -> Dict[str, Any]:
     extraction_llm_config, transformation_llm_config = __get_etl_config_from_project(
         project_item
@@ -46,7 +47,7 @@ def get_full_config_for_tmp_doc(
             "task_config": {
                 "use_cache": False,
                 "strategy": enums.ETLSplitStrategy.CHUNK.value,
-                "chunk_size": 1000,
+                "chunk_size": chunk_size,
             },
         },
         {
@@ -90,6 +91,77 @@ def get_full_config_for_tmp_doc(
                     "path": __get_minio_path_for_copy(
                         file_reference, meta_data, file_name
                     ),
+                },
+            },
+        },
+    ]
+    return full_config
+
+
+def get_full_config_for_markdown_file(
+    project_item: CognitionProject,
+    file_reference: FileReference,
+    markdown_file_id: str,
+    chunk_size: Optional[int] = 1000,
+) -> Dict[str, Any]:
+    extraction_llm_config, transformation_llm_config = __get_etl_config_from_project(
+        project_item
+    )
+    extractor = extraction_llm_config.get("extractor")
+
+    full_config = [
+        {
+            "llm_config": extraction_llm_config,
+            "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
+            "task_config": {
+                "use_cache": True,
+                "file_type": enums.ETLFileType.PDF.value,  # fixed for tmp doc atm
+                "extractor": extractor,
+                "minio_path": file_reference.minio_path,
+                "fallback": None,  # later filled by config of project
+            },
+        },
+        {
+            "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
+            "task_config": {
+                "use_cache": True,
+                "strategy": enums.ETLSplitStrategy.CHUNK.value,
+                "chunk_size": chunk_size,
+            },
+        },
+        {
+            "llm_config": transformation_llm_config,
+            "task_type": enums.CognitionMarkdownFileState.TRANSFORMING.value,
+            "task_config": {
+                "use_cache": True,
+                "transformers": [
+                    {  # NOTE: __call_gpt_with_key only reads user_prompt
+                        "enabled": False,
+                        "name": enums.ETLTransformer.CLEANSE.value,
+                        "system_prompt": None,
+                        "user_prompt": None,
+                    },
+                    {
+                        "enabled": True,
+                        "name": enums.ETLTransformer.TEXT_TO_TABLE.value,
+                        "system_prompt": None,
+                        "user_prompt": None,
+                    },
+                    {
+                        "enabled": False,
+                        "name": enums.ETLTransformer.SUMMARIZE.value,
+                        "system_prompt": None,
+                        "user_prompt": None,
+                    },
+                ],
+            },
+        },
+        {
+            "task_type": enums.CognitionMarkdownFileState.LOADING.value,
+            "task_config": {
+                "markdown_file": {
+                    "enabled": True,
+                    "id": markdown_file_id,
                 },
             },
         },
@@ -199,9 +271,10 @@ def get_full_config_for_integration(
         {
             "task_type": enums.CognitionMarkdownFileState.LOADING.value,
             "task_config": {
-                "integration_records": {
+                "integration_record": {
                     "enabled": True,
-                    "id": str(integration.id),
+                    "id": str(record.id),
+                    "integration_id": str(integration.id),
                 },
                 "markdown_file": {
                     "enabled": False,
