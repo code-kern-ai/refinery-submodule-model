@@ -291,6 +291,36 @@ def get_extraction_key(
     return extraction_key
 
 
+def get_splitting_key(
+    org_id: str, content: str, llm_config: Optional[Dict[str, Any]] = None
+) -> Path:
+    extraction_key = Path(org_id) / "split"
+
+    if llm_config:
+        llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
+        extraction_key = extraction_key / llm_identifier.as_key()
+
+        if llm_identifier == enums.LLMProvider.AZURE:
+            engine = llm_config.get("engine", "")
+            api_base = llm_config.get("apiBase", "")
+            api_version = llm_config.get("apiVersion", "")
+            api_hash = __get_hashed_string(api_base, api_version)
+            extraction_key = extraction_key / engine / api_hash
+        elif llm_identifier == enums.LLMProvider.OPENAI:
+            model = llm_config.get("model")
+            extraction_key = extraction_key / model
+
+        if llm_config.get("overwriteVisionPrompt"):
+            prompt_hash = __get_hashed_string(
+                llm_config.get("overwriteVisionPrompt", "")
+            )
+            extraction_key = extraction_key / prompt_hash
+        else:
+            extraction_key = extraction_key / "DEFAULT_PROMPT"
+    extraction_key = extraction_key / __get_hashed_string(content)
+    return extraction_key
+
+
 def get_transformation_key(org_id: str, llm_config: Dict[str, Any]) -> Path:
     llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
     transformation_key = Path(org_id) / "transform" / llm_identifier.as_key()
