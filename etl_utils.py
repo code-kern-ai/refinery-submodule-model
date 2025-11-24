@@ -21,9 +21,9 @@ JSON_CHUNKS_ENDING = ".chunks.json"
 
 # helper function for existing functionality, will be replaced with better builder in the future
 def get_full_config_for_tmp_doc(
+    file_reference: FileReference,
     project_item: CognitionProject,
     conversation_id: str,
-    file_reference: FileReference,
     chunk_size: Optional[int] = 1000,
 ) -> Dict[str, Any]:
     extraction_llm_config, transformation_llm_config = __get_etl_config_from_project(
@@ -100,9 +100,9 @@ def get_full_config_for_tmp_doc(
 
 
 def get_full_config_for_markdown_file(
+    file_reference: FileReference,
     markdown_dataset: CognitionMarkdownDataset,
     markdown_file: CognitionMarkdownFile,
-    file_reference: FileReference,
     chunk_size: Optional[int] = 1000,
 ) -> Dict[str, Any]:
     extraction_llm_config, transformation_llm_config = __get_etl_config_from_dataset(
