@@ -178,7 +178,20 @@ def get_full_config_for_integration(
                         "enabled": True,
                         "name": enums.ETLTransformer.SUMMARIZE.value,
                         "system_prompt": None,
-                        "user_prompt": None,
+                        "user_prompt": " ".join(
+                            (
+                                "You are a helpful AI assistant that summarizes documents.",
+                                "Your task is to provide a concise summary of the provided text.",
+                                "You will be given a context, and you should summarize it in a clear and concise manner.",
+                                "The summary should capture the main points and key information from the context.",
+                                (
+                                    f"You are summarizing the list of file paths in folder `{record.parent_path}`."
+                                    if record.extension == "FOLDER"
+                                    else f"You are summarizing the file `{record.name}` in folder `{record.parent_path}`."
+                                ),
+                                f"IT IS CRUCIAL THAT YOU ONLY ANSWER IN ISO-639-1:{integration.tokenizer[:2]}",
+                            )
+                        ),
                     },
                 ],
             },
@@ -186,7 +199,7 @@ def get_full_config_for_integration(
         {
             "task_type": enums.CognitionMarkdownFileState.LOADING.value,
             "task_config": {
-                "integration_record": {
+                "integration_records": {
                     "enabled": True,
                     "id": str(integration.id),
                 },

@@ -280,3 +280,9 @@ def __rename_metadata(
         "updated_at": f"{table_name}_updated_at",
     }
     return {rename_keys.get(key, key): value for key, value in metadata.items()}
+
+
+def get_metadata_from_record(record: object) -> Dict[str, Any]:
+    supported_keys = get_supported_metadata_keys(record.__tablename__)
+    supported_metadata = {key: getattr(record, key) for key in supported_keys}
+    return supported_metadata
