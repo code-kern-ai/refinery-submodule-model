@@ -54,7 +54,6 @@ def get_new_inbox_mails(
         admin_threads = (
             session.query(InboxMailThread)
             .filter(
-                InboxMailThread.organization_id == org_id,
                 InboxMailThread.is_admin_support_thread == True,
             )
             .all()

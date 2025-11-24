@@ -52,6 +52,16 @@ def get_admin_users() -> List[User]:
     return list(admin_users.values())
 
 
+def get_engineer_users(org_id: str) -> List[User]:
+    engineers = (
+        session.query(User)
+        .filter(User.role == enums.UserRoles.ENGINEER.value)
+        .filter(User.organization_id == org_id)
+        .all()
+    )
+    return engineers
+
+
 @TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
 def get_user_cached(user_id: str) -> User:
     user = get(user_id)
