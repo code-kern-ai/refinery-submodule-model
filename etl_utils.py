@@ -11,6 +11,8 @@ from .models import (
     CognitionIntegration,
     IntegrationSharepoint,
     CognitionProject,
+    CognitionMarkdownDataset,
+    CognitionMarkdownFile,
 )
 
 ETL_DIR = os.getenv("ETL_DIR", "/app/data/etl")
@@ -20,9 +22,8 @@ JSON_CHUNKS_ENDING = ".chunks.json"
 # helper function for existing functionality, will be replaced with better builder in the future
 def get_full_config_for_tmp_doc(
     project_item: CognitionProject,
+    conversation_id: str,
     file_reference: FileReference,
-    meta_data: Optional[Dict[str, Any]] = None,
-    file_name: Optional[str] = None,
     chunk_size: Optional[int] = 1000,
 ) -> Dict[str, Any]:
     extraction_llm_config, transformation_llm_config = __get_etl_config_from_project(
@@ -83,13 +84,13 @@ def get_full_config_for_tmp_doc(
                 "delete_queue_marker_s3": {
                     "enabled": True,
                     "path": __get_minio_path_for_deletion(
-                        file_reference, meta_data, file_name
+                        file_reference, project_item.id, conversation_id
                     ),
                 },
                 "copy_to_chat_files": {
                     "enabled": True,
                     "path": __get_minio_path_for_copy(
-                        file_reference, meta_data, file_name
+                        file_reference, project_item.id, conversation_id
                     ),
                 },
             },
@@ -99,15 +100,19 @@ def get_full_config_for_tmp_doc(
 
 
 def get_full_config_for_markdown_file(
-    project_item: CognitionProject,
+    markdown_dataset: CognitionMarkdownDataset,
+    markdown_file: CognitionMarkdownFile,
     file_reference: FileReference,
-    markdown_file_id: str,
     chunk_size: Optional[int] = 1000,
 ) -> Dict[str, Any]:
-    extraction_llm_config, transformation_llm_config = __get_etl_config_from_project(
-        project_item
+    extraction_llm_config, transformation_llm_config = __get_etl_config_from_dataset(
+        markdown_dataset
     )
-    extractor = extraction_llm_config.get("extractor")
+    extractor = markdown_file.meta_data.get("extractor")
+    if extractor is None:
+        raise ValueError(
+            "ERROR:    get_full_config_for_markdown_file - extractor is None"
+        )
 
     full_config = [
         {
@@ -122,6 +127,7 @@ def get_full_config_for_markdown_file(
             },
         },
         {
+            "llm_config": extraction_llm_config,
             "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
             "task_config": {
                 "use_cache": True,
@@ -161,7 +167,7 @@ def get_full_config_for_markdown_file(
             "task_config": {
                 "markdown_file": {
                     "enabled": True,
-                    "id": markdown_file_id,
+                    "id": str(markdown_file.id),
                 },
             },
         },
@@ -175,7 +181,20 @@ def __get_etl_config_from_project(
     extraction_llm_config = project_item.llm_config.get("extraction", {})
     transformation_llm_config = project_item.llm_config.get("transformation", {})
     if not extraction_llm_config or not transformation_llm_config:
-        raise ValueError(f"Project with id {project_item.ud} has incomplete llm_config")
+        raise ValueError(f"Project with id {project_item.id} has incomplete llm_config")
+
+    return extraction_llm_config, transformation_llm_config
+
+
+def __get_etl_config_from_dataset(
+    markdown_dataset: CognitionMarkdownDataset,
+) -> Tuple[Dict[str, Any], str]:
+    extraction_llm_config = markdown_dataset.llm_config.get("extraction", {})
+    transformation_llm_config = markdown_dataset.llm_config.get("transformation", {})
+    if not extraction_llm_config or not transformation_llm_config:
+        raise ValueError(
+            f"Dataset with id {markdown_dataset.id} has incomplete llm_config"
+        )
 
     return extraction_llm_config, transformation_llm_config
 
@@ -307,23 +326,27 @@ def get_full_config_for_integration(
 
 def __get_minio_path_for_deletion(
     file_reference: FileReference,
-    meta_data: Optional[Dict[str, Any]] = None,
-    file_name: Optional[str] = None,
+    project_id: Optional[str] = None,
+    conversation_id: Optional[str] = None,
 ) -> str:
-    project_id = (meta_data or file_reference.meta_data).get("project_id")
-    conversation_id = (meta_data or file_reference.meta_data).get("conversation_id")
-    original_file_name = file_name or file_reference.original_file_name
+    project_id = (project_id or file_reference.meta_data).get("project_id")
+    conversation_id = (conversation_id or file_reference.meta_data).get(
+        "conversation_id"
+    )
+    original_file_name = file_reference.original_file_name
     return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/queued/{original_file_name}.info"
 
 
 def __get_minio_path_for_copy(
     file_reference: FileReference,
-    meta_data: Optional[Dict[str, Any]] = None,
-    file_name: Optional[str] = None,
+    project_id: Optional[str] = None,
+    conversation_id: Optional[str] = None,
 ) -> str:
-    project_id = (meta_data or file_reference.meta_data).get("project_id")
-    conversation_id = (meta_data or file_reference.meta_data).get("conversation_id")
-    original_file_name = file_name or file_reference.original_file_name
+    project_id = (project_id or file_reference.meta_data).get("project_id")
+    conversation_id = (conversation_id or file_reference.meta_data).get(
+        "conversation_id"
+    )
+    original_file_name = file_reference.original_file_name
     return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/{original_file_name}{JSON_CHUNKS_ENDING}"
 
 
