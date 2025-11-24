@@ -373,7 +373,7 @@ def get_extraction_key(
 
     if extractor == enums.ETLExtractorPDF.AZURE_DI and llm_config:
         azure_di_api_base = llm_config.get("azureDiApiBase")
-        api_hash = __get_hashed_string(azure_di_api_base)
+        api_hash = get_hashed_string(azure_di_api_base)
         extraction_key = extraction_key / api_hash
     elif extractor == enums.ETLExtractorPDF.VISION and llm_config:
         llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
@@ -383,16 +383,14 @@ def get_extraction_key(
             engine = llm_config.get("engine", "")
             api_base = llm_config.get("apiBase", "")
             api_version = llm_config.get("apiVersion", "")
-            api_hash = __get_hashed_string(api_base, api_version)
+            api_hash = get_hashed_string(api_base, api_version)
             extraction_key = extraction_key / engine / api_hash
         elif llm_identifier == enums.LLMProvider.OPENAI:
             model = llm_config.get("model")
             extraction_key = extraction_key / model
 
         if llm_config.get("overwriteVisionPrompt"):
-            prompt_hash = __get_hashed_string(
-                llm_config.get("overwriteVisionPrompt", "")
-            )
+            prompt_hash = get_hashed_string(llm_config.get("overwriteVisionPrompt", ""))
             extraction_key = extraction_key / prompt_hash
         else:
             extraction_key = extraction_key / "DEFAULT_PROMPT"
@@ -416,16 +414,14 @@ def get_splitting_key(
             engine = llm_config.get("engine", "")
             api_base = llm_config.get("apiBase", "")
             api_version = llm_config.get("apiVersion", "")
-            api_hash = __get_hashed_string(api_base, api_version)
+            api_hash = get_hashed_string(api_base, api_version)
             extraction_key = extraction_key / engine / api_hash
         elif llm_identifier == enums.LLMProvider.OPENAI:
             model = llm_config.get("model")
             extraction_key = extraction_key / model
 
         if llm_config.get("overwriteVisionPrompt"):
-            prompt_hash = __get_hashed_string(
-                llm_config.get("overwriteVisionPrompt", "")
-            )
+            prompt_hash = get_hashed_string(llm_config.get("overwriteVisionPrompt", ""))
             extraction_key = extraction_key / prompt_hash
         else:
             extraction_key = extraction_key / "DEFAULT_PROMPT"
@@ -445,11 +441,11 @@ def get_transformation_key(
         engine = llm_config.get("engine", "")
         api_base = llm_config.get("apiBase", "")
         api_version = llm_config.get("apiVersion", "")
-        api_hash = __get_hashed_string(api_base, api_version)
+        api_hash = get_hashed_string(api_base, api_version)
         transformation_key = transformation_key / engine / api_hash
     elif llm_identifier == enums.LLMProvider.AZURE_FOUNDRY:
         model = llm_config.get("model", "")
-        api_hash = __get_hashed_string(llm_config.get("apiBase", ""))
+        api_hash = get_hashed_string(llm_config.get("apiBase", ""))
         transformation_key = transformation_key / model / api_hash
     elif (
         llm_identifier == enums.LLMProvider.OPENAI
@@ -460,7 +456,7 @@ def get_transformation_key(
     return transformation_key
 
 
-def __get_hashed_string(*args, delimiter: str = "_") -> str:
+def get_hashed_string(*args, delimiter: str = "_") -> str:
     hash_string = delimiter.join(map(str, args))
     hasher = hashlib.new("sha256")
     hasher.update(hash_string.encode())
