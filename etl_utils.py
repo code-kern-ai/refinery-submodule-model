@@ -6,7 +6,6 @@ import os
 
 from . import enums
 from .global_objects.etl_task import DEFAULT_EXTRACTORS
-from .integration_objects import manager as integration_record_bo
 from .models import (
     FileReference,
     CognitionIntegration,
@@ -16,7 +15,7 @@ from .models import (
     CognitionMarkdownFile,
 )
 
-ETL_DIR = os.getenv("ETL_DIR", "/app/data/etl")
+ETL_DIR = Path(os.getenv("ETL_DIR", "/app/data/etl"))
 JSON_CHUNKS_ENDING = ".chunks.json"
 
 
@@ -466,9 +465,14 @@ def get_hashed_string(*args, delimiter: str = "_") -> str:
 
 
 def delete_etl_cache(org_id: str, download_id: str) -> None:
+    def rm_tree(path: Path):
+        for item in path.iterdir():
+            if item.is_dir():
+                rm_tree(item)
+            else:
+                item.unlink()
+        path.rmdir()
+
     etl_cache_dir = ETL_DIR / org_id / download_id
     if etl_cache_dir.exists() and etl_cache_dir.is_dir():
-        for item in etl_cache_dir.iterdir():
-            if item.is_file():
-                item.unlink()
-        etl_cache_dir.rmdir()
+        rm_tree(etl_cache_dir)
