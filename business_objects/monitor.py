@@ -1,8 +1,8 @@
 from typing import Any, List, Optional
 import datetime
-from . import general
-from submodules.model import enums, telemetry
-from submodules.model.models import TaskQueue, Organization
+from submodules.model.business_objects import general
+from submodules.model import enums
+from submodules.model.models import TaskQueue, Organization, CognitionIntegration
 from submodules.model.util import prevent_sql_injection
 from submodules.model.session import session
 from submodules.model.global_objects import etl_task as etl_task_db_bo
@@ -208,9 +208,9 @@ def set_integration_task_to_failed(
         enums.CognitionMarkdownFileState
     ] = enums.CognitionMarkdownFileState.FAILED,
     with_commit: bool = True,
-) -> None:
+) -> CognitionIntegration:
     # argument `state` is a workaround for cognition-gateway/api/routes/integrations.delete_many
-    integration_db_bo.update(
+    return integration_db_bo.update(
         id=integration_id,
         state=state,
         finished_at=datetime.datetime.now(datetime.timezone.utc),
