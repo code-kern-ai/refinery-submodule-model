@@ -351,7 +351,7 @@ def __get_minio_path_for_copy(
     )
     if not project_id or not conversation_id:
         raise ValueError(
-            "ERROR:    __get_minio_path_for_deletion - missing project_id or conversation_id"
+            "ERROR:    __get_minio_path_for_copy - missing project_id or conversation_id"
         )
     return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/{file_reference.original_file_name}{JSON_CHUNKS_ENDING}"
 
