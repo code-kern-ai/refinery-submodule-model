@@ -87,13 +87,13 @@ def get_full_config_for_tmp_doc(
                 "delete_queue_marker_s3": {
                     "enabled": True,
                     "path": __get_minio_path_for_deletion(
-                        file_reference, project_item.id, conversation_id
+                        file_reference, str(project_item.id), conversation_id
                     ),
                 },
                 "copy_to_chat_files": {
                     "enabled": True,
                     "path": __get_minio_path_for_copy(
-                        file_reference, project_item.id, conversation_id
+                        file_reference, str(project_item.id), conversation_id
                     ),
                 },
             },
@@ -332,10 +332,8 @@ def __get_minio_path_for_deletion(
     project_id: Optional[str] = None,
     conversation_id: Optional[str] = None,
 ) -> str:
-    project_id = (project_id or file_reference.meta_data).get("project_id")
-    conversation_id = (conversation_id or file_reference.meta_data).get(
-        "conversation_id"
-    )
+    project_id = project_id or file_reference.meta_data.get("project_id")
+    conversation_id = conversation_id or file_reference.meta_data.get("conversation_id")
     if not project_id or not conversation_id:
         raise ValueError(
             "ERROR:    __get_minio_path_for_deletion - missing project_id or conversation_id"
@@ -348,10 +346,8 @@ def __get_minio_path_for_copy(
     project_id: Optional[str] = None,
     conversation_id: Optional[str] = None,
 ) -> str:
-    project_id = (project_id or file_reference.meta_data).get("project_id")
-    conversation_id = (conversation_id or file_reference.meta_data).get(
-        "conversation_id"
-    )
+    project_id = project_id or file_reference.meta_data.get("project_id")
+    conversation_id = conversation_id or file_reference.meta_data.get("conversation_id")
     if not project_id or not conversation_id:
         raise ValueError(
             "ERROR:    __get_minio_path_for_deletion - missing project_id or conversation_id"
