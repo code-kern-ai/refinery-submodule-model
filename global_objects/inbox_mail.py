@@ -5,7 +5,11 @@ from submodules.model.util import sql_alchemy_to_dict
 from ..session import session
 from sqlalchemy import cast, String, func, desc, asc
 
-from submodules.model.business_objects import general, user as user_bo
+from submodules.model.business_objects import (
+    general,
+    user as user_bo,
+    organization as org_bo,
+)
 from submodules.model.cognition_objects import (
     project as cognition_project,
     conversation,
@@ -206,6 +210,9 @@ def __extend_thread_dict(thread, participants_map, unread_count_map):
     thread_dict["latest_mail"] = sql_alchemy_to_dict(get_first_in_thread(thread.id))
     thread_dict["participant_ids"] = participants_map.get(str(thread.id), [])
     thread_dict["unread_mail_count"] = unread_count_map.get(str(thread.id), 0)
+    thread_dict["organization_name"] = (
+        org_bo.get(thread.organization_id).name if thread.organization_id else None
+    )
     return thread_dict
 
 
