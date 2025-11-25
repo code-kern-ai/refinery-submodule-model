@@ -41,8 +41,10 @@ def get_all_queued_etl_task_for_conversation(
         .filter(
             TaskQueue.organization_id == org_id,
             TaskQueue.task_type == enums.TaskType.EXECUTE_ETL.value,
-            text(f"task_info->>'project_id' = '{project_id}'"),
-            text(f"task_info->>'conversation_id' = '{conversation_id}'"),
+            text(f"task_info->'tmp_doc_metadata'->>'project_id' = '{project_id}'"),
+            text(
+                f"task_info->'tmp_doc_metadata'->>'conversation_id' = '{conversation_id}'"
+            ),
         )
         .all()
     )
