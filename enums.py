@@ -693,6 +693,7 @@ class MarkdownFileCategoryOrigin(Enum):
     PDF = "PDF"
     WEB = "WEB"
     SPREADSHEET = "SPREADSHEET"
+    DOCUMENTS = "DOCUMENTS"
 
 
 class RefinerySynchronizationTaskState(Enum):
