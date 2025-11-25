@@ -1066,12 +1066,26 @@ class ETLFileType(Enum):
         )
         return cls.MD
 
+    @staticmethod
+    def from_extension(value: str):
+        changed_value = value.lower()
+        if changed_value in [".pdf"]:
+            return ETLFileType.PDF
+        elif changed_value in [".docx", ".doc"]:
+            return ETLFileType.WORD
+        elif changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
+            return ETLFileType.MD
+        else:
+            raise ValueError(f"Could not parse ETLFileType from extension '{value}'")
+
 
 class ETLExtractorMD(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
     FILESYSTEM = "FILESYSTEM"
 
 
 class ETLExtractorPDF(Enum):
+    LANGCHAIN = "LANGCHAIN"
     VISION = "VISION"
     AZURE_DI = "AZURE_DI"
     PDF2MD = "PDF2MD"
@@ -1090,30 +1104,11 @@ class ETLExtractorPDF(Enum):
 
 
 class ETLExtractorWord(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
     FILESYSTEM = "FILESYSTEM"
-
-
-class ETLExtractor:
-    MD = ETLExtractorMD
-    PDF = ETLExtractorPDF
-    WORD = ETLExtractorWord
-
-    @classmethod
-    def from_string(cls, value: str):
-        changed_value = value.upper().replace(" ", "_").replace("-", "_")
-        for member in cls:
-            if member.name == changed_value:
-                return member
-        raise ValueError(f"ERROR: Unknown enum {cls.__name__}: {value}")
 
 
 class ETLTransformer(EnumKern):
     SUMMARIZE = "SUMMARIZE"
     CLEANSE = "CLEANSE"
     TEXT_TO_TABLE = "TEXT_TO_TABLE"
-
-
-class ETLCacheKeys(EnumKern):
-    FILE_CACHE = "FILE_CACHE"  # cache in filesystem (type derived from task_type)
-    EXTRACTION = "EXTRACTION"  # file_extraction table & s3
-    TRANSFORMATION = "TRANSFORMATION"  # file_transformation table & s3
