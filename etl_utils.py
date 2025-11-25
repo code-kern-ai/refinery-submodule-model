@@ -360,7 +360,7 @@ def __get_minio_path_for_copy(
 
 
 def get_download_key(org_id: str, download_id: str) -> Path:
-    return Path(org_id, "download", download_id)
+    return Path(org_id) / download_id / "download"
 
 
 def get_extraction_key(
@@ -404,7 +404,7 @@ def get_splitting_key(
     extractor: enums.ETLExtractorPDF,
     llm_config: Optional[Dict[str, Any]] = None,
 ) -> Path:
-    extraction_key = Path(org_id) / download_id / "extract" / extractor.value / "split"
+    extraction_key = Path(org_id) / download_id / "extract" / extractor.value
 
     if llm_config:
         llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
@@ -426,11 +426,14 @@ def get_splitting_key(
         else:
             extraction_key = extraction_key / "DEFAULT_PROMPT"
 
-    return extraction_key
+    return extraction_key / "split"
 
 
 def get_transformation_key(
-    org_id: str, download_id: str, llm_config: Dict[str, Any]
+    org_id: str,
+    download_id: str,
+    extractor: enums.ETLExtractorPDF,
+    llm_config: Dict[str, Any],
 ) -> Path:
     llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
     transformation_key = (
@@ -441,18 +444,19 @@ def get_transformation_key(
         engine = llm_config.get("engine", "")
         api_base = llm_config.get("apiBase", "")
         api_version = llm_config.get("apiVersion", "")
-        api_hash = get_hashed_string(api_base, api_version)
+        api_hash = get_hashed_string(extractor.value, api_base, api_version)
         transformation_key = transformation_key / engine / api_hash
     elif llm_identifier == enums.LLMProvider.AZURE_FOUNDRY:
         model = llm_config.get("model", "")
-        api_hash = get_hashed_string(llm_config.get("apiBase", ""))
+        api_hash = get_hashed_string(extractor.value, llm_config.get("apiBase", ""))
         transformation_key = transformation_key / model / api_hash
     elif (
         llm_identifier == enums.LLMProvider.OPENAI
         or llm_identifier == enums.LLMProvider.PRIVATEMODE_AI
     ):
         model = llm_config.get("model")
-        transformation_key = transformation_key / model
+        extractor_hash = get_hashed_string(extractor.value)
+        transformation_key = transformation_key / model / extractor_hash
     return transformation_key
 
 
