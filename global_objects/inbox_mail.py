@@ -358,14 +358,18 @@ def get_participant_ids_by_thread_id(thread_id: str) -> List[str]:
 
 
 def update_thread_progress(
-    user_id: str, thread_id: str, progress_state: str, with_commit: bool = True
+    user_id: str,
+    thread_id: str,
+    progress_state: str,
+    user_name: str,
+    with_commit: bool = True,
 ) -> Dict[str, Any]:
     thread_entity = get_inbox_mail_thread_by_id(thread_id)
     thread_entity.progress_state = progress_state
     if progress_state == InboxMailThreadSupportProgressState.IN_PROGRESS.value:
         thread_entity.support_owner_id = user_id
         meta_data = thread_entity.meta_data or {}
-        meta_data["supportOwnerName"] = kratos.resolve_user_name_by_id(user_id)
+        meta_data["supportOwnerName"] = user_name
         thread_entity.meta_data = meta_data
         flag_modified(thread_entity, "meta_data")
 
