@@ -52,6 +52,8 @@ def get_result_admin_query(
         return __get_template_usage(**parameters, as_query=as_query)
     elif query == enums.AdminQueries.PRIVATEMODE_USE_OVER_TIME:
         return __get_privatemode_use_over_time(**parameters, as_query=as_query)
+    elif query == enums.AdminQueries.INCOGNITO_USE_OVER_TIME:
+        return __get_incognito_mode_use_over_time(**parameters, as_query=as_query)
     return []
 
 
@@ -79,6 +81,80 @@ def __get_template_usage(organization_id: str = "", as_query: bool = False):
     """
     if as_query:
         return query
+    return general.execute_all(query)
+
+
+def __get_incognito_mode_use_over_time(
+    period: str = "days",
+    slices: int = 7,
+    organization_id: str = "",
+    as_query: bool = False,
+):
+
+    if period not in PERIOD_OPTIONS:
+        raise ValueError(f"Invalid period: {period}. Must be one of {PERIOD_OPTIONS}.")
+
+    slices = max(min(slices, 30), 1)
+
+    org_where = ""
+    if organization_id:
+        organization_id = prevent_sql_injection(
+            organization_id, isinstance(organization_id, str)
+        )
+        org_where = f"AND summary.organization_id = '{organization_id}'"
+
+    query = f"""
+    WITH params AS (
+        SELECT
+        '{period}'   ::text AS period,   -- ← 'days' | 'weeks' | 'months'
+        {slices}         ::int  AS n     -- ← how many of those periods you want
+    ),
+    periods AS (
+        SELECT
+            (generate_series(
+                date_trunc(p.period, CURRENT_DATE)
+                - (p.n - 1) * ('1 ' || p.period)::interval,
+                date_trunc(p.period, CURRENT_DATE),
+                ('1 ' || p.period)::interval
+            ))::date AS period_start
+        FROM params p
+    ),
+    filtered AS (
+        SELECT
+            summary.organization_id,
+            summary.day,
+            summary.incognito_messages
+        FROM cognition.admin_query_message_summary summary
+        WHERE summary.day >= (SELECT MIN(period_start) FROM periods)
+          AND summary.day < (
+                SELECT MAX(period_start)
+                       + ('1 ' || (SELECT period FROM params))::interval
+                FROM periods
+            )
+          {org_where}
+    ),
+    aggregated AS (
+        SELECT
+            f.organization_id,
+            date_trunc((SELECT period FROM params), f.day)::date AS period_start,
+            SUM(f.incognito_messages) AS incognito_messages
+        FROM filtered f
+        GROUP BY 1,2
+    )
+    SELECT
+        o.name organization_name,
+        a.period_start,
+        (a.period_start + ('1 ' || (SELECT period FROM params))::interval - INTERVAL '1 day')::date AS period_end,
+        a.incognito_messages
+    FROM aggregated a
+    INNER JOIN organization o
+        ON o.id = a.organization_id
+    ORDER BY o.name, a.period_start DESC
+    """
+
+    if as_query:
+        return query
+
     return general.execute_all(query)
 
 
