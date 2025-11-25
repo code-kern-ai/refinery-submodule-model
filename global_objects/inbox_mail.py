@@ -20,7 +20,6 @@ from submodules.model.models import (
     InboxMailThreadAssociation,
 )
 from submodules.model.enums import InboxMailThreadSupportProgressState
-from controller.auth import kratos
 from sqlalchemy.orm.attributes import flag_modified
 
 
