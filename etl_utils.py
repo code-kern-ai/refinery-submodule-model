@@ -7,8 +7,6 @@ import os
 from . import enums
 from .global_objects.etl_task import DEFAULT_EXTRACTORS
 from .integration_objects import manager as integration_record_bo
-from .global_objects import etl_task as etl_task_bo
-from .cognition_objects import integration as integration_bo
 from .models import (
     FileReference,
     CognitionIntegration,
@@ -467,91 +465,10 @@ def get_hashed_string(*args, delimiter: str = "_") -> str:
     return hasher.hexdigest()
 
 
-def delete_etl_cache_integration(integration: CognitionIntegration) -> None:
-    org_id = str(integration.organization_id)
-
-    for record in integration_record_bo.get_all_by_integration_id(integration.id):
-        file_type = enums.ETLFileType.from_string(
-            record.extension.replace(".", "").replace("FOLDER", "md")
-        )
-        extractor = DEFAULT_EXTRACTORS.get(file_type, enums.ETLExtractorMD.FILESYSTEM)
-
-        cache_keys = (
-            get_download_key(
-                org_id=org_id,
-                download_id=str(integration.id),
-            ),
-            get_extraction_key(
-                org_id=org_id,
-                download_id=str(integration.id),
-                extractor=extractor,
-                llm_config=integration.llm_config,
-            ),
-            get_transformation_key(
-                org_id=org_id,
-                download_id=str(integration.id),
-                llm_config=integration.llm_config,
-            ),
-        )
-        for cache_key in cache_keys:
-            file_cache_path = ETL_DIR / cache_key
-
-            if file_cache_path.exists() and file_cache_path.is_dir():
-                for item in file_cache_path.iterdir():
-                    if item.is_file():
-                        item.unlink()
-                file_cache_path.rmdir()
-
-
-def delete_etl_cache_file_reference(
-    file_reference: FileReference,
-    project_item: Optional[CognitionProject] = None,
-    markdown_dataset: Optional[CognitionMarkdownDataset] = None,
-) -> None:
-    org_id = str(file_reference.organization_id)
-
-    project_id, dataset_id = (
-        file_reference.meta_data.get("project_id"),
-        file_reference.meta_data.get("dataset_id"),
-    )
-
-    if markdown_dataset and not project_item:
-        extraction_llm_config, transformation_llm_config = (
-            __get_llm_config_from_dataset(markdown_dataset)
-        )
-    if project_item:
-        extraction_llm_config, transformation_llm_config = (
-            __get_llm_config_from_project(project_item)
-        )
-
-    file_type = enums.ETLFileType.from_string(
-        Path(file_reference.original_file_name).suffix.replace(".", "")
-    )
-    extractor = DEFAULT_EXTRACTORS.get(file_type, enums.ETLExtractorMD.FILESYSTEM)
-
-    cache_keys = (
-        get_download_key(
-            org_id=org_id,
-            download_id=str(file_reference.id),
-        ),
-        get_extraction_key(
-            org_id=org_id,
-            download_id=str(file_reference.id),
-            extractor=extractor,
-            llm_config=extraction_llm_config,
-        ),
-        get_transformation_key(
-            org_id=org_id,
-            download_id=str(file_reference.id),
-            llm_config=transformation_llm_config,
-        ),
-    )
-    for cache_key in cache_keys:
-        file_cache_path = ETL_DIR / cache_key
-
-        if file_cache_path.exists() and file_cache_path.is_dir():
-            for item in file_cache_path.iterdir():
-                if item.is_file():
-                    item.unlink()
-            # commented out so directories persist
-            # file_cache_path.rmdir()
+def delete_etl_cache(org_id: str, download_id: str) -> None:
+    etl_cache_dir = ETL_DIR / org_id / download_id
+    if etl_cache_dir.exists() and etl_cache_dir.is_dir():
+        for item in etl_cache_dir.iterdir():
+            if item.is_file():
+                item.unlink()
+        etl_cache_dir.rmdir()
