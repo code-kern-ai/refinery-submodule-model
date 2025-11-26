@@ -1109,11 +1109,10 @@ class CognitionProject(Base):
 
     allow_file_upload = Column(Boolean, default=False)
     max_file_size_mb = Column(Float, default=3.0)
-    llm_config = Column(JSON)
+    useable_etl_configurations = Column(JSON)
     max_folder_size_mb = Column(Float, default=20.0)
     # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
-    tokenizer = Column(String)
     # options from <SVGIcon/> component - only visible with new UI selected (user setting)
     icon = Column(String, default="IconBolt")
     allow_conversation_sharing_organization = Column(Boolean, default=False)
@@ -2030,13 +2029,7 @@ class ETLConfigPresets(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-        nullable=True,  # future proofing for organization-wide presets/etl page presets
-    )
-    name = Column(String, unique=True)
+    name = Column(String)
     description = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
