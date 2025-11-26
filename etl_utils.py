@@ -595,8 +595,8 @@ def delete_etl_cache(org_id: str, download_id: str) -> None:
 def get_extraction_config_for_file_type(
     preset: ETLConfigPresets, content_type: str
 ) -> Tuple[Dict[str, Any], str]:
-    file_type = enums.ETLFileType.from_mimetype(content_type)
-    access_key = file_type.value.lower()
+    file_type = enums.ETLFileType.from_mimetype(content_type).value
+    access_key = file_type.lower()
     if not preset:
         raise ValueError("ETL Config Preset not found")
     if file_type_config := preset.etl_config.get("extraction", {}).get(access_key):
