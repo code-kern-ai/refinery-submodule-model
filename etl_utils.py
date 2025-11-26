@@ -5,7 +5,9 @@ import hashlib
 import os
 
 from . import enums
+from .cognition_objects import etl_config_presets as etl_config_presets_db_co
 from .models import (
+    ETLConfigPresets,
     FileReference,
     CognitionIntegration,
     IntegrationSharepoint,
@@ -18,6 +20,121 @@ ETL_DIR = Path(os.getenv("ETL_DIR", "/app/data/etl"))
 JSON_CHUNKS_ENDING = ".chunks.json"
 
 
+def get_full_config_and_tokenizer_from_config_id(
+    file_reference: FileReference,
+    etl_config_id: Optional[str] = None,  # or in file_reference.meta_data
+    content_type: Optional[str] = None,  # or in file_reference.content_type
+    chunk_size: Optional[int] = 1000,
+    # only set for chat messages
+    project_id: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+) -> Tuple[Dict[str, Any], str]:
+
+    if project_id and conversation_id:
+        # project related load
+        for_project = True
+
+    etl_preset_item = etl_config_presets_db_co.get(
+        etl_config_id or file_reference.meta_data.get("etl_config_id")
+    )
+    extraction_config = get_extraction_config_for_file_type(
+        etl_preset_item, content_type or file_reference.content_type
+    )
+    extraction_llm_config = {
+        **extraction_config.get("llmConfig", {}),
+        "llmIndicator": extraction_config.get("llmIndicator"),
+        "overwriteVisionPrompt": extraction_config.get("overwriteVisionPrompt"),
+    }
+
+    full_config = [
+        {
+            "llm_config": extraction_llm_config,
+            "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
+            "task_config": {
+                "use_cache": False,
+                "extractor": extraction_config.get("extractor"),
+                "minio_path": file_reference.minio_path,
+                "fallback": None,  # later filled by config of project
+            },
+        },
+        {
+            "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
+            "task_config": {
+                "use_cache": False,
+                "strategy": enums.ETLSplitStrategy.CHUNK.value,
+                "chunk_size": chunk_size,
+            },
+        },
+    ]
+
+    if transformation_config := etl_preset_item.etl_config.get("transformation"):
+        transformation_type = transformation_config.get("type", "NO_TRANSFORMATION")
+        if transformation_type != "NO_TRANSFORMATION":
+            transformation_llm_config = {
+                **transformation_config.get("llmConfig", {}),
+                "llmIndicator": transformation_config.get("llmIndicator"),
+            }
+
+            if transformation_type == "COMMON_ETL":
+                transformers = [
+                    {  # NOTE: __call_gpt_with_key only reads user_prompt
+                        "enabled": False,
+                        "name": enums.ETLTransformer.CLEANSE.value,
+                        "system_prompt": None,
+                        "user_prompt": None,
+                    },
+                    {
+                        "enabled": True,
+                        "name": enums.ETLTransformer.TEXT_TO_TABLE.value,
+                        "system_prompt": None,
+                        "user_prompt": None,
+                    },
+                ]
+            elif transformation_type == "SUMMARIZE":
+                transformers = [
+                    {
+                        "enabled": True,
+                        "name": enums.ETLTransformer.SUMMARIZE.value,
+                        "system_prompt": None,
+                        "user_prompt": transformation_config.get("summarizationPrompt"),
+                    },
+                ]
+            else:
+                transformers = []
+
+            full_config.append(
+                {
+                    "llm_config": transformation_llm_config,
+                    "task_type": enums.CognitionMarkdownFileState.TRANSFORMING.value,
+                    "task_config": {
+                        "use_cache": False,
+                        "transformers": transformers,
+                    },
+                }
+            )
+    if for_project:
+        full_config.append(
+            {
+                "task_type": enums.CognitionMarkdownFileState.LOADING.value,
+                "task_config": {
+                    "delete_queue_marker_s3": {
+                        "enabled": True,
+                        "path": __get_minio_path_for_deletion(
+                            file_reference, project_id, conversation_id
+                        ),
+                    },
+                    "copy_to_chat_files": {
+                        "enabled": True,
+                        "path": __get_minio_path_for_copy(
+                            file_reference, project_id, conversation_id
+                        ),
+                    },
+                },
+            },
+        )
+    return full_config, etl_preset_item.etl_config.get("tokenizer")
+
+
 # helper function for existing functionality, will be replaced with better builder in the future
 def get_full_config_for_tmp_doc(
     file_reference: FileReference,
@@ -25,6 +142,7 @@ def get_full_config_for_tmp_doc(
     conversation_id: str,
     chunk_size: Optional[int] = 1000,
 ) -> List[Dict[str, Any]]:
+    raise ValueError("outdated function - do not use")
     extraction_llm_config, transformation_llm_config = __get_llm_config_from_project(
         project_item
     )
@@ -464,3 +582,43 @@ def delete_etl_cache(org_id: str, download_id: str) -> None:
     etl_cache_dir = ETL_DIR / org_id / download_id
     if etl_cache_dir.exists() and etl_cache_dir.is_dir():
         rm_tree(etl_cache_dir)
+
+
+def get_extraction_config_for_file_type(
+    preset: ETLConfigPresets, content_type: str
+) -> str:
+    access_key = parse_content_type_to_etl_key(content_type)
+    if not preset:
+        raise ValueError("ETL Config Preset not found")
+    if file_type_config := preset.etl_config.get("extraction", {}).get(access_key):
+        return file_type_config
+    return preset.etl_config.get("extraction", {}).get("default", {})
+
+
+def parse_content_type_to_etl_key(content_type: str) -> str:
+    if content_type == "application/pdf":
+        return "pdf"
+    elif content_type in [
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword",
+    ]:
+        return "word"
+    elif content_type in [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
+    ]:
+        return "excel"
+    elif content_type in [
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.ms-powerpoint",
+    ]:
+        return "powerpoint"
+    elif content_type in [
+        "text/markdown",
+        "text/plain",
+        "application/vnd.apple.pages",
+        # probably needs some more
+    ]:
+        return "txt"
+    else:
+        return "default"
