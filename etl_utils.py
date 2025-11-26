@@ -41,11 +41,11 @@ def get_full_config_and_tokenizer_from_config_id(
         etl_preset_item, content_type or file_reference.content_type
     )
     llm_config = {}
-    if llm_indicator_extract := extraction_config.get("llmIndicator"):
+    if llm_indicator_extract := extraction_config.get("llmIdentifier"):
         llm_config = {
             {
                 **extraction_config.get("llmConfig", {}),
-                "llmIndicator": llm_indicator_extract,
+                "llmIdentifier": llm_indicator_extract,
                 "overwriteVisionPrompt": extraction_config.get("overwriteVisionPrompt"),
             }
         }
@@ -68,22 +68,23 @@ def get_full_config_and_tokenizer_from_config_id(
         if transformation_type != "NO_TRANSFORMATION":
             transformation_llm_config = {
                 **transformation_config.get("llmConfig", {}),
-                "llmIndicator": transformation_config.get("llmIndicator"),
+                "llmIdentifier": transformation_config.get("llmIdentifier"),
+            }
+
+            splitting_config = {
+                "llm_config": transformation_llm_config,  # splitting strategy "CHUNK" needs llm_config to execute `split_large_sections_via_llm`
+                "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
+                "task_config": {
+                    "use_cache": False,
+                    "strategy": enums.ETLSplitStrategy.CHUNK.value,
+                    "chunk_size": chunk_size,
+                },
             }
 
             if transformation_type == "COMMON_ETL":
                 # add default splitting for common etl
-                full_config.append(
-                    {
-                        "llm_config": transformation_llm_config,  # splitting strategy "CHUNK" needs llm_config to execute `split_large_sections_via_llm`
-                        "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
-                        "task_config": {
-                            "use_cache": False,
-                            "strategy": enums.ETLSplitStrategy.CHUNK.value,
-                            "chunk_size": chunk_size,
-                        },
-                    }
-                )
+
+                full_config.append(splitting_config)
                 transformers = [
                     {  # NOTE: __call_gpt_with_key only reads user_prompt
                         "enabled": True,
@@ -99,6 +100,7 @@ def get_full_config_and_tokenizer_from_config_id(
                     },
                 ]
             elif transformation_type == "SUMMARIZE":
+                full_config.append(splitting_config)
                 transformers = [
                     {
                         "enabled": True,
