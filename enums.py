@@ -13,8 +13,7 @@ class EnumKern(Enum):
         for member in cls:
             if member.value == changed_value:
                 return member
-        print(f"ERROR:    unknown enum {cls.__name__}: {value}", flush=True)
-        raise ValueError(f"Unknown enum {cls.__name__}: {value}")
+        raise ValueError(f"ERROR:    unknown enum {cls.__name__}: {value}")
 
 
 class DataTypes(Enum):
