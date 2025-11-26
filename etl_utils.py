@@ -37,25 +37,29 @@ def get_full_config_and_tokenizer_from_config_id(
     etl_preset_item = etl_config_presets_db_co.get(
         etl_config_id or file_reference.meta_data.get("etl_config_id")
     )
-    extraction_config = get_extraction_config_for_file_type(
+    extraction_config, etl_file_type = get_extraction_config_for_file_type(
         etl_preset_item, content_type or file_reference.content_type
     )
-    extraction_llm_config = {
-        **extraction_config.get("llmConfig", {}),
-        "llmIndicator": extraction_config.get("llmIndicator"),
-        "overwriteVisionPrompt": extraction_config.get("overwriteVisionPrompt"),
-    }
-
+    llm_config = {}
+    if llm_indicator_extract := extraction_config.get("llmIndicator"):
+        llm_config = {
+            {
+                **extraction_config.get("llmConfig", {}),
+                "llmIndicator": llm_indicator_extract,
+                "overwriteVisionPrompt": extraction_config.get("overwriteVisionPrompt"),
+            }
+        }
     full_config = [
         {
-            "llm_config": extraction_llm_config,
             "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
             "task_config": {
                 "use_cache": False,
+                "file_type": etl_file_type,
                 "extractor": extraction_config.get("extractor"),
                 "minio_path": file_reference.minio_path,
                 "fallback": None,  # later filled by config of project
             },
+            **llm_config,
         },
         {
             "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
@@ -586,13 +590,14 @@ def delete_etl_cache(org_id: str, download_id: str) -> None:
 
 def get_extraction_config_for_file_type(
     preset: ETLConfigPresets, content_type: str
-) -> str:
+) -> Tuple[Dict[str, Any], str]:
     access_key = parse_content_type_to_etl_key(content_type)
+    file_type = parse_etl_key_to_etl_file_type(access_key)
     if not preset:
         raise ValueError("ETL Config Preset not found")
     if file_type_config := preset.etl_config.get("extraction", {}).get(access_key):
-        return file_type_config
-    return preset.etl_config.get("extraction", {}).get("default", {})
+        return file_type_config, file_type
+    return preset.etl_config.get("extraction", {}).get("default", {}), file_type
 
 
 def parse_content_type_to_etl_key(content_type: str) -> str:
@@ -620,5 +625,22 @@ def parse_content_type_to_etl_key(content_type: str) -> str:
         # probably needs some more
     ]:
         return "txt"
+    elif content_type.startswith("image/"):
+        return "image"
     else:
         return "default"
+
+
+def parse_etl_key_to_etl_file_type(etl_key: str) -> str:
+    if etl_key == "pdf":
+        return enums.ETLFileType.PDF.value
+    elif etl_key == "word":
+        return enums.ETLFileType.DOCX.value
+    elif etl_key == "excel":
+        return enums.ETLFileType.XLSX.value
+    elif etl_key == "powerpoint":
+        return enums.ETLFileType.PPTX.value
+    elif etl_key == "txt":
+        return enums.ETLFileType.IMG.value
+    else:
+        return "application/octet-stream"
