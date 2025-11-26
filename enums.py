@@ -1049,11 +1049,12 @@ class ETLSplitStrategy(EnumKern):
 
 
 class ETLFileType(Enum):
-    MD = "MD"
+    DEFAULT = "DEFAULT"
+    TXT = "TXT"
     PDF = "PDF"
-    DOCX = "DOCX"
-    XLSX = "XLSX"
-    PPTX = "PPTX"
+    WORD = "WORD"
+    EXCEL = "EXCEL"
+    POWERPOINT = "POWERPOINT"
     IMG = "IMG"
 
     @classmethod
@@ -1066,27 +1067,56 @@ class ETLFileType(Enum):
             f"WARNING:  unknown enum {cls.__name__}: {value}, defaulting to {cls.__name__}.MD",
             flush=True,
         )
-        return cls.MD
+        return cls.TXT
 
     @staticmethod
     def from_extension(value: str):
         changed_value = value.lower()
-        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
-            return ETLFileType.MD
+        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".txt"]:
+            return ETLFileType.TXT
         elif changed_value in [".pdf"]:
             return ETLFileType.PDF
         elif changed_value in [".docx", ".doc"]:
-            return ETLFileType.DOCX
+            return ETLFileType.WORD
         elif changed_value in [".xlsx", ".xls"]:
-            return ETLFileType.XLSX
+            return ETLFileType.EXCEL
         elif changed_value in [".pptx", ".ppt"]:
-            return ETLFileType.PPTX
+            return ETLFileType.POWERPOINT
         elif changed_value in [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff"]:
             return ETLFileType.IMG
         else:
-            raise ValueError(
-                f"ERROR:    could not parse ETLFileType from extension '{value}'"
-            )
+            return ETLFileType.DEFAULT
+
+    @staticmethod
+    def from_mimetype(value: str):
+        changed_value = value.lower()
+
+        if changed_value in ["application/pdf"]:
+            return ETLFileType.PDF
+        elif changed_value in [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword",
+        ]:
+            return ETLFileType.WORD
+        elif changed_value in [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel",
+        ]:
+            return ETLFileType.EXCEL
+        elif changed_value in [
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.ms-powerpoint",
+        ]:
+            return ETLFileType.POWERPOINT
+        elif changed_value in [
+            "text/markdown",
+            "text/plain",
+            "application/vnd.apple.pages",
+            # probably needs some more
+        ]:
+            return ETLFileType.TXT
+        else:
+            return ETLFileType.DEFAULT
 
 
 class ETLExtractorMD(EnumKern):
