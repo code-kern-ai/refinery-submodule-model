@@ -1,11 +1,10 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 from pathlib import Path
 
 import hashlib
 import os
 
 from . import enums
-from .global_objects.etl_task import DEFAULT_EXTRACTORS
 from .models import (
     FileReference,
     CognitionIntegration,
@@ -25,11 +24,15 @@ def get_full_config_for_tmp_doc(
     project_item: CognitionProject,
     conversation_id: str,
     chunk_size: Optional[int] = 1000,
-) -> Dict[str, Any]:
+) -> List[Dict[str, Any]]:
     extraction_llm_config, transformation_llm_config = __get_llm_config_from_project(
         project_item
     )
     extractor = extraction_llm_config.get("extractor")
+    if extractor is None:
+        print(
+            f"WARNING:  {__name__} - no extractor found in markdown_file meta_data for {file_reference.original_file_name}, will infer default"
+        )
 
     full_config = [
         {
@@ -37,7 +40,6 @@ def get_full_config_for_tmp_doc(
             "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
             "task_config": {
                 "use_cache": False,
-                "file_type": enums.ETLFileType.PDF.value,  # fixed for tmp doc atm
                 "extractor": extractor,
                 "minio_path": file_reference.minio_path,
                 "fallback": None,  # later filled by config of project
@@ -104,14 +106,14 @@ def get_full_config_for_markdown_file(
     markdown_dataset: CognitionMarkdownDataset,
     markdown_file: CognitionMarkdownFile,
     chunk_size: Optional[int] = 1000,
-) -> Dict[str, Any]:
+) -> List[Dict[str, Any]]:
     extraction_llm_config, transformation_llm_config = __get_llm_config_from_dataset(
         markdown_dataset
     )
     extractor = markdown_file.meta_data.get("extractor")
     if extractor is None:
-        raise ValueError(
-            "ERROR:    get_full_config_for_markdown_file - extractor is None"
+        print(
+            f"WARNING:  {__name__} - no extractor found in markdown_file meta_data for {file_reference.original_file_name}, will infer default"
         )
 
     full_config = [
@@ -120,7 +122,6 @@ def get_full_config_for_markdown_file(
             "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
             "task_config": {
                 "use_cache": True,
-                "file_type": enums.ETLFileType.PDF.value,  # fixed for tmp doc atm
                 "extractor": extractor,
                 "minio_path": file_reference.minio_path,
                 "fallback": None,  # later filled by config of project
@@ -202,30 +203,21 @@ def __get_llm_config_from_dataset(
 def get_full_config_for_integration(
     integration: CognitionIntegration,
     record: IntegrationSharepoint,
-):
-    file_type = enums.ETLFileType.from_string(
-        record.extension.replace(".", "").replace("FOLDER", "md")
-    )
-
-    extractor = DEFAULT_EXTRACTORS.get(file_type, enums.ETLExtractorMD.FILESYSTEM)
-
+) -> List[Dict[str, Any]]:
     full_config = [
         {
             "llm_config": integration.llm_config,
             "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
             "task_config": {
                 "use_cache": False,
-                "file_type": file_type.value,
-                "extractor": extractor.value,
                 "fallback": [
                     {
+                        "llm_config": integration.llm_config,
                         "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
                         "task_config": {
                             "use_cache": False,
-                            "file_type": file_type.value,
-                            "extractor": enums.ETLExtractorPDF.VISION.value,
+                            "extractor": enums.ETLExtractorMD.FILESYSTEM.value,
                         },
-                        "llm_config": integration.llm_config,
                     }
                 ],
             },

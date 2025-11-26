@@ -1050,9 +1050,12 @@ class ETLSplitStrategy(EnumKern):
 
 
 class ETLFileType(Enum):
-    PDF = "PDF"
-    WORD = "WORD"
     MD = "MD"
+    PDF = "PDF"
+    DOCX = "DOCX"
+    XLSX = "XLSX"
+    PPTX = "PPTX"
+    IMG = "IMG"
 
     @classmethod
     def from_string(cls, value: str):
@@ -1069,12 +1072,18 @@ class ETLFileType(Enum):
     @staticmethod
     def from_extension(value: str):
         changed_value = value.lower()
-        if changed_value in [".pdf"]:
+        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
+            return ETLFileType.MD
+        elif changed_value in [".pdf"]:
             return ETLFileType.PDF
         elif changed_value in [".docx", ".doc"]:
-            return ETLFileType.WORD
-        elif changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
-            return ETLFileType.MD
+            return ETLFileType.DOCX
+        elif changed_value in [".xlsx", ".xls"]:
+            return ETLFileType.XLSX
+        elif changed_value in [".pptx", ".ppt"]:
+            return ETLFileType.PPTX
+        elif changed_value in [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff"]:
+            return ETLFileType.IMG
         else:
             raise ValueError(f"Could not parse ETLFileType from extension '{value}'")
 
@@ -1103,9 +1112,20 @@ class ETLExtractorPDF(Enum):
         return cls.VISION
 
 
-class ETLExtractorWord(EnumKern):
+class ETLExtractorDOCX(EnumKern):
     LANGCHAIN = "LANGCHAIN"
-    FILESYSTEM = "FILESYSTEM"
+
+
+class ETLExtractorXLSX(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorPPTX(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorIMG(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
 
 
 class ETLTransformer(EnumKern):

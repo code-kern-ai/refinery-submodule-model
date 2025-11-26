@@ -16,19 +16,6 @@ FINISHED_STATES = [
     enums.CognitionMarkdownFileState.FINISHED.value,
     enums.CognitionMarkdownFileState.FAILED.value,
 ]
-DEFAULT_FILE_TYPE = enums.ETLFileType.PDF
-DEFAULT_EXTRACTORS = {
-    enums.ETLFileType.MD: enums.ETLExtractorMD.FILESYSTEM,
-    enums.ETLFileType.PDF: enums.ETLExtractorPDF.PDF2MD,
-}
-
-DEFAULT_FALLBACK_EXTRACTORS = {
-    enums.ETLFileType.MD: [],
-    enums.ETLFileType.PDF: [
-        enums.ETLExtractorPDF.PDF2MD,
-        enums.ETLExtractorPDF.VISION,
-    ],
-}
 
 
 def get_by_ids(ids: List[str]) -> List[EtlTask]:
