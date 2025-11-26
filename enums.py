@@ -1085,7 +1085,9 @@ class ETLFileType(Enum):
         elif changed_value in [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff"]:
             return ETLFileType.IMG
         else:
-            raise ValueError(f"Could not parse ETLFileType from extension '{value}'")
+            raise ValueError(
+                f"ERROR:    could not parse ETLFileType from extension '{value}'"
+            )
 
 
 class ETLExtractorMD(EnumKern):
