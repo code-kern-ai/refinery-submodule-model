@@ -61,14 +61,6 @@ def get_full_config_and_tokenizer_from_config_id(
             },
             **llm_config,
         },
-        {
-            "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
-            "task_config": {
-                "use_cache": False,
-                "strategy": enums.ETLSplitStrategy.CHUNK.value,
-                "chunk_size": chunk_size,
-            },
-        },
     ]
 
     if transformation_config := etl_preset_item.etl_config.get("transformation"):
@@ -80,9 +72,21 @@ def get_full_config_and_tokenizer_from_config_id(
             }
 
             if transformation_type == "COMMON_ETL":
+                # add default splitting for common etl
+                full_config.append(
+                    {
+                        "llm_config": transformation_llm_config,  # splitting strategy "CHUNK" needs llm_config to execute `split_large_sections_via_llm`
+                        "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
+                        "task_config": {
+                            "use_cache": False,
+                            "strategy": enums.ETLSplitStrategy.CHUNK.value,
+                            "chunk_size": chunk_size,
+                        },
+                    }
+                )
                 transformers = [
                     {  # NOTE: __call_gpt_with_key only reads user_prompt
-                        "enabled": False,
+                        "enabled": True,
                         "name": enums.ETLTransformer.CLEANSE.value,
                         "system_prompt": None,
                         "user_prompt": None,
@@ -591,56 +595,10 @@ def delete_etl_cache(org_id: str, download_id: str) -> None:
 def get_extraction_config_for_file_type(
     preset: ETLConfigPresets, content_type: str
 ) -> Tuple[Dict[str, Any], str]:
-    access_key = parse_content_type_to_etl_key(content_type)
-    file_type = parse_etl_key_to_etl_file_type(access_key)
+    file_type = enums.ETLFileType.from_mimetype(content_type)
+    access_key = file_type.value.lower()
     if not preset:
         raise ValueError("ETL Config Preset not found")
     if file_type_config := preset.etl_config.get("extraction", {}).get(access_key):
         return file_type_config, file_type
     return preset.etl_config.get("extraction", {}).get("default", {}), file_type
-
-
-def parse_content_type_to_etl_key(content_type: str) -> str:
-    if content_type == "application/pdf":
-        return "pdf"
-    elif content_type in [
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/msword",
-    ]:
-        return "word"
-    elif content_type in [
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.ms-excel",
-    ]:
-        return "excel"
-    elif content_type in [
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "application/vnd.ms-powerpoint",
-    ]:
-        return "powerpoint"
-    elif content_type in [
-        "text/markdown",
-        "text/plain",
-        "application/vnd.apple.pages",
-        # probably needs some more
-    ]:
-        return "txt"
-    elif content_type.startswith("image/"):
-        return "image"
-    else:
-        return "default"
-
-
-def parse_etl_key_to_etl_file_type(etl_key: str) -> str:
-    if etl_key == "pdf":
-        return enums.ETLFileType.PDF.value
-    elif etl_key == "word":
-        return enums.ETLFileType.DOCX.value
-    elif etl_key == "excel":
-        return enums.ETLFileType.XLSX.value
-    elif etl_key == "powerpoint":
-        return enums.ETLFileType.PPTX.value
-    elif etl_key == "txt":
-        return enums.ETLFileType.IMG.value
-    else:
-        return "application/octet-stream"
