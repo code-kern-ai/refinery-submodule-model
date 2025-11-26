@@ -1143,19 +1143,19 @@ class ETLExtractorPDF(Enum):
         return cls.VISION
 
 
-class ETLExtractorDOCX(EnumKern):
+class ETLExtractorWord(EnumKern):
     LANGCHAIN = "LANGCHAIN"
 
 
-class ETLExtractorXLSX(EnumKern):
+class ETLExtractorExcel(EnumKern):
     LANGCHAIN = "LANGCHAIN"
 
 
-class ETLExtractorPPTX(EnumKern):
+class ETLExtractorPowerpoint(EnumKern):
     LANGCHAIN = "LANGCHAIN"
 
 
-class ETLExtractorIMG(EnumKern):
+class ETLExtractorImg(EnumKern):
     LANGCHAIN = "LANGCHAIN"
 
 
