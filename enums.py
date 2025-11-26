@@ -1050,6 +1050,7 @@ class ETLSplitStrategy(EnumKern):
 
 class ETLFileType(Enum):
     DEFAULT = "DEFAULT"
+    MD = "MD"
     TXT = "TXT"
     PDF = "PDF"
     WORD = "WORD"
@@ -1072,8 +1073,8 @@ class ETLFileType(Enum):
     @staticmethod
     def from_extension(value: str):
         changed_value = value.lower()
-        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".txt"]:
-            return ETLFileType.TXT
+        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
+            return ETLFileType.MD
         elif changed_value in [".pdf"]:
             return ETLFileType.PDF
         elif changed_value in [".docx", ".doc"]:
