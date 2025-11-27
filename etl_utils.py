@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, Optional, Tuple, List, Union
 from pathlib import Path
 
 import hashlib
@@ -310,7 +310,7 @@ def __get_llm_config_from_project(
     extraction_llm_config = project_item.llm_config.get("extraction", {})
     transformation_llm_config = project_item.llm_config.get("transformation", {})
     if not extraction_llm_config or not transformation_llm_config:
-        raise ValueError(f"Project with id {project_item.id} has incomplete llm_config")
+        raise ValueError(f"project with id {project_item.id} has incomplete llm_config")
 
     return extraction_llm_config, transformation_llm_config
 
@@ -338,16 +338,7 @@ def get_full_config_for_integration(
             "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
             "task_config": {
                 "use_cache": False,
-                "fallback": [
-                    {
-                        "llm_config": integration.llm_config,
-                        "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
-                        "task_config": {
-                            "use_cache": False,
-                            "extractor": enums.ETLExtractorMD.FILESYSTEM.value,
-                        },
-                    }
-                ],
+                "fallback": None,
             },
         },
         {
@@ -426,15 +417,8 @@ def get_full_config_for_integration(
             "task_config": {
                 "http": [
                     {
-                        "url": "http://cognition-integration-provider:80/etl/status",
-                        "method": "POST",
-                        "kwargs": {
-                            "json": {
-                                # etl_task_id is automatically filled in by ETL provider
-                                "integration_id": str(integration.id),
-                                # "state": enums.CognitionMarkdownFileState.FINISHED.value,
-                            }
-                        },
+                        "url": "http://cognition-integration-provider:80/etl/status/{integration_id}",
+                        "method": "PUT",
                     }
                 ]
             },
@@ -517,7 +501,7 @@ def get_splitting_key(
     extractor: enums.ETLExtractorPDF,
     llm_config: Optional[Dict[str, Any]] = None,
 ) -> Path:
-    extraction_key = Path(org_id) / download_id / "extract" / extractor.value
+    extraction_key = Path(org_id) / download_id / "split" / extractor.value
 
     if llm_config:
         llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
@@ -539,7 +523,7 @@ def get_splitting_key(
         else:
             extraction_key = extraction_key / "DEFAULT_PROMPT"
 
-    return extraction_key / "split"
+    return extraction_key
 
 
 def get_transformation_key(

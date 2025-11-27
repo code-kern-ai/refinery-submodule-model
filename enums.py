@@ -1,5 +1,5 @@
+from typing import Any, Optional
 from enum import Enum
-from typing import Any
 
 
 class EnumKern(Enum):
@@ -13,7 +13,7 @@ class EnumKern(Enum):
         for member in cls:
             if member.value == changed_value:
                 return member
-        raise ValueError(f"ERROR:    unknown enum {cls.__name__}: {value}")
+        raise ValueError(f"Unknown enum {cls.__name__}: {value}")
 
 
 class DataTypes(Enum):
@@ -1049,7 +1049,7 @@ class ETLSplitStrategy(EnumKern):
 
 
 class ETLFileType(Enum):
-    DEFAULT = "DEFAULT"
+    DEFAULT = "TXT"
     MD = "MD"
     TXT = "TXT"
     PDF = "PDF"
@@ -1119,6 +1119,23 @@ class ETLFileType(Enum):
         else:
             return ETLFileType.DEFAULT
 
+    @classmethod
+    def get_default_extractor(cls, value: Optional["ETLFileType"] = None):
+        file_type = value or cls.value
+        if file_type == ETLFileType.MD or file_type == ETLFileType.TXT:
+            return ETLExtractorMD.FILESYSTEM
+        elif file_type == ETLFileType.PDF:
+            return ETLExtractorPDF.PDF2MD
+        elif file_type == ETLFileType.WORD:
+            return ETLExtractorWord.LANGCHAIN
+        elif file_type == ETLFileType.EXCEL:
+            return ETLExtractorExcel.LANGCHAIN
+        elif file_type == ETLFileType.POWERPOINT:
+            return ETLExtractorPowerpoint.LANGCHAIN
+        elif file_type == ETLFileType.IMG:
+            return ETLExtractorImg.LANGCHAIN
+        raise ValueError(f"No default extractor for given file type {file_type}")
+
 
 class ETLExtractorMD(EnumKern):
     LANGCHAIN = "LANGCHAIN"
@@ -1132,7 +1149,9 @@ class ETLExtractorPDF(Enum):
     PDF2MD = "PDF2MD"
 
     @classmethod
-    def from_string(cls, value: str):
+    def from_string(cls, value: Optional[str]):
+        if value is None:
+            return cls.LANGCHAIN
         changed_value = value.upper().replace(" ", "_").replace("-", "_")
         for member in cls:
             if member.value == changed_value:
