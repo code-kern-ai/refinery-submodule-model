@@ -1133,6 +1133,8 @@ class ETLFileType(Enum):
             return ETLExtractorPowerpoint.LANGCHAIN
         elif file_type == ETLFileType.IMG:
             return ETLExtractorImg.LANGCHAIN
+        elif file_type == ETLFileType.DEFAULT or file_type == ETLFileType.TXT:
+            return ETLExtractorTxt.LANGCHAIN
         raise ValueError(f"No default extractor for given file type {file_type}")
 
     def get_extractor_from_string(self, extractor: Optional[str] = None) -> EnumKern:
@@ -1150,6 +1152,7 @@ class ETLFileType(Enum):
             return ETLExtractorPowerpoint.from_string(extractor)
         elif self == ETLFileType.IMG:
             return ETLExtractorImg.from_string(extractor)
+        return self.get_default_extractor(self)
 
 
 class ETLExtractorMD(EnumKern):
@@ -1191,6 +1194,10 @@ class ETLExtractorPowerpoint(EnumKern):
 
 
 class ETLExtractorImg(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorTxt(EnumKern):
     LANGCHAIN = "LANGCHAIN"
 
 
