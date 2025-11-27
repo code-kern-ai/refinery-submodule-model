@@ -99,7 +99,7 @@ def get_all_users_by_users_team(user_id: str) -> List[User]:
     query = (
         session.query(User)
         .join(TeamMember, TeamMember.user_id == User.id)
-        .filter(TeamMember.team_id.in_(teams_subquery))
+        .filter(TeamMember.team_id.in_(sql.select(teams_subquery)))
         .distinct(User.id)
     )
     return query.all()

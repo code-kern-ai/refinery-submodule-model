@@ -206,7 +206,7 @@ def get_overview_by_threads(
 
 def __extend_thread_dict(thread, participants_map, unread_count_map):
     thread_dict = sql_alchemy_to_dict(thread)
-    thread_dict["latest_mail"] = sql_alchemy_to_dict(get_first_in_thread(thread.id))
+    thread_dict["latest_mail"] = sql_alchemy_to_dict(get_last_in_thread(thread.id))
     thread_dict["participant_ids"] = participants_map.get(str(thread.id), [])
     thread_dict["unread_mail_count"] = unread_count_map.get(str(thread.id), 0)
     thread_dict["organization_name"] = (
@@ -341,6 +341,16 @@ def get_first_in_thread(thread_id: str) -> Optional[InboxMail]:
         session.query(InboxMail)
         .filter(InboxMail.thread_id == thread_id)
         .order_by(asc(InboxMail.created_at))
+        .first()
+    )
+    return inbox_mail_entity
+
+
+def get_last_in_thread(thread_id: str) -> Optional[InboxMail]:
+    inbox_mail_entity = (
+        session.query(InboxMail)
+        .filter(InboxMail.thread_id == thread_id)
+        .order_by(desc(InboxMail.created_at))
         .first()
     )
     return inbox_mail_entity
