@@ -391,8 +391,8 @@ def get_extraction_key(
             model = llm_config.get("model")
             extraction_key = extraction_key / model
 
-        if llm_config.get("overwriteVisionPrompt"):
-            prompt_hash = get_hashed_string(llm_config.get("overwriteVisionPrompt", ""))
+        if overwrite_vision_prompt := llm_config.get("overwriteVisionPrompt"):
+            prompt_hash = get_hashed_string(overwrite_vision_prompt)
             extraction_key = extraction_key / prompt_hash
         else:
             extraction_key = extraction_key / "DEFAULT_PROMPT"
@@ -422,8 +422,8 @@ def get_splitting_key(
             model = llm_config.get("model")
             extraction_key = extraction_key / model
 
-        if llm_config.get("overwriteVisionPrompt"):
-            prompt_hash = get_hashed_string(llm_config.get("overwriteVisionPrompt", ""))
+        if overwrite_vision_prompt := llm_config.get("overwriteVisionPrompt"):
+            prompt_hash = get_hashed_string(overwrite_vision_prompt)
             extraction_key = extraction_key / prompt_hash
         else:
             extraction_key = extraction_key / "DEFAULT_PROMPT"
@@ -436,6 +436,7 @@ def get_transformation_key(
     download_id: str,
     extractor: enums.ETLExtractorPDF,
     llm_config: Dict[str, Any],
+    prompt: Optional[str] = "",
 ) -> Path:
     llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
     transformation_key = (
@@ -446,19 +447,22 @@ def get_transformation_key(
         engine = llm_config.get("engine", "")
         api_base = llm_config.get("apiBase", "")
         api_version = llm_config.get("apiVersion", "")
-        api_hash = get_hashed_string(extractor.value, api_base, api_version)
+        api_hash = get_hashed_string(extractor.value, api_base, api_version, prompt)
         transformation_key = transformation_key / engine / api_hash
     elif llm_identifier == enums.LLMProvider.AZURE_FOUNDRY:
         model = llm_config.get("model", "")
-        api_hash = get_hashed_string(extractor.value, llm_config.get("apiBase", ""))
+        api_hash = get_hashed_string(
+            extractor.value, llm_config.get("apiBase", ""), prompt
+        )
         transformation_key = transformation_key / model / api_hash
     elif (
         llm_identifier == enums.LLMProvider.OPENAI
         or llm_identifier == enums.LLMProvider.PRIVATEMODE_AI
     ):
         model = llm_config.get("model")
-        extractor_hash = get_hashed_string(extractor.value)
+        extractor_hash = get_hashed_string(extractor.value, prompt)
         transformation_key = transformation_key / model / extractor_hash
+
     return transformation_key
 
 
