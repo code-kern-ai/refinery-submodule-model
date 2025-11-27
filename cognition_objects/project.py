@@ -172,7 +172,6 @@ def create(
     org_id: str,
     user_id: str,
     interface_type: str,
-    tokenizer: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     operator_routing_config: Optional[Dict[str, Any]] = None,
@@ -192,7 +191,6 @@ def create(
         interface_type=interface_type,
         operator_routing_config=operator_routing_config,
         macro_config=macro_config,
-        tokenizer=tokenizer,
     )
     general.add(project, with_commit)
     return project
