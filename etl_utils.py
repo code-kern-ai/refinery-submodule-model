@@ -418,6 +418,7 @@ def get_full_config_for_integration(
                 "http": [
                     {
                         "url": "http://cognition-integration-provider:80/etl/status/{integration_id}",
+                        "url_format": {"integration_id": str(integration.id)},
                         "method": "PUT",
                     }
                 ]
