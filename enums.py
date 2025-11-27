@@ -1120,9 +1120,8 @@ class ETLFileType(Enum):
             return ETLFileType.DEFAULT
 
     @classmethod
-    def get_default_extractor(cls, value: Optional["ETLFileType"] = None):
-        file_type = value or cls.value
-        if file_type == ETLFileType.MD or file_type == ETLFileType.TXT:
+    def get_default_extractor(cls, file_type: Optional["ETLFileType"] = None):
+        if file_type == ETLFileType.MD:
             return ETLExtractorMD.FILESYSTEM
         elif file_type == ETLFileType.PDF:
             return ETLExtractorPDF.PDF2MD
@@ -1136,13 +1135,29 @@ class ETLFileType(Enum):
             return ETLExtractorImg.LANGCHAIN
         raise ValueError(f"No default extractor for given file type {file_type}")
 
+    def get_extractor_from_string(self, extractor: Optional[str] = None) -> EnumKern:
+        if extractor is None:
+            return self.get_default_extractor(self)
+        if self == ETLFileType.MD:
+            return ETLExtractorMD.from_string(extractor)
+        elif self == ETLFileType.PDF:
+            return ETLExtractorPDF.from_string(extractor)
+        elif self == ETLFileType.WORD:
+            return ETLExtractorWord.from_string(extractor)
+        elif self == ETLFileType.EXCEL:
+            return ETLExtractorExcel.from_string(extractor)
+        elif self == ETLFileType.POWERPOINT:
+            return ETLExtractorPowerpoint.from_string(extractor)
+        elif self == ETLFileType.IMG:
+            return ETLExtractorImg.from_string(extractor)
+
 
 class ETLExtractorMD(EnumKern):
     LANGCHAIN = "LANGCHAIN"
     FILESYSTEM = "FILESYSTEM"
 
 
-class ETLExtractorPDF(Enum):
+class ETLExtractorPDF(EnumKern):
     LANGCHAIN = "LANGCHAIN"
     VISION = "VISION"
     AZURE_DI = "AZURE_DI"
