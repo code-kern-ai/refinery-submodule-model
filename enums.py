@@ -1083,8 +1083,18 @@ class ETLFileType(Enum):
             return ETLFileType.EXCEL
         elif changed_value in [".pptx", ".ppt"]:
             return ETLFileType.POWERPOINT
-        elif changed_value in [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff"]:
+        elif changed_value in [
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".bmp",
+            ".tiff",
+            ".webp",
+            ".avif",
+        ]:
             return ETLFileType.IMG
+        # default is treated like txt so no extension mapping needed
         else:
             return ETLFileType.DEFAULT
 
@@ -1109,13 +1119,8 @@ class ETLFileType(Enum):
             "application/vnd.ms-powerpoint",
         ]:
             return ETLFileType.POWERPOINT
-        elif changed_value in [
-            "text/markdown",
-            "text/plain",
-            "application/vnd.apple.pages",
-            # probably needs some more
-        ]:
-            return ETLFileType.TXT
+        elif changed_value.startswith("image/"):
+            return ETLFileType.IMG
         else:
             return ETLFileType.DEFAULT
 
