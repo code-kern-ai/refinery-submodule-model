@@ -1064,10 +1064,6 @@ class ETLFileType(Enum):
         for member in cls:
             if member.value == changed_value:
                 return member
-        print(
-            f"WARNING:  unknown enum {cls.__name__}: {value}, defaulting to {cls.__name__}.MD",
-            flush=True,
-        )
         return cls.TXT
 
     @staticmethod
@@ -1129,7 +1125,9 @@ class ETLFileType(Enum):
         if file_type == ETLFileType.MD:
             return ETLExtractorMD.FILESYSTEM
         elif file_type == ETLFileType.PDF:
-            return ETLExtractorPDF.PDF2MD
+            return (
+                ETLExtractorPDF.LANGCHAIN
+            )  # integrations can exhaust cognition-pdf2md
         elif file_type == ETLFileType.WORD:
             return ETLExtractorWord.LANGCHAIN
         elif file_type == ETLFileType.EXCEL:
