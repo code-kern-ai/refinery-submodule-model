@@ -26,7 +26,6 @@ def get_user_cached_if_not_admin(user_id: str) -> Optional[User]:
     return user
 
 
-# TODO use new roles form kratos
 def get_admin_users() -> List[User]:
     kernai_admins = (
         session.query(User)
