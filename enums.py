@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 from enum import Enum
 
 
@@ -1125,9 +1125,9 @@ class ETLFileType(Enum):
         if file_type == ETLFileType.MD:
             return ETLExtractorMD.FILESYSTEM
         elif file_type == ETLFileType.PDF:
-            return (
-                ETLExtractorPDF.LANGCHAIN
-            )  # integrations can exhaust cognition-pdf2md
+            # integrations can exhaust cognition-pdf2md
+            # return ETLExtractorPDF.PDF2MD
+            return ETLExtractorPDF.LANGCHAIN
         elif file_type == ETLFileType.WORD:
             return ETLExtractorWord.LANGCHAIN
         elif file_type == ETLFileType.EXCEL:
@@ -1156,6 +1156,21 @@ class ETLFileType(Enum):
         elif self == ETLFileType.IMG:
             return ETLExtractorImg.from_string(extractor)
         return self.get_default_extractor(self)
+
+    def get_all_extractors(self) -> Dict[EnumKern]:
+        if self == ETLFileType.MD:
+            return ETLExtractorMD.all()
+        elif self == ETLFileType.PDF:
+            return ETLExtractorPDF.all()
+        elif self == ETLFileType.WORD:
+            return ETLExtractorWord.all()
+        elif self == ETLFileType.EXCEL:
+            return ETLExtractorExcel.all()
+        elif self == ETLFileType.POWERPOINT:
+            return ETLExtractorPowerpoint.all()
+        elif self == ETLFileType.IMG:
+            return ETLExtractorImg.all()
+        return ETLExtractorTxt.all()
 
 
 class ETLExtractorMD(EnumKern):

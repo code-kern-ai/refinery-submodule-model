@@ -98,6 +98,13 @@ def get_or_create_integration_etl_task(
     )
 
 
+def get_supported_extractors() -> Dict[str, List[str]]:
+    extractors = {}
+    for file_type in enums.ETLFileType:
+        extractors[file_type.value] = file_type.get_all_extractors()
+    return extractors
+
+
 def create(
     org_id: str,
     user_id: str,
