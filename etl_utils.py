@@ -361,6 +361,20 @@ def __get_minio_path_for_copy(
     return f"_cognition/{project_id}/chat_tmp_files/{conversation_id}/{file_reference.original_file_name}{JSON_CHUNKS_ENDING}"
 
 
+def delete_etl_cache(org_id: str, download_id: str) -> None:
+    def rm_tree(path: Path):
+        for item in path.iterdir():
+            if item.is_dir():
+                rm_tree(item)
+            else:
+                item.unlink()
+        path.rmdir()
+
+    etl_cache_dir = ETL_DIR / org_id / download_id
+    if etl_cache_dir.exists() and etl_cache_dir.is_dir():
+        rm_tree(etl_cache_dir)
+
+
 def get_download_key(org_id: str, download_id: str) -> Path:
     return Path(org_id) / download_id / "download"
 
@@ -471,20 +485,6 @@ def get_hashed_string(*args, delimiter: str = "_") -> str:
     hasher = hashlib.new("sha256")
     hasher.update(hash_string.encode())
     return hasher.hexdigest()
-
-
-def delete_etl_cache(org_id: str, download_id: str) -> None:
-    def rm_tree(path: Path):
-        for item in path.iterdir():
-            if item.is_dir():
-                rm_tree(item)
-            else:
-                item.unlink()
-        path.rmdir()
-
-    etl_cache_dir = ETL_DIR / org_id / download_id
-    if etl_cache_dir.exists() and etl_cache_dir.is_dir():
-        rm_tree(etl_cache_dir)
 
 
 def get_extraction_config_for_file_type(
