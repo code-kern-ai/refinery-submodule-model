@@ -130,11 +130,10 @@ def create(
     category_origin: str,
     name: str,
     description: str,
-    tokenizer: str,
     refinery_project_id: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
-    llm_config: Optional[Dict[str, Any]] = None,
+    useable_etl_configurations: Optional[List[Dict[str, Any]]] = None,
 ) -> CognitionMarkdownDataset:
     new_dataset = CognitionMarkdownDataset(
         organization_id=org_id,
@@ -143,9 +142,8 @@ def create(
         category_origin=category_origin,
         name=name,
         description=description,
-        tokenizer=tokenizer,
         created_at=created_at,
-        llm_config=llm_config,
+        useable_etl_configurations=useable_etl_configurations,
     )
 
     general.add(new_dataset, with_commit)

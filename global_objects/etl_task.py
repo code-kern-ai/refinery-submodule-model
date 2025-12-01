@@ -94,6 +94,7 @@ def get_or_create_integration_etl_task(
         file_size_bytes=record.size,
         full_config=full_config,
         tokenizer=integration.tokenizer,
+        meta_data={"integration_id": str(integration.id)},
         priority=priority,
     )
 
@@ -112,6 +113,7 @@ def create(
     file_size_bytes: int,
     tokenizer: str,
     full_config: Dict[str, Any],
+    meta_data: Optional[Dict[str, Any]] = None,
     priority: Optional[int] = -1,
     file_path: Optional[str] = None,
     id: Optional[str] = None,
@@ -124,8 +126,9 @@ def create(
         original_file_name=original_file_name,
         file_path=file_path,
         file_size_bytes=file_size_bytes,
-        full_config=full_config,
         tokenizer=tokenizer,
+        full_config=full_config,
+        meta_data=meta_data,
         priority=priority,
     )
     general.add(etl_task, with_commit)
@@ -145,8 +148,10 @@ def update(
     finished_at: Optional[Union[str, datetime.datetime]] = None,
     state: Optional[enums.CognitionMarkdownFileState] = None,
     is_active: Optional[bool] = None,
+    meta_data: Optional[Dict[str, Any]] = None,
     priority: Optional[int] = None,
     error_message: Optional[str] = None,
+    overwrite_meta_data: bool = False,
     with_commit: bool = True,
 ) -> Optional[EtlTask]:
     if not id and not etl_task:
@@ -178,6 +183,12 @@ def update(
         etl_task.state = state.value
     if is_active is not None:
         etl_task.is_active = is_active
+    if meta_data is not None:
+        if overwrite_meta_data:
+            etl_task.meta_data = meta_data
+        else:
+            etl_task.meta_data.update(meta_data)
+        flag_modified(etl_task, "meta_data")
     if priority is not None:
         etl_task.priority = priority
     if error_message is not None:

@@ -2605,20 +2605,6 @@ class EtlTask(Base):
     # array of indivitual tasks to be executed including fallback etc.
     full_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
 
-    # cache_config = Column(
-    #     JSON
-    # )  # {"use_file_cache": true, "use_extraction_cache": false, "use_transformation_cache": true}
-    # extract_config = Column(JSON)  # schema depends on the file type
-    # split_config = Column(JSON)  # {"chunk": true, "shrink": false}
-    # transform_config = Column(
-    #     JSON
-    # )  # {"summarize": true, "cleanse": true, "text_to_table": true}
-    # load_config = Column(JSON)  # {"refinery_project": false, "markdown_file": true}
-    # notify_config = Column(
-    #     JSON
-    # )  # {"http": {"url": "http://cognition-gateway:80/etl/complete/{task_id}", "method": "POST"}}
-    # llm_config = Column(JSON)
-
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
     state = Column(
@@ -2627,6 +2613,7 @@ class EtlTask(Base):
     is_active = Column(Boolean, default=False)
     priority = Column(Integer, default=0)
     error_message = Column(String)
+    meta_data = Column(JSON)
 
 
 class ConversationShare(Base):
