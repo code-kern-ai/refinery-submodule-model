@@ -14,7 +14,6 @@ from ..models import (
     IntegrationPdf,
     IntegrationGithubIssue,
     IntegrationGithubFile,
-    EtlTask,
 )
 
 
@@ -30,6 +29,17 @@ def get(
         query = query.filter(IntegrationModel.id == id)
         return query.first()
     return query.order_by(IntegrationModel.created_at.desc()).all()
+
+
+def count(integration_id: str) -> Union[List[object], object]:
+    IntegrationModel = integration_model(integration_id)
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration_id,
+        )
+        .count()
+    )
 
 
 def get_by_id(
@@ -201,21 +211,27 @@ def update(
         # it was likely deleted during runtime
         print(f"Integration with id '{integration_id}' not found", flush=True)
         return
+
+    record_updated = False
     integration_record = get(IntegrationModel, integration_id, id)
     integration_record.updated_by = updated_by
 
     if running_id is not None:
         integration_record.running_id = running_id
+        record_updated = True
     if updated_at is not None:
         integration_record.updated_at = updated_at
+        record_updated = True
     if error_message is not None:
         integration_record.error_message = error_message
+        record_updated = True
     if content is not None:
         integration_record.content = content
+        record_updated = True
     if etl_task_id is not None and integration_record.etl_task_id is None:
         integration_record.etl_task_id = etl_task_id
+        record_updated = True
 
-    record_updated = False
     for key, value in metadata.items():
         if not hasattr(integration_record, key):
             raise ValueError(

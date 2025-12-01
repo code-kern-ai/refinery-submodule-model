@@ -1,5 +1,5 @@
+from typing import Any, List, Optional, Dict
 from enum import Enum
-from typing import Any
 
 
 class EnumKern(Enum):
@@ -13,7 +13,7 @@ class EnumKern(Enum):
         for member in cls:
             if member.value == changed_value:
                 return member
-        raise ValueError(f"ERROR:    unknown enum {cls.__name__}: {value}")
+        raise ValueError(f"Unknown enum {cls.__name__}: {value}")
 
 
 class DataTypes(Enum):
@@ -1049,7 +1049,7 @@ class ETLSplitStrategy(EnumKern):
 
 
 class ETLFileType(Enum):
-    DEFAULT = "DEFAULT"
+    DEFAULT = "TXT"
     MD = "MD"
     TXT = "TXT"
     PDF = "PDF"
@@ -1064,10 +1064,6 @@ class ETLFileType(Enum):
         for member in cls:
             if member.value == changed_value:
                 return member
-        print(
-            f"WARNING:  unknown enum {cls.__name__}: {value}, defaulting to {cls.__name__}.MD",
-            flush=True,
-        )
         return cls.TXT
 
     @staticmethod
@@ -1083,8 +1079,18 @@ class ETLFileType(Enum):
             return ETLFileType.EXCEL
         elif changed_value in [".pptx", ".ppt"]:
             return ETLFileType.POWERPOINT
-        elif changed_value in [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff"]:
+        elif changed_value in [
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".bmp",
+            ".tiff",
+            ".webp",
+            ".avif",
+        ]:
             return ETLFileType.IMG
+        # default is treated like txt so no extension mapping needed
         else:
             return ETLFileType.DEFAULT
 
@@ -1109,15 +1115,62 @@ class ETLFileType(Enum):
             "application/vnd.ms-powerpoint",
         ]:
             return ETLFileType.POWERPOINT
-        elif changed_value in [
-            "text/markdown",
-            "text/plain",
-            "application/vnd.apple.pages",
-            # probably needs some more
-        ]:
-            return ETLFileType.TXT
+        elif changed_value.startswith("image/"):
+            return ETLFileType.IMG
         else:
             return ETLFileType.DEFAULT
+
+    @classmethod
+    def get_default_extractor(cls, file_type: Optional["ETLFileType"] = None):
+        if file_type == ETLFileType.MD:
+            return ETLExtractorMD.FILESYSTEM
+        elif file_type == ETLFileType.PDF:
+            # integrations can exhaust cognition-pdf2md
+            # return ETLExtractorPDF.PDF2MD
+            return ETLExtractorPDF.LANGCHAIN
+        elif file_type == ETLFileType.WORD:
+            return ETLExtractorWord.LANGCHAIN
+        elif file_type == ETLFileType.EXCEL:
+            return ETLExtractorExcel.LANGCHAIN
+        elif file_type == ETLFileType.POWERPOINT:
+            return ETLExtractorPowerpoint.LANGCHAIN
+        elif file_type == ETLFileType.IMG:
+            return ETLExtractorImg.LANGCHAIN
+        elif file_type == ETLFileType.DEFAULT or file_type == ETLFileType.TXT:
+            return ETLExtractorTxt.LANGCHAIN
+        raise ValueError(f"No default extractor for given file type {file_type}")
+
+    def get_extractor_from_string(self, extractor: Optional[str] = None) -> EnumKern:
+        if extractor is None:
+            return self.get_default_extractor(self)
+        if self == ETLFileType.MD:
+            return ETLExtractorMD.from_string(extractor)
+        elif self == ETLFileType.PDF:
+            return ETLExtractorPDF.from_string(extractor)
+        elif self == ETLFileType.WORD:
+            return ETLExtractorWord.from_string(extractor)
+        elif self == ETLFileType.EXCEL:
+            return ETLExtractorExcel.from_string(extractor)
+        elif self == ETLFileType.POWERPOINT:
+            return ETLExtractorPowerpoint.from_string(extractor)
+        elif self == ETLFileType.IMG:
+            return ETLExtractorImg.from_string(extractor)
+        return self.get_default_extractor(self)
+
+    def get_supported_extractors(self) -> List[str]:
+        if self == ETLFileType.MD:
+            return ETLExtractorMD.all()
+        elif self == ETLFileType.PDF:
+            return ETLExtractorPDF.all()
+        elif self == ETLFileType.WORD:
+            return ETLExtractorWord.all()
+        elif self == ETLFileType.EXCEL:
+            return ETLExtractorExcel.all()
+        elif self == ETLFileType.POWERPOINT:
+            return ETLExtractorPowerpoint.all()
+        elif self == ETLFileType.IMG:
+            return ETLExtractorImg.all()
+        return ETLExtractorTxt.all()
 
 
 class ETLExtractorMD(EnumKern):
@@ -1125,14 +1178,16 @@ class ETLExtractorMD(EnumKern):
     FILESYSTEM = "FILESYSTEM"
 
 
-class ETLExtractorPDF(Enum):
+class ETLExtractorPDF(EnumKern):
     LANGCHAIN = "LANGCHAIN"
     VISION = "VISION"
     AZURE_DI = "AZURE_DI"
     PDF2MD = "PDF2MD"
 
     @classmethod
-    def from_string(cls, value: str):
+    def from_string(cls, value: Optional[str]):
+        if value is None:
+            return cls.LANGCHAIN
         changed_value = value.upper().replace(" ", "_").replace("-", "_")
         for member in cls:
             if member.value == changed_value:
@@ -1158,6 +1213,18 @@ class ETLExtractorPowerpoint(EnumKern):
 
 class ETLExtractorImg(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorTxt(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractors:
+    def get_all_extractors() -> Dict[EnumKern, List[str]]:
+        all_extractors = {}
+        for file_type in ETLFileType:
+            all_extractors[file_type] = file_type.get_supported_extractors()
+        return all_extractors
 
 
 class ETLTransformer(EnumKern):

@@ -180,6 +180,18 @@ def get_all_etl_tasks(
     )
 
 
+def get_integration_progress(
+    integration_id: str,
+) -> float:
+    count_all_records = integration_records_bo.count(integration_id)
+    all_tasks = get_all_etl_tasks(integration_id)
+    finished_tasks = [task for task in all_tasks if task.state in FINISHED_STATES]
+
+    if count_all_records == 0:
+        return 0.0
+    return round((len(finished_tasks) / count_all_records) * 100.0, 2)
+
+
 def count_org_integrations(org_id: str) -> Dict[str, int]:
     counts = (
         session.query(CognitionIntegration.type, func.count(CognitionIntegration.id))
