@@ -331,7 +331,7 @@ def create_by_thread(
     general.add(inbox_mail_entitiy)
 
     if with_commit:
-        general.commit()
+        general.flush_or_commit(with_commit)
 
     return inbox_mail_entitiy
 
@@ -362,7 +362,7 @@ def get_participant_ids_by_thread_id(thread_id: str) -> List[str]:
         .filter(InboxMailThreadAssociation.thread_id == thread_id)
         .all()
     )
-    participant_ids = [assoc.user_id for assoc in associations]
+    participant_ids = [str(assoc.user_id) for assoc in associations]
     return participant_ids
 
 
