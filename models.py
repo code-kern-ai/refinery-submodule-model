@@ -1555,7 +1555,6 @@ class CognitionMarkdownDataset(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
-    llm_config = Column(JSON)
 
     # might want to index this in the future since it's based on an enum
     category_origin = Column(String)
