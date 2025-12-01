@@ -28,7 +28,7 @@ def get_full_config_and_tokenizer_from_config_id(
     project_id: Optional[str] = None,
     conversation_id: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], str]:
-
+    for_project = False
     if project_id and conversation_id:
         # project related load
         for_project = True
@@ -138,6 +138,18 @@ def get_full_config_and_tokenizer_from_config_id(
                             file_reference, project_id, conversation_id
                         ),
                     },
+                },
+            },
+        )
+    else:
+        full_config.append(
+            {
+                "task_type": enums.CognitionMarkdownFileState.LOADING.value,
+                "task_config": {
+                    "markdown_file": {
+                        "enabled": True,
+                        "id": file_reference.meta_data["markdown_file_id"],
+                    }
                 },
             },
         )
