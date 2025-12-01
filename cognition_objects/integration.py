@@ -187,6 +187,8 @@ def get_integration_progress(
     all_tasks = get_all_etl_tasks(integration_id)
     finished_tasks = [task for task in all_tasks if task.state in FINISHED_STATES]
 
+    if count_all_records == 0:
+        return 0.0
     return round((len(finished_tasks) / count_all_records) * 100.0, 2)
 
 

@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict
+from typing import Any, List, Optional, Dict
 from enum import Enum
 
 
@@ -1157,7 +1157,7 @@ class ETLFileType(Enum):
             return ETLExtractorImg.from_string(extractor)
         return self.get_default_extractor(self)
 
-    def get_all_extractors(self) -> Dict[EnumKern]:
+    def get_supported_extractors(self) -> List[str]:
         if self == ETLFileType.MD:
             return ETLExtractorMD.all()
         elif self == ETLFileType.PDF:
@@ -1217,6 +1217,14 @@ class ETLExtractorImg(EnumKern):
 
 class ETLExtractorTxt(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractors:
+    def get_all_extractors() -> Dict[EnumKern, List[str]]:
+        all_extractors = {}
+        for file_type in ETLFileType:
+            all_extractors[file_type] = file_type.get_supported_extractors()
+        return all_extractors
 
 
 class ETLTransformer(EnumKern):
