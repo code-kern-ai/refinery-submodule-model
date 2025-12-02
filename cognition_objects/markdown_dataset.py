@@ -136,6 +136,15 @@ def get_dataset_count_dict(org_id: str) -> Dict[str, int]:
     raise Exception("No results found")
 
 
+def get_default_etl_config_id(org_id: str, dataset_id: str) -> Optional[str]:
+    dataset = get(org_id, dataset_id)
+    if dataset and dataset.useable_etl_configurations:
+        for config in dataset.useable_etl_configurations:
+            if config.get("isDefault"):
+                return config.get("id")
+    raise ValueError(f"No default ETL config found for dataset {dataset_id}")
+
+
 def create(
     org_id: str,
     created_by: str,

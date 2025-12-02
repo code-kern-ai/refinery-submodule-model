@@ -147,6 +147,15 @@ def get_project_users_overview(
     return {}
 
 
+def get_default_etl_config_id(project_id: str) -> Optional[str]:
+    project = get_cached(project_id)
+    if project and project.useable_etl_configurations:
+        for config in project.useable_etl_configurations:
+            if config.get("isDefault"):
+                return config.get("id")
+    raise ValueError(f"No default ETL config found for project {project_id}")
+
+
 ROUTING_SOURCE_CODE_DEFAULT_BLANK = """from typing import Dict, Any, Tuple
 def routing(
     record_dict: Dict[str, Any], scope_dict: Dict[str, Any]
