@@ -1066,6 +1066,30 @@ class ETLFileType(Enum):
                 return member
         return cls.TXT
 
+    def get_supported_file_extensions(self) -> List[str]:
+        if self == ETLFileType.MD:
+            return [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]
+        elif self == ETLFileType.PDF:
+            return [".pdf"]
+        elif self == ETLFileType.WORD:
+            return [".docx", ".doc"]
+        elif self == ETLFileType.EXCEL:
+            return [".xlsx", ".xls"]
+        elif self == ETLFileType.POWERPOINT:
+            return [".pptx", ".ppt"]
+        elif self == ETLFileType.IMG:
+            return [
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".bmp",
+                ".tiff",
+                ".webp",
+                ".avif",
+            ]
+        return ["txt"]
+
     @staticmethod
     def from_extension(value: str):
         changed_value = value.lower()

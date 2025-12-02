@@ -2,6 +2,7 @@ from typing import Any, List, Optional, Dict, Union
 from sqlalchemy.orm.attributes import flag_modified
 
 import datetime
+import mimetypes
 
 from submodules.model import enums
 from submodules.model.session import session
@@ -11,6 +12,8 @@ from submodules.model.models import (
     CognitionIntegration,
     IntegrationSharepoint,
 )
+from submodules.model.util import prevent_sql_injection
+
 
 FINISHED_STATES = [
     enums.CognitionMarkdownFileState.FINISHED.value,
@@ -99,11 +102,19 @@ def get_or_create_integration_etl_task(
     )
 
 
-def get_supported_extractors() -> Dict[str, List[str]]:
-    extractors = {}
+def get_supported_file_extensions() -> Dict[str, List[str]]:
+    file_extensions = {}
     for file_type in enums.ETLFileType:
-        extractors[file_type.value] = file_type.get_supported_extractors()
-    return extractors
+        file_extensions[file_type.value] = file_type.get_supported_file_extensions()
+    file_extensions[enums.ETLFileType.TXT.value].append(
+        [
+            ext[0]
+            for ext in filter(
+                lambda x: x[1].startswith("text/"), mimetypes.types_map.items()
+            )
+        ]
+    )
+    return file_extensions
 
 
 def create(
@@ -126,6 +137,7 @@ def create(
         original_file_name=original_file_name,
         file_path=file_path,
         file_size_bytes=file_size_bytes,
+        state=enums.CognitionMarkdownFileState.QUEUED.value,
         tokenizer=tokenizer,
         full_config=full_config,
         meta_data=meta_data,
@@ -222,3 +234,65 @@ def delete_many(ids: List[str], with_commit: bool = True) -> None:
         .delete(synchronize_session=False)
     )
     general.flush_or_commit(with_commit)
+
+
+def get_last_etl_tasks(
+    states: List[enums.CognitionMarkdownFileState],
+    created_at_from: str,
+    created_at_to: Optional[str] = None,
+) -> List[Any]:
+
+    states = [state.value for state in states]
+    if len(states) == 0:
+        return []
+
+    created_at_from = prevent_sql_injection(
+        created_at_from, isinstance(created_at_from, str)
+    )
+    if created_at_to:
+        created_at_to = prevent_sql_injection(
+            created_at_to, isinstance(created_at_to, str)
+        )
+    created_at_to_filter = ""
+
+    if created_at_to:
+        created_at_to_filter = f"AND mf.created_at <= '{created_at_to}'"
+
+    states_filter_sql = ", ".join([f"'{state}'" for state in states])
+
+    query = f"""
+    SELECT *
+    FROM (
+        SELECT 
+            et.organization_id, 
+            et.created_at, 
+            et.created_by, 
+            et.started_at, 
+            et.finished_at, 
+            et.original_file_name AS file_name, 
+            et.error_message AS error, 
+            et.state, 
+            md.id AS dataset_id, 
+            md.name AS dataset_name,
+            ig.id AS integration_id,
+            ig.name AS integration_name,
+            o.name AS organization_name,
+            ROW_NUMBER() OVER (
+                PARTITION BY md.organization_id, md.id
+                ORDER BY et.created_at DESC
+            ) AS rn
+        FROM global.etl_task et
+        JOIN organization o ON o.id = et.organization_id
+        LEFT JOIN cognition.markdown_file mf ON et.id = mf.etl_task_id
+        LEFT JOIN cognition.markdown_dataset md ON md.id = mf.dataset_id
+        LEFT JOIN cognition.integration ig ON et.meta_data->>'integration_id' = ig.id::TEXT
+        WHERE 
+            et.created_at >= '{created_at_from}'
+            AND et.state IN ({states_filter_sql})
+            {created_at_to_filter}
+    ) sub
+    WHERE sub.rn <= 5
+    ORDER BY organization_id, dataset_id, created_at DESC
+    """
+
+    return general.execute_all(query)

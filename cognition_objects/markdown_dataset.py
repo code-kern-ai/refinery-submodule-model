@@ -34,7 +34,7 @@ def __get_enriched_query(
     category_origin: Optional[str] = None,
     query_add: Optional[str] = "",
 ) -> str:
-    where_add = ""
+    where_add = " AND (ed.config_ids->>'isDefault')::bool is true"
     if id:
         id = prevent_sql_injection(id, isinstance(id, str))
         where_add += f" AND md.id = '{id}'"
@@ -42,13 +42,25 @@ def __get_enriched_query(
         where_add += f" AND md.category_origin = '{category_origin}'"
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     return f"""
-        SELECT md.*, COALESCE(mf.num_files, 0) AS num_files, COALESCE(mf.num_reviewed_files, 0) AS num_reviewed_files
+        SELECT 
+            md.*, 
+            COALESCE(mf.num_files, 0) AS num_files, 
+            COALESCE(mf.num_reviewed_files, 0) AS num_reviewed_files, 
+            ecp.etl_config
         FROM cognition.{Tablenames.MARKDOWN_DATASET.value} md
         LEFT JOIN (
             SELECT dataset_id, COUNT(*) as num_files, COUNT(CASE WHEN is_reviewed = TRUE THEN 1 END) AS num_reviewed_files
             FROM cognition.{Tablenames.MARKDOWN_FILE.value}
             GROUP BY dataset_id
         ) mf ON md.id = mf.dataset_id
+        LEFT JOIN(
+            SELECT md.id, json_array_elements(md.useable_etl_configurations) config_ids 
+            FROM cognition.{Tablenames.MARKDOWN_DATASET.value} md
+        ) ed ON ed.id = md.id
+        LEFT JOIN(
+            SELECT ecp.id, ecp.etl_config
+            FROM cognition.{Tablenames.ETL_CONFIG_PRESET.value} ecp
+        ) ecp on ecp.id = (ed.config_ids ->> 'id')::uuid
         WHERE md.organization_id = '{org_id}' {where_add}
         {query_add}
     """
