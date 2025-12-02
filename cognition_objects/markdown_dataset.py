@@ -3,9 +3,10 @@ from datetime import datetime
 
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionMarkdownDataset, Project
+from ..models import CognitionMarkdownDataset, CognitionMarkdownFile, Project
 from ..enums import Tablenames, MarkdownFileCategoryOrigin
 from ..util import prevent_sql_injection
+from .markdown_file import delete_many as delete_many_md_files
 
 
 def get(org_id: str, id: str) -> CognitionMarkdownDataset:
@@ -33,7 +34,7 @@ def __get_enriched_query(
     category_origin: Optional[str] = None,
     query_add: Optional[str] = "",
 ) -> str:
-    where_add = ""
+    where_add = " AND (ed.config_ids->>'isDefault')::bool is true"
     if id:
         id = prevent_sql_injection(id, isinstance(id, str))
         where_add += f" AND md.id = '{id}'"
@@ -41,13 +42,25 @@ def __get_enriched_query(
         where_add += f" AND md.category_origin = '{category_origin}'"
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     return f"""
-        SELECT md.*, COALESCE(mf.num_files, 0) AS num_files, COALESCE(mf.num_reviewed_files, 0) AS num_reviewed_files
+        SELECT 
+            md.*, 
+            COALESCE(mf.num_files, 0) AS num_files, 
+            COALESCE(mf.num_reviewed_files, 0) AS num_reviewed_files, 
+            ecp.etl_config
         FROM cognition.{Tablenames.MARKDOWN_DATASET.value} md
         LEFT JOIN (
             SELECT dataset_id, COUNT(*) as num_files, COUNT(CASE WHEN is_reviewed = TRUE THEN 1 END) AS num_reviewed_files
             FROM cognition.{Tablenames.MARKDOWN_FILE.value}
             GROUP BY dataset_id
         ) mf ON md.id = mf.dataset_id
+        LEFT JOIN(
+            SELECT md.id, json_array_elements(md.useable_etl_configurations) config_ids 
+            FROM cognition.{Tablenames.MARKDOWN_DATASET.value} md
+        ) ed ON ed.id = md.id
+        LEFT JOIN(
+            SELECT ecp.id, ecp.etl_config
+            FROM cognition.{Tablenames.ETL_CONFIG_PRESET.value} ecp
+        ) ecp on ecp.id = (ed.config_ids ->> 'id')::uuid
         WHERE md.organization_id = '{org_id}' {where_add}
         {query_add}
     """
@@ -129,11 +142,10 @@ def create(
     category_origin: str,
     name: str,
     description: str,
-    tokenizer: str,
     refinery_project_id: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
-    llm_config: Optional[Dict[str, Any]] = None,
+    useable_etl_configurations: Optional[List[Dict[str, Any]]] = None,
 ) -> CognitionMarkdownDataset:
     new_dataset = CognitionMarkdownDataset(
         organization_id=org_id,
@@ -142,9 +154,8 @@ def create(
         category_origin=category_origin,
         name=name,
         description=description,
-        tokenizer=tokenizer,
         created_at=created_at,
-        llm_config=llm_config,
+        useable_etl_configurations=useable_etl_configurations,
     )
 
     general.add(new_dataset, with_commit)
@@ -183,6 +194,21 @@ def delete_many(org_id: str, dataset_ids: List[str], with_commit: bool = True) -
             )
         ),
     ).delete(synchronize_session=False)
+
+    md_file_ids = (
+        session.query(CognitionMarkdownFile.id)
+        .filter(
+            CognitionMarkdownFile.organization_id == org_id,
+            CognitionMarkdownFile.dataset_id.in_(dataset_ids),
+        )
+        .all()
+    )
+
+    delete_many_md_files(
+        org_id=org_id,
+        md_file_ids=[md_file_id for (md_file_id,) in md_file_ids],
+        with_commit=True,
+    )
 
     session.query(CognitionMarkdownDataset).filter(
         CognitionMarkdownDataset.organization_id == org_id,

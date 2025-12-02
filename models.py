@@ -20,6 +20,7 @@ from .enums import (
     TokenSubject,
     UploadStates,
     UserRoles,
+    CognitionMarkdownFileState,
 )
 from sqlalchemy import (
     BigInteger,
@@ -1108,11 +1109,10 @@ class CognitionProject(Base):
 
     allow_file_upload = Column(Boolean, default=False)
     max_file_size_mb = Column(Float, default=3.0)
-    llm_config = Column(JSON)
+    useable_etl_configurations = Column(JSON)
     max_folder_size_mb = Column(Float, default=20.0)
     # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
-    tokenizer = Column(String)
     # options from <SVGIcon/> component - only visible with new UI selected (user setting)
     icon = Column(String, default="IconBolt")
     allow_conversation_sharing_organization = Column(Boolean, default=False)
@@ -1555,16 +1555,22 @@ class CognitionMarkdownDataset(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
-    tokenizer = Column(String)
-    llm_config = Column(JSON)
 
     # might want to index this in the future since it's based on an enum
     category_origin = Column(String)
+    useable_etl_configurations = Column(JSON)
 
 
 class CognitionMarkdownFile(Base):
     __tablename__ = Tablenames.MARKDOWN_FILE.value
-    __table_args__ = {"schema": "cognition"}
+    __table_args__ = (
+        UniqueConstraint(
+            "id",
+            "etl_task_id",
+            name=f"unique_{__tablename__}_etl_task_id",
+        ),
+        {"schema": "cognition"},
+    )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(
         UUID(as_uuid=True),
@@ -1593,6 +1599,12 @@ class CognitionMarkdownFile(Base):
     state = Column(String)
     is_reviewed = Column(Boolean, default=False)
     meta_data = Column(JSON)
+
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
 
 
 class FileTransformationLLMLogs(Base):
@@ -2007,6 +2019,27 @@ class CognitionGroupMember(Base):
     created_at = Column(DateTime, default=sql.func.now())
 
 
+class ETLConfigPresets(Base):
+    __tablename__ = Tablenames.ETL_CONFIG_PRESET.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    etl_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
+    add_config = Column(JSON)  # additional config for e.g. setting scope dict values
+
+
 # =========================== Global tables ===========================
 class GlobalWebsocketAccess(Base):
     # table to store prepared websocket configuration.
@@ -2232,6 +2265,7 @@ class IntegrationGithubFile(Base):
             "integration_id",
             "running_id",
             "source",
+            "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
@@ -2263,6 +2297,13 @@ class IntegrationGithubFile(Base):
     sha = Column(String)
     code_language = Column(String)
 
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    content = Column(String)
+
 
 class IntegrationGithubIssue(Base):
     __tablename__ = Tablenames.INTEGRATION_GITHUB_ISSUE.value
@@ -2271,6 +2312,7 @@ class IntegrationGithubIssue(Base):
             "integration_id",
             "running_id",
             "source",
+            "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
@@ -2305,6 +2347,13 @@ class IntegrationGithubIssue(Base):
     milestone = Column(String)
     number = Column(Integer)
 
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    content = Column(String)
+
 
 class IntegrationPdf(Base):
     __tablename__ = Tablenames.INTEGRATION_PDF.value
@@ -2313,6 +2362,7 @@ class IntegrationPdf(Base):
             "integration_id",
             "running_id",
             "source",
+            "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
@@ -2345,6 +2395,13 @@ class IntegrationPdf(Base):
     total_pages = Column(Integer)
     title = Column(String)
 
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    content = Column(String)
+
 
 class IntegrationSharepoint(Base):
     __tablename__ = Tablenames.INTEGRATION_SHAREPOINT.value
@@ -2353,6 +2410,7 @@ class IntegrationSharepoint(Base):
             "integration_id",
             "running_id",
             "source",
+            "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
         {"schema": "integration"},
@@ -2395,6 +2453,13 @@ class IntegrationSharepoint(Base):
     hashes = Column(JSON)
     permissions = Column(JSON)
     file_properties = Column(JSON)
+
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    content = Column(String)
 
 
 class IntegrationSharepointPropertySync(Base):
@@ -2514,6 +2579,40 @@ class TimedExecutions(Base):
     __table_args__ = {"schema": "global"}
     time_key = Column(String, unique=True, primary_key=True)  # enums.TimedExecutionKey
     last_executed_at = Column(DateTime)
+
+
+class EtlTask(Base):
+    __tablename__ = Tablenames.ETL_TASK.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    original_file_name = Column(String)
+    file_path = Column(String)
+    file_size_bytes = Column(BigInteger)
+    tokenizer = Column(String)
+
+    # array of indivitual tasks to be executed including fallback etc.
+    full_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
+
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+    state = Column(
+        String, default=CognitionMarkdownFileState.QUEUE.value
+    )  # of type enums.CognitionMarkdownFileState
+    is_active = Column(Boolean, default=False)
+    priority = Column(Integer, default=0)
+    error_message = Column(String)
+    meta_data = Column(JSON)
 
 
 class ConversationShare(Base):

@@ -6,7 +6,6 @@ from ..session import session
 from ..models import (
     CognitionEnvironmentVariable,
     CognitionMarkdownDataset,
-    CognitionProject,
     GraphRAGIndex,
 )
 from ..util import prevent_sql_injection
@@ -59,6 +58,22 @@ def get_by_name_and_org_id(
             CognitionEnvironmentVariable.organization_id == org_id,
             CognitionEnvironmentVariable.project_id == None,
             CognitionEnvironmentVariable.name == name,
+        )
+        .first()
+    )
+
+
+def get_by_id_and_org_id(
+    org_id: str,
+    id: str,
+) -> CognitionEnvironmentVariable:
+
+    return (
+        session.query(CognitionEnvironmentVariable)
+        .filter(
+            CognitionEnvironmentVariable.organization_id == org_id,
+            CognitionEnvironmentVariable.project_id == None,
+            CognitionEnvironmentVariable.id == id,
         )
         .first()
     )
@@ -120,43 +135,6 @@ def get_all_by_project_id(project_id: str) -> List[CognitionEnvironmentVariable]
         .order_by(CognitionEnvironmentVariable.created_at.asc())
         .all()
     )
-
-
-def get_cognition_project_env_var_value(cognition_project_id: str) -> str:
-
-    env_var_id = cast(
-        CognitionProject.llm_config.op("->")("transformation").op("->>")("envVarId"),
-        UUID,
-    )
-    v = (
-        session.query(CognitionEnvironmentVariable.value)
-        .join(CognitionProject, env_var_id == CognitionEnvironmentVariable.id)
-        .filter(
-            CognitionProject.id == cognition_project_id,
-        )
-        .first()
-    )
-    if v and v[0]:
-        return str(v[0])
-
-
-def get_cognition_project_extraction_env_var_value(
-    cognition_project_id: str, envVar: str
-) -> str:
-    env_var_id = cast(
-        CognitionProject.llm_config.op("->")("extraction").op("->>")(envVar),
-        UUID,
-    )
-    v = (
-        session.query(CognitionEnvironmentVariable.value)
-        .join(CognitionProject, env_var_id == CognitionEnvironmentVariable.id)
-        .filter(
-            CognitionProject.id == cognition_project_id,
-        )
-        .first()
-    )
-    if v and v[0]:
-        return str(v[0])
 
 
 def get_cognition_graphrag_env_var_value(org_id: str, graphrag_index_id: str) -> str:

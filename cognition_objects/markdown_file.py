@@ -4,7 +4,7 @@ from datetime import datetime
 from .. import enums
 from ..business_objects import general
 from ..session import session
-from ..models import CognitionMarkdownFile
+from ..models import CognitionMarkdownFile, EtlTask
 from ..util import prevent_sql_injection
 
 
@@ -14,6 +14,17 @@ def get(org_id: str, md_file_id: str) -> CognitionMarkdownFile:
         .filter(
             CognitionMarkdownFile.organization_id == org_id,
             CognitionMarkdownFile.id == md_file_id,
+        )
+        .first()
+    )
+
+
+def get_by_etl_task_id(org_id: str, etl_task_id: str) -> CognitionMarkdownFile:
+    return (
+        session.query(CognitionMarkdownFile)
+        .filter(
+            CognitionMarkdownFile.organization_id == org_id,
+            CognitionMarkdownFile.etl_task_id == etl_task_id,
         )
         .first()
     )
@@ -57,24 +68,43 @@ def __get_enriched_query(
     query_add: Optional[str] = "",
     exclude_content: bool = False,
 ) -> str:
+    mf_prefix = "mf"
+    et_prefix = "et"
+
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     where_add = ""
     if md_file_id:
         md_file_id = prevent_sql_injection(md_file_id, isinstance(md_file_id, str))
-        where_add += f" AND mf.id = '{md_file_id}'"
+        where_add += f" AND {mf_prefix}.id = '{md_file_id}'"
     if dataset_id:
         prevent_sql_injection(dataset_id, isinstance(dataset_id, str))
-        where_add += f" AND mf.dataset_id = '{dataset_id}'"
+        where_add += f" AND {mf_prefix}.dataset_id = '{dataset_id}'"
     if exclude_content:
         mf_select = general.construct_select_columns(
-            "markdown_file", "cognition", prefix="mf", exclude_columns=["content"]
+            "markdown_file",
+            "cognition",
+            prefix=mf_prefix,
+            exclude_columns=["content", "state", "started_at", "finished_at", "error"],
         )
     else:
-        mf_select = "mf.*"
+        mf_select = f"{mf_prefix}.*"
 
-    query = f"""SELECT {mf_select} FROM cognition.markdown_file mf
+    et_select = general.construct_select_columns(
+        "etl_task",
+        "global",
+        prefix=et_prefix,
+        include_columns=["is_active", "error_message"],
+    )
+
+    query = f"""SELECT
+        {mf_select}, {et_select}, LENGTH({mf_prefix}.content) as content_length,
+        COALESCE({et_prefix}.state, {mf_prefix}.state) state,
+        COALESCE({et_prefix}.started_at, {mf_prefix}.started_at) started_at,
+        COALESCE({et_prefix}.finished_at, {mf_prefix}.finished_at) finished_at
+    FROM cognition.markdown_file {mf_prefix}
+    LEFT JOIN global.etl_task {et_prefix} ON {mf_prefix}.etl_task_id = {et_prefix}.id
     """
-    query += f"WHERE mf.organization_id = '{org_id}' {where_add}"
+    query += f"WHERE {mf_prefix}.organization_id = '{org_id}' {where_add}"
     query += query_add
     return query
 
@@ -175,6 +205,7 @@ def update(
     finished_at: Optional[datetime] = None,
     error: Optional[str] = None,
     meta_data: Optional[Dict[str, Any]] = None,
+    etl_task_id: Optional[Dict[str, Any]] = None,
     overwrite_meta_data: bool = True,
     with_commit: bool = True,
 ) -> CognitionMarkdownFile:
@@ -199,69 +230,33 @@ def update(
             markdown_file.meta_data = meta_data
         else:
             markdown_file.meta_data = {**markdown_file.meta_data, **meta_data}
+    if etl_task_id is not None:
+        markdown_file.etl_task_id = etl_task_id
     general.flush_or_commit(with_commit)
 
     return markdown_file
 
 
 def delete(org_id: str, md_file_id: str, with_commit: bool = True) -> None:
-    session.query(CognitionMarkdownFile).filter(
+    md_file = session.query(CognitionMarkdownFile).filter(
         CognitionMarkdownFile.organization_id == org_id,
         CognitionMarkdownFile.id == md_file_id,
+    )
+    session.query(EtlTask).filter(
+        EtlTask.organization_id == org_id, EtlTask.id == md_file.etl_task_id
     ).delete()
+    md_file.delete()
     general.flush_or_commit(with_commit)
 
 
 def delete_many(org_id: str, md_file_ids: List[str], with_commit: bool = True) -> None:
-    session.query(CognitionMarkdownFile).filter(
+    md_files = session.query(CognitionMarkdownFile).filter(
         CognitionMarkdownFile.organization_id == org_id,
         CognitionMarkdownFile.id.in_(md_file_ids),
-    ).delete(synchronize_session=False)
-    general.flush_or_commit(with_commit)
-
-
-def get_last_etl_tasks(
-    states: List[str],
-    created_at_from: str,
-    created_at_to: Optional[str] = None,
-) -> List[Any]:
-
-    states = [prevent_sql_injection(st, isinstance(st, str)) for st in states]
-    if len(states) == 0:
-        return []
-
-    created_at_from = prevent_sql_injection(
-        created_at_from, isinstance(created_at_from, str)
     )
-    if created_at_to:
-        created_at_to = prevent_sql_injection(
-            created_at_to, isinstance(created_at_to, str)
-        )
-    created_at_to_filter = ""
-
-    if created_at_to:
-        created_at_to_filter = f"AND mf.created_at <= '{created_at_to}'"
-
-    states_filter_sql = ", ".join([f"'{state}'" for state in states])
-
-    query = f"""
-    SELECT *
-    FROM (
-        SELECT mf.created_at, mf.created_by, mf.started_at, mf.finished_at, mf.file_name, mf.error, mf.state, md.id AS dataset_id, md.name AS dataset_name, md.organization_id, o.name AS organization_name,
-            ROW_NUMBER() OVER (
-                PARTITION BY md.organization_id, md.id
-                ORDER BY mf.created_at DESC
-            ) AS rn
-        FROM cognition.markdown_file mf
-            JOIN cognition.markdown_dataset md ON md.id = mf.dataset_id
-            JOIN organization o ON o.id = md.organization_id
-        WHERE 
-            mf.created_at >= '{created_at_from}'
-            AND mf.state IN ({states_filter_sql})
-            {created_at_to_filter}
-    ) sub
-    WHERE rn <= 5
-    ORDER BY organization_id, dataset_id, created_at DESC
-    """
-
-    return general.execute_all(query)
+    session.query(EtlTask).filter(
+        EtlTask.organization_id == org_id,
+        EtlTask.id.in_([mf.etl_task_id for mf in md_files]),
+    ).delete(synchronize_session=False)
+    md_files.delete(synchronize_session=False)
+    general.flush_or_commit(with_commit)

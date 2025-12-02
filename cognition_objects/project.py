@@ -172,7 +172,6 @@ def create(
     org_id: str,
     user_id: str,
     interface_type: str,
-    tokenizer: str,
     with_commit: bool = True,
     created_at: Optional[datetime] = None,
     operator_routing_config: Optional[Dict[str, Any]] = None,
@@ -192,7 +191,6 @@ def create(
         interface_type=interface_type,
         operator_routing_config=operator_routing_config,
         macro_config=macro_config,
-        tokenizer=tokenizer,
     )
     general.add(project, with_commit)
     return project
@@ -212,8 +210,7 @@ def update(
     max_file_size_mb: Optional[float] = None,
     max_folder_size_mb: Optional[float] = None,
     macro_config: Optional[Dict[str, Any]] = None,
-    llm_config: Optional[Dict[str, Any]] = None,
-    tokenizer: Optional[str] = None,
+    useable_etl_configurations: Optional[List[Dict[str, Any]]] = None,
     icon: Optional[str] = None,
     allow_conversation_sharing_organization: Optional[bool] = None,
     allow_conversation_sharing_global: Optional[bool] = None,
@@ -251,26 +248,8 @@ def update(
 
         project.macro_config = new_values
         flag_modified(project, "macro_config")
-    if llm_config is not None:
-        new_values = project.llm_config
-        if new_values is None:
-            new_values = {}
-
-        # if level 3+ depth is needed, we will need to extend below using deepcopy
-        for key in llm_config:
-            if isinstance(llm_config[key], dict):
-                if key not in new_values:
-                    new_values[key] = {}
-                for sub_key in llm_config[key]:
-                    if llm_config[key][sub_key] == "_null":
-                        if sub_key in new_values[key]:
-                            del new_values[key][sub_key]
-                    else:
-                        new_values[key][sub_key] = llm_config[key][sub_key]
-            else:
-                new_values[key] = llm_config[key]
-        project.llm_config = new_values
-        flag_modified(project, "llm_config")
+    if useable_etl_configurations is not None:
+        project.useable_etl_configurations = useable_etl_configurations
 
     if operator_routing_config is not None:
         new_values = project.operator_routing_config
@@ -286,8 +265,6 @@ def update(
 
         project.operator_routing_config = new_values
         flag_modified(project, "operator_routing_config")
-    if tokenizer is not None:
-        project.tokenizer = tokenizer
     if icon is not None:
         project.icon = icon
     if allow_conversation_sharing_organization is not None:

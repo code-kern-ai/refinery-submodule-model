@@ -1,12 +1,20 @@
-from typing import List, Optional, Dict, Union, Type, Any
+from typing import List, Optional, Dict, Tuple, Union, Type, Any
 from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
+from ..enums import CognitionIntegrationType
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
+from ..global_objects import etl_task as etl_task_db_bo
 from ..session import session
 from .helper import get_supported_metadata_keys
+from ..models import (
+    IntegrationSharepoint,
+    IntegrationPdf,
+    IntegrationGithubIssue,
+    IntegrationGithubFile,
+)
 
 
 def get(
@@ -23,11 +31,33 @@ def get(
     return query.order_by(IntegrationModel.created_at.desc()).all()
 
 
+def count(integration_id: str) -> Union[List[object], object]:
+    IntegrationModel = integration_model(integration_id)
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration_id,
+        )
+        .count()
+    )
+
+
 def get_by_id(
     IntegrationModel: Type,
     id: str,
 ) -> object:
     return session.query(IntegrationModel).filter(IntegrationModel.id == id).first()
+
+
+def get_by_etl_task_id(
+    IntegrationModel: Type,
+    etl_task_id: str,
+) -> object:
+    return (
+        session.query(IntegrationModel)
+        .filter(IntegrationModel.etl_task_id == etl_task_id)
+        .first()
+    )
 
 
 def get_by_running_id(
@@ -61,15 +91,32 @@ def get_by_source(
 
 
 def get_all_by_integration_id(
-    IntegrationModel: Type,
     integration_id: str,
-) -> List[object]:
+) -> Tuple[List[object], Type]:
+    IntegrationModel = integration_model(integration_id)
     return (
-        session.query(IntegrationModel)
-        .filter(IntegrationModel.integration_id == integration_id)
-        .order_by(IntegrationModel.created_at)
-        .all()
+        (
+            session.query(IntegrationModel)
+            .filter(IntegrationModel.integration_id == integration_id)
+            .order_by(IntegrationModel.created_at)
+            .all()
+        ),
+        IntegrationModel,
     )
+
+
+def integration_model(integration_id: str) -> Type:
+    integration = integration_db_bo.get_by_id(integration_id)
+    if integration.type == CognitionIntegrationType.SHAREPOINT.value:
+        return IntegrationSharepoint
+    elif integration.type == CognitionIntegrationType.PDF.value:
+        return IntegrationPdf
+    elif integration.type == CognitionIntegrationType.GITHUB_FILE.value:
+        return IntegrationGithubFile
+    elif integration.type == CognitionIntegrationType.GITHUB_ISSUE.value:
+        return IntegrationGithubIssue
+    else:
+        raise ValueError(f"Unsupported integration type: {integration.type}")
 
 
 def get_all_by_project_id(
@@ -88,23 +135,20 @@ def get_all_by_project_id(
 
 
 def get_existing_integration_records(
-    IntegrationModel: Type,
     integration_id: str,
     by: str = "source",
 ) -> Dict[str, object]:
     # TODO(extension): make return type Dict[str, List[object]]
     # once an object_id can reference multiple different integration records
-    return {
-        getattr(record, by, record.source): record
-        for record in get_all_by_integration_id(IntegrationModel, integration_id)
-    }
+    records, _ = get_all_by_integration_id(integration_id)
+    return {getattr(record, by, record.source): record for record in records}
 
 
 def get_running_ids(
-    IntegrationModel: Type,
     integration_id: str,
     by: str = "source",
 ) -> Dict[str, int]:
+    IntegrationModel = integration_model(integration_id)
     return dict(
         session.query(
             getattr(IntegrationModel, by, IntegrationModel.source),
@@ -124,6 +168,7 @@ def create(
     created_at: Optional[datetime] = None,
     error_message: Optional[str] = None,
     id: Optional[str] = None,
+    content: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
 ) -> Optional[object]:
@@ -139,6 +184,7 @@ def create(
         created_at=created_at,
         error_message=error_message,
         id=id,
+        content=content,
         **metadata,
     )
 
@@ -155,6 +201,8 @@ def update(
     running_id: Optional[int] = None,
     updated_at: Optional[datetime] = None,
     error_message: Optional[str] = None,
+    etl_task_id: Optional[str] = None,
+    content: Optional[str] = None,
     with_commit: bool = True,
     **metadata,
 ) -> Optional[object]:
@@ -163,17 +211,27 @@ def update(
         # it was likely deleted during runtime
         print(f"Integration with id '{integration_id}' not found", flush=True)
         return
+
+    record_updated = False
     integration_record = get(IntegrationModel, integration_id, id)
     integration_record.updated_by = updated_by
 
     if running_id is not None:
         integration_record.running_id = running_id
+        record_updated = True
     if updated_at is not None:
         integration_record.updated_at = updated_at
+        record_updated = True
     if error_message is not None:
         integration_record.error_message = error_message
+        record_updated = True
+    if content is not None:
+        integration_record.content = content
+        record_updated = True
+    if etl_task_id is not None and integration_record.etl_task_id is None:
+        integration_record.etl_task_id = etl_task_id
+        record_updated = True
 
-    record_updated = False
     for key, value in metadata.items():
         if not hasattr(integration_record, key):
             raise ValueError(
@@ -198,6 +256,9 @@ def delete_many(
 ) -> None:
     integration_records = session.query(IntegrationModel).filter(
         IntegrationModel.id.in_(ids)
+    )
+    etl_task_db_bo.delete_many(
+        ids=[record.etl_task_id for record in integration_records]
     )
     integration_records.delete(synchronize_session=False)
     general.flush_or_commit(with_commit)
@@ -235,3 +296,9 @@ def __rename_metadata(
         "updated_at": f"{table_name}_updated_at",
     }
     return {rename_keys.get(key, key): value for key, value in metadata.items()}
+
+
+def get_metadata_from_record(record: object) -> Dict[str, Any]:
+    supported_keys = get_supported_metadata_keys(record.__tablename__)
+    supported_metadata = {key: getattr(record, key) for key in supported_keys}
+    return supported_metadata

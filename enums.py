@@ -1,5 +1,19 @@
+from typing import Any, List, Optional, Dict
 from enum import Enum
-from typing import Any
+
+
+class EnumKern(Enum):
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
+
+    @classmethod
+    def from_string(cls, value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        for member in cls:
+            if member.value == changed_value:
+                return member
+        raise ValueError(f"Unknown enum {cls.__name__}: {value}")
 
 
 class DataTypes(Enum):
@@ -178,6 +192,8 @@ class Tablenames(Enum):
     ADMIN_QUERY_MESSAGE_SUMMARY = "admin_query_message_summary"
     RELEASE_NOTIFICATION = "release_notification"
     TIMED_EXECUTIONS = "timed_executions"
+    ETL_TASK = "etl_task"
+    ETL_CONFIG_PRESET = "etl_config_preset"
     CONVERSATION_SHARE = "conversation_share"
     CONVERSATION_GLOBAL_SHARE = "conversation_global_share"
     INBOX_MAIL = "inbox_mail"
@@ -475,22 +491,18 @@ class TokenScope(Enum):
     READ = "READ"
     READ_WRITE = "READ_WRITE"
 
-    def all():
-        return [
-            TokenScope.READ.value,
-            TokenScope.READ_WRITE.value,
-        ]
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
 
 
 class TokenSubject(Enum):
     PROJECT = Tablenames.PROJECT.value.upper()
     MARKDOWN_DATASET = Tablenames.MARKDOWN_DATASET.value.upper()
 
-    def all():
-        return [
-            TokenSubject.PROJECT.value,
-            TokenSubject.MARKDOWN_DATASET.value,
-        ]
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
 
 
 class TokenizationTaskTypes(Enum):
@@ -522,6 +534,7 @@ class TaskType(Enum):
     RUN_COGNITION_MACRO = "RUN_COGNITION_MACRO"
     PARSE_COGNITION_FILE = "PARSE_COGNITION_FILE"
     EXECUTE_INTEGRATION = "EXECUTE_INTEGRATION"
+    EXECUTE_ETL = "EXECUTE_ETL"
 
 
 class TaskQueueAction(Enum):
@@ -682,6 +695,7 @@ class MarkdownFileCategoryOrigin(Enum):
     PDF = "PDF"
     WEB = "WEB"
     SPREADSHEET = "SPREADSHEET"
+    DOCUMENTS = "DOCUMENTS"
 
 
 class RefinerySynchronizationTaskState(Enum):
@@ -720,18 +734,21 @@ class LLMProvider(Enum):
         return self.value.replace(" ", "_").upper()
 
 
-class CognitionMarkdownFileState(Enum):
+# now also etl states!
+class CognitionMarkdownFileState(EnumKern):
     QUEUE = "QUEUE"
+    STARTED = "STARTED"
     EXTRACTING = "EXTRACTING"
     TOKENIZING = "TOKENIZING"
     SPLITTING = "SPLITTING"
     TRANSFORMING = "TRANSFORMING"
+    LOADING = "LOADING"  # e.g. to file reference in db
+    # CACHE_HANDLING = "CACHE_HANDLING"
+    NOTIFYING = (
+        "NOTIFYING"  # e.g. notifying that the file is ready of integration provider
+    )
     FINISHED = "FINISHED"
     FAILED = "FAILED"
-
-    @classmethod
-    def all(cls):
-        return [e.value for e in cls]
 
 
 class CognitionInterfaceType(Enum):
@@ -812,11 +829,9 @@ class MacroType(Enum):
     DOCUMENT_MESSAGE_QUEUE = "DOCUMENT_MESSAGE_QUEUE"
     FOLDER_MESSAGE_QUEUE = "FOLDER_MESSAGE_QUEUE"
 
-    def all():
-        return [
-            MacroType.DOCUMENT_MESSAGE_QUEUE.value,
-            MacroType.FOLDER_MESSAGE_QUEUE.value,
-        ]
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
 
 
 # currently only one option, but could be extended in the future
@@ -1029,6 +1044,220 @@ class MessageType(Enum):
 
 class TimedExecutionKey(Enum):
     LAST_RESET_USER_MESSAGE_COUNT = "LAST_RESET_USER_MESSAGE_COUNT"
+
+
+class ETLSplitStrategy(EnumKern):
+    CHUNK = "CHUNK"
+    SHRINK = "SHRINK"
+
+
+class ETLFileType(Enum):
+    DEFAULT = "TXT"
+    MD = "MD"
+    TXT = "TXT"
+    PDF = "PDF"
+    WORD = "WORD"
+    EXCEL = "EXCEL"
+    POWERPOINT = "POWERPOINT"
+    IMG = "IMG"
+
+    @classmethod
+    def from_string(cls, value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        for member in cls:
+            if member.value == changed_value:
+                return member
+        return cls.TXT
+
+    def get_supported_file_extensions(self) -> List[str]:
+        if self == ETLFileType.MD:
+            return [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]
+        elif self == ETLFileType.PDF:
+            return [".pdf"]
+        elif self == ETLFileType.WORD:
+            return [".docx", ".doc"]
+        elif self == ETLFileType.EXCEL:
+            return [".xlsx", ".xls"]
+        elif self == ETLFileType.POWERPOINT:
+            return [".pptx", ".ppt"]
+        elif self == ETLFileType.IMG:
+            return [
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".bmp",
+                ".tiff",
+                ".webp",
+                ".avif",
+            ]
+        return ["txt"]
+
+    @staticmethod
+    def from_extension(value: str):
+        changed_value = value.lower()
+        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
+            return ETLFileType.MD
+        elif changed_value in [".pdf"]:
+            return ETLFileType.PDF
+        elif changed_value in [".docx", ".doc"]:
+            return ETLFileType.WORD
+        elif changed_value in [".xlsx", ".xls"]:
+            return ETLFileType.EXCEL
+        elif changed_value in [".pptx", ".ppt"]:
+            return ETLFileType.POWERPOINT
+        elif changed_value in [
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".bmp",
+            ".tiff",
+            ".webp",
+            ".avif",
+        ]:
+            return ETLFileType.IMG
+        # default is treated like txt so no extension mapping needed
+        else:
+            return ETLFileType.DEFAULT
+
+    @staticmethod
+    def from_mimetype(value: str):
+        changed_value = value.lower()
+
+        if changed_value in ["application/pdf"]:
+            return ETLFileType.PDF
+        elif changed_value in [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword",
+        ]:
+            return ETLFileType.WORD
+        elif changed_value in [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel",
+        ]:
+            return ETLFileType.EXCEL
+        elif changed_value in [
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.ms-powerpoint",
+        ]:
+            return ETLFileType.POWERPOINT
+        elif changed_value.startswith("image/"):
+            return ETLFileType.IMG
+        else:
+            return ETLFileType.DEFAULT
+
+    @classmethod
+    def get_default_extractor(cls, file_type: Optional["ETLFileType"] = None):
+        if file_type == ETLFileType.MD:
+            return ETLExtractorMD.FILESYSTEM
+        elif file_type == ETLFileType.PDF:
+            # integrations can exhaust cognition-pdf2md
+            # return ETLExtractorPDF.PDF2MD
+            return ETLExtractorPDF.LANGCHAIN
+        elif file_type == ETLFileType.WORD:
+            return ETLExtractorWord.LANGCHAIN
+        elif file_type == ETLFileType.EXCEL:
+            return ETLExtractorExcel.LANGCHAIN
+        elif file_type == ETLFileType.POWERPOINT:
+            return ETLExtractorPowerpoint.LANGCHAIN
+        elif file_type == ETLFileType.IMG:
+            return ETLExtractorImg.LANGCHAIN
+        elif file_type == ETLFileType.DEFAULT or file_type == ETLFileType.TXT:
+            return ETLExtractorTxt.LANGCHAIN
+        raise ValueError(f"No default extractor for given file type {file_type}")
+
+    def get_extractor_from_string(self, extractor: Optional[str] = None) -> EnumKern:
+        if extractor is None:
+            return self.get_default_extractor(self)
+        if self == ETLFileType.MD:
+            return ETLExtractorMD.from_string(extractor)
+        elif self == ETLFileType.PDF:
+            return ETLExtractorPDF.from_string(extractor)
+        elif self == ETLFileType.WORD:
+            return ETLExtractorWord.from_string(extractor)
+        elif self == ETLFileType.EXCEL:
+            return ETLExtractorExcel.from_string(extractor)
+        elif self == ETLFileType.POWERPOINT:
+            return ETLExtractorPowerpoint.from_string(extractor)
+        elif self == ETLFileType.IMG:
+            return ETLExtractorImg.from_string(extractor)
+        return self.get_default_extractor(self)
+
+    def get_supported_extractors(self) -> List[str]:
+        if self == ETLFileType.MD:
+            return ETLExtractorMD.all()
+        elif self == ETLFileType.PDF:
+            return ETLExtractorPDF.all()
+        elif self == ETLFileType.WORD:
+            return ETLExtractorWord.all()
+        elif self == ETLFileType.EXCEL:
+            return ETLExtractorExcel.all()
+        elif self == ETLFileType.POWERPOINT:
+            return ETLExtractorPowerpoint.all()
+        elif self == ETLFileType.IMG:
+            return ETLExtractorImg.all()
+        return ETLExtractorTxt.all()
+
+
+class ETLExtractorMD(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+    FILESYSTEM = "FILESYSTEM"
+
+
+class ETLExtractorPDF(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+    VISION = "VISION"
+    AZURE_DI = "AZURE_DI"
+    PDF2MD = "PDF2MD"
+
+    @classmethod
+    def from_string(cls, value: Optional[str]):
+        if value is None:
+            return cls.LANGCHAIN
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        for member in cls:
+            if member.value == changed_value:
+                return member
+        if changed_value == "PDF2MARKDOWN":
+            return cls.PDF2MD
+        if changed_value == "GPT_4":
+            return cls.VISION
+        return cls.VISION
+
+
+class ETLExtractorWord(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorExcel(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorPowerpoint(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorImg(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorTxt(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractors:
+    def get_all_extractors() -> Dict[EnumKern, List[str]]:
+        all_extractors = {}
+        for file_type in ETLFileType:
+            all_extractors[file_type] = file_type.get_supported_extractors()
+        return all_extractors
+
+
+class ETLTransformer(EnumKern):
+    SUMMARIZE = "SUMMARIZE"
+    CLEANSE = "CLEANSE"
+    TEXT_TO_TABLE = "TEXT_TO_TABLE"
 
 
 class InboxMailThreadSupportProgressState(Enum):

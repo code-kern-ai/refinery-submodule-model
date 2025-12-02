@@ -3,9 +3,11 @@ import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
+
 from ..business_objects import general
+from ..integration_objects import manager as integration_records_bo
 from ..session import session
-from ..models import CognitionIntegration, CognitionGroup
+from ..models import CognitionIntegration, CognitionGroup, EtlTask
 from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
@@ -147,6 +149,49 @@ def get_last_synced_at(
     return result[0] if result else None
 
 
+def get_active_etl_tasks(
+    integration_id: str,
+) -> List[EtlTask]:
+    IntegrationModel = integration_records_bo.integration_model(integration_id)
+    return (
+        session.query(EtlTask)
+        .filter(EtlTask.is_active == True)
+        .join(
+            IntegrationModel,
+            (EtlTask.id == IntegrationModel.etl_task_id)
+            & (IntegrationModel.integration_id == integration_id),
+        )
+        .all()
+    )
+
+
+def get_all_etl_tasks(
+    integration_id: str,
+) -> List[EtlTask]:
+    IntegrationModel = integration_records_bo.integration_model(integration_id)
+    return (
+        session.query(EtlTask)
+        .join(
+            IntegrationModel,
+            (IntegrationModel.etl_task_id == EtlTask.id)
+            & (IntegrationModel.integration_id == integration_id),
+        )
+        .all()
+    )
+
+
+def get_integration_progress(
+    integration_id: str,
+) -> float:
+    count_all_records = integration_records_bo.count(integration_id)
+    all_tasks = get_all_etl_tasks(integration_id)
+    finished_tasks = [task for task in all_tasks if task.state in FINISHED_STATES]
+
+    if count_all_records == 0:
+        return 0.0
+    return round((len(finished_tasks) / count_all_records) * 100.0, 2)
+
+
 def count_org_integrations(org_id: str) -> Dict[str, int]:
     counts = (
         session.query(CognitionIntegration.type, func.count(CognitionIntegration.id))
@@ -201,6 +246,7 @@ def create(
 
 def update(
     id: str,
+    project_id: Optional[str] = None,
     updated_by: Optional[str] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -220,6 +266,8 @@ def update(
     if not integration:
         return None
 
+    if project_id is not None and integration.project_id is None:
+        integration.project_id = project_id
     if updated_by is not None:
         integration.updated_by = updated_by
     if name is not None:
@@ -279,6 +327,16 @@ def execution_finished(id: str) -> bool:
 def delete_many(
     ids: List[str], delete_cognition_groups: bool = True, with_commit: bool = True
 ) -> None:
+    for id in ids:
+        integration_records, IntegrationModel = (
+            integration_records_bo.get_all_by_integration_id(id)
+        )
+        integration_records_bo.delete_many(
+            IntegrationModel,
+            ids=[rec.id for rec in integration_records],
+            with_commit=True,
+        )
+
     (
         session.query(CognitionIntegration)
         .filter(CognitionIntegration.id.in_(ids))
@@ -290,6 +348,7 @@ def delete_many(
             .filter(CognitionGroup.meta_data.op("->>")("integration_id").in_(ids))
             .delete(synchronize_session=False)
         )
+
     general.flush_or_commit(with_commit)
 
 

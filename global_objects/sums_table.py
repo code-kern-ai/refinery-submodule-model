@@ -72,17 +72,24 @@ def get_privatemode_sum_snapshot(as_query: bool = False) -> Dict[str, Any]:
             WHERE pl.created_at::date = CURRENT_DATE - INTERVAL '1 day'
             AND pl.strategy_step_type = '{StrategyStepType.TEMPLATED.value}'
             AND st.config::jsonb -> 'steps' @> '[{{"config": {{"llmIdentifier": "{LLMProvider.PRIVATEMODE_AI.value}"}}}}]'
-            UNION 
+            UNION
             SELECT pl.project_id, pl.message_id, CASE WHEN u.email LIKE '%@kern.ai' THEN TRUE ELSE FALSE END is_kern_user
             FROM cognition.pipeline_logs pl
-            INNER JOIN cognition.project p
-                ON pl.project_id = p.id
+            INNER JOIN (
+                    SELECT  p.id
+                    FROM cognition.project p
+                    JOIN cognition.etl_config_preset e
+                        ON e.id IN (
+                            SELECT (elem->>'id')::uuid
+                            FROM jsonb_array_elements(p.useable_etl_configurations::jsonb) elem
+                        )
+                    WHERE e.etl_config::text ILIKE '%privatemode%'
+                ) relevant_projects
+                    ON pl.project_id = relevant_projects.id
             INNER JOIN PUBLIC.user u
                 ON pl.created_by = u.id
             WHERE pl.created_at::date = CURRENT_DATE - INTERVAL '1 day'
             AND pl.strategy_step_type = '{StrategyStepType.TMP_DOC_RETRIEVAL.value}'
-            AND (p.llm_config::jsonb -> 'extraction' ->> 'llmIdentifier' = 'PRIVATEMODE_AI' --written like the enum here so not interpolated
-            OR p.llm_config::jsonb -> 'transformation' ->> 'llmIdentifier' = 'PRIVATEMODE_AI')  --written like the enum here so not interpolated
         ) x
         INNER JOIN cognition.project p
             ON x.project_id = p.id
