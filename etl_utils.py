@@ -42,11 +42,9 @@ def get_full_config_and_tokenizer_from_config_id(
     llm_config = {}
     if llm_indicator_extract := extraction_config.get("llmIdentifier"):
         llm_config = {
-            {
-                **extraction_config.get("llmConfig", {}),
-                "llmIdentifier": llm_indicator_extract,
-                "overwriteVisionPrompt": extraction_config.get("overwriteVisionPrompt"),
-            }
+            **extraction_config.get("llmConfig", {}),
+            "llmIdentifier": llm_indicator_extract,
+            "overwriteVisionPrompt": extraction_config.get("overwriteVisionPrompt"),
         }
     full_config = [
         {
