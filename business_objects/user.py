@@ -26,6 +26,41 @@ def get_user_cached_if_not_admin(user_id: str) -> Optional[User]:
     return user
 
 
+def get_admin_users() -> List[User]:
+    kernai_admins = (
+        session.query(User)
+        .filter(User.email.ilike("%@kern.ai"), User.verified == True)
+        .all()
+    )
+
+    query = """
+    SELECT email FROM global.full_admin_access
+    """
+
+    result = general.execute_all(query)
+    full_admin_emails = [row[0].lower() for row in result] if result else []
+
+    if full_admin_emails:
+        full_admins = (
+            session.query(User).filter(User.email.in_(full_admin_emails)).all()
+        )
+    else:
+        full_admins = []
+
+    admin_users = {user.id: user for user in kernai_admins + full_admins}
+    return list(admin_users.values())
+
+
+def get_engineer_users(org_id: str) -> List[User]:
+    engineers = (
+        session.query(User)
+        .filter(User.role == enums.UserRoles.ENGINEER.value)
+        .filter(User.organization_id == org_id)
+        .all()
+    )
+    return engineers
+
+
 @TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
 def get_user_cached(user_id: str) -> User:
     user = get(user_id)
@@ -49,6 +84,23 @@ def get_all(
         query = query.filter(User.organization_id == organization_id)
     if user_role:
         query = query.filter(User.role == user_role.value)
+    return query.all()
+
+
+def get_all_users_by_users_team(user_id: str) -> List[User]:
+    if not user_id:
+        return []
+    teams_subquery = (
+        session.query(TeamMember.team_id)
+        .filter(TeamMember.user_id == user_id)
+        .subquery()
+    )
+    query = (
+        session.query(User)
+        .join(TeamMember, TeamMember.user_id == User.id)
+        .filter(TeamMember.team_id.in_(sql.select(teams_subquery)))
+        .distinct(User.id)
+    )
     return query.all()
 
 

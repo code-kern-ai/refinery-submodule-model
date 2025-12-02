@@ -196,6 +196,9 @@ class Tablenames(Enum):
     ETL_CONFIG_PRESET = "etl_config_preset"
     CONVERSATION_SHARE = "conversation_share"
     CONVERSATION_GLOBAL_SHARE = "conversation_global_share"
+    INBOX_MAIL = "inbox_mail"
+    INBOX_MAIL_THREAD = "inbox_mail_thread"
+    INBOX_MAIL_THREAD_ASSOCIATION = "inbox_mail_thread_association"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -1255,3 +1258,10 @@ class ETLTransformer(EnumKern):
     SUMMARIZE = "SUMMARIZE"
     CLEANSE = "CLEANSE"
     TEXT_TO_TABLE = "TEXT_TO_TABLE"
+
+
+class InboxMailThreadSupportProgressState(Enum):
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    RESOLVED = "RESOLVED"
+    FAILED = "FAILED"

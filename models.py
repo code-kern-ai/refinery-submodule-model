@@ -2660,3 +2660,71 @@ class ConversationGlobalShare(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+
+
+class InboxMailThread(Base):
+    __tablename__ = Tablenames.INBOX_MAIL_THREAD.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    subject = Column(String)
+    meta_data = Column(JSON)
+    is_important = Column(Boolean, default=False)
+    progress_state = Column(
+        String
+    )  # of type enums. InboxMailThreadSupportProgressState *.value
+    support_owner_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    is_admin_support_thread = Column(Boolean, default=False)
+
+
+class InboxMail(Base):
+    __tablename__ = Tablenames.INBOX_MAIL.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime, default=sql.func.now())
+    sender_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    thread_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"global.{Tablenames.INBOX_MAIL_THREAD.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    content = Column(String)
+
+
+class InboxMailThreadAssociation(Base):
+    __tablename__ = Tablenames.INBOX_MAIL_THREAD_ASSOCIATION.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    thread_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"global.{Tablenames.INBOX_MAIL_THREAD.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    unread_mail_count = Column(Integer, default=0)
