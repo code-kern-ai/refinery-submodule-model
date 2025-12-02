@@ -137,7 +137,6 @@ def create(
         original_file_name=original_file_name,
         file_path=file_path,
         file_size_bytes=file_size_bytes,
-        state=enums.CognitionMarkdownFileState.QUEUED.value,
         tokenizer=tokenizer,
         full_config=full_config,
         meta_data=meta_data,
