@@ -14,6 +14,7 @@ from ..models import (
     IntegrationPdf,
     IntegrationGithubIssue,
     IntegrationGithubFile,
+    CognitionIntegration,
 )
 
 
@@ -31,12 +32,12 @@ def get(
     return query.order_by(IntegrationModel.created_at.desc()).all()
 
 
-def count(integration_id: str) -> Union[List[object], object]:
-    IntegrationModel = integration_model(integration_id)
+def count(integration: CognitionIntegration) -> int:
+    IntegrationModel = integration_model(integration=integration)
     return (
         session.query(IntegrationModel)
         .filter(
-            IntegrationModel.integration_id == integration_id,
+            IntegrationModel.integration_id == integration.id,
         )
         .count()
     )
@@ -105,8 +106,13 @@ def get_all_by_integration_id(
     )
 
 
-def integration_model(integration_id: str) -> Type:
-    integration = integration_db_bo.get_by_id(integration_id)
+def integration_model(
+    integration_id: Optional[str] = None,
+    integration: Optional[CognitionIntegration] = None,
+) -> Type:
+    if not integration_id and not integration:
+        raise ValueError("Either integration_id or integration must be provided")
+    integration = integration or integration_db_bo.get_by_id(integration_id)
     if integration.type == CognitionIntegrationType.SHAREPOINT.value:
         return IntegrationSharepoint
     elif integration.type == CognitionIntegrationType.PDF.value:
