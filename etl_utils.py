@@ -56,7 +56,7 @@ def get_full_config_and_tokenizer_from_config_id(
                 "minio_path": file_reference.minio_path,
                 "fallback": None,  # later filled by config of project
             },
-            **llm_config,
+            "llm_config": llm_config,
         },
     ]
 
@@ -153,94 +153,6 @@ def get_full_config_and_tokenizer_from_config_id(
             },
         )
     return full_config, etl_preset_item.etl_config.get("tokenizer")
-
-
-def get_full_config_for_markdown_file(
-    file_reference: FileReference,
-    markdown_dataset: CognitionMarkdownDataset,
-    markdown_file: CognitionMarkdownFile,
-    chunk_size: Optional[int] = 1000,
-) -> List[Dict[str, Any]]:
-    extraction_llm_config, transformation_llm_config = __get_llm_config_from_dataset(
-        markdown_dataset
-    )
-    extractor = markdown_file.meta_data.get("extractor")
-    if extractor is None:
-        print(
-            f"WARNING:  {__name__} - no extractor found in markdown_file meta_data for {file_reference.original_file_name}, will infer default"
-        )
-
-    full_config = [
-        {
-            "llm_config": extraction_llm_config,
-            "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
-            "task_config": {
-                "use_cache": True,
-                "extractor": extractor,
-                "minio_path": file_reference.minio_path,
-                "fallback": None,  # later filled by config of project
-            },
-        },
-        {
-            "llm_config": extraction_llm_config,
-            "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
-            "task_config": {
-                "use_cache": True,
-                "strategy": enums.ETLSplitStrategy.CHUNK.value,
-                "chunk_size": chunk_size,
-            },
-        },
-        {
-            "llm_config": transformation_llm_config,
-            "task_type": enums.CognitionMarkdownFileState.TRANSFORMING.value,
-            "task_config": {
-                "use_cache": True,
-                "transformers": [
-                    {  # NOTE: __call_gpt_with_key only reads user_prompt
-                        "enabled": False,
-                        "name": enums.ETLTransformer.CLEANSE.value,
-                        "system_prompt": None,
-                        "user_prompt": None,
-                    },
-                    {
-                        "enabled": True,
-                        "name": enums.ETLTransformer.TEXT_TO_TABLE.value,
-                        "system_prompt": None,
-                        "user_prompt": None,
-                    },
-                    {
-                        "enabled": False,
-                        "name": enums.ETLTransformer.SUMMARIZE.value,
-                        "system_prompt": None,
-                        "user_prompt": None,
-                    },
-                ],
-            },
-        },
-        {
-            "task_type": enums.CognitionMarkdownFileState.LOADING.value,
-            "task_config": {
-                "markdown_file": {
-                    "enabled": True,
-                    "id": str(markdown_file.id),
-                },
-            },
-        },
-    ]
-    return full_config
-
-
-def __get_llm_config_from_dataset(
-    markdown_dataset: CognitionMarkdownDataset,
-) -> Tuple[Dict[str, Any], str]:
-    extraction_llm_config = markdown_dataset.llm_config.get("extraction", {})
-    transformation_llm_config = markdown_dataset.llm_config.get("transformation", {})
-    if not extraction_llm_config or not transformation_llm_config:
-        raise ValueError(
-            f"Dataset with id {markdown_dataset.id} has incomplete llm_config"
-        )
-
-    return extraction_llm_config, transformation_llm_config
 
 
 def get_full_config_for_integration(
