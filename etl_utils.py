@@ -60,7 +60,17 @@ def get_full_config_and_tokenizer_from_config_id(
         },
     ]
 
-    if transformation_config := etl_preset_item.etl_config.get("transformation"):
+    splitting_config = {
+        "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
+        "task_config": {
+            "use_cache": True,
+            "strategy": enums.ETLSplitStrategy.CHUNK.value,
+            "chunk_size": chunk_size,
+        },
+    }
+    transformation_config = etl_preset_item.etl_config.get("transformation")
+
+    if transformation_config:
         transformation_type = transformation_config.get("type", "NO_TRANSFORMATION")
         if transformation_type != "NO_TRANSFORMATION":
             transformation_llm_config = {
@@ -68,20 +78,11 @@ def get_full_config_and_tokenizer_from_config_id(
                 "llmIdentifier": transformation_config.get("llmIdentifier"),
             }
 
-            splitting_config = {
-                "llm_config": transformation_llm_config,  # splitting strategy "CHUNK" needs llm_config to execute `split_large_sections_via_llm`
-                "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
-                "task_config": {
-                    "use_cache": True,
-                    "strategy": enums.ETLSplitStrategy.CHUNK.value,
-                    "chunk_size": chunk_size,
-                },
-            }
+            # splitting strategy "CHUNK" needs llm_config to execute `split_large_sections_via_llm`
+            splitting_config.update({"llm_config": transformation_llm_config})
+            full_config.append(splitting_config)
 
             if transformation_type == "COMMON_ETL":
-                # add default splitting for common etl
-
-                full_config.append(splitting_config)
                 transformers = [
                     {  # NOTE: __call_gpt_with_key only reads user_prompt
                         "enabled": True,
@@ -97,7 +98,6 @@ def get_full_config_and_tokenizer_from_config_id(
                     },
                 ]
             elif transformation_type == "SUMMARIZE":
-                full_config.append(splitting_config)
                 transformers = [
                     {
                         "enabled": True,
@@ -119,6 +119,7 @@ def get_full_config_and_tokenizer_from_config_id(
                     },
                 }
             )
+
     if for_project:
         full_config.append(
             {
