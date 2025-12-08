@@ -24,14 +24,20 @@ def get_full_config_and_tokenizer_from_config_id(
     etl_config_id: Optional[str] = None,  # or in file_reference.meta_data
     content_type: Optional[str] = None,  # or in file_reference.content_type
     chunk_size: Optional[int] = 1000,
+    # only set for markdown datasets
+    markdown_file_id: Optional[str] = None,  # or in file_reference.meta_data
     # only set for chat messages
-    project_id: Optional[str] = None,
-    conversation_id: Optional[str] = None,
+    project_id: Optional[str] = None,  # or in file_reference.meta_data
+    conversation_id: Optional[str] = None,  # or in file_reference.meta_data
 ) -> Tuple[Dict[str, Any], str]:
+    for_dataset = False
     for_project = False
     if project_id and conversation_id:
         # project related load
         for_project = True
+    elif markdown_file_id:
+        # dataset related load
+        for_dataset = True
 
     etl_preset_item = etl_config_presets_db_co.get(
         etl_config_id or file_reference.meta_data.get("etl_config_id")
@@ -139,14 +145,17 @@ def get_full_config_and_tokenizer_from_config_id(
                 },
             },
         )
-    else:
+    elif for_dataset:
         full_config.append(
             {
                 "task_type": enums.CognitionMarkdownFileState.LOADING.value,
                 "task_config": {
                     "markdown_file": {
                         "enabled": True,
-                        "id": file_reference.meta_data["markdown_file_id"],
+                        "id": (
+                            markdown_file_id
+                            or file_reference.meta_data["markdown_file_id"]
+                        ),
                     }
                 },
             },
@@ -297,6 +306,9 @@ def delete_etl_cache(org_id: str, download_id: str) -> None:
         rm_tree(etl_cache_dir)
 
 
+# TODO: delete_etl_tasks for related file_reference_id
+
+
 def get_download_key(org_id: str, download_id: str) -> Path:
     return Path(org_id) / download_id / "download"
 
@@ -402,10 +414,16 @@ def get_transformation_key(
     return transformation_key
 
 
-def get_hashed_string(*args, delimiter: str = "_") -> str:
-    hash_string = delimiter.join(map(str, args))
-    hasher = hashlib.new("sha256")
-    hasher.update(hash_string.encode())
+def get_hashed_string(*args, delimiter: str = "_", from_bytes: bool = False) -> str:
+    if not from_bytes:
+        _hash = delimiter.join(map(str, args)).encode()
+    else:
+        try:
+            _hash = next(map(bytes, args))
+        except StopIteration:
+            raise ValueError("ERROR: A 'bytes' argument is required to hash")
+
+    hasher = hashlib.sha256(_hash)
     return hasher.hexdigest()
 
 

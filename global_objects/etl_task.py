@@ -1,5 +1,7 @@
 from typing import Any, List, Optional, Dict, Union
+from sqlalchemy.sql.expression import cast
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.dialects.postgresql import UUID
 
 import datetime
 import mimetypes
@@ -115,6 +117,64 @@ def get_supported_file_extensions() -> Dict[str, List[str]]:
         ]
     )
     return file_extensions
+
+
+def get_or_create(
+    org_id: str,
+    user_id: str,
+    original_file_name: str,
+    file_size_bytes: int,
+    tokenizer: str,
+    full_config: Dict[str, Any],
+    file_path: Optional[str] = None,
+    meta_data: Optional[Dict[str, Any]] = None,
+    priority: Optional[int] = -1,
+    id: Optional[str] = None,
+    with_commit: bool = True,
+):
+    if id:
+        return get_by_id(id)
+
+    file_reference_id = meta_data.get("file_reference_id") if meta_data else None
+    integration_id = meta_data.get("integration_id") if meta_data else None
+    query: EtlTask = session.query(EtlTask).filter(
+        EtlTask.organization_id == org_id,
+        EtlTask.original_file_name == original_file_name,
+        EtlTask.file_size_bytes == file_size_bytes,
+    )
+
+    if file_path:
+        query = query.filter(EtlTask.file_path == file_path)
+    if file_reference_id:
+        query = query.filter(
+            file_reference_id
+            == cast(EtlTask.meta_data.op("->>")("file_reference_id"), UUID)
+        )
+    if integration_id:
+        query = query.filter(
+            integration_id == cast(EtlTask.meta_data.op("->>")("integration_id"), UUID)
+        )
+
+    # TODO: enhance
+    if with_commit is False:
+        return query.first()
+
+    if etl_task := query.first():
+        return etl_task
+
+    return create(
+        org_id=org_id,
+        user_id=user_id,
+        original_file_name=original_file_name,
+        file_size_bytes=file_size_bytes,
+        tokenizer=tokenizer,
+        full_config=full_config,
+        meta_data=meta_data,
+        priority=priority,
+        file_path=file_path,
+        id=id,
+        with_commit=with_commit,
+    )
 
 
 def create(
