@@ -1080,7 +1080,7 @@ class ETLFileType(Enum):
                 ".webp",
                 ".avif",
             ]
-        return ["txt"]
+        return [".txt"]
 
     @staticmethod
     def from_extension(value: str):
