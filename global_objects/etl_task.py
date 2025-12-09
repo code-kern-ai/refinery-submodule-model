@@ -124,8 +124,8 @@ def get_or_create(
     user_id: str,
     original_file_name: str,
     file_size_bytes: int,
-    tokenizer: str,
-    full_config: Dict[str, Any],
+    tokenizer: Optional[str] = None,
+    full_config: Optional[Dict[str, Any]] = None,
     file_path: Optional[str] = None,
     meta_data: Optional[Dict[str, Any]] = None,
     priority: Optional[int] = -1,
@@ -137,6 +137,7 @@ def get_or_create(
 
     file_reference_id = meta_data.get("file_reference_id") if meta_data else None
     integration_id = meta_data.get("integration_id") if meta_data else None
+    markdown_file_id = meta_data.get("markdown_file_id") if meta_data else None
     query: EtlTask = session.query(EtlTask).filter(
         EtlTask.organization_id == org_id,
         EtlTask.original_file_name == original_file_name,
@@ -149,6 +150,11 @@ def get_or_create(
         query = query.filter(
             file_reference_id
             == cast(EtlTask.meta_data.op("->>")("file_reference_id"), UUID)
+        )
+    if markdown_file_id:
+        query = query.filter(
+            markdown_file_id
+            == cast(EtlTask.meta_data.op("->>")("markdown_file_id"), UUID)
         )
     if integration_id:
         query = query.filter(

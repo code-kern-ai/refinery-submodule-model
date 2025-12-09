@@ -11,8 +11,6 @@ from .models import (
     FileReference,
     CognitionIntegration,
     IntegrationSharepoint,
-    CognitionMarkdownDataset,
-    CognitionMarkdownFile,
 )
 
 ETL_DIR = Path(os.getenv("ETL_DIR", "/app/data/etl"))
@@ -51,6 +49,11 @@ def get_full_config_and_tokenizer_from_config_id(
             **extraction_config.get("llmConfig", {}),
             "llmIdentifier": llm_indicator_extract,
             "overwriteVisionPrompt": extraction_config.get("overwriteVisionPrompt"),
+        }
+    elif extraction_config.get("azureDiApiBase"):
+        llm_config = {
+            "azureDiApiBase": extraction_config["azureDiApiBase"],
+            "azureDiEnvVarId": extraction_config["azureDiEnvVarId"],
         }
     full_config = [
         {
