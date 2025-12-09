@@ -11,8 +11,6 @@ from .models import (
     FileReference,
     CognitionIntegration,
     IntegrationSharepoint,
-    CognitionMarkdownDataset,
-    CognitionMarkdownFile,
 )
 
 ETL_DIR = Path(os.getenv("ETL_DIR", "/app/data/etl"))
@@ -24,14 +22,20 @@ def get_full_config_and_tokenizer_from_config_id(
     etl_config_id: Optional[str] = None,  # or in file_reference.meta_data
     content_type: Optional[str] = None,  # or in file_reference.content_type
     chunk_size: Optional[int] = 1000,
+    # only set for markdown datasets
+    markdown_file_id: Optional[str] = None,  # or in file_reference.meta_data
     # only set for chat messages
-    project_id: Optional[str] = None,
-    conversation_id: Optional[str] = None,
+    project_id: Optional[str] = None,  # or in file_reference.meta_data
+    conversation_id: Optional[str] = None,  # or in file_reference.meta_data
 ) -> Tuple[Dict[str, Any], str]:
+    for_dataset = False
     for_project = False
     if project_id and conversation_id:
         # project related load
         for_project = True
+    elif markdown_file_id:
+        # dataset related load
+        for_dataset = True
 
     etl_preset_item = etl_config_presets_db_co.get(
         etl_config_id or file_reference.meta_data.get("etl_config_id")
@@ -46,6 +50,11 @@ def get_full_config_and_tokenizer_from_config_id(
             "llmIdentifier": llm_indicator_extract,
             "overwriteVisionPrompt": extraction_config.get("overwriteVisionPrompt"),
         }
+    elif extraction_config.get("azureDiApiBase"):
+        llm_config = {
+            "azureDiApiBase": extraction_config["azureDiApiBase"],
+            "azureDiEnvVarId": extraction_config["azureDiEnvVarId"],
+        }
     full_config = [
         {
             "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
@@ -56,7 +65,7 @@ def get_full_config_and_tokenizer_from_config_id(
                 "minio_path": file_reference.minio_path,
                 "fallback": None,  # later filled by config of project
             },
-            **llm_config,
+            "llm_config": llm_config,
         },
     ]
 
@@ -68,8 +77,9 @@ def get_full_config_and_tokenizer_from_config_id(
                 "llmIdentifier": transformation_config.get("llmIdentifier"),
             }
 
+            # splitting strategy "CHUNK" needs llm_config to execute `split_large_sections_via_llm`
             splitting_config = {
-                "llm_config": transformation_llm_config,  # splitting strategy "CHUNK" needs llm_config to execute `split_large_sections_via_llm`
+                "llm_config": transformation_llm_config,
                 "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
                 "task_config": {
                     "use_cache": True,
@@ -79,8 +89,6 @@ def get_full_config_and_tokenizer_from_config_id(
             }
 
             if transformation_type == "COMMON_ETL":
-                # add default splitting for common etl
-
                 full_config.append(splitting_config)
                 transformers = [
                     {  # NOTE: __call_gpt_with_key only reads user_prompt
@@ -119,6 +127,7 @@ def get_full_config_and_tokenizer_from_config_id(
                     },
                 }
             )
+
     if for_project:
         full_config.append(
             {
@@ -139,107 +148,22 @@ def get_full_config_and_tokenizer_from_config_id(
                 },
             },
         )
-    else:
+    elif for_dataset:
         full_config.append(
             {
                 "task_type": enums.CognitionMarkdownFileState.LOADING.value,
                 "task_config": {
                     "markdown_file": {
                         "enabled": True,
-                        "id": file_reference.meta_data["markdown_file_id"],
+                        "id": (
+                            markdown_file_id
+                            or file_reference.meta_data["markdown_file_id"]
+                        ),
                     }
                 },
             },
         )
     return full_config, etl_preset_item.etl_config.get("tokenizer")
-
-
-def get_full_config_for_markdown_file(
-    file_reference: FileReference,
-    markdown_dataset: CognitionMarkdownDataset,
-    markdown_file: CognitionMarkdownFile,
-    chunk_size: Optional[int] = 1000,
-) -> List[Dict[str, Any]]:
-    extraction_llm_config, transformation_llm_config = __get_llm_config_from_dataset(
-        markdown_dataset
-    )
-    extractor = markdown_file.meta_data.get("extractor")
-    if extractor is None:
-        print(
-            f"WARNING:  {__name__} - no extractor found in markdown_file meta_data for {file_reference.original_file_name}, will infer default"
-        )
-
-    full_config = [
-        {
-            "llm_config": extraction_llm_config,
-            "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
-            "task_config": {
-                "use_cache": True,
-                "extractor": extractor,
-                "minio_path": file_reference.minio_path,
-                "fallback": None,  # later filled by config of project
-            },
-        },
-        {
-            "llm_config": extraction_llm_config,
-            "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
-            "task_config": {
-                "use_cache": True,
-                "strategy": enums.ETLSplitStrategy.CHUNK.value,
-                "chunk_size": chunk_size,
-            },
-        },
-        {
-            "llm_config": transformation_llm_config,
-            "task_type": enums.CognitionMarkdownFileState.TRANSFORMING.value,
-            "task_config": {
-                "use_cache": True,
-                "transformers": [
-                    {  # NOTE: __call_gpt_with_key only reads user_prompt
-                        "enabled": False,
-                        "name": enums.ETLTransformer.CLEANSE.value,
-                        "system_prompt": None,
-                        "user_prompt": None,
-                    },
-                    {
-                        "enabled": True,
-                        "name": enums.ETLTransformer.TEXT_TO_TABLE.value,
-                        "system_prompt": None,
-                        "user_prompt": None,
-                    },
-                    {
-                        "enabled": False,
-                        "name": enums.ETLTransformer.SUMMARIZE.value,
-                        "system_prompt": None,
-                        "user_prompt": None,
-                    },
-                ],
-            },
-        },
-        {
-            "task_type": enums.CognitionMarkdownFileState.LOADING.value,
-            "task_config": {
-                "markdown_file": {
-                    "enabled": True,
-                    "id": str(markdown_file.id),
-                },
-            },
-        },
-    ]
-    return full_config
-
-
-def __get_llm_config_from_dataset(
-    markdown_dataset: CognitionMarkdownDataset,
-) -> Tuple[Dict[str, Any], str]:
-    extraction_llm_config = markdown_dataset.llm_config.get("extraction", {})
-    transformation_llm_config = markdown_dataset.llm_config.get("transformation", {})
-    if not extraction_llm_config or not transformation_llm_config:
-        raise ValueError(
-            f"Dataset with id {markdown_dataset.id} has incomplete llm_config"
-        )
-
-    return extraction_llm_config, transformation_llm_config
 
 
 def get_full_config_for_integration(
@@ -385,6 +309,9 @@ def delete_etl_cache(org_id: str, download_id: str) -> None:
         rm_tree(etl_cache_dir)
 
 
+# TODO: delete_etl_tasks for related file_reference_id
+
+
 def get_download_key(org_id: str, download_id: str) -> Path:
     return Path(org_id) / download_id / "download"
 
@@ -490,10 +417,16 @@ def get_transformation_key(
     return transformation_key
 
 
-def get_hashed_string(*args, delimiter: str = "_") -> str:
-    hash_string = delimiter.join(map(str, args))
-    hasher = hashlib.new("sha256")
-    hasher.update(hash_string.encode())
+def get_hashed_string(*args, delimiter: str = "_", from_bytes: bool = False) -> str:
+    if not from_bytes:
+        _hash = delimiter.join(map(str, args)).encode()
+    else:
+        try:
+            _hash = next(map(bytes, args))
+        except StopIteration:
+            raise ValueError("ERROR: A 'bytes' argument is required to hash")
+
+    hasher = hashlib.sha256(_hash)
     return hasher.hexdigest()
 
 

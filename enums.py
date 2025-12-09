@@ -400,17 +400,6 @@ class Pages(Enum):
     SETTINGS = "settings"
 
 
-class DOCS(Enum):
-    UPLOADING_DATA = "https://docs.kern.ai/refinery/project-creation-and-data-upload"
-    KNOWLEDGE_BASE = "https://docs.kern.ai/refinery/heuristics#labeling-functions"
-    WORKFLOW = "https://docs.kern.ai/refinery/manual-labeling#labeling-workflow"
-    CREATING_PROJECTS = "https://docs.kern.ai/refinery/project-creation-and-data-upload#project-creation-workflow"
-    WEAK_SUPERVISION = "https://docs.kern.ai/refinery/weak-supervision"
-    CREATE_EMBEDDINGS = "https://docs.kern.ai/refinery/embedding-integration"
-    INFORMATION_SOURCES = "https://docs.kern.ai/refinery/heuristics#labeling-functions"
-    DATA_BROWSER = "https://docs.kern.ai/refinery/data-management"
-
-
 class SliceTypes(Enum):
     STATIC_DEFAULT = "STATIC_DEFAULT"
     STATIC_OUTLIER = "STATIC_OUTLIER"
@@ -1091,7 +1080,7 @@ class ETLFileType(Enum):
                 ".webp",
                 ".avif",
             ]
-        return ["txt"]
+        return [".txt"]
 
     @staticmethod
     def from_extension(value: str):
