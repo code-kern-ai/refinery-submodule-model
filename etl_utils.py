@@ -309,9 +309,6 @@ def delete_etl_cache(org_id: str, download_id: str) -> None:
         rm_tree(etl_cache_dir)
 
 
-# TODO: delete_etl_tasks for related file_reference_id
-
-
 def get_download_key(org_id: str, download_id: str) -> Path:
     return Path(org_id) / download_id / "download"
 

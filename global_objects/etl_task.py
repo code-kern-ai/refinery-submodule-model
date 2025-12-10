@@ -292,7 +292,6 @@ def execution_finished(id: str) -> bool:
 
 
 def delete_many(ids: List[str], with_commit: bool = True) -> None:
-    # TODO: cascade delete cached files
     (
         session.query(EtlTask)
         .filter(EtlTask.id.in_(ids))
