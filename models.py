@@ -2614,6 +2614,9 @@ class EtlTask(Base):
     error_message = Column(String)
     meta_data = Column(JSON)
 
+    full_config_hash = Column(String, index=True)
+    is_stale = Column(Boolean, default=False)
+
 
 class ConversationShare(Base):
     __tablename__ = Tablenames.CONVERSATION_SHARE.value

@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Dict, Union
+from typing import Any, List, Optional, Dict, Tuple, Union
 from sqlalchemy.sql.expression import cast
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,6 +15,7 @@ from submodules.model.models import (
     IntegrationSharepoint,
 )
 from submodules.model.util import prevent_sql_injection
+from submodules.model.etl_utils import get_hashed_string
 
 
 FINISHED_STATES = [
@@ -131,13 +132,10 @@ def get_or_create(
     priority: Optional[int] = -1,
     id: Optional[str] = None,
     with_commit: bool = True,
-):
+) -> Tuple[EtlTask, bool]:
     if id:
         return get_by_id(id)
 
-    file_reference_id = meta_data.get("file_reference_id") if meta_data else None
-    integration_id = meta_data.get("integration_id") if meta_data else None
-    markdown_file_id = meta_data.get("markdown_file_id") if meta_data else None
     query: EtlTask = session.query(EtlTask).filter(
         EtlTask.organization_id == org_id,
         EtlTask.original_file_name == original_file_name,
@@ -146,6 +144,10 @@ def get_or_create(
 
     if file_path:
         query = query.filter(EtlTask.file_path == file_path)
+
+    file_reference_id = meta_data.get("file_reference_id") if meta_data else None
+    integration_id = meta_data.get("integration_id") if meta_data else None
+    markdown_file_id = meta_data.get("markdown_file_id") if meta_data else None
     if file_reference_id:
         query = query.filter(
             file_reference_id
@@ -161,25 +163,24 @@ def get_or_create(
             integration_id == cast(EtlTask.meta_data.op("->>")("integration_id"), UUID)
         )
 
-    # TODO: enhance
-    if with_commit is False:
-        return query.first()
-
     if etl_task := query.first():
-        return etl_task
+        return etl_task, True
 
-    return create(
-        org_id=org_id,
-        user_id=user_id,
-        original_file_name=original_file_name,
-        file_size_bytes=file_size_bytes,
-        tokenizer=tokenizer,
-        full_config=full_config,
-        meta_data=meta_data,
-        priority=priority,
-        file_path=file_path,
-        id=id,
-        with_commit=with_commit,
+    return (
+        create(
+            org_id=org_id,
+            user_id=user_id,
+            original_file_name=original_file_name,
+            file_size_bytes=file_size_bytes,
+            tokenizer=tokenizer,
+            full_config=full_config,
+            meta_data=meta_data,
+            priority=priority,
+            file_path=file_path,
+            id=id,
+            with_commit=with_commit,
+        ),
+        False,
     )
 
 
@@ -205,6 +206,7 @@ def create(
         file_size_bytes=file_size_bytes,
         tokenizer=tokenizer,
         full_config=full_config,
+        full_config_hash=get_hashed_string(full_config),
         meta_data=meta_data,
         priority=priority,
     )
