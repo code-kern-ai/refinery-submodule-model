@@ -6,9 +6,10 @@ from sqlalchemy.dialects.postgresql import UUID
 import datetime
 import mimetypes
 
-from submodules.model import enums
+from submodules.model import enums, etl_utils
 from submodules.model.session import session
 from submodules.model.business_objects import general
+from submodules.model.cognition_objects import file_reference as file_reference_co_bo
 from submodules.model.models import (
     EtlTask,
     CognitionIntegration,
@@ -33,15 +34,31 @@ def get_by_id(id: str) -> EtlTask:
 
 
 def is_stale(
-    new_full_config: Dict[str, Any],
-    etl_task: Optional[EtlTask] = None,
     etl_task_id: Optional[str] = None,
+    etl_task: Optional[Dict[str, Any]] = None,
 ) -> bool:
     if not etl_task:
         if not etl_task_id:
-            raise Exception("ERROR: Either etl_task or etl_task_id must be provided")
-        etl_task = get_by_id(etl_task_id)
-    return etl_task.full_config_hash != get_hashed_string(new_full_config)
+            raise ValueError("Either etl_task_id or etl_task must be provided")
+        etl_task = get_enriched(etl_task_id)
+    if not etl_task:
+        return False
+
+    file_reference = file_reference_co_bo.get_by_id(
+        etl_task["organization_id"], etl_task["file_reference_id"]
+    )
+    if not file_reference:
+        return False
+
+    new_full_config, tokenizer = etl_utils.get_full_config_and_tokenizer_from_config_id(
+        file_reference=file_reference,
+        etl_config_id=etl_task["etl_config_id"],
+        markdown_file_id=etl_task["markdown_file_id"],
+    )
+    return (
+        etl_task.tokenizer == tokenizer
+        and etl_task.full_config_hash != get_hashed_string(new_full_config)
+    )
 
 
 def get_all(
@@ -56,6 +73,52 @@ def get_all(
     if only_active:
         query = query.filter(EtlTask.is_active == True)
     return query.order_by(EtlTask.created_at.desc()).all()
+
+
+def get_enriched(etl_task_id: str) -> Dict[str, Any]:
+    etl_tasks = get_all_enriched(
+        where_add=f" AND et.id = '{prevent_sql_injection(etl_task_id, True)}' ",
+    )
+    return etl_tasks[0] if etl_tasks else {}
+
+
+def get_all_enriched(
+    exclude_failed: Optional[bool] = False,
+    only_active: Optional[bool] = False,
+    only_markdown_files: Optional[bool] = False,
+    where_add: Optional[str] = "",
+) -> List[Dict[str, Any]]:
+    mf_join = ""
+    if exclude_failed:
+        where_add += " AND et.state != '{}'".format(
+            enums.CognitionMarkdownFileState.FAILED.value
+        )
+    if only_active:
+        where_add += " AND et.is_active IS TRUE"
+    if only_markdown_files:
+        mf_join = ""
+    else:
+        mf_join = "LEFT"
+
+    query = f"""
+        SELECT 
+            et.*,
+            md.id AS dataset_id,
+            md.config_ids->>'id' AS etl_config_id,
+            et.meta_data->>'file_reference_id' AS file_reference_id
+        FROM global.{enums.Tablenames.ETL_TASK.value} et
+        {mf_join} JOIN (
+            SELECT id, dataset_id
+            FROM cognition.{enums.Tablenames.MARKDOWN_FILE.value}
+        ) mf ON et.meta_data->>'markdown_file_id' = mf.id::varchar
+        LEFT JOIN(
+            SELECT id, json_array_elements(useable_etl_configurations) config_ids 
+            FROM cognition.{enums.Tablenames.MARKDOWN_DATASET.value}
+        ) md ON md.id = mf.dataset_id AND (md.config_ids->>'isDefault')::bool is true
+        WHERE 1=1 {where_add}
+        ORDER BY et.created_at DESC
+    """
+    return general.execute_all(query)
 
 
 def get_all_in_org(

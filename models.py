@@ -2610,12 +2610,15 @@ class EtlTask(Base):
         String, default=CognitionMarkdownFileState.QUEUE.value
     )  # of type enums.CognitionMarkdownFileState
     is_active = Column(Boolean, default=False)
+
     priority = Column(Integer, default=0)
     error_message = Column(String)
     meta_data = Column(JSON)
 
     full_config_hash = Column(String, index=True)
     is_stale = Column(Boolean, default=False)
+    num_llm_ops = Column(Integer, default=0)
+    updated_at = Column(DateTime, onupdate=sql.func.now())
 
 
 class ConversationShare(Base):
