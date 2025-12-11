@@ -77,7 +77,7 @@ def get_all(
 
 def get_enriched(etl_task_id: str) -> Dict[str, Any]:
     etl_tasks = get_all_enriched(
-        where_add=f" AND et.id = '{prevent_sql_injection(etl_task_id, True)}' ",
+        where_add=f" AND et.id = '{prevent_sql_injection(etl_task_id, True)}'",
     )
     return etl_tasks[0] if etl_tasks else {}
 
@@ -103,6 +103,7 @@ def get_all_enriched(
     query = f"""
         SELECT 
             et.*,
+            mf.id AS markdown_file_id,
             md.id AS dataset_id,
             md.config_ids->>'id' AS etl_config_id,
             et.meta_data->>'file_reference_id' AS file_reference_id
@@ -281,6 +282,12 @@ def create(
         full_config_hash=get_hashed_string(full_config),
         meta_data=meta_data,
         priority=priority,
+        llm_ops={
+            "total_llm_calls": 0,
+            "total_tokens_input": 0,
+            "total_tokens_output": 0,
+            "total_cost_eur": 0.0,
+        },
     )
     general.add(etl_task, with_commit)
 
@@ -302,6 +309,8 @@ def update(
     meta_data: Optional[Dict[str, Any]] = None,
     priority: Optional[int] = None,
     error_message: Optional[str] = None,
+    is_stale: Optional[bool] = None,
+    llm_ops: Optional[Dict[str, Any]] = None,
     overwrite_meta_data: bool = False,
     with_commit: bool = True,
 ) -> Optional[EtlTask]:
@@ -334,6 +343,14 @@ def update(
         etl_task.state = state.value
     if is_active is not None:
         etl_task.is_active = is_active
+    if is_stale is not None:
+        etl_task.is_stale = is_stale
+    if llm_ops is not None:
+        if overwrite_meta_data:
+            etl_task.llm_ops = llm_ops
+        else:
+            etl_task.llm_ops.update(llm_ops)
+        flag_modified(etl_task, "llm_ops")
     if meta_data is not None:
         if overwrite_meta_data:
             etl_task.meta_data = meta_data
