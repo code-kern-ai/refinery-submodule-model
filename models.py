@@ -2617,7 +2617,7 @@ class EtlTask(Base):
 
     full_config_hash = Column(String, index=True)
     is_stale = Column(Boolean, default=False)
-    num_llm_ops = Column(Integer, default=0)
+    llm_ops = Column(JSON)
     updated_at = Column(DateTime, onupdate=sql.func.now())
 
 
