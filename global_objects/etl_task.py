@@ -32,6 +32,18 @@ def get_by_id(id: str) -> EtlTask:
     return session.query(EtlTask).filter(EtlTask.id == id).first()
 
 
+def is_stale(
+    new_full_config: Dict[str, Any],
+    etl_task: Optional[EtlTask] = None,
+    etl_task_id: Optional[str] = None,
+) -> bool:
+    if not etl_task:
+        if not etl_task_id:
+            raise Exception("ERROR: Either etl_task or etl_task_id must be provided")
+        etl_task = get_by_id(etl_task_id)
+    return etl_task.full_config_hash != get_hashed_string(new_full_config)
+
+
 def get_all(
     exclude_failed: Optional[bool] = False,
     only_active: Optional[bool] = False,
@@ -128,7 +140,7 @@ def get_or_create(
     tokenizer: Optional[str] = None,
     full_config: Optional[Dict[str, Any]] = None,
     file_path: Optional[str] = None,
-    meta_data: Optional[Dict[str, Any]] = None,
+    meta_data: Optional[Dict[str, Any]] = {},
     priority: Optional[int] = -1,
     id: Optional[str] = None,
     with_commit: bool = True,
@@ -145,20 +157,17 @@ def get_or_create(
     if file_path:
         query = query.filter(EtlTask.file_path == file_path)
 
-    file_reference_id = meta_data.get("file_reference_id") if meta_data else None
-    integration_id = meta_data.get("integration_id") if meta_data else None
-    markdown_file_id = meta_data.get("markdown_file_id") if meta_data else None
-    if file_reference_id:
+    if file_reference_id := meta_data.get("file_reference_id"):
         query = query.filter(
             file_reference_id
             == cast(EtlTask.meta_data.op("->>")("file_reference_id"), UUID)
         )
-    if markdown_file_id:
+    if markdown_file_id := meta_data.get("markdown_file_id"):
         query = query.filter(
             markdown_file_id
             == cast(EtlTask.meta_data.op("->>")("markdown_file_id"), UUID)
         )
-    if integration_id:
+    if integration_id := meta_data.get("integration_id"):
         query = query.filter(
             integration_id == cast(EtlTask.meta_data.op("->>")("integration_id"), UUID)
         )
