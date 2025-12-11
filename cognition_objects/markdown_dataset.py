@@ -177,6 +177,7 @@ def update(
     dataset_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    useable_etl_configurations: Optional[List[Dict[str, Any]]] = None,
     with_commit: bool = True,
 ) -> CognitionMarkdownDataset:
     dataset = get(org_id, dataset_id)
@@ -186,6 +187,9 @@ def update(
 
     if description:
         dataset.description = description
+
+    if useable_etl_configurations:
+        dataset.useable_etl_configurations = useable_etl_configurations
 
     general.flush_or_commit(with_commit)
 
