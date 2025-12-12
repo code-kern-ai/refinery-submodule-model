@@ -99,8 +99,8 @@ def __get_enriched_query(
     query = f"""SELECT
         {mf_select}, {et_select}, LENGTH({mf_prefix}.content) as content_length,
         COALESCE({et_prefix}.state, {mf_prefix}.state) state,
-        COALESCE({et_prefix}.started_at, {mf_prefix}.started_at) started_at,
-        COALESCE({et_prefix}.finished_at, {mf_prefix}.finished_at) finished_at
+        {et_prefix}.started_at,
+        {et_prefix}.finished_at
     FROM cognition.markdown_file {mf_prefix}
     LEFT JOIN global.etl_task {et_prefix} ON {mf_prefix}.etl_task_id = {et_prefix}.id
     """

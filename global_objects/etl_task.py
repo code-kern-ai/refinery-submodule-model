@@ -48,17 +48,16 @@ def is_stale(
         etl_task["organization_id"], etl_task["file_reference_id"]
     )
     if not file_reference:
-        return False
+        return True
 
     new_full_config, tokenizer = etl_utils.get_full_config_and_tokenizer_from_config_id(
         file_reference=file_reference,
         etl_config_id=etl_task["etl_config_id"],
         markdown_file_id=etl_task["markdown_file_id"],
     )
-    return (
-        etl_task.tokenizer == tokenizer
-        and etl_task.full_config_hash != get_hashed_string(new_full_config)
-    )
+    return etl_task["tokenizer"] == tokenizer and etl_task[
+        "full_config_hash"
+    ] != get_hashed_string(new_full_config)
 
 
 def get_all(
@@ -127,7 +126,7 @@ def get_all_enriched(
         WHERE 1=1 {where_add}
         ORDER BY et.created_at DESC
     """
-    return general.execute_all(query)
+    return list(map(lambda x: x._asdict(), general.execute_all(query)))
 
 
 def get_all_in_org(
