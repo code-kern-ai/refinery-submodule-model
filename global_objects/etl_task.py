@@ -76,10 +76,8 @@ def get_all(
 
 
 def get_enriched(etl_task_id: str) -> Dict[str, Any]:
-    etl_tasks = get_all_enriched(
-        where_add=f" AND et.id::TEXT = '{prevent_sql_injection(etl_task_id, True)}'",
-    )
-    return etl_tasks[0]._asdict() if etl_tasks else {}
+    etl_tasks = get_all_enriched(etl_task_id=etl_task_id)
+    return etl_tasks[0] if etl_tasks else {}
 
 
 def get_all_enriched(
@@ -87,8 +85,18 @@ def get_all_enriched(
     only_active: Optional[bool] = False,
     only_markdown_files: Optional[bool] = False,
     where_add: Optional[str] = "",
+    etl_task_id: Optional[str] = None,
+    dataset_id: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     mf_join = ""
+    if etl_task_id:
+        where_add += " AND et.id::TEXT = '{}'".format(
+            prevent_sql_injection(etl_task_id, True)
+        )
+    if dataset_id:
+        where_add += " AND md.id::TEXT = '{}'".format(
+            prevent_sql_injection(dataset_id, True)
+        )
     if exclude_failed:
         where_add += " AND et.state != '{}'".format(
             enums.CognitionMarkdownFileState.FAILED.value

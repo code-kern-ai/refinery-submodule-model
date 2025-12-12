@@ -93,7 +93,7 @@ def __get_enriched_query(
         "etl_task",
         "global",
         prefix=et_prefix,
-        include_columns=["is_active", "error_message"],
+        include_columns=["is_active", "is_stale", "llm_ops", "error_message"],
     )
 
     query = f"""SELECT
