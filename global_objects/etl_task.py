@@ -77,9 +77,9 @@ def get_all(
 
 def get_enriched(etl_task_id: str) -> Dict[str, Any]:
     etl_tasks = get_all_enriched(
-        where_add=f" AND et.id = '{prevent_sql_injection(etl_task_id, True)}'",
+        where_add=f" AND et.id::TEXT = '{prevent_sql_injection(etl_task_id, True)}'",
     )
-    return etl_tasks[0] if etl_tasks else {}
+    return etl_tasks[0]._asdict() if etl_tasks else {}
 
 
 def get_all_enriched(
@@ -103,19 +103,19 @@ def get_all_enriched(
     query = f"""
         SELECT 
             et.*,
-            mf.id AS markdown_file_id,
-            md.id AS dataset_id,
+            mf.id::TEXT AS markdown_file_id,
+            md.id::TEXT AS dataset_id,
             md.config_ids->>'id' AS etl_config_id,
             et.meta_data->>'file_reference_id' AS file_reference_id
         FROM global.{enums.Tablenames.ETL_TASK.value} et
         {mf_join} JOIN (
             SELECT id, dataset_id
             FROM cognition.{enums.Tablenames.MARKDOWN_FILE.value}
-        ) mf ON et.meta_data->>'markdown_file_id' = mf.id::varchar
+        ) mf ON et.meta_data->>'markdown_file_id' = mf.id::TEXT
         LEFT JOIN(
             SELECT id, json_array_elements(useable_etl_configurations) config_ids 
             FROM cognition.{enums.Tablenames.MARKDOWN_DATASET.value}
-        ) md ON md.id = mf.dataset_id AND (md.config_ids->>'isDefault')::bool is true
+        ) md ON md.id = mf.dataset_id AND (md.config_ids->>'isDefault')::BOOL IS true
         WHERE 1=1 {where_add}
         ORDER BY et.created_at DESC
     """
@@ -302,6 +302,7 @@ def update(
     file_path: Optional[str] = None,
     file_size_bytes: Optional[int] = None,
     full_config: Optional[Dict] = None,
+    tokenizer: Optional[str] = None,
     started_at: Optional[datetime.datetime] = None,
     finished_at: Optional[Union[str, datetime.datetime]] = None,
     state: Optional[enums.CognitionMarkdownFileState] = None,
@@ -327,10 +328,13 @@ def update(
         etl_task.file_path = file_path
     if file_size_bytes is not None and etl_task.file_size_bytes is None:
         etl_task.file_size_bytes = file_size_bytes
+    if tokenizer is not None:
+        etl_task.tokenizer = tokenizer
     if original_file_name is not None and etl_task.original_file_name is None:
         etl_task.original_file_name = original_file_name
     if full_config is not None:
         etl_task.full_config = full_config
+        etl_task.full_config_hash = get_hashed_string(full_config)
         flag_modified(etl_task, "full_config")
     if started_at is not None:
         etl_task.started_at = started_at
