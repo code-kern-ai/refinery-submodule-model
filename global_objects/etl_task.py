@@ -82,6 +82,7 @@ def get_enriched(etl_task_id: str) -> Dict[str, Any]:
 def get_all_enriched(
     exclude_failed: Optional[bool] = False,
     only_active: Optional[bool] = False,
+    only_inactive: Optional[bool] = False,
     only_markdown_files: Optional[bool] = False,
     where_add: Optional[str] = "",
     etl_task_id: Optional[str] = None,
@@ -102,6 +103,8 @@ def get_all_enriched(
         )
     if only_active:
         where_add += " AND et.is_active IS TRUE"
+    if only_inactive:
+        where_add += " AND et.is_active IS FALSE"
     if only_markdown_files:
         mf_join = ""
     else:
