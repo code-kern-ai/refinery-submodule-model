@@ -63,6 +63,8 @@ def is_stale(
 def get_all(
     exclude_failed: Optional[bool] = False,
     only_active: Optional[bool] = False,
+    only_inactive: Optional[bool] = False,
+    created_at_until: Optional[datetime.datetime] = None,
 ) -> List[EtlTask]:
     query = session.query(EtlTask)
     if exclude_failed:
@@ -71,6 +73,10 @@ def get_all(
         )
     if only_active:
         query = query.filter(EtlTask.is_active == True)
+    if only_inactive:
+        query = query.filter(EtlTask.is_active == False)
+    if created_at_until:
+        query = query.filter(EtlTask.created_at <= created_at_until)
     return query.order_by(EtlTask.created_at.desc()).all()
 
 
@@ -121,7 +127,7 @@ def get_all_enriched(
         {mf_join} JOIN (
             SELECT id, dataset_id
             FROM cognition.{enums.Tablenames.MARKDOWN_FILE.value}
-        ) mf ON et.meta_data->>'markdown_file_id' = mf.id::TEXT
+        ) mf ON et.id = mf.etl_task_id
         LEFT JOIN(
             SELECT id, json_array_elements(useable_etl_configurations) config_ids 
             FROM cognition.{enums.Tablenames.MARKDOWN_DATASET.value}

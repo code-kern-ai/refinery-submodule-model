@@ -1602,7 +1602,7 @@ class CognitionMarkdownFile(Base):
 
     etl_task_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="SET NULL"),
         index=True,
     )
 

@@ -301,7 +301,7 @@ def delete_etl_cache(org_id: str, download_id: str) -> None:
             if item.is_dir():
                 rm_tree(item)
             else:
-                item.unlink()
+                item.unlink(missing_ok=True)
         path.rmdir()
 
     etl_cache_dir = ETL_DIR / org_id / download_id
