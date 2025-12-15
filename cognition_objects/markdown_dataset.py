@@ -34,7 +34,7 @@ def __get_enriched_query(
     category_origin: Optional[str] = None,
     query_add: Optional[str] = "",
 ) -> str:
-    where_add = " AND (ed.config_ids->>'isDefault')::bool is true"
+    where_add = ""
     if id:
         id = prevent_sql_injection(id, isinstance(id, str))
         where_add += f" AND md.id = '{id}'"
@@ -46,7 +46,8 @@ def __get_enriched_query(
             md.*, 
             COALESCE(mf.num_files, 0) AS num_files, 
             COALESCE(mf.num_reviewed_files, 0) AS num_reviewed_files, 
-            ecp.etl_config
+            ecp.etl_config,
+            ecp.id as etl_config_id
         FROM cognition.{Tablenames.MARKDOWN_DATASET.value} md
         LEFT JOIN (
             SELECT dataset_id, COUNT(*) as num_files, COUNT(CASE WHEN is_reviewed = TRUE THEN 1 END) AS num_reviewed_files
@@ -56,7 +57,7 @@ def __get_enriched_query(
         LEFT JOIN(
             SELECT md.id, json_array_elements(md.useable_etl_configurations) config_ids 
             FROM cognition.{Tablenames.MARKDOWN_DATASET.value} md
-        ) ed ON ed.id = md.id
+        ) ed ON ed.id = md.id AND (ed.config_ids->>'isDefault')::bool is true
         LEFT JOIN(
             SELECT ecp.id, ecp.etl_config
             FROM cognition.{Tablenames.ETL_CONFIG_PRESET.value} ecp
@@ -177,6 +178,7 @@ def update(
     dataset_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    useable_etl_configurations: Optional[List[Dict[str, Any]]] = None,
     with_commit: bool = True,
 ) -> CognitionMarkdownDataset:
     dataset = get(org_id, dataset_id)
@@ -186,6 +188,9 @@ def update(
 
     if description:
         dataset.description = description
+
+    if useable_etl_configurations:
+        dataset.useable_etl_configurations = useable_etl_configurations
 
     general.flush_or_commit(with_commit)
 

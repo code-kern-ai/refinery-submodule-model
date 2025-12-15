@@ -1602,7 +1602,7 @@ class CognitionMarkdownFile(Base):
 
     etl_task_id = Column(
         UUID(as_uuid=True),
-        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="SET NULL"),
         index=True,
     )
 
@@ -2610,9 +2610,15 @@ class EtlTask(Base):
         String, default=CognitionMarkdownFileState.QUEUE.value
     )  # of type enums.CognitionMarkdownFileState
     is_active = Column(Boolean, default=False)
+
     priority = Column(Integer, default=0)
     error_message = Column(String)
     meta_data = Column(JSON)
+
+    full_config_hash = Column(String, index=True)
+    is_stale = Column(Boolean, default=False)
+    llm_ops = Column(JSON)
+    updated_at = Column(DateTime, onupdate=sql.func.now())
 
 
 class ConversationShare(Base):

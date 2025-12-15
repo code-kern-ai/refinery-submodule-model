@@ -185,15 +185,27 @@ def get_integration_progress(
 ) -> float:
     integration = get_by_id(integration_id)
     count_all_records = integration_records_bo.count(integration)
-    all_tasks = get_all_etl_tasks(integration_id)
-    finished_tasks = [task for task in all_tasks if task.state in FINISHED_STATES]
 
     if (
         count_all_records == 0
         or integration.state == enums.CognitionMarkdownFileState.FAILED.value
     ):
         return 0.0
-    integration_progress = round((len(finished_tasks) / count_all_records) * 100.0, 2)
+
+    all_tasks = get_all_etl_tasks(integration_id)
+    finished_tasks = [task for task in all_tasks if task.state in FINISHED_STATES]
+    count_finished_tasks = len(finished_tasks)
+
+    # backward compatibility
+    if not all_tasks or len(all_tasks) != count_all_records:
+        all_records, _ = integration_records_bo.get_all_by_integration_id(
+            integration_id
+        )
+        count_finished_tasks += len(
+            [record for record in all_records if not record.etl_task_id]
+        )
+
+    integration_progress = round((count_finished_tasks / count_all_records) * 100.0, 2)
     if integration.state not in FINISHED_STATES:
         integration_progress = min(integration_progress - 1, 0)
     return integration_progress

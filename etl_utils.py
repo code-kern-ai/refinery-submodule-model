@@ -301,15 +301,12 @@ def delete_etl_cache(org_id: str, download_id: str) -> None:
             if item.is_dir():
                 rm_tree(item)
             else:
-                item.unlink()
+                item.unlink(missing_ok=True)
         path.rmdir()
 
     etl_cache_dir = ETL_DIR / org_id / download_id
     if etl_cache_dir.exists() and etl_cache_dir.is_dir():
         rm_tree(etl_cache_dir)
-
-
-# TODO: delete_etl_tasks for related file_reference_id
 
 
 def get_download_key(org_id: str, download_id: str) -> Path:
