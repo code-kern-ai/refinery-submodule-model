@@ -125,7 +125,7 @@ def get_all_enriched(
             et.meta_data->>'file_reference_id' AS file_reference_id
         FROM global.{enums.Tablenames.ETL_TASK.value} et
         {mf_join} JOIN (
-            SELECT id, dataset_id
+            SELECT id, etl_task_id, dataset_id
             FROM cognition.{enums.Tablenames.MARKDOWN_FILE.value}
         ) mf ON et.id = mf.etl_task_id
         LEFT JOIN(
