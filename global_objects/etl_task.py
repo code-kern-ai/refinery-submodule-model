@@ -379,6 +379,8 @@ def update(
         if overwrite_meta_data:
             etl_task.llm_ops = llm_ops
         else:
+            if etl_task.llm_ops is None:
+                etl_task.llm_ops = {}
             etl_task.llm_ops.update(llm_ops)
         flag_modified(etl_task, "llm_ops")
     if meta_data is not None:
