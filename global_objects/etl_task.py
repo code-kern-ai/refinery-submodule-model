@@ -2,6 +2,7 @@ from typing import Any, List, Optional, Dict, Tuple, Union
 from sqlalchemy.sql.expression import cast
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.dialects.postgresql import UUID
+from pathlib import Path
 
 import datetime
 import mimetypes
@@ -31,6 +32,15 @@ def get_by_ids(ids: List[str]) -> List[EtlTask]:
 
 def get_by_id(id: str) -> EtlTask:
     return session.query(EtlTask).filter(EtlTask.id == id).first()
+
+
+def is_valid_extension(file_name: str):
+    supported_extensions = get_supported_file_extensions()
+    file_extension = Path(file_name).suffix.lower().strip()
+
+    return file_extension in [
+        ext for exts in supported_extensions.values() for ext in exts
+    ]
 
 
 def is_stale(
