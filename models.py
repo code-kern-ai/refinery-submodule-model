@@ -230,6 +230,7 @@ class User(Base):
     use_new_cognition_ui = Column(Boolean, default=True)
     auto_logout_minutes = Column(Integer)
     messages_created_this_month = Column(BigInteger, default=0)
+    one_drive_path = Column(String)
 
 
 class Team(Base):
