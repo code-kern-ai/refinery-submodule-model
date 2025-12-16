@@ -94,8 +94,6 @@ def __get_enriched_query(
         "global",
         prefix=et_prefix,
         include_columns=[
-            "started_at",
-            "finished_at",
             "is_active",
             "is_stale",
             "llm_ops",
@@ -106,6 +104,16 @@ def __get_enriched_query(
     query = f"""SELECT
         {mf_select}, {et_select}, LENGTH({mf_prefix}.content) AS content_length,
         COALESCE({et_prefix}.state, {mf_prefix}.state) AS state,
+        CASE WHEN {et_prefix}.started_at IS NULL THEN
+            {mf_prefix}.started_at
+        ELSE
+            {et_prefix}.started_at
+        END AS started_at,
+        CASE WHEN {et_prefix}.started_at IS NULL THEN
+            {mf_prefix}.finished_at
+        ELSE
+            {et_prefix}.finished_at
+        END AS finished_at,
         {et_prefix}.meta_data->>'scope_readable' AS scope_readable
     FROM cognition.markdown_file {mf_prefix}
     LEFT JOIN global.etl_task {et_prefix} ON {mf_prefix}.etl_task_id = {et_prefix}.id
