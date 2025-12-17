@@ -1249,6 +1249,26 @@ class ETLTransformer(EnumKern):
     TEXT_TO_TABLE = "TEXT_TO_TABLE"
 
 
+class ETLTransformerType(EnumKern):
+    COMMON_ETL = "COMMON_ETL"
+    NO_TRANSFORMATION = "NO_TRANSFORMATION"
+    SUMMARIZE = "SUMMARIZE"
+
+    # backwards compatibility
+    @classmethod
+    def from_transformers(
+        cls, transformers: List[Dict[str, Any]]
+    ) -> "ETLTransformerType":
+        if not transformers or len(transformers) == 0:
+            return cls.NO_TRANSFORMATION
+        if (
+            len(transformers) == 1
+            and transformers[0]["type"] == ETLTransformer.SUMMARIZE.value
+        ):
+            return cls.SUMMARIZE
+        return cls.COMMON_ETL
+
+
 class InboxMailThreadSupportProgressState(Enum):
     PENDING = "PENDING"
     IN_PROGRESS = "IN_PROGRESS"
