@@ -70,8 +70,10 @@ def get_full_config_and_tokenizer_from_config_id(
     ]
 
     if transformation_config := etl_preset_item.etl_config.get("transformation"):
-        transformation_type = transformation_config.get("type", "NO_TRANSFORMATION")
-        if transformation_type != "NO_TRANSFORMATION":
+        transformation_type = enums.ETLTransformerType.from_string(
+            transformation_config.get("type", "NO_TRANSFORMATION")
+        )
+        if transformation_type != enums.ETLTransformerType.NO_TRANSFORMATION:
             transformation_llm_config = {
                 **transformation_config.get("llmConfig", {}),
                 "llmIdentifier": transformation_config.get("llmIdentifier"),
@@ -88,7 +90,7 @@ def get_full_config_and_tokenizer_from_config_id(
                 },
             }
 
-            if transformation_type == "COMMON_ETL":
+            if transformation_type == enums.ETLTransformerType.COMMON_ETL:
                 full_config.append(splitting_config)
                 transformers = [
                     {  # NOTE: __call_gpt_with_key only reads user_prompt
@@ -104,7 +106,7 @@ def get_full_config_and_tokenizer_from_config_id(
                         "user_prompt": None,
                     },
                 ]
-            elif transformation_type == "SUMMARIZE":
+            elif transformation_type == enums.ETLTransformerType.SUMMARIZE:
                 full_config.append(splitting_config)
                 transformers = [
                     {
@@ -123,6 +125,7 @@ def get_full_config_and_tokenizer_from_config_id(
                     "task_type": enums.CognitionMarkdownFileState.TRANSFORMING.value,
                     "task_config": {
                         "use_cache": True,
+                        "transformation_type": transformation_type.value,
                         "transformers": transformers,
                     },
                 }
@@ -385,10 +388,17 @@ def get_transformation_key(
     extractor: enums.ETLExtractorPDF,
     llm_config: Dict[str, Any],
     prompt: Optional[str] = "",
+    transformation_type: Optional[
+        enums.ETLTransformerType
+    ] = enums.ETLTransformerType.NO_TRANSFORMATION,
 ) -> Path:
     llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
     transformation_key = (
-        Path(org_id) / download_id / "transform" / llm_identifier.as_key()
+        Path(org_id)
+        / download_id
+        / "transform"
+        / transformation_type.value
+        / llm_identifier.as_key()
     )
 
     if llm_identifier == enums.LLMProvider.AZURE:
