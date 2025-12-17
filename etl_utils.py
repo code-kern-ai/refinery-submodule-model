@@ -392,7 +392,6 @@ def get_transformation_key(
         enums.ETLTransformerType
     ] = enums.ETLTransformerType.NO_TRANSFORMATION,
 ) -> Path:
-    # TODO: consider transformation type
     llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
     transformation_key = (
         Path(org_id)
