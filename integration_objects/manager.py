@@ -106,6 +106,17 @@ def get_all_by_integration_id(
     )
 
 
+def get_all_sharepoints_by_integration_ids(
+    integration_ids: List[str],
+) -> Tuple[List[object], Type]:
+    return (
+        session.query(IntegrationSharepoint)
+        .filter(IntegrationSharepoint.integration_id.in_(integration_ids))
+        .order_by(IntegrationSharepoint.created_at)
+        .all()
+    )
+
+
 def integration_model(
     integration_id: Optional[str] = None,
     integration: Optional[CognitionIntegration] = None,

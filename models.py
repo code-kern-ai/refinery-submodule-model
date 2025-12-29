@@ -1146,6 +1146,11 @@ class PlaygroundQuestion(Base):
 class RefineryKnowledgeGraph(Base):
     __tablename__ = Tablenames.KNOWLEDGE_GRAPH.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
@@ -2307,26 +2312,6 @@ class ETLConfigPresets(Base):
     )
     etl_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
     add_config = Column(JSON)  # additional config for e.g. setting scope dict values
-
-
-class CognitionKnowledgeGraph(Base):
-    __tablename__ = Tablenames.KNOWLEDGE_GRAPH.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    name = Column(String)
-    description = Column(String)
-    type = Column(String)  # enum.KnowledgeGraphType
 
 
 # =========================== Global tables ===========================
