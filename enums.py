@@ -583,6 +583,7 @@ class StrategyStepType(Enum):
     FULL_TEXT_SEARCH = "FULL_TEXT_SEARCH"
     CURRENT_TIME = "CURRENT_TIME"
     COMPLIANT_WEBSEARCH = "COMPLIANT_WEBSEARCH"
+    KNOWLEDGE_GRAPH = "KNOWLEDGE_GRAPH"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -615,6 +616,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.FULL_TEXT_SEARCH: "Full text search",
     StrategyStepType.CURRENT_TIME: "Get current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "Web search",
+    StrategyStepType.KNOWLEDGE_GRAPH: "Query knowledge graph",
 }
 
 STEP_WHEN_TO_USE = {
@@ -637,6 +639,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.FULL_TEXT_SEARCH: "When you want to perform a full text search",
     StrategyStepType.CURRENT_TIME: "When you want to get the current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "When you want to perform a web search",
+    StrategyStepType.KNOWLEDGE_GRAPH: "When you want to understand how the project is used",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -660,6 +663,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.FULL_TEXT_SEARCH: "Running full text search",
     StrategyStepType.CURRENT_TIME: "Getting current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "Searching the web",
+    StrategyStepType.KNOWLEDGE_GRAPH: "Querying knowledge graph",
 }
 
 STEP_ERRORS = {
