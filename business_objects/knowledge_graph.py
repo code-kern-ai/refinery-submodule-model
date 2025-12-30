@@ -63,6 +63,23 @@ def create(
     return knowledge_graph
 
 
+def update(
+    org_id: str,
+    knowledge_graph_id: str,
+    name: str,
+    description: str,
+    with_commit: bool = True,
+) -> RefineryKnowledgeGraph:
+    knowledge_graph = get(org_id, knowledge_graph_id)
+
+    if name:
+        knowledge_graph.name = name
+    if description:
+        knowledge_graph.description = description
+    general.add(knowledge_graph, with_commit)
+    return knowledge_graph
+
+
 def delete_many(
     org_id: str, project_id: str, ids: List[str], with_commit: bool = False
 ) -> None:
