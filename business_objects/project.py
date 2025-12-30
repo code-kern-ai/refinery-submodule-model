@@ -668,6 +668,6 @@ def get_project_by_project_id_sql(project_id: str) -> Dict[str, Any]:
 
 def is_integration_project(org_id: str, project_id: str) -> bool:
     all_integration_project_ids = {
-        i.project_id for i in integration_db_co.get_all_in_org(org_id)
+        str(i.project_id) for i in integration_db_co.get_all_in_org(org_id)
     }
     return project_id in all_integration_project_ids
