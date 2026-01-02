@@ -1092,6 +1092,15 @@ class ETLFileType(Enum):
         return [".txt"]
 
     @staticmethod
+    def get_all_supported_file_extensions():
+        all_supported_file_extensions = []
+        for FileType in ETLFileType:
+            all_supported_file_extensions.extend(
+                FileType.get_supported_file_extensions()
+            )
+        return all_supported_file_extensions
+
+    @staticmethod
     def from_extension(value: str):
         changed_value = value.lower()
         if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
