@@ -150,7 +150,12 @@ def get_all_sharepoints_by_integration_ids(
                 elif func_name.lower() == "min":
                     query = query.add_columns(func.min(column).label(agg_label))
 
-    return list(map(lambda x: x._asdict(), query.all()))
+    return list(
+        map(
+            lambda x: x._asdict() if not isinstance(x, IntegrationSharepoint) else x,
+            query.all(),
+        )
+    )
 
 
 def integration_model(
