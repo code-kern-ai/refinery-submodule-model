@@ -107,14 +107,14 @@ def get_all_by_integration_id(
 
 
 def get_all_sharepoints_by_integration_ids(
-    integration_ids: List[str],
+    integration_ids: List[str], search_term: Optional[str] = None
 ) -> Tuple[List[object], Type]:
-    return (
-        session.query(IntegrationSharepoint)
-        .filter(IntegrationSharepoint.integration_id.in_(integration_ids))
-        .order_by(IntegrationSharepoint.created_at)
-        .all()
+    query = session.query(IntegrationSharepoint).filter(
+        IntegrationSharepoint.integration_id.in_(integration_ids)
     )
+    if search_term:
+        query = query.filter(IntegrationSharepoint.source.ilike(f"%{search_term}%"))
+    return query.order_by(IntegrationSharepoint.created_at).all()
 
 
 def integration_model(
@@ -324,3 +324,15 @@ def get_metadata_from_record(record: object) -> Dict[str, Any]:
     supported_keys = get_supported_metadata_keys(record.__tablename__)
     supported_metadata = {key: getattr(record, key) for key in supported_keys}
     return supported_metadata
+
+
+def get_db_info(IntegrationModel: Type):
+    table_name = IntegrationModel.__tablename__
+    table_schema = IntegrationModel.__table__.schema or "public"
+    query = f"""
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = '{table_name}'
+        AND table_schema = '{table_schema}'
+    """
+    return list(map(lambda x: x._asdict(), general.execute_all(query)))
