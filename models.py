@@ -2484,6 +2484,52 @@ class IntegrationSharepointPropertySync(Base):
     state = Column(String)
 
 
+class IntegrationWebpage(Base):
+    __tablename__ = Tablenames.INTEGRATION_WEBPAGE.value
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "source",
+            "etl_task_id",
+            name=f"unique_{__tablename__}_source",
+        ),
+        {"schema": "integration"},
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    minio_file_name = Column(String)
+    error_message = Column(String)
+
+    url = Column(String)
+    title = Column(String)
+
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    content = Column(String)
+
+
 class CognitionConversationTag(Base):
     __tablename__ = Tablenames.CONVERSATION_TAG.value
     __table_args__ = {"schema": "cognition"}

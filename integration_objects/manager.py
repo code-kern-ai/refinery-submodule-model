@@ -14,6 +14,7 @@ from ..models import (
     IntegrationPdf,
     IntegrationGithubIssue,
     IntegrationGithubFile,
+    IntegrationWebpage,
     CognitionIntegration,
 )
 
@@ -121,6 +122,8 @@ def integration_model(
         return IntegrationGithubFile
     elif integration.type == CognitionIntegrationType.GITHUB_ISSUE.value:
         return IntegrationGithubIssue
+    elif integration.type == CognitionIntegrationType.WEBPAGE.value:
+        return IntegrationWebpage
     else:
         raise ValueError(f"Unsupported integration type: {integration.type}")
 

@@ -34,6 +34,7 @@ TABLE_METADATA = {
         "permissions",
         "file_properties",
     },
+    Tablenames.INTEGRATION_WEBPAGE.value: {"url", "title"},
 }
 
 
