@@ -89,3 +89,13 @@ def delete_many(
         RefineryKnowledgeGraph.id.in_(ids),
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def get_db_info(table_schema: str, table_name: str):
+    query = f"""
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = '{table_name}'
+        AND table_schema = '{table_schema}'
+    """
+    return list(map(lambda x: x._asdict(), general.execute_all(query)))

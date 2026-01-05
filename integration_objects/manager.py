@@ -107,14 +107,50 @@ def get_all_by_integration_id(
 
 
 def get_all_sharepoints_by_integration_ids(
-    integration_ids: List[str], search_term: Optional[str] = None
+    integration_ids: List[str],
+    search_term: Optional[str] = None,
+    group_by: Optional[List[str]] = None,
+    aggregate_by: Optional[List[str]] = None,
+    aggregate_functions: Optional[List[str]] = None,
 ) -> Tuple[List[object], Type]:
-    query = session.query(IntegrationSharepoint).filter(
-        IntegrationSharepoint.integration_id.in_(integration_ids)
-    )
+    if group_by and aggregate_functions:
+        query = session.query(
+            *[getattr(IntegrationSharepoint, col) for col in group_by]
+        ).filter(IntegrationSharepoint.integration_id.in_(integration_ids))
+    else:
+        query = session.query(IntegrationSharepoint).filter(
+            IntegrationSharepoint.integration_id.in_(integration_ids)
+        )
     if search_term:
         query = query.filter(IntegrationSharepoint.source.ilike(f"%{search_term}%"))
-    return query.order_by(IntegrationSharepoint.created_at).all()
+
+    if group_by and aggregate_functions:
+        group_by_columns = [getattr(IntegrationSharepoint, col) for col in group_by]
+        query = query.group_by(*group_by_columns)
+
+    if aggregate_functions:
+        for func_name in aggregate_functions:
+            if not aggregate_by:
+                aggregate_by = [None]
+            for col in aggregate_by:
+                column = getattr(IntegrationSharepoint, col or "", None)
+                if col:
+                    agg_label = f"{func_name}_{col}"
+                else:
+                    agg_label = f"{func_name}"
+
+                if func_name.lower() == "count":
+                    query = query.add_columns(func.count(column).label(agg_label))
+                elif func_name.lower() == "sum":
+                    query = query.add_columns(func.sum(column).label(agg_label))
+                elif func_name.lower() == "avg":
+                    query = query.add_columns(func.avg(column).label(agg_label))
+                elif func_name.lower() == "max":
+                    query = query.add_columns(func.max(column).label(agg_label))
+                elif func_name.lower() == "min":
+                    query = query.add_columns(func.min(column).label(agg_label))
+
+    return list(map(lambda x: x._asdict(), query.all()))
 
 
 def integration_model(
@@ -324,15 +360,3 @@ def get_metadata_from_record(record: object) -> Dict[str, Any]:
     supported_keys = get_supported_metadata_keys(record.__tablename__)
     supported_metadata = {key: getattr(record, key) for key in supported_keys}
     return supported_metadata
-
-
-def get_db_info(IntegrationModel: Type):
-    table_name = IntegrationModel.__tablename__
-    table_schema = IntegrationModel.__table__.schema or "public"
-    query = f"""
-    SELECT column_name, data_type
-    FROM information_schema.columns
-    WHERE table_name = '{table_name}'
-        AND table_schema = '{table_schema}'
-    """
-    return list(map(lambda x: x._asdict(), general.execute_all(query)))
