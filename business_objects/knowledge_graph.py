@@ -17,6 +17,14 @@ def get(org_id: str, id: str) -> RefineryKnowledgeGraph:
     )
 
 
+def get_by_id(id: str) -> RefineryKnowledgeGraph:
+    return (
+        session.query(RefineryKnowledgeGraph)
+        .filter(RefineryKnowledgeGraph.id == id)
+        .first()
+    )
+
+
 def get_by_project_id(org_id: str, project_id: str) -> List[RefineryKnowledgeGraph]:
     return (
         session.query(RefineryKnowledgeGraph)
