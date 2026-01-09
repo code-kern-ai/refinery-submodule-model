@@ -1143,8 +1143,8 @@ class PlaygroundQuestion(Base):
     # meta_info = Column(JSON)
 
 
-class RefineryKnowledgeGraph(Base):
-    __tablename__ = Tablenames.KNOWLEDGE_GRAPH.value
+class DataBlock(Base):
+    __tablename__ = Tablenames.DATA_BLOCK.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(
         UUID(as_uuid=True),
@@ -1165,6 +1165,23 @@ class RefineryKnowledgeGraph(Base):
     name = Column(String)
     description = Column(String)
     type = Column(String)  # enum.KnowledgeGraphType
+    sql_config = Column(JSON)
+
+
+class DataBlockResults(Base):
+    __tablename__ = Tablenames.DATA_BLOCK_RESULTS.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    data_block_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.DATA_BLOCK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    data = Column(JSON)
 
 
 # --- COGNITION TABLES
