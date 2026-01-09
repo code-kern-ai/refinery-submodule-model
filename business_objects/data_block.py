@@ -91,25 +91,12 @@ def delete_many(
     general.flush_or_commit(with_commit)
 
 
-def get_db_info(table_schema: str, table_name: str):
-    query = f"""
-    SELECT column_name, data_type
-    FROM information_schema.columns
-    WHERE table_name = '{table_name}'
-        AND table_schema = '{table_schema}'
-    """
-    return list(map(lambda x: x._asdict(), general.execute_all(query)))
-
-
-# DataBlockResults CRUD operations
-
-
-def get_result(project_id: str, result_id: str) -> Optional[DataBlockResults]:
+def get_result(project_id: str, data_block_id: str) -> Optional[DataBlockResults]:
     return (
         session.query(DataBlockResults)
         .filter(
             DataBlockResults.project_id == project_id,
-            DataBlockResults.id == result_id,
+            DataBlockResults.data_block_id == data_block_id,
         )
         .first()
     )
@@ -153,11 +140,11 @@ def create_result(
 
 def update_result(
     project_id: str,
-    result_id: str,
+    data_block_id: str,
     data: Optional[Dict] = None,
     with_commit: bool = True,
 ) -> Optional[DataBlockResults]:
-    result = get_result(project_id, result_id)
+    result = get_result(project_id, data_block_id)
     if not result:
         return None
 
