@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from submodules.model.business_objects import general
 from submodules.model.session import session
 from submodules.model import DataBlock, DataBlockResults
-from submodules.model.enums import KnowledgeGraphType
+from submodules.model.enums import DataBlockType
 
 
 def get(org_id: str, id: str) -> DataBlock:
@@ -29,7 +29,7 @@ def get_by_project_id(org_id: str, project_id: str) -> List[DataBlock]:
 
 
 def get_by_project_id_and_type(
-    org_id: str, project_id: str, type: KnowledgeGraphType
+    org_id: str, project_id: str, type: DataBlockType
 ) -> DataBlock:
     return (
         session.query(DataBlock)
@@ -48,7 +48,7 @@ def create(
     project_id: str,
     name: str,
     description: str,
-    type: KnowledgeGraphType,
+    type: DataBlockType,
     with_commit: bool = True,
 ) -> DataBlock:
     data_block = DataBlock(
@@ -65,12 +65,12 @@ def create(
 
 def update(
     org_id: str,
-    knowledge_graph_id: str,
+    data_block_id: str,
     name: str,
     description: str,
     with_commit: bool = True,
 ) -> DataBlock:
-    data_block = get(org_id, knowledge_graph_id)
+    data_block = get(org_id, data_block_id)
 
     if name:
         data_block.name = name

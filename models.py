@@ -1164,7 +1164,7 @@ class DataBlock(Base):
     created_at = Column(DateTime, default=sql.func.now())
     name = Column(String)
     description = Column(String)
-    type = Column(String)  # enum.KnowledgeGraphType
+    type = Column(String)  # enum.DataBlockType
     sql_config = Column(JSON)
 
 

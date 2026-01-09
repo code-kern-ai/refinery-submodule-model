@@ -1295,6 +1295,6 @@ class InboxMailThreadSupportProgressState(Enum):
     FAILED = "FAILED"
 
 
-class KnowledgeGraphType(EnumKern):
+class DataBlockType(EnumKern):
     LIVE = "LIVE"
     STABLE = "STABLE"
