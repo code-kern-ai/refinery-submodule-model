@@ -983,10 +983,11 @@ def get_records_by_running_ids(project_id: str, running_ids: List[int]) -> List[
     )
 
 
-def get_record_data_by_sanitized_where(
+def get_record_data_by_sanitized_params(
     refinery_project_id: str,
     sanitized_where: str,
     limit: int,
+    sanitized_select: Optional[str] = None,
     order_by: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     ## only to be used in cognition and with sql_validator check!!
@@ -998,7 +999,7 @@ def get_record_data_by_sanitized_where(
         order_by = prevent_sql_injection(order_by, isinstance(order_by, str))
         final_order = f" ORDER BY {order_by} "
     query = f"""
-    SELECT r.data::JSON
+    SELECT {sanitized_select or 'r.data::JSON'}
     FROM public.record r
     WHERE project_id = '{refinery_project_id}' AND ({sanitized_where})
     {final_order}
