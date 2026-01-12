@@ -989,6 +989,7 @@ def get_record_data_by_sanitized_params(
     limit: int,
     sanitized_select: Optional[str] = None,
     order_by: Optional[str] = None,
+    group_by: Optional[str] = None,
     return_query: bool = False,
 ) -> List[Dict[str, Any]]:
     ## only to be used in cognition and with sql_validator check!!
@@ -996,14 +997,19 @@ def get_record_data_by_sanitized_params(
         refinery_project_id, isinstance(refinery_project_id, str)
     )
     final_order = ""
+    final_group = ""
     if order_by:
         order_by = prevent_sql_injection(order_by, isinstance(order_by, str))
         final_order = f" ORDER BY {order_by} "
+    if group_by:
+        group_by = prevent_sql_injection(group_by, isinstance(group_by, str))
+        final_group = f" GROUP BY {group_by} "
     query = f"""
     SELECT {sanitized_select or 'r.data::JSON'}
     FROM public.record r
     WHERE project_id = '{refinery_project_id}' AND ({sanitized_where})
     {final_order}
+    {final_group}
     LIMIT {limit}
     """
     if return_query:
