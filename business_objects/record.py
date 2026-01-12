@@ -989,6 +989,7 @@ def get_record_data_by_sanitized_params(
     limit: int,
     sanitized_select: Optional[str] = None,
     order_by: Optional[str] = None,
+    return_query: bool = False,
 ) -> List[Dict[str, Any]]:
     ## only to be used in cognition and with sql_validator check!!
     refinery_project_id = prevent_sql_injection(
@@ -1005,5 +1006,7 @@ def get_record_data_by_sanitized_params(
     {final_order}
     LIMIT {limit}
     """
+    if return_query:
+        return query
     data = general.execute_all(query)
     return [row[0] for row in data] if data else []

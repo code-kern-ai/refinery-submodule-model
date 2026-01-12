@@ -58,6 +58,7 @@ def create(
         name=name,
         description=description,
         type=type.value,
+        sql_config={},
     )
     general.add(data_block, with_commit)
     return data_block
