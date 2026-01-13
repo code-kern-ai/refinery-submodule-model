@@ -58,7 +58,7 @@ def is_stale(
         etl_task["organization_id"], etl_task["file_reference_id"]
     )
     if not file_reference:
-        return True
+        return False
 
     new_full_config, tokenizer = etl_utils.get_full_config_and_tokenizer_from_config_id(
         file_reference=file_reference,
