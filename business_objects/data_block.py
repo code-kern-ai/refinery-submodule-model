@@ -58,7 +58,7 @@ def create(
         name=name,
         description=description,
         type=type.value,
-        sql_config={},
+        # sql_config={},
     )
     general.add(data_block, with_commit)
     return data_block
@@ -67,8 +67,10 @@ def create(
 def update(
     org_id: str,
     data_block_id: str,
-    name: str,
-    description: str,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    sql_config: Optional[Dict[str, Dict[str, str]]] = None,
+    overwrite_sql_config: bool = False,
     with_commit: bool = True,
 ) -> DataBlock:
     data_block = get(org_id, data_block_id)
@@ -77,6 +79,14 @@ def update(
         data_block.name = name
     if description:
         data_block.description = description
+    if sql_config is not None:
+        if overwrite_sql_config:
+            data_block.sql_config = sql_config
+        else:
+            if not data_block.sql_config:
+                data_block.sql_config = {}
+            data_block.sql_config.update(sql_config)
+
     general.add(data_block, with_commit)
     return data_block
 

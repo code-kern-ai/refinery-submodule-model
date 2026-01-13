@@ -996,8 +996,11 @@ def get_record_data_by_sanitized_params(
     refinery_project_id = prevent_sql_injection(
         refinery_project_id, isinstance(refinery_project_id, str)
     )
+    final_where = ""
     final_order = ""
     final_group = ""
+    if sanitized_where:
+        final_where = f" AND ({sanitized_where}) "
     if order_by:
         order_by = prevent_sql_injection(order_by, isinstance(order_by, str))
         final_order = f" ORDER BY {order_by} "
@@ -1007,7 +1010,7 @@ def get_record_data_by_sanitized_params(
     query = f"""
     SELECT {sanitized_select or 'r.data::JSON'}
     FROM public.record r
-    WHERE project_id = '{refinery_project_id}' AND ({sanitized_where})
+    WHERE project_id = '{refinery_project_id}' {final_where}
     {final_order}
     {final_group}
     LIMIT {limit}
