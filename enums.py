@@ -199,7 +199,7 @@ class Tablenames(Enum):
     INBOX_MAIL = "inbox_mail"
     INBOX_MAIL_THREAD = "inbox_mail_thread"
     INBOX_MAIL_THREAD_ASSOCIATION = "inbox_mail_thread_association"
-    INTEGRATION_WEBPAGE = "integration_webpage"
+    INTEGRATION_WEBPAGE = "webpage"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs

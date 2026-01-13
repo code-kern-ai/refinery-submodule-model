@@ -2489,7 +2489,6 @@ class IntegrationWebpage(Base):
     __table_args__ = (
         UniqueConstraint(
             "integration_id",
-            "running_id",
             "source",
             "etl_task_id",
             name=f"unique_{__tablename__}_source",
@@ -2514,13 +2513,13 @@ class IntegrationWebpage(Base):
         ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
-    running_id = Column(Integer, index=True)
-    source = Column(String, index=True)
+    running_ids = Column(JSON)  # to allow multiple running ids for webpages
+    source = Column(String, index=True)  # url
     minio_file_name = Column(String)
     error_message = Column(String)
 
-    url = Column(String)
     title = Column(String)
+    raw_markdown_content = Column(String)  # before any processing
 
     etl_task_id = Column(
         UUID(as_uuid=True),
