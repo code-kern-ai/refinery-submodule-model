@@ -1166,6 +1166,7 @@ class DataBlock(Base):
     description = Column(String)
     type = Column(String)  # enum.DataBlockType
     sql_config = Column(JSON)
+    sql_schema = Column(ARRAY(JSON))
 
 
 class DataBlockResults(Base):
