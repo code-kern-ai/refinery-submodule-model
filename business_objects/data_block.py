@@ -122,16 +122,13 @@ def get_result(project_id: str, data_block_id: str) -> Optional[DataBlockResults
     )
 
 
-def get_results_by_data_block_id(
-    project_id: str, data_block_id: str
-) -> List[DataBlockResults]:
+def get_result_by_data_block_id(data_block_id: str) -> DataBlockResults:
     return (
         session.query(DataBlockResults)
         .filter(
-            DataBlockResults.project_id == project_id,
             DataBlockResults.data_block_id == data_block_id,
         )
-        .all()
+        .first()
     )
 
 
