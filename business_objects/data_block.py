@@ -72,7 +72,6 @@ def update(
     sql_config: Optional[Dict[str, Dict[str, str]]] = None,
     sql_schema: Optional[List[Dict[str, str]]] = None,
     overwrite_sql_config: bool = False,
-    overwrite_sql_schema: bool = False,
     with_commit: bool = True,
 ) -> DataBlock:
     data_block = get(org_id, data_block_id)
@@ -89,12 +88,9 @@ def update(
                 data_block.sql_config = {}
             data_block.sql_config.update(sql_config)
     if sql_schema is not None:
-        if overwrite_sql_schema:
-            data_block.sql_schema = sql_schema
-        else:
-            if not data_block.sql_schema:
-                data_block.sql_schema = {}
-            data_block.sql_schema.update(sql_schema)
+        if not data_block.sql_schema:
+            data_block.sql_schema = {}
+        data_block.sql_schema = sql_schema
 
     general.add(data_block, with_commit)
     return data_block
