@@ -3,6 +3,8 @@ from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
+import re
+
 from ..enums import CognitionIntegrationType
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
@@ -144,10 +146,30 @@ def get_existing_integration_records(
     integration_id: str,
     by: str = "source",
 ) -> Dict[str, object]:
-    # TODO(extension): make return type Dict[str, List[object]]
-    # once an object_id can reference multiple different integration records
     records, _ = get_all_by_integration_id(integration_id)
-    return {getattr(record, by, record.source): record for record in records}
+    return {
+        getattr(record, by, record.source): record
+        for record in filter(
+            lambda x: not re.search(r"#\d$", getattr(x, by, x.source) or ""), records
+        )
+    }
+
+
+def get_related_chunk_records(
+    integration_record: object,
+    by: str = "source",
+) -> List[object]:
+    IntegrationModel = type(integration_record)
+    record_identifier = getattr(IntegrationModel, by, IntegrationModel.source)
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            record_identifier.like(
+                f"{getattr(integration_record, by, integration_record.source)}#%"
+            )
+        )
+        .all()
+    )
 
 
 def get_running_ids(
