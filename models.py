@@ -1166,7 +1166,7 @@ class DataBlock(Base):
     description = Column(String)
     type = Column(String)  # enum.DataBlockType
     sql_config = Column(JSON)
-    sql_schema = Column(ARRAY(JSON))
+    # sql_schema = Column(ARRAY(JSON))
 
 
 class DataBlockResults(Base):
@@ -1182,7 +1182,29 @@ class DataBlockResults(Base):
         ForeignKey(f"{Tablenames.DATA_BLOCK.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    sql_used = Column(String)
     data = Column(JSON)
+
+
+class DataBlockAttributes(Base):
+    __tablename__ = Tablenames.DATA_BLOCK_ATTRIBUTES.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    data_block_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.DATA_BLOCK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    data_type = Column(String)
+    relative_position = Column(Integer)
+    user_created = Column(Boolean, default=False)
+    source_code = Column(String)
+    state = Column(String, default=AttributeState.UPLOADED.value)
+    logs = Column(ARRAY(String))
+    started_at = Column(DateTime, default=sql.func.now())
+    finished_at = Column(DateTime)
+    progress = Column(Float)
+    additional_config = Column(JSON, comment="used when data_type == LLM_RESPONSE")
 
 
 # --- COGNITION TABLES

@@ -70,7 +70,6 @@ def update(
     name: Optional[str] = None,
     description: Optional[str] = None,
     sql_config: Optional[Dict[str, Dict[str, str]]] = None,
-    sql_schema: Optional[List[Dict[str, str]]] = None,
     overwrite_sql_config: bool = False,
     with_commit: bool = True,
 ) -> DataBlock:
@@ -87,10 +86,6 @@ def update(
             if not data_block.sql_config:
                 data_block.sql_config = {}
             data_block.sql_config.update(sql_config)
-    if sql_schema is not None:
-        if not data_block.sql_schema:
-            data_block.sql_schema = {}
-        data_block.sql_schema = sql_schema
 
     general.add(data_block, with_commit)
     return data_block
@@ -140,11 +135,13 @@ def create_result(
     project_id: str,
     data_block_id: str,
     data: Dict,
+    sql_used: str,
     with_commit: bool = True,
 ) -> DataBlockResults:
     result = DataBlockResults(
         project_id=project_id,
         data_block_id=data_block_id,
+        sql_used=sql_used,
         data=data,
     )
     general.add(result, with_commit)
@@ -155,6 +152,7 @@ def update_result(
     project_id: str,
     data_block_id: str,
     data: Optional[Dict] = None,
+    sql_used: Optional[str] = None,
     with_commit: bool = True,
 ) -> Optional[DataBlockResults]:
     result = get_result(project_id, data_block_id)
@@ -163,6 +161,10 @@ def update_result(
 
     if data is not None:
         result.data = data
+
+    if sql_used is not None:
+        result.sql_used = sql_used
+
     general.add(result, with_commit)
     return result
 
