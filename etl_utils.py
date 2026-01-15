@@ -11,6 +11,7 @@ from .models import (
     FileReference,
     CognitionIntegration,
     IntegrationSharepoint,
+    IntegrationWebpage,
 )
 
 ETL_DIR = Path(os.getenv("ETL_DIR", "/app/data/etl"))
@@ -169,7 +170,67 @@ def get_full_config_and_tokenizer_from_config_id(
     return full_config, etl_preset_item.etl_config.get("tokenizer")
 
 
-def get_full_config_for_integration(
+def get_full_config_for_webpage_integration(
+    integration: CognitionIntegration,
+    record: IntegrationWebpage,
+) -> List[Dict[str, Any]]:
+    full_config = [
+        {
+            "llm_config": integration.llm_config,
+            "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
+            "task_config": {
+                "use_cache": False,
+                "fallback": None,
+            },
+        },
+        {
+            "llm_config": integration.llm_config,
+            "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
+            "task_config": {
+                "use_cache": False,
+                "strategy": enums.ETLSplitStrategy.CHUNK.value,
+                "chunk_size": integration.config.get("split_kwargs", {}).get(
+                    "chunk_size", 16384
+                ),
+                "keep_first_n": integration.config.get("split_kwargs", {}).get(
+                    "keep_first_n", 5
+                ),
+                "keep_last_n": integration.config.get("split_kwargs", {}).get(
+                    "keep_last_n", 1
+                ),
+            },
+        },
+        {
+            "task_type": enums.CognitionMarkdownFileState.LOADING.value,
+            "task_config": {
+                "integration_record": {
+                    "enabled": True,
+                    "id": str(record.id),
+                    "integration_id": str(integration.id),
+                },
+                "markdown_file": {
+                    "enabled": False,
+                    "id": None,
+                },
+            },
+        },
+        {
+            "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
+            "task_config": {
+                "http": [
+                    {
+                        "url": "http://cognition-integration-provider:80/etl/status/{integration_id}",
+                        "url_format": {"integration_id": str(integration.id)},
+                        "method": "PUT",
+                    }
+                ]
+            },
+        },
+    ]
+    return full_config
+
+
+def get_full_config_for_sharepoint_integration(
     integration: CognitionIntegration,
     record: IntegrationSharepoint,
 ) -> List[Dict[str, Any]]:

@@ -94,12 +94,16 @@ def get_by_source(
 
 def get_all_by_integration_id(
     integration_id: str,
+    only_refinery_unsynced: bool = False,
 ) -> Tuple[List[object], Type]:
     IntegrationModel = integration_model(integration_id)
     return (
         (
             session.query(IntegrationModel)
-            .filter(IntegrationModel.integration_id == integration_id)
+            .filter(
+                IntegrationModel.integration_id == integration_id,
+                IntegrationModel.refinery_synced == (not only_refinery_unsynced),
+            )
             .order_by(IntegrationModel.created_at)
             .all()
         ),
@@ -173,7 +177,6 @@ def create(
     IntegrationModel: Type,
     created_by: str,
     integration_id: str,
-    running_id: int,
     created_at: Optional[datetime] = None,
     error_message: Optional[str] = None,
     id: Optional[str] = None,
@@ -189,7 +192,6 @@ def create(
     integration_record = IntegrationModel(
         created_by=created_by,
         integration_id=integration_id,
-        running_id=running_id,
         created_at=created_at,
         error_message=error_message,
         id=id,

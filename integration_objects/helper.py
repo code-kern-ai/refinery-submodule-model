@@ -6,7 +6,7 @@ from ..enums import Tablenames
 REFINERY_ATTRIBUTE_ACCESS_GROUPS = "<ACCESS_GROUPS>"
 REFINERY_ATTRIBUTE_ACCESS_USERS = "<ACCESS_USERS>"
 
-DEFAULT_METADATA = {"source", "minio_file_name", "running_id"}
+DEFAULT_METADATA = {"source", "minio_file_name", "running_ids"}
 TABLE_METADATA = {
     Tablenames.INTEGRATION_PDF.value: {"file_path", "page", "total_pages", "title"},
     Tablenames.INTEGRATION_GITHUB_FILE.value: {"path", "sha", "code_language"},
@@ -34,7 +34,7 @@ TABLE_METADATA = {
         "permissions",
         "file_properties",
     },
-    Tablenames.INTEGRATION_WEBPAGE.value: {"url", "title"},
+    Tablenames.INTEGRATION_WEBPAGE.value: {"raw_markdown_content", "title"},
 }
 
 
