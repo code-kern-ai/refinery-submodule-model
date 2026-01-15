@@ -188,6 +188,30 @@ def get_running_ids(
     )
 
 
+def duplicate(
+    integration_record: object, content: str, chunk_idx: int, by: str = "source"
+) -> object:
+    IntegrationModel = type(integration_record)
+    duplicated_record = IntegrationModel(
+        created_by=integration_record.created_by,
+        integration_id=integration_record.integration_id,
+        etl_task_id=integration_record.etl_task_id,
+        error_message=integration_record.error_message,
+        content=content,
+    )
+
+    for key in get_supported_metadata_keys(IntegrationModel.__tablename__):
+        value = getattr(integration_record, key)
+        setattr(duplicated_record, key, value)
+
+    duplicated_record.running_id = None
+    setattr(duplicated_record, by, f"{getattr(integration_record, by)}#{chunk_idx}")
+
+    general.add(duplicated_record, with_commit=False)
+
+    return duplicated_record
+
+
 def create(
     IntegrationModel: Type,
     created_by: str,
