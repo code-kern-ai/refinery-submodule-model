@@ -143,7 +143,7 @@ def create_many(
             or attr.get("column_data_type", DataTypes.TEXT.value),
             relative_position=current_position + idx + 1,
             user_created=attr.get("user_created", False),
-            state=attr.get("state", AttributeState.USABLE.value),
+            state=attr.get("state", AttributeState.AUTOMATICALLY_CREATED.value),
         )
         general.add(attribute, with_commit=False)
         created_attributes.append(attribute)
