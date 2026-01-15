@@ -261,6 +261,8 @@ def get_schema_as_list(data_block_id: str) -> List[Dict[str, str]]:
             "column_name": attr.name,
             "column_data_type": attr.data_type,
             "state": attr.state,
+            "id": attr.id,
+            "user_created": attr.user_created,
         }
         for attr in attributes
     ]
