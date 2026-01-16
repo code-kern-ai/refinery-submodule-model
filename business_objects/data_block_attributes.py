@@ -132,21 +132,28 @@ def create_many(
     Create multiple attributes at once.
     Each attribute dict should contain: name, data_type, and optionally state.
     """
-    current_position = get_relative_position(data_block_id)
+    relative_position = 0  # get_relative_position(data_block_id)
     created_attributes = []
 
     for idx, attr in enumerate(attributes):
+        relative_position += idx + 1
         attribute = DataBlockAttributes(
             data_block_id=data_block_id,
-            name=attr.get("name") or attr.get("column_name"),
-            data_type=attr.get("data_type")
-            or attr.get("column_data_type", DataTypes.TEXT.value),
-            relative_position=current_position + idx + 1,
+            name=attr.get("column_name"),
+            data_type=attr.get("column_data_type", DataTypes.TEXT.value),
+            relative_position=relative_position,
             user_created=attr.get("user_created", False),
             state=attr.get("state", AttributeState.AUTOMATICALLY_CREATED.value),
         )
         general.add(attribute, with_commit=False)
         created_attributes.append(attribute)
+
+    for attr in get_all(
+        data_block_id, state_filter=[AttributeState.USER_CREATED.value]
+    ):
+        relative_position += 1
+        attr.relative_position = relative_position
+        general.add(attr, with_commit=False)
 
     general.flush_or_commit(with_commit)
     return created_attributes
@@ -209,9 +216,10 @@ def delete(data_block_id: str, attribute_id: str, with_commit: bool = False) -> 
     general.flush_or_commit(with_commit)
 
 
-def delete_by_data_block_id(data_block_id: str, with_commit: bool = False) -> None:
+def delete_automatically_created(data_block_id: str, with_commit: bool = False) -> None:
     session.query(DataBlockAttributes).filter(
         DataBlockAttributes.data_block_id == data_block_id,
+        DataBlockAttributes.state == AttributeState.AUTOMATICALLY_CREATED.value,
     ).delete()
     general.flush_or_commit(with_commit)
 
@@ -244,7 +252,7 @@ def sync_attributes_from_schema(
         List of created/updated DataBlockAttributes
     """
     # Delete existing attributes for this data block
-    delete_by_data_block_id(data_block_id, with_commit=False)
+    delete_automatically_created(data_block_id, with_commit=False)
 
     # Create new attributes from schema
     return create_many(data_block_id, schema, with_commit=with_commit)
