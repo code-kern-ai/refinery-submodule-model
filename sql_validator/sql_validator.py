@@ -2,6 +2,7 @@ from typing import Dict, Optional
 from sqlglot import parse_one, tokenize
 from sqlglot.errors import ParseError
 from sqlglot import expressions as exp
+from sqlglot.optimizer.simplify import simplify
 
 from sqlglot import TokenType
 
@@ -11,6 +12,7 @@ from .constants import (
     ALLOWED_TOKEN_TYPES,
     ALLOWED_COLUMN_PREFIX,
     DISALLOWED_COLUMN_PREFIX,
+    ALLOWED_FUNCS,
 )
 
 
@@ -126,13 +128,6 @@ def validate_sql_clause(
 
     if not parsed:
         return f"Invalid {what} clause"
-    if full_text_search_validation:
-        if reason := __contains_always_true(parsed):
-            return reason
-    else:
-        for e in parsed.expressions:
-            if reason := __contains_always_true(e):
-                return reason
 
     # Step 3: walk AST nodes
     for node in parsed.walk():
@@ -144,8 +139,79 @@ def validate_sql_clause(
             return f"Disallowed node: {node.key}"
 
         if node.key == "column":
-            if not str(node).startswith(ALLOWED_COLUMN_PREFIX):
-                return f"Column does not start with allowed prefix: {str(node)}"
+            # Strict column check: no quotes, no extra spaces, exact case
+            full_col = str(node)
+            if not full_col.startswith(ALLOWED_COLUMN_PREFIX):
+                return f"Column does not start with allowed prefix: {full_col}"
+
+        # Reject comparisons where left side is identical to right side (e.g. 1=1, data=data)
+        if isinstance(node, exp.Binary) and not isinstance(node, (exp.JSONExtract, exp.JSONExtractScalar)):
+            # Normalize sides for comparison to catch "data" = data
+            left_norm = str(node.left).replace('"', '').replace(" ", "").lower()
+            right_norm = str(node.right).replace('"', '').replace(" ", "").lower()
+            if left_norm == right_norm:
+                return f"Tautology detected: identical sides in {node.key}"
+
+        # Strict function whitelisting for anonymous functions
+        if isinstance(node, exp.Anonymous):
+            func_name = node.this.lower()
+            if func_name not in ALLOWED_FUNCS:
+                return f"Disallowed function: {func_name}"
+
+    # Robustness: Any WHERE clause must actually refer to a column
+    where_node = None
+    if where:
+        if full_text_search_validation:
+            where_node = parsed
+        elif parsed.args.get("where"):
+            where_node = parsed.args["where"].this
+            
+    if where_node:
+        has_column = False
+        for n in where_node.walk():
+            # In some dialects/versions, sqlglot might parse JSON access as Lambda or other nodes
+            # so we check for Column or Identifier nodes that look like our allowed columns
+            if isinstance(n, (exp.Column, exp.Identifier)):
+                name = n.name.lower() if hasattr(n, "name") else str(n).lower()
+                if name in ["data", "r.data", "r"]:
+                    has_column = True
+                    break
+        if not has_column:
+            return "WHERE clause must contain at least one column reference"
+
+    # Final check for always-true/constant expressions
+    # Always check the original parsed tree for tautologies first
+    if full_text_search_validation:
+        if reason := __contains_always_true(parsed):
+            return reason
+    else:
+        # Check WHERE clause and SELECT expressions separately
+        if parsed.args.get("where"):
+            if reason := __contains_always_true(parsed.args["where"].this):
+                return reason
+        for e in parsed.expressions:
+            if reason := __contains_always_true(e):
+                return reason
+
+    # Now simplify and check again to catch things like NOT FALSE
+    try:
+        simplified = simplify(parsed)
+        # If the WHERE clause disappeared during simplification, it was likely a tautology (e.g. 1=1)
+        if parsed.args.get("where") and not simplified.args.get("where"):
+            return "Tautology detected: WHERE clause simplified away"
+        
+        if full_text_search_validation:
+            if reason := __contains_always_true(simplified):
+                return reason
+        else:
+            if simplified.args.get("where"):
+                if reason := __contains_always_true(simplified.args["where"].this):
+                    return reason
+            for e in simplified.expressions:
+                if reason := __contains_always_true(e):
+                    return reason
+    except Exception:
+        pass
 
     if include_db_check:
         # import here to avoid test file dependency issues
@@ -196,16 +262,8 @@ def __contains_disallowed_tokens(sql: str) -> str | None:
 
 def __contains_always_true(expr):
     """
-    Return a string reason if expr is provably always-true, otherwise None.
-
-    Rules covered:
-     - A top-level Boolean literal TRUE (exp.Boolean) -> always-true
-     - A CAST to BOOLEAN whose inner is a literal 1/TRUE -> always-true
-       (but NOT a cast of a column/expression)
-     - EQ of two identical literals (1 = 1, 'a' = 'a') -> always-true
-     - OR: if any branch is always-true -> always-true
-     - AND: if both branches are always-true -> always-true
-     - Parentheses are unwrapped
+    Return a string reason if expr is a constant (always-true or always-false),
+    as we want to avoid constant conditions in WHERE/SELECT.
     """
     # Unwrap parentheses
     if isinstance(expr, exp.Paren):
@@ -218,34 +276,26 @@ def __contains_always_true(expr):
         left = expr.args.get("this")
         right = expr.args.get("expression")
         if isinstance(left, exp.Literal) and isinstance(right, exp.Literal):
-            # For safety compare their `.this` representation; adapt if you need type-aware compare
             if left.this == right.this:
                 return f"Always-true expression: {left.this} = {right.this}"
-        # Do NOT recurse into left/right here — a literal RHS TRUE does not make the EQ always true.
-
+    
     # Cast to BOOLEAN of a literal (like 1::BOOLEAN)
     if isinstance(expr, exp.Cast):
         to_type = expr.args.get("to")
         inner = expr.args.get("this")
-        # to_type could be an Identifier, DataType, or other node; string compare is pragmatic
         if to_type and isinstance(inner, exp.Literal):
             try:
                 typ = str(to_type).upper()
             except Exception:
                 typ = ""
             if "BOOLEAN" in typ:
-                # Treat literal 1 / '1' / True / 'TRUE' as always-true (adapt to your dialect needs)
-                if inner.this in (1, "1", True, "TRUE"):
-                    return f"Always-true cast: {inner.this}::BOOLEAN"
-        # Do NOT treat casts of non-literals as always-true.
+                return f"Constant cast to BOOLEAN: {inner.this}::BOOLEAN"
 
-    # Top-level Boolean literal: only flag if expr itself is the Boolean node
+    # Any Boolean literal (True or False)
     if isinstance(expr, exp.Boolean):
-        if expr.this:  # True value
-            return f"Always-true boolean literal: {expr.this}"
-        # If it's FALSE, it's not always-true; ignore.
+        return f"Constant boolean literal: {expr.this}"
 
-    # OR: any branch always-true => whole expression always-true
+    # OR: recurse to catch (1=1 OR ...)
     if isinstance(expr, exp.Or):
         left = expr.args.get("this")
         right = expr.args.get("expression")
@@ -256,20 +306,14 @@ def __contains_always_true(expr):
             if reason := __contains_always_true(right):
                 return reason
 
-    # AND: both branches must be always-true
-    if isinstance(expr, exp.And):
-        left = expr.args.get("this")
-        right = expr.args.get("expression")
-        left_reason = (
-            __contains_always_true(left) if isinstance(left, exp.Expression) else None
-        )
-        right_reason = (
-            __contains_always_true(right) if isinstance(right, exp.Expression) else None
-        )
-        if left_reason and right_reason:
-            return f"Always-true AND expression: {left_reason} and {right_reason}"
+    # COALESCE: if the first non-null is always true
+    if isinstance(expr, exp.Coalesce):
+        for arg in expr.expressions:
+            if isinstance(arg, exp.Literal) and arg.is_string and arg.this.lower() == 'null':
+                continue
+            if isinstance(arg, exp.Null):
+                continue
+            # first non-null
+            return __contains_always_true(arg)
 
-    # For all other node types, do NOT descend into arbitrary children:
-    # only recurse into child expressions that are meaningful for short-circuit logic.
-    # This prevents a Boolean literal nested as part of a larger expression from being treated as the whole expression.
     return None

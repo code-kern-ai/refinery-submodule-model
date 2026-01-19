@@ -68,6 +68,7 @@ ALLOWED_NODES = {
     "literal",
     "lower",
     "lt",
+    "lte",
     "mod",
     "matchagainst",
     "mul",
@@ -124,7 +125,11 @@ ALLOWED_NODES = {
     "stddev",
     "variance",
     "datatypeparam",
+    "div",
     "groupconcat",
+    "jsonbcontainsalltopkeys",
+    "pow",
+    "unixtotime",
 }
 
 ALLOWED_TOKEN_TYPES = {
@@ -220,6 +225,8 @@ ALLOWED_TOKEN_TYPES = {
     TokenType.L_BRACKET,
     TokenType.R_BRACKET,
     TokenType.COMMA,
+    TokenType.ESCAPE,
+    TokenType.PIPE,
     # Arrays
     TokenType.ARRAY,
     # Extended/Other
