@@ -23,15 +23,16 @@ def _get_validate():
         if parent_of_pkg not in sys.path:
             sys.path.insert(0, parent_of_pkg)
 
-        # Import using package name `sql_helper`. This will give sibling modules correct package context,
+        # Import using package name `sql_validator`. This will give sibling modules correct package context,
         # so their relative imports (e.g. `from .constants import ...`) will work.
-        mod = importlib.import_module("sql_helper.sql_helper_none_submodule")
+        mod = importlib.import_module("sql_validator")
         return mod.validate_sql_clause
 
 
 # get the function (works whether run directly or as package)
 validate_sql_clause = _get_validate()
 
+AGG_EXPR = "data->>'name'"
 
 if __name__ == "__main__":
     VALID_CASES = [
@@ -110,6 +111,112 @@ if __name__ == "__main__":
         "upper(data->>'country') = 'US'",
         "(data->>'joined_at')::timestamp < now() AND jsonb_typeof(data->'settings') = 'object'",
         "data->>'timezone' IN ('UTC', 'CET', 'PST')",
+        # complex cases with aggregates
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), sum((data->>'running_id')::numeric)",
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), avg((data->>'running_id')::numeric)",
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), min((data->>'running_id')::numeric)",
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), max((data->>'running_id')::numeric)",
+            "group_by": AGG_EXPR,
+        },
+        # Statistical aggregates (numeric)
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), stddev((data->>'running_id')::numeric)",
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), variance((data->>'running_id')::numeric)",
+            "group_by": AGG_EXPR,
+        },
+        # Correlation / covariance
+        {
+            "select": (
+                f"{AGG_EXPR}, count({AGG_EXPR}), "
+                f"corr((data->>'running_id')::numeric, (data->>'running_id')::numeric)"
+            ),
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": (
+                f"{AGG_EXPR}, count({AGG_EXPR}), "
+                f"covar_pop((data->>'running_id')::numeric, (data->>'running_id')::numeric)"
+            ),
+            "group_by": AGG_EXPR,
+        },
+        # Regression aggregates
+        {
+            "select": (
+                f"{AGG_EXPR}, count({AGG_EXPR}), "
+                f"regr_slope((data->>'running_id')::numeric, (data->>'running_id')::numeric)"
+            ),
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": (
+                f"{AGG_EXPR}, count({AGG_EXPR}), "
+                f"regr_intercept((data->>'running_id')::numeric, (data->>'running_id')::numeric)"
+            ),
+            "group_by": AGG_EXPR,
+        },
+        # Boolean aggregates
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), bool_and((data->>'flag')::boolean)",
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), bool_or((data->>'flag')::boolean)",
+            "group_by": AGG_EXPR,
+        },
+        # Bitwise aggregates
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), bit_and((data->>'bits')::bit(8))",
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), bit_or((data->>'bits')::bit(8))",
+            "group_by": AGG_EXPR,
+        },
+        # Text / collection aggregates
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), array_agg(data->>'text')",
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), string_agg(data->>'text', ',')",
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), json_agg(data->>'text')",
+            "group_by": AGG_EXPR,
+        },
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), jsonb_agg(data->>'text')",
+            "group_by": AGG_EXPR,
+        },
+        # Range aggregate (constructed from numeric JSON value)
+        {
+            "select": (
+                f"{AGG_EXPR}, count({AGG_EXPR}), "
+                f"range_agg(numrange("
+                f"(data->>'running_id')::numeric, "
+                f"(data->>'running_id')::numeric + 1))"
+            ),
+            "group_by": AGG_EXPR,
+        },
+        # Misc
+        {
+            "select": f"{AGG_EXPR}, count({AGG_EXPR}), any_value(data->>'text')",
+            "group_by": AGG_EXPR,
+        },
     ]
 
     INVALID_CASES = [
@@ -180,7 +287,11 @@ if __name__ == "__main__":
         "EXISTS(SELECT 1 FROM users WHERE is_admin = true)",
         "(SELECT COUNT(*) FROM users) > 0",
         "id IN (SELECT id FROM users WHERE role='admin')",
-        "id = (SELECT id FROM users LIMIT 1)"
+        "id = (SELECT id FROM users LIMIT 1)",
+        "SELECT (SELECT MAX(id) FROM record) FROM record",
+        "data->>'name' = (SELECT 'Alice')",
+        "EXISTS (SELECT 1 FROM record)",
+        "id IN (SELECT id FROM record)",
         # Function / backend abuse (Postgres / MySQL)
         "pg_terminate_backend(pid) IS NOT NULL",
         "pg_sleep(10) IS NULL",
@@ -281,22 +392,53 @@ if __name__ == "__main__":
         "(col1 IS NULL AND col2 IS NOT NULL) OR (col3 > 1000)",
         "(CASE WHEN flag = 1 THEN 1 ELSE 0 END) = 1",
         "id = CAST(? AS INTEGER)",
+        "1 = (SELECT 1)",
+        {
+            "select": "(SELECT MAX(id) FROM record)",
+        }
     ]
 
     print("=== VALID CASES ===")
     for sql in VALID_CASES:
-        rejection_reason = validate_sql_clause(sql)
-        if rejection_reason:
-            print(
-                "FALSE NEGATIVES (rejected but shouldn't):", sql, "=>", rejection_reason
+        if isinstance(sql, dict):
+            extend_allowed_nodes = {"select", "where", "group", "order", "ordered"}
+            rejection_reason = validate_sql_clause(
+                extend_allowed_nodes=extend_allowed_nodes, **sql
             )
+            if any(rejection_reason[key] for key in rejection_reason):
+                print(
+                    "FALSE NEGATIVES (rejected but shouldn't):",
+                    sql,
+                    "=>",
+                    rejection_reason,
+                )
+        else:
+            rejection_reason = validate_sql_clause(where=sql)
+            if rejection_reason:
+                print(
+                    "FALSE NEGATIVES (rejected but shouldn't):",
+                    sql,
+                    "=>",
+                    rejection_reason,
+                )
         # else:
         #     print("Correctly accepted:", sql)
 
     print("\n=== INVALID CASES ===")
     for sql in INVALID_CASES:
-        rejection_reason = validate_sql_clause(sql)
-        if not rejection_reason:
-            print("FALSE POSITIVES (not rejected but should):", sql)
+        if isinstance(sql, dict):
+            extend_allowed_nodes = {"select", "where", "group", "order", "ordered"}
+            rejection_reason = validate_sql_clause(
+                extend_allowed_nodes=extend_allowed_nodes, **sql
+            )
+            if isinstance(rejection_reason, dict):
+                if not any(rejection_reason.values()):
+                    print("FALSE POSITIVES (not rejected but should):", sql)
+            elif not rejection_reason:
+                print("FALSE POSITIVES (not rejected but should):", sql)
+        else:
+            rejection_reason = validate_sql_clause(where=sql)
+            if not rejection_reason:
+                print("FALSE POSITIVES (not rejected but should):", sql)
         # else:
         #     print("Correctly rejected:", sql, "=>", rejection_reason)

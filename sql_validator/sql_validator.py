@@ -27,6 +27,9 @@ def validate_sql_clause(
     Returns None if safe, otherwise a string reason for rejection.
     """
     provided_clauses = list(filter(None, [select, where, order_by, group_by]))
+    full_text_search_validation = (
+        len(provided_clauses) == 1 and extend_allowed_nodes is None
+    )
     if len(provided_clauses) == 0:
         return "No SELECT, WHERE or ORDER BY clause provided"
     elif len(provided_clauses) > 1 and extend_allowed_nodes is None:
@@ -97,27 +100,34 @@ def validate_sql_clause(
     # Step 2: parse the clause in context
     try:
         if select:
-            parsed = parse_one(f"SELECT {select}", read="postgres")
-            # expr = parsed.args.get("select")
+            if full_text_search_validation:
+                parsed = parse_one(select, read="postgres")
+            else:
+                parsed = parse_one(f"SELECT {select}", read="postgres")
         elif where:
-            # Wrap in SELECT WHERE to parse correctly as a single context
-            parsed = parse_one(f"SELECT 1 WHERE {where}", read="postgres")
-            # expr = parsed.args.get("where")
+            if full_text_search_validation:
+                parsed = parse_one(where, read="postgres")
+            else:
+                # Wrap in SELECT WHERE to parse correctly as a single context
+                parsed = parse_one(f"SELECT 1 WHERE {where}", read="postgres")
         elif group_by:
-            parsed = parse_one(f"SELECT 1 GROUP BY {group_by}", read="postgres")
-            # expr = parsed.args.get("group")
+            if full_text_search_validation:
+                parsed = parse_one(group_by, read="postgres")
+            else:
+                parsed = parse_one(f"SELECT 1 GROUP BY {group_by}", read="postgres")
         elif order_by:
-            # Wrap in SELECT ORDER BY to handle comma-separated lists correctly
-            parsed = parse_one(f"SELECT 1 ORDER BY {order_by}", read="postgres")
-            # expr = parsed.args.get("order")
+            if full_text_search_validation:
+                parsed = parse_one(order_by, read="postgres")
+            else:
+                # Wrap in SELECT ORDER BY to handle comma-separated lists correctly
+                parsed = parse_one(f"SELECT 1 ORDER BY {order_by}", read="postgres")
     except ParseError:
         return f"Parse error => invalid {what} condition, check for correct syntax"
 
     if not parsed:
         return f"Invalid {what} clause"
-
-    if where:
-        if reason := __contains_always_true(parsed.expression):
+    if full_text_search_validation:
+        if reason := __contains_always_true(parsed):
             return reason
     else:
         for e in parsed.expressions:
@@ -126,6 +136,10 @@ def validate_sql_clause(
 
     # Step 3: walk AST nodes
     for node in parsed.walk():
+        # Disallow sub-selects: only one Select node allowed, and it must be the root
+        if isinstance(node, (exp.Select, exp.Subquery)) and node is not parsed:
+            return "Sub-selects are not allowed"
+
         if node.key not in ALLOWED_NODES.union(extend_allowed_nodes or set()):
             return f"Disallowed node: {node.key}"
 

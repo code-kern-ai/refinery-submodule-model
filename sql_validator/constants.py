@@ -87,6 +87,7 @@ ALLOWED_NODES = {
     "replace",
     "regexpilike",
     "regexplike",
+    "select",
     "strtotime",
     "strposition",
     "strtodate",
@@ -108,6 +109,22 @@ ALLOWED_NODES = {
     "max",
     "min",
     "sum",
+    "stddevvariance",
+    "corr",
+    "covarpop",
+    "regrslope",
+    "regrintercept",
+    "logicalor",
+    "logicaland",
+    "bitwiseandagg",
+    "bitwiseoragg",
+    "arrayagg",
+    "jsonarrayagg",
+    "anyvalue",
+    "stddev",
+    "variance",
+    "datatypeparam",
+    "groupconcat",
 }
 
 ALLOWED_TOKEN_TYPES = {
@@ -214,6 +231,7 @@ ALLOWED_TOKEN_TYPES = {
     TokenType.LEFT,
     TokenType.RIGHT,
     TokenType.REPLACE,
+    TokenType.SELECT,
 }
 
 ALLOWED_FUNCS = {
