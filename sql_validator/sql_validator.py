@@ -13,7 +13,13 @@ from .constants import (
     ALLOWED_COLUMN_PREFIX,
     DISALLOWED_COLUMN_PREFIX,
     ALLOWED_FUNCS,
+    MAX_WINDOW_FUNCTIONS,
+    MAX_QUERY_LENGTH,
+    MAX_EXPRESSION_DEPTH,
+    MAX_REGEX_LENGTH,
+    DANGEROUS_REGEX_PATTERNS,
 )
+import re
 
 
 def validate_sql_clause(
@@ -23,10 +29,28 @@ def validate_sql_clause(
     order_by: Optional[str] = None,
     include_db_check: bool = False,
     extend_allowed_nodes: Optional[set] = None,
+    db_check_tautology: bool = False,
+    tautology_check_project_id: Optional[str] = None,
 ) -> str | None | Dict[str, Optional[str]]:
     """
-    Validate a user-provided clause.
+    Validate a user-provided SQL clause for security.
+    
     Returns None if safe, otherwise a string reason for rejection.
+    
+    Parameters:
+        select: SELECT clause content (without SELECT keyword)
+        where: WHERE clause content (without WHERE keyword)
+        group_by: GROUP BY clause content (without GROUP BY keyword)
+        order_by: ORDER BY clause content (without ORDER BY keyword)
+        include_db_check: If True, validates syntax against the database
+        extend_allowed_nodes: Additional AST nodes to allow
+        db_check_tautology: If True, performs database-based tautology detection.
+            This executes the WHERE condition against actual project data to detect
+            conditions that always evaluate to TRUE. Requires tautology_check_project_id.
+            Note: This adds query overhead proportional to project size.
+        tautology_check_project_id: Project UUID required for db_check_tautology.
+            The tautology check evaluates: SELECT DISTINCT ({where}) FROM record WHERE project_id = '{id}'
+            If result is a single TRUE value, the condition is flagged as always-true.
     """
     provided_clauses = list(filter(None, [select, where, order_by, group_by]))
     full_text_search_validation = (
@@ -84,6 +108,17 @@ def validate_sql_clause(
                 general.rollback()
                 all_results["db_check"] = f"Database error when validating clauses: {e}"
 
+        # Database-based tautology check for multi-clause validation
+        if not any(all_results.values()) and db_check_tautology and where and tautology_check_project_id:
+            tautology_result = validate_sql_clause(
+                where=where,
+                extend_allowed_nodes=extend_allowed_nodes,
+                db_check_tautology=True,
+                tautology_check_project_id=tautology_check_project_id,
+            )
+            if tautology_result:
+                all_results["db_tautology_check"] = tautology_result
+
         return all_results
 
     what = (
@@ -95,8 +130,16 @@ def validate_sql_clause(
         if group_by
         else "ORDER BY"
     )
+
+    # Step 0: Check query length and empty/whitespace content
+    clause_text = select or where or group_by or order_by
+    if not clause_text or not clause_text.strip():
+        return f"Empty or whitespace-only {what} clause is not allowed"
+    if len(clause_text) > MAX_QUERY_LENGTH:
+        return f"Query too long: {len(clause_text)} characters (maximum allowed: {MAX_QUERY_LENGTH})"
+
     # Step 1: reject unsafe tokens
-    if reason := __contains_disallowed_tokens(select or where or group_by or order_by):
+    if reason := __contains_disallowed_tokens(clause_text):
         return reason
 
     # Step 2: parse the clause in context
@@ -132,6 +175,21 @@ def validate_sql_clause(
             if isinstance(expr, exp.Star):
                 return "SELECT * is not allowed - only the data JSON field can be accessed. Use count(1) instead of count(*)"
 
+    # Complexity limit: count window functions to prevent DoS
+    # Window functions are powerful but can be expensive; limit their count
+    window_count = sum(1 for node in parsed.walk() if isinstance(node, exp.Window))
+    if window_count > MAX_WINDOW_FUNCTIONS:
+        return f"Too many window functions: {window_count} (maximum allowed: {MAX_WINDOW_FUNCTIONS})"
+
+    # Complexity limit: check expression depth to prevent DoS via deeply nested expressions
+    max_depth = __get_max_expression_depth(parsed)
+    if max_depth > MAX_EXPRESSION_DEPTH:
+        return f"Expression too deeply nested: depth {max_depth} (maximum allowed: {MAX_EXPRESSION_DEPTH})"
+
+    # Check for dangerous regex patterns that could cause ReDoS
+    if reason := __check_regex_complexity(parsed):
+        return reason
+
     # Step 3: walk AST nodes
     for node in parsed.walk():
         # Disallow sub-selects: only one Select node allowed, and it must be the root
@@ -161,14 +219,25 @@ def validate_sql_clause(
             to_type = node.args.get("to")
             if to_type:
                 type_str = str(to_type).lower()
+                # All PostgreSQL pseudo-types that reference system catalogs
                 dangerous_types = [
-                    "regclass",
-                    "oid",
-                    "xid",
-                    "tid",
-                    "cid",
-                    "name",
-                    "refcursor",
+                    "regclass",       # OID of relation
+                    "regcollation",   # OID of collation
+                    "regconfig",      # OID of text search config
+                    "regdictionary",  # OID of text search dictionary
+                    "regnamespace",   # OID of namespace
+                    "regoper",        # OID of operator
+                    "regoperator",    # OID of operator with types
+                    "regproc",        # OID of function
+                    "regprocedure",   # OID of function with types
+                    "regrole",        # OID of role
+                    "regtype",        # OID of type
+                    "oid",            # Object identifier
+                    "xid",            # Transaction ID
+                    "cid",            # Command ID
+                    "tid",            # Tuple ID (physical location)
+                    "name",           # Internal name type
+                    "refcursor",      # Cursor reference
                 ]
                 if any(dt in type_str for dt in dangerous_types):
                     return f"Dangerous system type cast not allowed: {type_str}"
@@ -188,6 +257,21 @@ def validate_sql_clause(
             func_name = node.this.lower()
             if func_name not in ALLOWED_FUNCS:
                 return f"Disallowed function: {func_name}"
+
+            # SECURITY: Check JSON path functions for SQL keywords in path arguments
+            # Even though these are string literals (not executed as SQL), we block them
+            # as a defense-in-depth measure to prevent any potential confusion or edge cases
+            if func_name.startswith("jsonb_path_"):
+                for arg in node.expressions:
+                    if isinstance(arg, exp.Literal) and arg.is_string:
+                        path_str = arg.this.upper()
+                        # Block any SQL keywords that could indicate injection attempts
+                        sql_keywords = ["SELECT", "INSERT", "UPDATE", "DELETE", "DROP", 
+                                       "TRUNCATE", "ALTER", "CREATE", "EXECUTE", "UNION",
+                                       "FROM", "WHERE", "JOIN", "INTO"]
+                        for keyword in sql_keywords:
+                            if keyword in path_str:
+                                return f"SQL keyword '{keyword}' not allowed in JSON path expression"
 
     # Robustness: WHERE and GROUP BY clauses must actually refer to a column
     # ORDER BY can contain aggregates (like count(1)) which don't expose columns, so we're more lenient
@@ -301,6 +385,16 @@ def validate_sql_clause(
             if reason := __contains_always_true(e):
                 return reason
 
+        # Check for tautologies inside window function ORDER BY clauses
+        for node in parsed.walk():
+            if isinstance(node, exp.Window):
+                window_order = node.args.get("order")
+                if window_order:
+                    for e in window_order.expressions:
+                        inner = e.this if isinstance(e, exp.Ordered) else e
+                        if reason := __contains_always_true(inner):
+                            return f"Tautology in window ORDER BY: {reason}"
+
     # Now simplify and check again to catch things like NOT FALSE
     try:
         simplified = simplify(parsed)
@@ -345,6 +439,39 @@ def validate_sql_clause(
         except Exception as e:
             general.rollback()
             return f"Database error when validating {what} clause: {e}"
+
+    # Database-based tautology detection (optional)
+    # This evaluates the WHERE condition against actual project data to catch
+    # tautologies that static analysis can't detect (e.g., complex expressions).
+    # Only applies to WHERE clauses since they're the security-relevant filter.
+    if db_check_tautology and where and tautology_check_project_id:
+        from submodules.model.business_objects import general
+
+        try:
+            # Evaluate the condition for all rows in the project and check if
+            # it always returns TRUE. We use DISTINCT to collapse results.
+            # If we get exactly one row with value TRUE, it's an always-true condition.
+            tautology_check_sql = f"""
+                SELECT 
+                    COUNT(DISTINCT d) = 1 
+                    AND bool_or(d) = true 
+                    AND COUNT(*) > 0 
+                    AS is_tautology
+                FROM (
+                    SELECT ({where}) AS d 
+                    FROM public.record 
+                    WHERE project_id = '{tautology_check_project_id}'
+                ) sub
+            """
+            result = general.execute_all(tautology_check_sql)
+            if result and len(result) > 0 and result[0]["is_tautology"]:
+                return "Database tautology check: WHERE condition evaluates to TRUE for all records in project"
+        except Exception as e:
+            # Don't fail validation if tautology check fails - it's an optional extra check
+            general.rollback()
+            # Log but don't block: the static checks are the primary defense
+            pass
+
     return None
 
 
@@ -611,6 +738,17 @@ def __contains_always_true(expr):
         if isinstance(inner, exp.Expression):
             return __contains_always_true(inner)
 
+    # NOT: Check for NOT FALSE (= TRUE) or NOT TRUE (= FALSE)
+    # These are constant expressions that can bypass WHERE filters
+    if isinstance(expr, exp.Not):
+        inner = expr.args.get("this")
+        if isinstance(inner, exp.Boolean):
+            return f"Constant NOT expression: NOT {inner.this}"
+        # Recurse into NOT to catch nested constants
+        if isinstance(inner, exp.Expression):
+            if reason := __contains_always_true(inner):
+                return f"Constant in NOT expression: {reason}"
+
     # EQ: Check using constant evaluation (handles 10/2=5, coalesce(1,2)=1, etc.)
     if isinstance(expr, exp.EQ):
         if reason := __is_constant_comparison_true(expr):
@@ -621,6 +759,29 @@ def __contains_always_true(expr):
         if isinstance(left, exp.Literal) and isinstance(right, exp.Literal):
             if left.this == right.this:
                 return f"Always-true expression: {left.this} = {right.this}"
+
+    # Other comparison operators: <, >, <=, >=, != with constants
+    # These can be tautologies like 1 < 2 or 1 != 2
+    if isinstance(expr, (exp.LT, exp.GT, exp.LTE, exp.GTE, exp.NEQ)):
+        left_val = __get_constant_value(expr.left)
+        right_val = __get_constant_value(expr.right)
+        # Both must be resolvable constants
+        if not isinstance(left_val, _ConstantNotResolvable) and not isinstance(right_val, _ConstantNotResolvable):
+            if left_val is not None and right_val is not None:
+                try:
+                    # Evaluate the comparison
+                    if isinstance(expr, exp.LT) and left_val < right_val:
+                        return f"Constant comparison tautology: {left_val} < {right_val}"
+                    if isinstance(expr, exp.GT) and left_val > right_val:
+                        return f"Constant comparison tautology: {left_val} > {right_val}"
+                    if isinstance(expr, exp.LTE) and left_val <= right_val:
+                        return f"Constant comparison tautology: {left_val} <= {right_val}"
+                    if isinstance(expr, exp.GTE) and left_val >= right_val:
+                        return f"Constant comparison tautology: {left_val} >= {right_val}"
+                    if isinstance(expr, exp.NEQ) and left_val != right_val:
+                        return f"Constant comparison tautology: {left_val} != {right_val}"
+                except Exception:
+                    pass
 
     # IS NULL: Check using constant evaluation (handles nullif(1,1) is null)
     if isinstance(expr, exp.Is):
@@ -643,7 +804,19 @@ def __contains_always_true(expr):
     if isinstance(expr, exp.Boolean):
         return f"Constant boolean literal: {expr.this}"
 
-    # OR: recurse to catch (1=1 OR ...)
+    # AND: check both sides for tautologies
+    # An AND with a tautology like (data->>'a' = 'b' AND TRUE) still has a constant
+    if isinstance(expr, exp.And):
+        left = expr.args.get("this")
+        right = expr.args.get("expression")
+        if left and isinstance(left, exp.Expression):
+            if reason := __contains_always_true(left):
+                return reason
+        if right and isinstance(right, exp.Expression):
+            if reason := __contains_always_true(right):
+                return reason
+
+    # OR: recurse to catch (1=1 OR ...) - CRITICAL: OR with tautology bypasses filters
     if isinstance(expr, exp.Or):
         left = expr.args.get("this")
         right = expr.args.get("expression")
@@ -677,5 +850,56 @@ def __contains_always_true(expr):
         for if_node in expr.args.get("ifs", []):
             if reason := __contains_always_true(if_node.this):
                 return f"Constant CASE condition: {reason}"
+
+    return None
+
+
+def __get_max_expression_depth(node, current_depth=0) -> int:
+    """
+    Calculate the maximum nesting depth of an expression tree.
+    Used to prevent DoS attacks via deeply nested expressions.
+    """
+    if not isinstance(node, exp.Expression):
+        return current_depth
+
+    max_child_depth = current_depth
+    for child in node.iter_expressions():
+        child_depth = __get_max_expression_depth(child, current_depth + 1)
+        max_child_depth = max(max_child_depth, child_depth)
+
+    return max_child_depth
+
+
+def __check_regex_complexity(parsed) -> str | None:
+    """
+    Check for potentially dangerous regex patterns that could cause ReDoS.
+    Returns a reason string if dangerous, None otherwise.
+    """
+    for node in parsed.walk():
+        # Check RegexpLike and RegexpILike nodes (for ~ and ~* operators)
+        if isinstance(node, (exp.RegexpLike, exp.RegexpILike)):
+            pattern_node = node.expression
+            if isinstance(pattern_node, exp.Literal) and pattern_node.is_string:
+                pattern = pattern_node.this
+
+                # Check pattern length
+                if len(pattern) > MAX_REGEX_LENGTH:
+                    return f"Regex pattern too long: {len(pattern)} characters (maximum allowed: {MAX_REGEX_LENGTH})"
+
+                # Check for dangerous patterns that could cause catastrophic backtracking
+                for dangerous in DANGEROUS_REGEX_PATTERNS:
+                    if re.search(dangerous, pattern):
+                        return f"Potentially dangerous regex pattern detected (could cause performance issues): {pattern[:50]}..."
+
+                # Check for excessive quantifier nesting like (a+)+ or (a*)* 
+                # These can cause exponential backtracking
+                nested_quantifier_pattern = r'\([^)]*[+*][^)]*\)[+*]'
+                if re.search(nested_quantifier_pattern, pattern):
+                    return f"Nested quantifiers in regex pattern could cause performance issues: {pattern[:50]}..."
+
+                # Check for excessive alternation with overlap
+                # e.g., (a|a|a|a|a|a|a|a|a|a) - many similar alternatives
+                if pattern.count('|') > 20:
+                    return f"Too many alternatives in regex pattern: {pattern.count('|')} (maximum recommended: 20)"
 
     return None

@@ -165,4 +165,28 @@ INVALID_CASES = [
     "coalesce(nullif(1,1), nullif(2,2), 3)=3",
     "nullif(abs(-5), 5) is null",
     "(coalesce(null, 5)+coalesce(null, 5))=10",
+    # --- Additional comparison tautologies ---
+    "1 != 2",  # NEQ tautology
+    "1 <> 2",  # Alternative NEQ syntax
+    "5 > 3",
+    "3 < 5",
+    "5 >= 5",
+    "5 <= 5",
+    "10 > 5 + 4",  # 10 > 9
+    "1 + 1 < 3",  # 2 < 3
+    # --- AND with tautology (should still be blocked) ---
+    "data->>'a' = 'b' AND TRUE",
+    "data->>'a' = 'b' AND 1=1",
+    "data->>'a' = 'b' AND (1 < 2)",
+    "data->>'a' = 'b' AND NOT FALSE",
+    "2 > 1 AND data->>'a' = 'b'",
+    "TRUE AND data->>'a' = 'b'",
+    # --- OR with tautology (CRITICAL - bypasses filter) ---
+    "data->>'a' = 'b' OR NOT FALSE",
+    "data->>'a' = 'b' OR (1 < 2)",
+    "data->>'a' = 'b' OR (2 > 1)",
+    "data->>'a' = 'b' OR (1 != 2)",
+    # --- Nested NOT ---
+    "NOT NOT TRUE",
+    "NOT NOT FALSE",
 ]

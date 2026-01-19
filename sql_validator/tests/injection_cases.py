@@ -177,8 +177,7 @@ INVALID_CASES = [
     "1 OR '1'='2'--",
     "' OR '1'='1'--",
     "' OR '1'='2'--",
-    # --- Encoded/Obfuscated ---
-    "data->>'a' = CHAR(65)", # CHAR might be disallowed
+    # Note: CHAR(65) is now allowed - it just produces the string 'A'
     # Note: \u0027Alice\u0027 and $quote$Alice$quote$ are valid PostgreSQL string literal syntaxes
     # They evaluate to 'Alice', so they're effectively valid queries, not injection attempts
     # --- Comment variations ---
@@ -195,4 +194,23 @@ INVALID_CASES = [
     "jsonb_to_recordset(data->'items')", # if not in whitelist
     "jsonb_each(data)",
     "jsonb_populate_record(null::record, data)",
+    # --- All dangerous PostgreSQL pseudo-type casts ---
+    "(data->>'x')::regclass",
+    "(data->>'x')::regcollation",
+    "(data->>'x')::regconfig",
+    "(data->>'x')::regdictionary",
+    "(data->>'x')::regnamespace",
+    "(data->>'x')::regoper",
+    "(data->>'x')::regoperator",
+    "(data->>'x')::regproc",
+    "(data->>'x')::regprocedure",
+    "(data->>'x')::regrole",
+    "(data->>'x')::regtype",
+    "(data->>'x')::oid",
+    "(data->>'x')::xid",
+    "(data->>'x')::cid",
+    "(data->>'x')::tid",
+    "CAST(data->>'x' AS regclass)",
+    "CAST(data->>'x' AS regproc)",
+    "CAST(data->>'x' AS oid)",
 ]

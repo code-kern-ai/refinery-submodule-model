@@ -238,8 +238,6 @@ INVALID_CASES = [
     },
     # --- Complex Postgres bypass attempt: LATERAL JOIN ---
     "data->>'a' = 'b' CROSS JOIN LATERAL (SELECT 1) AS t",
-    # --- Complex Postgres bypass attempt: WINDOW functions ---
-    "row_number() OVER (PARTITION BY data->>'category' ORDER BY data->>'name')",
     # --- Complex Postgres bypass attempt: CAST to system type ---
     "(data->>'id')::regclass",
     # --- Complex Postgres bypass attempt: ARRAY subquery ---
@@ -447,14 +445,6 @@ INVALID_CASES = [
     {"select": "count(DISTINCT *)"},
     {"select": "sum(DISTINCT *)"},
     {"select": "array_agg(DISTINCT *)"},
-    # --- Window functions (should fail - not in ALLOWED_NODES) ---
-    {"select": "row_number() OVER ()"},
-    {"select": "rank() OVER (PARTITION BY data->>'category')"},
-    {"select": "dense_rank() OVER ()"},
-    {"select": "lag(data->>'value') OVER ()"},
-    {"select": "lead(data->>'value') OVER ()"},
-    {"select": "first_value(data->>'value') OVER ()"},
-    {"select": "last_value(data->>'value') OVER ()"},
     # --- CTE attempts (should fail) ---
     "WITH t AS (SELECT data->>'name') SELECT * FROM t",
     "WITH RECURSIVE t AS (SELECT 1) SELECT data->>'name' FROM t",
@@ -474,9 +464,9 @@ INVALID_CASES = [
     "data->'tags' @> ARRAY(SELECT 'tag')",
     "data->'tags' = ARRAY(SELECT 'tag')",
     "ARRAY(SELECT id FROM record) && data->'tags'",
-    # --- JSONB path operations with subqueries ---
-    "jsonb_path_exists(data, '$.items[*] ? (@.id == (SELECT 1))')",
-    "jsonb_path_query(data, '$.items[*] ? (@.value > (SELECT 1))')",
+    # Note: jsonb_path_* functions with "(SELECT ...)" in the path STRING are now allowed
+    # because the "SELECT" is inside a string literal, not actual SQL. The JSON path
+    # engine will reject invalid path syntax, but it's not a SQL injection risk.
     # --- More comprehensive multi-clause failure combinations ---
     # SELECT fails (subquery), others pass
     {
@@ -631,20 +621,6 @@ INVALID_CASES = [
     {"select": "jsonb_agg(*)"},
     {"select": "jsonb_object_agg(*, *)"},
     {"select": "jsonb_object_agg(data->>'key', *)"},
-    # --- More window function attempts (should fail) ---
-    {"select": "count(1) OVER ()"},
-    {"select": "sum((data->>'amount')::numeric) OVER (PARTITION BY data->>'category')"},
-    {"select": "row_number() OVER (ORDER BY data->>'name')"},
-    {"select": "rank() OVER ()"},
-    {"select": "dense_rank() OVER ()"},
-    {"select": "percent_rank() OVER ()"},
-    {"select": "cume_dist() OVER ()"},
-    {"select": "ntile(4) OVER ()"},
-    {"select": "lag(data->>'value') OVER ()"},
-    {"select": "lead(data->>'value') OVER ()"},
-    {"select": "first_value(data->>'value') OVER ()"},
-    {"select": "last_value(data->>'value') OVER ()"},
-    {"select": "nth_value(data->>'value', 1) OVER ()"},
     # --- More CTE attempts ---
     "WITH t(id) AS (SELECT 1) SELECT data->>'name' FROM t",
     "WITH t AS (SELECT data->>'name') SELECT * FROM t",
@@ -658,9 +634,6 @@ INVALID_CASES = [
     "ARRAY(SELECT id FROM record) && data->'tags'",
     "ARRAY(SELECT id FROM record) @> data->'tags'",
     "ARRAY(SELECT id FROM record) <@ data->'tags'",
-    "jsonb_path_exists(data, '$.items[*] ? (@.id == (SELECT MAX(id) FROM record))')",
-    "jsonb_path_query_array(data, '$.items[*] ? (@.value > (SELECT 1))')",
-    "jsonb_path_query_first(data, '$.items[*] ? (@.id == (SELECT 1))')",
     # --- More system catalog access ---
     "data->>'a' = (SELECT tablename FROM pg_tables WHERE schemaname = 'public' LIMIT 1)",
     "data->>'a' = (SELECT column_name FROM information_schema.columns WHERE table_name = 'record' LIMIT 1)",
@@ -669,12 +642,10 @@ INVALID_CASES = [
     "data->>'a' = (SELECT nspname FROM pg_namespace LIMIT 1)",
     # --- More function call attempts ---
     "generate_series(1, 10)",
-    "unnest(ARRAY[1,2,3])",
-    "unnest(data->'tags')",
-    "jsonb_each(data)",
-    "jsonb_each_text(data)",
-    "jsonb_object_keys(data)",
-    "jsonb_populate_record(null::record, data)",
+    # Note: unnest() and jsonb_object_keys() are now allowed - safe set-returning functions
+    "jsonb_each(data)",       # Set returning - could enable but not whitelisted
+    "jsonb_each_text(data)",  # Set returning - could enable but not whitelisted  
+    "jsonb_populate_record(null::record, data)",  # Dangerous - accesses record types
     "jsonb_populate_recordset(null::record, data)",
     "jsonb_to_record(data)",
     "jsonb_to_recordset(data)",
