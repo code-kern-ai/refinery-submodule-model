@@ -1169,7 +1169,7 @@ class DataBlock(Base):
     # sql_schema = Column(ARRAY(JSON))
 
 
-class DataBlockResults(Base):
+class DataBlockResult(Base):
     __tablename__ = Tablenames.DATA_BLOCK_RESULTS.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(
@@ -1186,7 +1186,9 @@ class DataBlockResults(Base):
     data = Column(JSON)
 
 
-class DataBlockAttributes(Base):
+class DataBlockAttribute(Base):
+    """Similar to Attribute, but for DataBlocks"""
+
     __tablename__ = Tablenames.DATA_BLOCK_ATTRIBUTES.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     data_block_id = Column(

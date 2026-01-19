@@ -96,9 +96,7 @@ def validate_sql_clause(
     # Step 1: reject unsafe tokens
     if reason := __contains_disallowed_tokens(
         select or where or group_by or order_by,
-        extend_disallowed_column_prefix=(
-            extend_disallowed_column_prefix if select else None
-        ),
+        extend_disallowed_column_prefix,
     ):
         return reason
 
