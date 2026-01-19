@@ -23,6 +23,7 @@ def validate_sql_clause(
     order_by: Optional[str] = None,
     include_db_check: bool = False,
     extend_allowed_nodes: Optional[set] = None,
+    disallowed_identifiers: Optional[set] = None,
 ) -> str | None | Dict[str, Optional[str]]:
     """
     Validate a user-provided clause.
@@ -51,6 +52,7 @@ def validate_sql_clause(
                     **{key: val},
                     include_db_check=False,
                     extend_allowed_nodes=extend_allowed_nodes,
+                    disallowed_identifiers=disallowed_identifiers,
                 )
             else:
                 deny_reason = None
@@ -89,11 +91,7 @@ def validate_sql_clause(
     what = (
         "SELECT"
         if select
-        else "WHERE"
-        if where
-        else "GROUP BY"
-        if group_by
-        else "ORDER BY"
+        else "WHERE" if where else "GROUP BY" if group_by else "ORDER BY"
     )
     # Step 1: reject unsafe tokens
     if reason := __contains_disallowed_tokens(select or where or group_by or order_by):
@@ -144,11 +142,18 @@ def validate_sql_clause(
             if not full_col.startswith(ALLOWED_COLUMN_PREFIX):
                 return f"Column does not start with allowed prefix: {full_col}"
 
+        if node.key == "identifier":
+            full_col = str(node)
+            if full_col.endswith(tuple(disallowed_identifiers)):
+                return f"Disallowed identifier: {full_col}"
+
         # Reject comparisons where left side is identical to right side (e.g. 1=1, data=data)
-        if isinstance(node, exp.Binary) and not isinstance(node, (exp.JSONExtract, exp.JSONExtractScalar)):
+        if isinstance(node, exp.Binary) and not isinstance(
+            node, (exp.JSONExtract, exp.JSONExtractScalar)
+        ):
             # Normalize sides for comparison to catch "data" = data
-            left_norm = str(node.left).replace('"', '').replace(" ", "").lower()
-            right_norm = str(node.right).replace('"', '').replace(" ", "").lower()
+            left_norm = str(node.left).replace('"', "").replace(" ", "").lower()
+            right_norm = str(node.right).replace('"', "").replace(" ", "").lower()
             if left_norm == right_norm:
                 return f"Tautology detected: identical sides in {node.key}"
 
@@ -165,7 +170,7 @@ def validate_sql_clause(
             where_node = parsed
         elif parsed.args.get("where"):
             where_node = parsed.args["where"].this
-            
+
     if where_node:
         has_column = False
         for n in where_node.walk():
@@ -199,7 +204,7 @@ def validate_sql_clause(
         # If the WHERE clause disappeared during simplification, it was likely a tautology (e.g. 1=1)
         if parsed.args.get("where") and not simplified.args.get("where"):
             return "Tautology detected: WHERE clause simplified away"
-        
+
         if full_text_search_validation:
             if reason := __contains_always_true(simplified):
                 return reason
@@ -278,7 +283,7 @@ def __contains_always_true(expr):
         if isinstance(left, exp.Literal) and isinstance(right, exp.Literal):
             if left.this == right.this:
                 return f"Always-true expression: {left.this} = {right.this}"
-    
+
     # Cast to BOOLEAN of a literal (like 1::BOOLEAN)
     if isinstance(expr, exp.Cast):
         to_type = expr.args.get("to")
@@ -309,7 +314,11 @@ def __contains_always_true(expr):
     # COALESCE: if the first non-null is always true
     if isinstance(expr, exp.Coalesce):
         for arg in expr.expressions:
-            if isinstance(arg, exp.Literal) and arg.is_string and arg.this.lower() == 'null':
+            if (
+                isinstance(arg, exp.Literal)
+                and arg.is_string
+                and arg.this.lower() == "null"
+            ):
                 continue
             if isinstance(arg, exp.Null):
                 continue
