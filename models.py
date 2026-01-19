@@ -2438,6 +2438,7 @@ class IntegrationSharepoint(Base):
     source = Column(String, index=True)
     minio_file_name = Column(String)
     error_message = Column(String)
+    refinery_synced = Column(Boolean, default=False)
 
     extension = Column(String)
     object_id = Column(String)
@@ -2517,6 +2518,7 @@ class IntegrationWebpage(Base):
     source = Column(String, index=True)
     minio_file_name = Column(String)
     error_message = Column(String)
+    refinery_synced = Column(Boolean, default=False)
 
     title = Column(String)
     raw_markdown_content_hash = Column(String)
