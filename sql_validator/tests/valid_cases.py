@@ -74,4 +74,36 @@ VALID_CASES = [
     "data ->> 'name' = 'Alice'",
     "data->> 'name' = 'Alice'",
     "data ->>'name' = 'Alice'",
+    # --- More Valid ---
+    "data->'metadata'->'author' ? 'Alice'",
+    "data->'items' @> '[{\"id\": 1}]'::jsonb",
+    "data->>'price'::numeric > 10.50",
+    "COALESCE(data->>'nickname', 'Guest') = 'Guest'",
+    "TRIM(BOTH ' ' FROM data->>'name') = 'Alice'",
+    "data->>'a' || data->>'b' = 'ab'",
+    "data->'tags' - 'old_tag' ? 'new_tag'",
+    "data->'tags' || '[\"new\"]'::jsonb ? 'new'",
+    "data->>'a' = 'Alice'",
+    "data->>'a' = E'Alice'",
+    # --- Arithmetic in WHERE that isn't a tautology ---
+    "(data->>'quantity')::int * 2 > 10",
+    "(data->>'price')::numeric + 5 < 100",
+    "(data->>'score')::int / 10 = (data->>'level')::int",
+    "abs((data->>'value')::int) > 0",
+    "coalesce((data->>'amount')::numeric, 0) > 100",
+    "nullif(data->>'status', 'pending') IS NOT NULL",
+    "(data->>'count')::int + (data->>'bonus')::int >= 50",
+    # --- Aggregates with 1 (NOT * - * is never allowed) ---
+    {
+        "select": "count(1), data->>'category'",
+        "group_by": "data->>'category'"
+    },
+    {
+        "select": "count(1), sum((data->>'amount')::numeric)",
+        "group_by": "data->>'category'"
+    },
+    {
+        "select": "count(1), count(DISTINCT data->>'user_id')",
+        "where": "data->>'action' = 'login'"
+    },
 ]
