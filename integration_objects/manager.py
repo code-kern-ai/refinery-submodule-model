@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional, Dict, Tuple, Union, Type, Any
 from datetime import datetime
 from sqlalchemy import func
@@ -151,10 +152,34 @@ def get_existing_integration_records(
     integration_id: str,
     by: str = "source",
 ) -> Dict[str, object]:
-    # TODO(extension): make return type Dict[str, List[object]]
-    # once an object_id can reference multiple different integration records
+
     records, _ = get_all_by_integration_id(integration_id)
-    return {getattr(record, by, record.source): record for record in records}
+    return {
+        getattr(record, by, record.source): record
+        for record in filter(
+            lambda x: not re.search(r"#\d$", getattr(x, by, x.source) or ""), records
+        )
+    }
+
+
+def get_related_chunk_records(
+    integration_record: object,
+    by: str = "source",
+) -> List[object]:
+    IntegrationModel = type(integration_record)
+    record_identifier = getattr(IntegrationModel, by, IntegrationModel.source)
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration_record.integration_id,
+        )
+        .filter(
+            record_identifier.like(
+                f"{getattr(integration_record, by, integration_record.source)}#%"
+            )
+        )
+        .all()
+    )
 
 
 def get_running_ids(
@@ -171,6 +196,30 @@ def get_running_ids(
         .group_by(getattr(IntegrationModel, by, IntegrationModel.source))
         .all()
     )
+
+
+def duplicate(
+    integration_record: object, content: str, chunk_idx: int, by: str = "source"
+) -> object:
+    IntegrationModel = type(integration_record)
+    duplicated_record = IntegrationModel(
+        created_by=integration_record.created_by,
+        integration_id=integration_record.integration_id,
+        etl_task_id=integration_record.etl_task_id,
+        error_message=integration_record.error_message,
+        content=content,
+    )
+
+    for key in get_supported_metadata_keys(IntegrationModel.__tablename__):
+        value = getattr(integration_record, key)
+        setattr(duplicated_record, key, value)
+
+    duplicated_record.running_id = None
+    setattr(duplicated_record, by, f"{getattr(integration_record, by)}#{chunk_idx}")
+
+    general.add(duplicated_record, with_commit=False)
+
+    return duplicated_record
 
 
 def create(
