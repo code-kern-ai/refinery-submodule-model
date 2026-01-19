@@ -1,7 +1,6 @@
 from __future__ import with_statement
 from typing import List, Dict, Any, Optional, Tuple, Iterable
 
-from traitlets import Integer
 from sqlalchemy import cast, Text, String
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam
@@ -1019,19 +1018,5 @@ def get_record_by_attribute_value(
             Record.project_id == project_id,
             Record.data[attribute_name].as_string() == str(attribute_value),
         )
-        .all()
-    )
-
-
-def get_projects_running_ids(project_id: str) -> List[int]:
-    return (
-        session.query(
-            cast(
-                Record.data[attribute.get_running_id_name(project_id)].as_integer(),
-                Integer,
-            )
-        )
-        .distinct()
-        .filter(Record.project_id == project_id)
         .all()
     )
