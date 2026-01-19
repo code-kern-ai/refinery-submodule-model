@@ -6,7 +6,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from . import general
 from ..enums import AttributeState, DataTypes
-from ..models import DataBlockAttributes
+from ..models import DataBlockAttribute
 from ..session import session
 
 
@@ -17,23 +17,23 @@ DEFAULT_ATTRIBUTE_STATES_USEABLE = [
 ]
 
 
-def get(data_block_id: str, attribute_id: str) -> DataBlockAttributes:
+def get(data_block_id: str, attribute_id: str) -> DataBlockAttribute:
     return (
-        session.query(DataBlockAttributes)
+        session.query(DataBlockAttribute)
         .filter(
-            DataBlockAttributes.data_block_id == data_block_id,
-            DataBlockAttributes.id == attribute_id,
+            DataBlockAttribute.data_block_id == data_block_id,
+            DataBlockAttribute.id == attribute_id,
         )
         .first()
     )
 
 
-def get_by_name(data_block_id: str, name: str) -> DataBlockAttributes:
+def get_by_name(data_block_id: str, name: str) -> DataBlockAttribute:
     return (
-        session.query(DataBlockAttributes)
+        session.query(DataBlockAttribute)
         .filter(
-            DataBlockAttributes.data_block_id == data_block_id,
-            DataBlockAttributes.name == name,
+            DataBlockAttribute.data_block_id == data_block_id,
+            DataBlockAttribute.name == name,
         )
         .first()
     )
@@ -42,25 +42,25 @@ def get_by_name(data_block_id: str, name: str) -> DataBlockAttributes:
 def get_all(
     data_block_id: str,
     state_filter: Optional[List[str]] = None,
-) -> List[DataBlockAttributes]:
-    if state_filter is None:
-        state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
-    query = session.query(DataBlockAttributes).filter(
-        DataBlockAttributes.data_block_id == data_block_id
+) -> List[DataBlockAttribute]:
+    # if state_filter is None:
+    #     state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
+    query = session.query(DataBlockAttribute).filter(
+        DataBlockAttribute.data_block_id == data_block_id
     )
     if state_filter:
-        query = query.filter(DataBlockAttributes.state.in_(state_filter))
-    return query.order_by(DataBlockAttributes.relative_position.asc()).all()
+        query = query.filter(DataBlockAttribute.state.in_(state_filter))
+    return query.order_by(DataBlockAttribute.relative_position.asc()).all()
 
 
 def get_all_by_names(
     data_block_id: str, attribute_names: List[str]
-) -> List[DataBlockAttributes]:
+) -> List[DataBlockAttribute]:
     return (
-        session.query(DataBlockAttributes)
+        session.query(DataBlockAttribute)
         .filter(
-            DataBlockAttributes.data_block_id == data_block_id,
-            DataBlockAttributes.name.in_(attribute_names),
+            DataBlockAttribute.data_block_id == data_block_id,
+            DataBlockAttribute.name.in_(attribute_names),
         )
         .all()
     )
@@ -68,8 +68,8 @@ def get_all_by_names(
 
 def get_relative_position(data_block_id: str) -> int:
     result = (
-        session.query(func.max(DataBlockAttributes.relative_position))
-        .filter(DataBlockAttributes.data_block_id == data_block_id)
+        session.query(func.max(DataBlockAttribute.relative_position))
+        .filter(DataBlockAttribute.data_block_id == data_block_id)
         .first()
     )
     return result[0] if result and result[0] is not None else 0
@@ -89,8 +89,8 @@ def create(
     progress: Optional[float] = None,
     additional_config: Optional[Dict[str, Any]] = None,
     with_commit: bool = False,
-) -> DataBlockAttributes:
-    attribute = DataBlockAttributes(
+) -> DataBlockAttribute:
+    attribute = DataBlockAttribute(
         data_block_id=data_block_id,
         name=name,
         data_type=data_type,
@@ -127,7 +127,7 @@ def create_many(
     data_block_id: str,
     attributes: List[Dict[str, Any]],
     with_commit: bool = False,
-) -> List[DataBlockAttributes]:
+) -> List[DataBlockAttribute]:
     """
     Create multiple attributes at once.
     Each attribute dict should contain: name, data_type, and optionally state.
@@ -137,7 +137,7 @@ def create_many(
 
     for idx, attr in enumerate(attributes):
         relative_position += idx + 1
-        attribute = DataBlockAttributes(
+        attribute = DataBlockAttribute(
             data_block_id=data_block_id,
             name=attr.get("column_name"),
             data_type=attr.get("column_data_type", DataTypes.TEXT.value),
@@ -149,7 +149,8 @@ def create_many(
         created_attributes.append(attribute)
 
     for attr in get_all(
-        data_block_id, state_filter=[AttributeState.USER_CREATED.value]
+        data_block_id,
+        state_filter=[AttributeState.UPLOADED.value, AttributeState.USABLE.value],
     ):
         relative_position += 1
         attr.relative_position = relative_position
@@ -174,7 +175,7 @@ def update(
     progress: Optional[float] = None,
     additional_config: Optional[Dict[str, Any]] = None,
     with_commit: bool = False,
-) -> DataBlockAttributes:
+) -> DataBlockAttribute:
     attribute = get(data_block_id, attribute_id)
     if not attribute:
         return None
@@ -209,17 +210,17 @@ def update(
 
 
 def delete(data_block_id: str, attribute_id: str, with_commit: bool = False) -> None:
-    session.query(DataBlockAttributes).filter(
-        DataBlockAttributes.data_block_id == data_block_id,
-        DataBlockAttributes.id == attribute_id,
+    session.query(DataBlockAttribute).filter(
+        DataBlockAttribute.data_block_id == data_block_id,
+        DataBlockAttribute.id == attribute_id,
     ).delete()
     general.flush_or_commit(with_commit)
 
 
 def delete_automatically_created(data_block_id: str, with_commit: bool = False) -> None:
-    session.query(DataBlockAttributes).filter(
-        DataBlockAttributes.data_block_id == data_block_id,
-        DataBlockAttributes.state == AttributeState.AUTOMATICALLY_CREATED.value,
+    session.query(DataBlockAttribute).filter(
+        DataBlockAttribute.data_block_id == data_block_id,
+        DataBlockAttribute.state == AttributeState.AUTOMATICALLY_CREATED.value,
     ).delete()
     general.flush_or_commit(with_commit)
 
@@ -227,9 +228,9 @@ def delete_automatically_created(data_block_id: str, with_commit: bool = False) 
 def delete_many(
     data_block_id: str, attribute_ids: List[str], with_commit: bool = False
 ) -> None:
-    session.query(DataBlockAttributes).filter(
-        DataBlockAttributes.data_block_id == data_block_id,
-        DataBlockAttributes.id.in_(attribute_ids),
+    session.query(DataBlockAttribute).filter(
+        DataBlockAttribute.data_block_id == data_block_id,
+        DataBlockAttribute.id.in_(attribute_ids),
     ).delete()
     general.flush_or_commit(with_commit)
 
@@ -238,7 +239,7 @@ def sync_attributes_from_schema(
     data_block_id: str,
     schema: List[Dict[str, str]],
     with_commit: bool = False,
-) -> List[DataBlockAttributes]:
+) -> List[DataBlockAttribute]:
     """
     Synchronize attributes from a schema definition.
     This replaces the old sql_schema column functionality.
@@ -249,7 +250,7 @@ def sync_attributes_from_schema(
         with_commit: Whether to commit the transaction
 
     Returns:
-        List of created/updated DataBlockAttributes
+        List of created/updated DataBlockAttribute
     """
     # Delete existing attributes for this data block
     delete_automatically_created(data_block_id, with_commit=False)

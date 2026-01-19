@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Set
 from sqlglot import parse_one, tokenize
 from sqlglot.errors import ParseError
 from sqlglot import expressions as exp
@@ -29,14 +29,15 @@ def validate_sql_clause(
     order_by: Optional[str] = None,
     include_db_check: bool = False,
     extend_allowed_nodes: Optional[set] = None,
+    extend_disallowed_column_prefix: Optional[set] = None,
     db_check_tautology: bool = False,
     tautology_check_project_id: Optional[str] = None,
 ) -> str | None | Dict[str, Optional[str]]:
     """
     Validate a user-provided SQL clause for security.
-    
+
     Returns None if safe, otherwise a string reason for rejection.
-    
+
     Parameters:
         select: SELECT clause content (without SELECT keyword)
         where: WHERE clause content (without WHERE keyword)
@@ -75,6 +76,7 @@ def validate_sql_clause(
                     **{key: val},
                     include_db_check=False,
                     extend_allowed_nodes=extend_allowed_nodes,
+                    extend_disallowed_column_prefix=extend_disallowed_column_prefix,
                 )
             else:
                 deny_reason = None
@@ -109,7 +111,12 @@ def validate_sql_clause(
                 all_results["db_check"] = f"Database error when validating clauses: {e}"
 
         # Database-based tautology check for multi-clause validation
-        if not any(all_results.values()) and db_check_tautology and where and tautology_check_project_id:
+        if (
+            not any(all_results.values())
+            and db_check_tautology
+            and where
+            and tautology_check_project_id
+        ):
             tautology_result = validate_sql_clause(
                 where=where,
                 extend_allowed_nodes=extend_allowed_nodes,
@@ -139,7 +146,10 @@ def validate_sql_clause(
         return f"Query too long: {len(clause_text)} characters (maximum allowed: {MAX_QUERY_LENGTH})"
 
     # Step 1: reject unsafe tokens
-    if reason := __contains_disallowed_tokens(clause_text):
+    if reason := __contains_disallowed_tokens(
+        select or where or group_by or order_by,
+        extend_disallowed_column_prefix,
+    ):
         return reason
 
     # Step 2: parse the clause in context
@@ -221,23 +231,23 @@ def validate_sql_clause(
                 type_str = str(to_type).lower()
                 # All PostgreSQL pseudo-types that reference system catalogs
                 dangerous_types = [
-                    "regclass",       # OID of relation
-                    "regcollation",   # OID of collation
-                    "regconfig",      # OID of text search config
+                    "regclass",  # OID of relation
+                    "regcollation",  # OID of collation
+                    "regconfig",  # OID of text search config
                     "regdictionary",  # OID of text search dictionary
-                    "regnamespace",   # OID of namespace
-                    "regoper",        # OID of operator
-                    "regoperator",    # OID of operator with types
-                    "regproc",        # OID of function
-                    "regprocedure",   # OID of function with types
-                    "regrole",        # OID of role
-                    "regtype",        # OID of type
-                    "oid",            # Object identifier
-                    "xid",            # Transaction ID
-                    "cid",            # Command ID
-                    "tid",            # Tuple ID (physical location)
-                    "name",           # Internal name type
-                    "refcursor",      # Cursor reference
+                    "regnamespace",  # OID of namespace
+                    "regoper",  # OID of operator
+                    "regoperator",  # OID of operator with types
+                    "regproc",  # OID of function
+                    "regprocedure",  # OID of function with types
+                    "regrole",  # OID of role
+                    "regtype",  # OID of type
+                    "oid",  # Object identifier
+                    "xid",  # Transaction ID
+                    "cid",  # Command ID
+                    "tid",  # Tuple ID (physical location)
+                    "name",  # Internal name type
+                    "refcursor",  # Cursor reference
                 ]
                 if any(dt in type_str for dt in dangerous_types):
                     return f"Dangerous system type cast not allowed: {type_str}"
@@ -266,9 +276,22 @@ def validate_sql_clause(
                     if isinstance(arg, exp.Literal) and arg.is_string:
                         path_str = arg.this.upper()
                         # Block any SQL keywords that could indicate injection attempts
-                        sql_keywords = ["SELECT", "INSERT", "UPDATE", "DELETE", "DROP", 
-                                       "TRUNCATE", "ALTER", "CREATE", "EXECUTE", "UNION",
-                                       "FROM", "WHERE", "JOIN", "INTO"]
+                        sql_keywords = [
+                            "SELECT",
+                            "INSERT",
+                            "UPDATE",
+                            "DELETE",
+                            "DROP",
+                            "TRUNCATE",
+                            "ALTER",
+                            "CREATE",
+                            "EXECUTE",
+                            "UNION",
+                            "FROM",
+                            "WHERE",
+                            "JOIN",
+                            "INTO",
+                        ]
                         for keyword in sql_keywords:
                             if keyword in path_str:
                                 return f"SQL keyword '{keyword}' not allowed in JSON path expression"
@@ -348,7 +371,7 @@ def validate_sql_clause(
                         has_column_or_aggregate = True
                 except ValueError:
                     pass
-            
+
             if not has_column_or_aggregate:
                 for n in ordered_expr.walk():
                     if isinstance(n, (exp.Column, exp.Identifier)):
@@ -466,27 +489,30 @@ def validate_sql_clause(
             result = general.execute_all(tautology_check_sql)
             if result and len(result) > 0 and result[0]["is_tautology"]:
                 return "Database tautology check: WHERE condition evaluates to TRUE for all records in project"
-        except Exception as e:
+        except Exception:
             # Don't fail validation if tautology check fails - it's an optional extra check
             general.rollback()
-            # Log but don't block: the static checks are the primary defense
-            pass
 
     return None
 
 
-def __contains_disallowed_tokens(sql: str) -> str | None:
+def __contains_disallowed_tokens(
+    sql: str, extend_disallowed_column_prefix: Optional[Set[str]] = None
+) -> str | None:
     """
     Check for comments or dangerous system functions.
     Returns a string reason if disallowed, None otherwise.
     """
+    disallowed_column_prefix = set(DISALLOWED_COLUMN_PREFIX).union(
+        extend_disallowed_column_prefix or set()
+    )
     try:
         for t in tokenize(sql):
             if t.token_type not in ALLOWED_TOKEN_TYPES:
                 return f"Disallowed token type: {t.text}"
             if (
                 t.token_type == TokenType.IDENTIFIER or t.token_type == TokenType.VAR
-            ) and t.text.lower().startswith(DISALLOWED_COLUMN_PREFIX):
+            ) and t.text.lower().startswith(tuple(disallowed_column_prefix)):
                 return f"Disallowed system function: {t.text}"
             if t.comments:
                 return "Comments are not allowed"
@@ -766,20 +792,32 @@ def __contains_always_true(expr):
         left_val = __get_constant_value(expr.left)
         right_val = __get_constant_value(expr.right)
         # Both must be resolvable constants
-        if not isinstance(left_val, _ConstantNotResolvable) and not isinstance(right_val, _ConstantNotResolvable):
+        if not isinstance(left_val, _ConstantNotResolvable) and not isinstance(
+            right_val, _ConstantNotResolvable
+        ):
             if left_val is not None and right_val is not None:
                 try:
                     # Evaluate the comparison
                     if isinstance(expr, exp.LT) and left_val < right_val:
-                        return f"Constant comparison tautology: {left_val} < {right_val}"
+                        return (
+                            f"Constant comparison tautology: {left_val} < {right_val}"
+                        )
                     if isinstance(expr, exp.GT) and left_val > right_val:
-                        return f"Constant comparison tautology: {left_val} > {right_val}"
+                        return (
+                            f"Constant comparison tautology: {left_val} > {right_val}"
+                        )
                     if isinstance(expr, exp.LTE) and left_val <= right_val:
-                        return f"Constant comparison tautology: {left_val} <= {right_val}"
+                        return (
+                            f"Constant comparison tautology: {left_val} <= {right_val}"
+                        )
                     if isinstance(expr, exp.GTE) and left_val >= right_val:
-                        return f"Constant comparison tautology: {left_val} >= {right_val}"
+                        return (
+                            f"Constant comparison tautology: {left_val} >= {right_val}"
+                        )
                     if isinstance(expr, exp.NEQ) and left_val != right_val:
-                        return f"Constant comparison tautology: {left_val} != {right_val}"
+                        return (
+                            f"Constant comparison tautology: {left_val} != {right_val}"
+                        )
                 except Exception:
                     pass
 
@@ -891,15 +929,15 @@ def __check_regex_complexity(parsed) -> str | None:
                     if re.search(dangerous, pattern):
                         return f"Potentially dangerous regex pattern detected (could cause performance issues): {pattern[:50]}..."
 
-                # Check for excessive quantifier nesting like (a+)+ or (a*)* 
+                # Check for excessive quantifier nesting like (a+)+ or (a*)*
                 # These can cause exponential backtracking
-                nested_quantifier_pattern = r'\([^)]*[+*][^)]*\)[+*]'
+                nested_quantifier_pattern = r"\([^)]*[+*][^)]*\)[+*]"
                 if re.search(nested_quantifier_pattern, pattern):
                     return f"Nested quantifiers in regex pattern could cause performance issues: {pattern[:50]}..."
 
                 # Check for excessive alternation with overlap
                 # e.g., (a|a|a|a|a|a|a|a|a|a) - many similar alternatives
-                if pattern.count('|') > 20:
+                if pattern.count("|") > 20:
                     return f"Too many alternatives in regex pattern: {pattern.count('|')} (maximum recommended: 20)"
 
     return None

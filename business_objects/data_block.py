@@ -2,7 +2,7 @@ from typing import Dict, List, Optional
 
 from submodules.model.business_objects import general
 from submodules.model.session import session
-from submodules.model import DataBlock, DataBlockResults
+from submodules.model import DataBlock, DataBlockResult
 from submodules.model.enums import DataBlockType
 
 
@@ -15,6 +15,11 @@ def get(org_id: str, id: str) -> DataBlock:
         )
         .first()
     )
+
+
+def get_by_id(data_block_id: str) -> DataBlock:
+    """Get a data block by ID without requiring org_id."""
+    return session.query(DataBlock).filter(DataBlock.id == data_block_id).first()
 
 
 def get_by_project_id(org_id: str, project_id: str) -> List[DataBlock]:
@@ -102,31 +107,31 @@ def delete_many(
     general.flush_or_commit(with_commit)
 
 
-def get_result(project_id: str, data_block_id: str) -> Optional[DataBlockResults]:
+def get_result(project_id: str, data_block_id: str) -> Optional[DataBlockResult]:
     return (
-        session.query(DataBlockResults)
+        session.query(DataBlockResult)
         .filter(
-            DataBlockResults.project_id == project_id,
-            DataBlockResults.data_block_id == data_block_id,
+            DataBlockResult.project_id == project_id,
+            DataBlockResult.data_block_id == data_block_id,
         )
         .first()
     )
 
 
-def get_result_by_data_block_id(data_block_id: str) -> DataBlockResults:
+def get_result_by_data_block_id(data_block_id: str) -> DataBlockResult:
     return (
-        session.query(DataBlockResults)
+        session.query(DataBlockResult)
         .filter(
-            DataBlockResults.data_block_id == data_block_id,
+            DataBlockResult.data_block_id == data_block_id,
         )
         .first()
     )
 
 
-def get_results_by_project_id(project_id: str) -> List[DataBlockResults]:
+def get_results_by_project_id(project_id: str) -> List[DataBlockResult]:
     return (
-        session.query(DataBlockResults)
-        .filter(DataBlockResults.project_id == project_id)
+        session.query(DataBlockResult)
+        .filter(DataBlockResult.project_id == project_id)
         .all()
     )
 
@@ -137,8 +142,8 @@ def create_result(
     data: Dict,
     sql_used: str,
     with_commit: bool = True,
-) -> DataBlockResults:
-    result = DataBlockResults(
+) -> DataBlockResult:
+    result = DataBlockResult(
         project_id=project_id,
         data_block_id=data_block_id,
         sql_used=sql_used,
@@ -154,7 +159,7 @@ def update_result(
     data: Optional[Dict] = None,
     sql_used: Optional[str] = None,
     with_commit: bool = True,
-) -> Optional[DataBlockResults]:
+) -> Optional[DataBlockResult]:
     result = get_result(project_id, data_block_id)
     if not result:
         return None
@@ -170,9 +175,9 @@ def update_result(
 
 
 def delete_result(project_id: str, result_id: str, with_commit: bool = True) -> None:
-    session.query(DataBlockResults).filter(
-        DataBlockResults.project_id == project_id,
-        DataBlockResults.id == result_id,
+    session.query(DataBlockResult).filter(
+        DataBlockResult.project_id == project_id,
+        DataBlockResult.id == result_id,
     ).delete()
     general.flush_or_commit(with_commit)
 
@@ -180,8 +185,8 @@ def delete_result(project_id: str, result_id: str, with_commit: bool = True) -> 
 def delete_results_by_data_block_id(
     project_id: str, data_block_id: str, with_commit: bool = True
 ) -> None:
-    session.query(DataBlockResults).filter(
-        DataBlockResults.project_id == project_id,
-        DataBlockResults.data_block_id == data_block_id,
+    session.query(DataBlockResult).filter(
+        DataBlockResult.project_id == project_id,
+        DataBlockResult.data_block_id == data_block_id,
     ).delete()
     general.flush_or_commit(with_commit)
