@@ -272,6 +272,9 @@ def get_schema_as_list(data_block_id: str) -> List[Dict[str, str]]:
             "state": attr.state,
             "id": attr.id,
             "user_created": attr.user_created,
+            "additional_config": (
+                attr.additional_config if attr.additional_config else {}
+            ),
         }
         for attr in attributes
     ]
