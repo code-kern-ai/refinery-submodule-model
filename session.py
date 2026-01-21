@@ -12,6 +12,12 @@ from .util import collect_engine_variables
 from threading import Lock
 import time
 
+try:
+    SESSION_TIMEOUT_LIMIT = int(os.getenv("SESSION_TIMEOUT_LIMIT", "30"))
+except Exception:
+    # ensure that SESSION_TIMEOUT_LIMIT is always an integer
+    SESSION_TIMEOUT_LIMIT = 30
+
 session_lock = Lock()
 
 request_id_ctx_var = ContextVar("request_id", default=None)
@@ -101,7 +107,9 @@ def start_session_cleanup_thread():
 def __start_session_cleanup():
     while True:
         with session_lock:
-            sessions = general.get_session_lookup(exclude_last_x_seconds=30 * 60)
+            sessions = general.get_session_lookup(
+                exclude_last_x_seconds=SESSION_TIMEOUT_LIMIT * 60
+            )
             for session in sessions:
                 try:
                     general.force_remove_and_refresh_session_by_id(
