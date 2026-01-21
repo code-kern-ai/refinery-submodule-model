@@ -1,8 +1,8 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from submodules.model.business_objects import general
 from submodules.model.session import session
-from submodules.model import DataBlock, DataBlockResult
+from submodules.model import DataBlock
 from submodules.model.enums import DataBlockType
 
 
@@ -22,7 +22,7 @@ def get_by_id(data_block_id: str) -> DataBlock:
     return session.query(DataBlock).filter(DataBlock.id == data_block_id).first()
 
 
-def get_by_project_id(org_id: str, project_id: str) -> List[DataBlock]:
+def get_all_by_project_id(org_id: str, project_id: str) -> List[DataBlock]:
     return (
         session.query(DataBlock)
         .filter(
@@ -63,7 +63,7 @@ def create(
         name=name,
         description=description,
         type=type.value,
-        # sql_config={},
+        sql_data=[],
     )
     general.add(data_block, with_commit)
     return data_block
@@ -74,8 +74,9 @@ def update(
     data_block_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    sql_config: Optional[Dict[str, Dict[str, str]]] = None,
-    overwrite_sql_config: bool = False,
+    sql_config: Optional[Dict[str, Dict[str, Any]]] = None,
+    sql_data: Optional[List[Dict[str, str]]] = None,
+    overwrite_sql: bool = False,
     with_commit: bool = True,
 ) -> DataBlock:
     data_block = get(org_id, data_block_id)
@@ -84,10 +85,18 @@ def update(
         data_block.name = name
     if description:
         data_block.description = description
-    if sql_config is not None:
-        if overwrite_sql_config:
+
+    if overwrite_sql:
+        if sql_data is not None:
+            data_block.sql_data = sql_data
+        if sql_config is not None:
             data_block.sql_config = sql_config
-        else:
+    else:
+        if sql_data is not None:
+            if not data_block.sql_data:
+                data_block.sql_data = []
+            data_block.sql_data.extend(sql_data)
+        if sql_config is not None:
             if not data_block.sql_config:
                 data_block.sql_config = {}
             data_block.sql_config.update(sql_config)
@@ -103,90 +112,5 @@ def delete_many(
         DataBlock.organization_id == org_id,
         DataBlock.project_id == project_id,
         DataBlock.id.in_(ids),
-    ).delete()
-    general.flush_or_commit(with_commit)
-
-
-def get_result(project_id: str, data_block_id: str) -> Optional[DataBlockResult]:
-    return (
-        session.query(DataBlockResult)
-        .filter(
-            DataBlockResult.project_id == project_id,
-            DataBlockResult.data_block_id == data_block_id,
-        )
-        .first()
-    )
-
-
-def get_result_by_data_block_id(data_block_id: str) -> DataBlockResult:
-    return (
-        session.query(DataBlockResult)
-        .filter(
-            DataBlockResult.data_block_id == data_block_id,
-        )
-        .first()
-    )
-
-
-def get_results_by_project_id(project_id: str) -> List[DataBlockResult]:
-    return (
-        session.query(DataBlockResult)
-        .filter(DataBlockResult.project_id == project_id)
-        .all()
-    )
-
-
-def create_result(
-    project_id: str,
-    data_block_id: str,
-    data: Dict,
-    sql_used: str,
-    with_commit: bool = True,
-) -> DataBlockResult:
-    result = DataBlockResult(
-        project_id=project_id,
-        data_block_id=data_block_id,
-        sql_used=sql_used,
-        data=data,
-    )
-    general.add(result, with_commit)
-    return result
-
-
-def update_result(
-    project_id: str,
-    data_block_id: str,
-    data: Optional[Dict] = None,
-    sql_used: Optional[str] = None,
-    with_commit: bool = True,
-) -> Optional[DataBlockResult]:
-    result = get_result(project_id, data_block_id)
-    if not result:
-        return None
-
-    if data is not None:
-        result.data = data
-
-    if sql_used is not None:
-        result.sql_used = sql_used
-
-    general.add(result, with_commit)
-    return result
-
-
-def delete_result(project_id: str, result_id: str, with_commit: bool = True) -> None:
-    session.query(DataBlockResult).filter(
-        DataBlockResult.project_id == project_id,
-        DataBlockResult.id == result_id,
-    ).delete()
-    general.flush_or_commit(with_commit)
-
-
-def delete_results_by_data_block_id(
-    project_id: str, data_block_id: str, with_commit: bool = True
-) -> None:
-    session.query(DataBlockResult).filter(
-        DataBlockResult.project_id == project_id,
-        DataBlockResult.data_block_id == data_block_id,
     ).delete()
     general.flush_or_commit(with_commit)

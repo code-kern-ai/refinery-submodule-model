@@ -94,16 +94,13 @@ VALID_CASES = [
     "nullif(data->>'status', 'pending') IS NOT NULL",
     "(data->>'count')::int + (data->>'bonus')::int >= 50",
     # --- Aggregates with 1 (NOT * - * is never allowed) ---
-    {
-        "select": "count(1), data->>'category'",
-        "group_by": "data->>'category'"
-    },
+    {"select": "count(1), data->>'category'", "group_by": "data->>'category'"},
     {
         "select": "count(1), sum((data->>'amount')::numeric)",
-        "group_by": "data->>'category'"
+        "group_by": "data->>'category'",
     },
     {
         "select": "count(1), count(DISTINCT data->>'user_id')",
-        "where": "data->>'action' = 'login'"
+        "where": "data->>'action' = 'login'",
     },
 ]

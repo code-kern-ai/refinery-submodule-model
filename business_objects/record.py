@@ -986,10 +986,10 @@ def get_records_by_running_ids(project_id: str, running_ids: List[int]) -> List[
 def get_record_data_by_sanitized_params(
     refinery_project_id: str,
     sanitized_where: str,
-    limit: int,
+    limit: Optional[int] = None,
     sanitized_select: Optional[str] = None,
     order_by: Optional[str] = None,
-    group_by: Optional[str] = None,
+    sanitized_group_by: Optional[str] = None,
     return_query: bool = False,
 ) -> List[Dict[str, Any]]:
     ## only to be used in cognition and with sql_validator check!!
@@ -1004,16 +1004,15 @@ def get_record_data_by_sanitized_params(
     if order_by:
         order_by = prevent_sql_injection(order_by, isinstance(order_by, str))
         final_order = f" ORDER BY {order_by} "
-    if group_by:
-        group_by = prevent_sql_injection(group_by, isinstance(group_by, str))
-        final_group = f" GROUP BY {group_by} "
+    if sanitized_group_by:
+        final_group = f" GROUP BY {sanitized_group_by} "
     query = f"""
     SELECT {sanitized_select or 'r.data::JSON'}
     FROM public.record r
     WHERE project_id = '{refinery_project_id}' {final_where}
-    {final_order}
     {final_group}
-    LIMIT {limit}
+    {final_order}
+    {f"LIMIT {limit}" if limit is not None else ""}
     """
     if return_query:
         return query

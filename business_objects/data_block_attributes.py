@@ -10,13 +10,6 @@ from ..models import DataBlockAttribute
 from ..session import session
 
 
-DEFAULT_ATTRIBUTE_STATES_USEABLE = [
-    AttributeState.UPLOADED.value,
-    AttributeState.USABLE.value,
-    AttributeState.AUTOMATICALLY_CREATED.value,
-]
-
-
 def get(data_block_id: str, attribute_id: str) -> DataBlockAttribute:
     return (
         session.query(DataBlockAttribute)
@@ -66,7 +59,7 @@ def get_all_by_names(
     )
 
 
-def get_relative_position(data_block_id: str) -> int:
+def get_max_relative_position(data_block_id: str) -> int:
     result = (
         session.query(func.max(DataBlockAttribute.relative_position))
         .filter(DataBlockAttribute.data_block_id == data_block_id)
@@ -144,6 +137,8 @@ def create_many(
             relative_position=relative_position,
             user_created=attr.get("user_created", False),
             state=attr.get("state", AttributeState.AUTOMATICALLY_CREATED.value),
+            is_primary_key=attr.get("is_primary_key", False),
+            additional_config=attr.get("additional_config", {}),
         )
         general.add(attribute, with_commit=False)
         created_attributes.append(attribute)
@@ -267,10 +262,10 @@ def get_schema_as_list(data_block_id: str) -> List[Dict[str, str]]:
     attributes = get_all(data_block_id, state_filter=None)
     return [
         {
+            "id": attr.id,
             "column_name": attr.name,
             "column_data_type": attr.data_type,
             "state": attr.state,
-            "id": attr.id,
             "user_created": attr.user_created,
             "additional_config": (
                 attr.additional_config if attr.additional_config else {}

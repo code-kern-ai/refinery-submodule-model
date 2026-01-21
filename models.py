@@ -1165,25 +1165,9 @@ class DataBlock(Base):
     name = Column(String)
     description = Column(String)
     type = Column(String)  # enum.DataBlockType
+
     sql_config = Column(JSON)
-    # sql_schema = Column(ARRAY(JSON))
-
-
-class DataBlockResult(Base):
-    __tablename__ = Tablenames.DATA_BLOCK_RESULTS.value
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    data_block_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.DATA_BLOCK.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    sql_used = Column(String)
-    data = Column(JSON)
+    sql_data = Column(ARRAY(JSON))
 
 
 class DataBlockAttribute(Base):
@@ -1197,7 +1181,8 @@ class DataBlockAttribute(Base):
         index=True,
     )
     name = Column(String)
-    data_type = Column(String)
+    data_type = Column(String)  # of type enums.DataTypes
+    is_primary_key = Column(Boolean, default=False)
     relative_position = Column(Integer)
     user_created = Column(Boolean, default=False)
     source_code = Column(String)
