@@ -2221,7 +2221,7 @@ class CognitionIntegration(Base):
     name = Column(String)
     description = Column(String)
     tokenizer = Column(String)
-    state = Column(String)  # of type enums.CognitionMarkdownFileState.*.value
+    state = Column(String)  # of type enums.CognitionIntegrationState.*.value
     type = Column(String)  # of type enums.CognitionIntegrationType.*.value
     config = Column(JSON)
     """JSON object that contains the configuration for the integration type.

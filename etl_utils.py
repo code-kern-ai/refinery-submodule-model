@@ -217,11 +217,9 @@ def get_full_config_for_webpage_integration(
         {
             "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
             "task_config": {
-                "http": [
+                "integration": [
                     {
-                        "url": "http://cognition-integration-provider:80/etl/status/{integration_id}",
-                        "url_format": {"integration_id": str(integration.id)},
-                        "method": "PUT",
+                        "integration_id": str(integration.id),
                     }
                 ]
             },
@@ -317,11 +315,9 @@ def get_full_config_for_sharepoint_integration(
         {
             "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
             "task_config": {
-                "http": [
+                "integration": [
                     {
-                        "url": "http://cognition-integration-provider:80/etl/status/{integration_id}",
-                        "url_format": {"integration_id": str(integration.id)},
-                        "method": "PUT",
+                        "integration_id": str(integration.id),
                     }
                 ]
             },

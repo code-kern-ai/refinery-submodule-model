@@ -1276,3 +1276,14 @@ class InboxMailThreadSupportProgressState(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     RESOLVED = "RESOLVED"
     FAILED = "FAILED"
+
+
+class CognitionIntegrationState(Enum):
+    QUEUE = "QUEUE"
+    STARTED = "STARTED"
+    EXTRACTING = "EXTRACTING"
+    ETL_PROCESSING = "ETL_PROCESSING"
+    LOADING = "LOADING"  # e.g. to integration records
+    REFINERY_SYNCING = "REFINERY_SYNCING"  ## e.g. syncing with refinery (records + postprocessing permissions)
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"

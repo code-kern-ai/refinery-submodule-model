@@ -8,16 +8,13 @@ from ..business_objects import general
 from ..integration_objects import manager as integration_records_bo
 from ..session import session
 from ..models import CognitionIntegration, CognitionGroup, EtlTask
-from ..enums import (
-    CognitionMarkdownFileState,
-    CognitionIntegrationType,
-)
+from ..enums import CognitionIntegrationType, CognitionIntegrationState
 from ..util import prevent_sql_injection
 from submodules.model import enums
 
 FINISHED_STATES = [
-    CognitionMarkdownFileState.FINISHED.value,
-    CognitionMarkdownFileState.FAILED.value,
+    CognitionIntegrationState.FINISHED.value,
+    CognitionIntegrationState.FAILED.value,
 ]
 
 
@@ -47,7 +44,7 @@ def get_all(
         query = query.filter(CognitionIntegration.type == integration_type)
     if exclude_failed:
         query = query.filter(
-            CognitionIntegration.state != CognitionMarkdownFileState.FAILED.value
+            CognitionIntegration.state != CognitionIntegrationState.FAILED.value
         )
     if only_synced:
         query = query.filter(CognitionIntegration.is_synced == True)
@@ -100,7 +97,7 @@ def get_all_in_org(
         query = query.filter(CognitionIntegration.is_synced == True)
     if exclude_failed:
         query = query.filter(
-            CognitionIntegration.state != CognitionMarkdownFileState.FAILED.value
+            CognitionIntegration.state != CognitionIntegrationState.FAILED.value
         )
     return query.order_by(CognitionIntegration.created_at.desc()).all()
 
@@ -188,7 +185,7 @@ def get_integration_progress(
 
     if (
         count_all_records == 0
-        or integration.state == enums.CognitionMarkdownFileState.FAILED.value
+        or integration.state == enums.CognitionIntegrationState.FAILED.value
     ):
         return 0.0
 
@@ -270,7 +267,7 @@ def update(
     name: Optional[str] = None,
     description: Optional[str] = None,
     tokenizer: Optional[str] = None,
-    state: Optional[CognitionMarkdownFileState] = None,
+    state: Optional[CognitionIntegrationState] = None,
     integration_config: Optional[int] = None,
     llm_config: Optional[Dict] = None,
     error_message: Optional[str] = None,
@@ -555,3 +552,18 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
     """
 
     return general.execute_all(query)
+
+
+def get_integration_etl_all_finished(integration_id: str) -> bool:
+    IntegrationModel = integration_records_bo.integration_model(integration_id)
+    return (
+        session.query(EtlTask)
+        .join(
+            IntegrationModel,
+            (EtlTask.id == IntegrationModel.etl_task_id)
+            & (IntegrationModel.integration_id == integration_id),
+        )
+        .filter(EtlTask.is_active == True)
+        .filter(EtlTask.state.notin_(FINISHED_STATES))
+        .first()
+    ) is None
