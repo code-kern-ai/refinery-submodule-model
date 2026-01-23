@@ -177,19 +177,25 @@ def get_all_etl_tasks(
     )
 
 
+# TODO change this funciton for cognition-gateway
 def get_integration_progress(
     integration_id: str,
+    by: Optional[str] = None,
+    scope: Optional[str] = enums.IntegrationRecordScope.ROOT.value,
 ) -> float:
+
     integration = get_by_id(integration_id)
-    count_all_records = integration_records_bo.count(integration)
+    count_all_records = integration_records_bo.count(integration, by, scope)
 
     if (
         count_all_records == 0
         or integration.state == enums.CognitionIntegrationState.FAILED.value
     ):
+
         return 0.0
 
     all_tasks = get_all_etl_tasks(integration_id)
+
     finished_tasks = [task for task in all_tasks if task.state in FINISHED_STATES]
     count_finished_tasks = len(finished_tasks)
 
@@ -198,9 +204,10 @@ def get_integration_progress(
         all_records, _ = integration_records_bo.get_all_by_integration_id(
             integration_id
         )
-        count_finished_tasks += len(
+        additional_finished = len(
             [record for record in all_records if not record.etl_task_id]
         )
+        count_finished_tasks += additional_finished
 
     integration_progress = round((count_finished_tasks / count_all_records) * 100.0, 2)
     if integration.state not in FINISHED_STATES:

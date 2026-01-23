@@ -246,7 +246,7 @@ def get_full_config_for_sharepoint_integration(
             "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
             "task_config": {
                 "use_cache": False,
-                "strategy": enums.ETLSplitStrategy.SHRINK.value,
+                "strategy": enums.ETLSplitStrategy.CHUNK.value,
                 "chunk_size": integration.config.get("split_kwargs", {}).get(
                     "chunk_size", 16384
                 ),
@@ -275,25 +275,6 @@ def get_full_config_for_sharepoint_integration(
                         "name": enums.ETLTransformer.TEXT_TO_TABLE.value,
                         "system_prompt": None,
                         "user_prompt": None,
-                    },
-                    {
-                        "enabled": True,
-                        "name": enums.ETLTransformer.SUMMARIZE.value,
-                        "system_prompt": None,
-                        "user_prompt": " ".join(
-                            (
-                                "You are a helpful AI assistant that summarizes documents.",
-                                "Your task is to provide a concise summary of the provided text.",
-                                "You will be given a context, and you should summarize it in a clear and concise manner.",
-                                "The summary should capture the main points and key information from the context.",
-                                (
-                                    f"You are summarizing the list of file paths in folder `{record.parent_path}`."
-                                    if record.extension == "FOLDER"
-                                    else f"You are summarizing the file `{record.name}` in folder `{record.parent_path}`."
-                                ),
-                                f"IT IS CRUCIAL THAT YOU ONLY ANSWER IN ISO-639-1:{integration.tokenizer[:2]}",
-                            )
-                        ),
                     },
                 ],
             },

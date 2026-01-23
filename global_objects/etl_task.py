@@ -190,11 +190,6 @@ def get_or_create_integration_etl_task(
     priority: Optional[int] = -1,
     file_size_bytes: Optional[int] = None,
 ) -> EtlTask:
-    if etl_task := (
-        session.query(EtlTask).filter(EtlTask.id == record.etl_task_id).first()
-    ):
-        return etl_task
-
     return create(
         org_id=org_id,
         user_id=integration.created_by,

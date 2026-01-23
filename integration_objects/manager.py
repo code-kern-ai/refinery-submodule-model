@@ -3,13 +3,15 @@ from typing import List, Optional, Dict, Tuple, Union, Type, Any
 from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
+from submodules.s3 import enums
 
-from ..enums import CognitionIntegrationType
+from ..enums import CognitionIntegrationType, IntegrationRecordScope
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
 from ..global_objects import etl_task as etl_task_db_bo
 from ..session import session
-from .helper import get_supported_metadata_keys
+from .helper import get_integration_record_identifier, get_supported_metadata_keys
+from enum import Enum
 from ..models import (
     IntegrationSharepoint,
     IntegrationPdf,
@@ -18,6 +20,7 @@ from ..models import (
     IntegrationWebpage,
     CognitionIntegration,
 )
+from submodules.model import enums
 
 
 def get(
@@ -34,15 +37,65 @@ def get(
     return query.order_by(IntegrationModel.created_at.desc()).all()
 
 
-def count(integration: CognitionIntegration) -> int:
+def count(
+    integration: CognitionIntegration,
+    by: str = "source",
+) -> int:
+    IntegrationModel = integration_model(integration=integration)
+    records = (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration.id,
+        )
+        .all()
+    )
+    filtered_records = [
+        x for x in records if re.search(r"#\d$", getattr(x, by, x.source) or "")
+    ]
+
+    for record in filtered_records:
+        print(getattr(record, by, record.source), flush=True)
+
+    return len(filtered_records)
+
+
+def get_last_record(integration: CognitionIntegration) -> Optional[object]:
     IntegrationModel = integration_model(integration=integration)
     return (
         session.query(IntegrationModel)
         .filter(
             IntegrationModel.integration_id == integration.id,
         )
-        .count()
+        .order_by(IntegrationModel.created_at.desc())
+        .first()
     )
+
+
+def get_record_scope(integration_id: str) -> IntegrationRecordScope:
+    integration = integration_db_bo.get_by_id(integration_id)
+    last_record = get_last_record(integration)
+    if last_record is None:
+        return
+    etl_task = etl_task_db_bo.get_by_id(last_record.etl_task_id)
+    if etl_task is None:
+        return
+
+    full_config = etl_task.full_config or []
+    splitting_task = next(
+        (
+            task
+            for task in full_config
+            if task.get("task_type") == enums.CognitionMarkdownFileState.SPLITTING.value
+        ),
+        None,
+    )
+    if (
+        splitting_task
+        and splitting_task.get("task_config", {}).get("strategy")
+        == enums.ETLSplitStrategy.CHUNK.value
+    ):
+        return IntegrationRecordScope.CHUNKS.value
+    return IntegrationRecordScope.ROOT.value
 
 
 def get_by_id(
@@ -96,18 +149,28 @@ def get_by_source(
 def get_all_by_integration_id(
     integration_id: str,
     only_refinery_unsynced: bool = False,
+    scope: Optional[IntegrationRecordScope] = None,
 ) -> Tuple[List[object], Type]:
     IntegrationModel = integration_model(integration_id)
-    return (
-        (
-            session.query(IntegrationModel)
-            .filter(
-                IntegrationModel.integration_id == integration_id,
-                IntegrationModel.refinery_synced == (not only_refinery_unsynced),
+    query = session.query(IntegrationModel).filter(
+        IntegrationModel.integration_id == integration_id
+    )
+    if only_refinery_unsynced:
+        query = query.filter((IntegrationModel.refinery_synced == False))
+    if scope:
+        integration_entity = integration_db_bo.get_by_id(integration_id)
+        record_identifier = getattr(
+            IntegrationModel,
+            get_integration_record_identifier(integration=integration_entity),
+            IntegrationModel.source,
+        )
+        query = query.filter(
+            record_identifier.like(
+                f"%#%" if scope == IntegrationRecordScope.CHUNKS.value else f"%[^#]%"
             )
-            .order_by(IntegrationModel.created_at)
-            .all()
-        ),
+        )
+    return (
+        query.order_by(IntegrationModel.created_at).all(),
         IntegrationModel,
     )
 
@@ -151,15 +214,21 @@ def get_all_by_project_id(
 def get_existing_integration_records(
     integration_id: str,
     by: str = "source",
+    scope: IntegrationRecordScope = IntegrationRecordScope.ALL.value,
 ) -> Dict[str, object]:
 
-    records, _ = get_all_by_integration_id(integration_id)
-    return {
-        getattr(record, by, record.source): record
-        for record in filter(
+    records, _ = get_all_by_integration_id(integration_id, scope)
+
+    if scope == IntegrationRecordScope.ROOT.value:
+        records = filter(
             lambda x: not re.search(r"#\d$", getattr(x, by, x.source) or ""), records
         )
-    }
+    elif scope == IntegrationRecordScope.CHUNKS.value:
+        records = filter(
+            lambda x: re.search(r"#\d$", getattr(x, by, x.source) or ""), records
+        )
+
+    return {getattr(record, by, record.source): record for record in records}
 
 
 def get_related_chunk_records(
@@ -272,6 +341,7 @@ def update(
     error_message: Optional[str] = None,
     etl_task_id: Optional[str] = None,
     content: Optional[str] = None,
+    refinery_synced: Optional[bool] = None,
     with_commit: bool = True,
     **metadata,
 ) -> Optional[object]:
@@ -297,10 +367,12 @@ def update(
     if content is not None:
         integration_record.content = content
         record_updated = True
-    if etl_task_id is not None and integration_record.etl_task_id is None:
+    if etl_task_id is not None:
         integration_record.etl_task_id = etl_task_id
         record_updated = True
-
+    if refinery_synced is not None:
+        integration_record.refinery_synced = refinery_synced
+        record_updated = True
     for key, value in metadata.items():
         if not hasattr(integration_record, key):
             raise ValueError(
@@ -371,3 +443,15 @@ def get_metadata_from_record(record: object) -> Dict[str, Any]:
     supported_keys = get_supported_metadata_keys(record.__tablename__)
     supported_metadata = {key: getattr(record, key) for key in supported_keys}
     return supported_metadata
+
+
+def set_refinery_synced_by_record_ids(
+    integration_id: str,
+    record_ids: List[str],
+    with_commit: bool = True,
+) -> None:
+    IntegrationModel = integration_model(integration_id=integration_id)
+    session.query(IntegrationModel).filter(IntegrationModel.id.in_(record_ids)).update(
+        {IntegrationModel.refinery_synced: True}, synchronize_session=False
+    )
+    general.flush_or_commit(with_commit)

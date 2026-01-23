@@ -1287,3 +1287,9 @@ class CognitionIntegrationState(Enum):
     REFINERY_SYNCING = "REFINERY_SYNCING"  ## e.g. syncing with refinery (records + postprocessing permissions)
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+
+
+class IntegrationRecordScope(Enum):
+    ALL = "ALL"
+    ROOT = "ROOT"
+    CHUNKS = "CHUNKS"
