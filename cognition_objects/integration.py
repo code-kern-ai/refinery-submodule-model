@@ -14,7 +14,7 @@ from submodules.model import enums
 
 FINISHED_STATES = [
     CognitionIntegrationState.FINISHED.value,
-    CognitionIntegrationState.FAILED.value,
+    CognitionIntegrationState.ETL_PROCESSING.value,
 ]
 
 
@@ -556,14 +556,20 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
 
 def get_integration_etl_all_finished(integration_id: str) -> bool:
     IntegrationModel = integration_records_bo.integration_model(integration_id)
-    return (
+
+    etl_tasks_finished = (
         session.query(EtlTask)
         .join(
             IntegrationModel,
             (EtlTask.id == IntegrationModel.etl_task_id)
             & (IntegrationModel.integration_id == integration_id),
         )
-        .filter(EtlTask.is_active == True)
+        .filter(EtlTask.is_active)
         .filter(EtlTask.state.notin_(FINISHED_STATES))
         .first()
     ) is None
+
+    if not etl_tasks_finished:
+        return False
+    integration = get_by_id(integration_id)
+    return integration.state in FINISHED_STATES

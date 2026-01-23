@@ -205,9 +205,7 @@ def duplicate(
     chunk_idx: int,
     by: str = "source",
 ) -> object:
-    print("Starting duplication process", flush=True)
     IntegrationModel = type(integration_record)
-    print(f"IntegrationModel determined: {IntegrationModel.__name__}", flush=True)
 
     duplicated_record = IntegrationModel(
         created_by=integration_record.created_by,
@@ -215,27 +213,21 @@ def duplicate(
         etl_task_id=integration_record.etl_task_id,
         error_message=integration_record.error_message,
         content=content,
+        updated_by=integration_record.updated_by,
+        updated_at=integration_record.updated_at,
+        refinery_synced=integration_record.refinery_synced,
     )
-    print("Base duplicated record created", flush=True)
 
     for key in get_supported_metadata_keys(IntegrationModel.__tablename__):
         value = getattr(integration_record, key)
         setattr(duplicated_record, key, value)
-        print(f"Copied metadata key: {key}, value: {value}", flush=True)
 
     duplicated_record.running_id = running_id
-    print(f"Set running_id: {running_id}", flush=True)
 
     new_attr_value = f"{getattr(integration_record, by)}#{chunk_idx}"
     setattr(duplicated_record, by, new_attr_value)
-    print(f"Set attribute '{by}' to: {new_attr_value}", flush=True)
 
     general.add(duplicated_record, with_commit=False)
-    print(
-        "Duplicated record added to session with attr value:",
-        getattr(duplicated_record, by),
-        flush=True,
-    )
     return duplicated_record
 
 

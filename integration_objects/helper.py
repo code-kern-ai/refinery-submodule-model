@@ -1,6 +1,7 @@
 from typing import Set
 
-from ..enums import Tablenames
+from submodules.model.models import CognitionIntegration
+from submodules.model.enums import CognitionIntegrationType, Tablenames
 
 
 REFINERY_ATTRIBUTE_ACCESS_GROUPS = "<ACCESS_GROUPS>"
@@ -57,3 +58,14 @@ def get_supported_metadata_keys(table_name: str) -> Set[str]:
         # returns: {"source", "minio_file_name", "running_id", "file_path", "page", "total_pages", "title"}
     """
     return DEFAULT_METADATA.union(TABLE_METADATA.get(table_name, set()))
+
+
+def get_integration_record_identifier(
+    integration: CognitionIntegration,
+) -> str:
+    if integration.type == CognitionIntegrationType.SHAREPOINT.value:
+        return "object_id"
+    elif integration.type == CognitionIntegrationType.WEBPAGE.value:
+        return "source"
+    else:
+        return "source"
