@@ -27,6 +27,7 @@ def validate_sql_clause(
     where: Optional[str] = None,
     group_by: Optional[str] = None,
     order_by: Optional[str] = None,
+    limit: Optional[str] = None,
     include_db_check: bool = False,
     extend_allowed_nodes: Optional[set] = None,
     extend_disallowed_column_prefix: Optional[set] = None,
@@ -57,6 +58,8 @@ def validate_sql_clause(
     full_text_search_validation = (
         len(provided_clauses) == 1 and extend_allowed_nodes is None
     )
+    if limit and not limit.isdigit():
+        return "LIMIT is not a valid digit"
     if len(provided_clauses) == 0:
         return "No SELECT, WHERE or ORDER BY clause provided"
     elif len(provided_clauses) > 1 and extend_allowed_nodes is None:
@@ -86,7 +89,7 @@ def validate_sql_clause(
             full_sql = """
             SELECT {select} 
             FROM public.record r
-            WHERE project_id = '00000000-0000-0000-0000-000000000000' {where}
+            WHERE project_id = '00000000-0000-0000-0000-000000000000' AND ({where})
             {group_by} 
             {order_by}
             LIMIT 0 """
@@ -96,6 +99,8 @@ def validate_sql_clause(
                         params[key] = "1"
                     else:
                         params[key] = ""
+                elif key == "where" and params[key] == "":
+                    params[key] = "1=1"
                 elif key == "group_by" and params[key]:
                     params[key] = "GROUP BY " + params[key]
                 elif key == "order_by" and params[key]:
@@ -131,11 +136,7 @@ def validate_sql_clause(
     what = (
         "SELECT"
         if select
-        else "WHERE"
-        if where
-        else "GROUP BY"
-        if group_by
-        else "ORDER BY"
+        else "WHERE" if where else "GROUP BY" if group_by else "ORDER BY"
     )
 
     # Step 0: Check query length and empty/whitespace content
@@ -170,6 +171,8 @@ def validate_sql_clause(
             parsed = parse_one(f"SELECT 1 GROUP BY {group_by}", read="postgres")
         elif order_by:
             parsed = parse_one(f"SELECT 1 ORDER BY {order_by}", read="postgres")
+        elif limit:
+            parsed = parse_one(f"SELECT 1 LIMIT {limit}", read="postgres")
     except ParseError:
         return f"Parse error => invalid {what} condition, check for correct syntax"
 
