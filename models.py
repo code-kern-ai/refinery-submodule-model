@@ -231,6 +231,7 @@ class User(Base):
     auto_logout_minutes = Column(Integer)
     messages_created_this_month = Column(BigInteger, default=0)
     one_drive_path = Column(String)
+    messages_created_today = Column(Integer, default=0)
 
 
 class Team(Base):
