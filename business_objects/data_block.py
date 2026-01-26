@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional, Any
 
+from sqlalchemy.types import Text
+
 from submodules.model.business_objects import general
 from submodules.model.session import session
 from submodules.model import DataBlock
@@ -44,6 +46,23 @@ def get_by_project_id_and_type(
             DataBlock.type == type.value,
         )
         .first()
+    )
+
+
+def get_refinery_attribute_dependants(
+    org_id: str, project_id: str, refinery_attribute_name: str
+) -> List[DataBlock]:
+    return (
+        session.query(DataBlock)
+        .filter(
+            DataBlock.organization_id == org_id,
+            DataBlock.project_id == project_id,
+            DataBlock.type == DataBlockType.STABLE.value,
+            DataBlock.sql_config.cast(Text).like(
+                f"%data->>'{refinery_attribute_name}'%"
+            ),
+        )
+        .all()
     )
 
 
