@@ -233,6 +233,8 @@ class User(Base):
     messages_created_this_month = Column(BigInteger, default=0)
     one_drive_path = Column(String)
     messages_created_today = Column(Integer, default=0)
+    # light users have limited access (e.g. 5 msg per day)
+    is_light_user = Column(Boolean, default=False)
 
 
 class Team(Base):
