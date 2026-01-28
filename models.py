@@ -169,6 +169,7 @@ class Organization(Base):
             TokenLimit.FILE_UPLOAD_INTERVAL.lowercase(): 3600,
         },
     )  # per hour
+    light_user_config = Column(JSON)
 
 
 class User(Base):
@@ -233,6 +234,9 @@ class User(Base):
     one_drive_path = Column(String)
     sound_settings = Column(JSON)
     notification_settings = Column(JSON)
+    messages_created_today = Column(Integer, default=0)
+    # light users have limited access (e.g. 5 msg per day)
+    is_light_user = Column(Boolean, default=False)
 
 
 class Team(Base):

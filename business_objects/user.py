@@ -202,9 +202,9 @@ def delete(user_id: str, with_commit: bool = False) -> None:
 
 def get_missing_users(user_ids: List[str]):
     query = f"""
-    SELECT jsonb_object_agg(u.id, jsonb_build_object('last_interaction', u.last_interaction,'messages_created_this_month', u.messages_created_this_month))
+    SELECT jsonb_object_agg(u.id, jsonb_build_object('last_interaction', u.last_interaction,'messages_created_this_month', u.messages_created_this_month, 'messages_created_today', u.messages_created_today))
     FROM public.user u
-    WHERE id IN ({','.join([f"'{user_id}'" for user_id in user_ids])})
+    WHERE id IN ({",".join([f"'{user_id}'" for user_id in user_ids])})
     """
     value = general.execute_first(query)
     if value is None or value[0] is None:
@@ -232,7 +232,6 @@ def get_active_users_after_filter(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ) -> List[User]:
-
     last_interaction_range = prevent_sql_injection(
         last_interaction_range, isinstance(last_interaction_range, datetime)
     )
