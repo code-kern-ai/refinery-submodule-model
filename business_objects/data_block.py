@@ -50,12 +50,11 @@ def get_by_project_id_and_type(
 
 
 def get_refinery_attribute_dependants(
-    org_id: str, project_id: str, refinery_attribute_name: str
+    project_id: str, refinery_attribute_name: str
 ) -> List[DataBlock]:
     return (
         session.query(DataBlock)
         .filter(
-            DataBlock.organization_id == org_id,
             DataBlock.project_id == project_id,
             DataBlock.type == DataBlockType.STABLE.value,
             DataBlock.sql_config.cast(Text).like(

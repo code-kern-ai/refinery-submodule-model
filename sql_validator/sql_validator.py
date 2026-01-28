@@ -30,7 +30,6 @@ def validate_sql_clause(
     limit: Optional[str] = None,
     include_db_check: bool = False,
     extend_allowed_nodes: Optional[set] = None,
-    extend_disallowed_column_prefix: Optional[set] = None,
     db_check_tautology: bool = False,
     tautology_check_project_id: Optional[str] = None,
 ) -> str | None | Dict[str, Optional[str]]:
@@ -79,7 +78,6 @@ def validate_sql_clause(
                     **{key: val},
                     include_db_check=False,
                     extend_allowed_nodes=extend_allowed_nodes,
-                    extend_disallowed_column_prefix=extend_disallowed_column_prefix,
                 )
             else:
                 deny_reason = None
@@ -147,10 +145,7 @@ def validate_sql_clause(
         return f"Query too long: {len(clause_text)} characters (maximum allowed: {MAX_QUERY_LENGTH})"
 
     # Step 1: reject unsafe tokens
-    if reason := __contains_disallowed_tokens(
-        select or where or group_by or order_by,
-        extend_disallowed_column_prefix,
-    ):
+    if reason := __contains_disallowed_tokens(select or where or group_by or order_by):
         return reason
 
     # Step 2: parse the clause in context
@@ -499,16 +494,12 @@ def validate_sql_clause(
     return None
 
 
-def __contains_disallowed_tokens(
-    sql: str, extend_disallowed_column_prefix: Optional[Set[str]] = None
-) -> str | None:
+def __contains_disallowed_tokens(sql: str) -> str | None:
     """
     Check for comments or dangerous system functions.
     Returns a string reason if disallowed, None otherwise.
     """
-    disallowed_column_prefix = set(DISALLOWED_COLUMN_PREFIX).union(
-        extend_disallowed_column_prefix or set()
-    )
+    disallowed_column_prefix = set(DISALLOWED_COLUMN_PREFIX)
     try:
         for t in tokenize(sql):
             if t.token_type not in ALLOWED_TOKEN_TYPES:
