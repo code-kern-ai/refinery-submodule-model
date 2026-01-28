@@ -16,6 +16,10 @@ FINISHED_STATES = [
     CognitionIntegrationState.FINISHED.value,
     CognitionIntegrationState.ETL_PROCESSING.value,
 ]
+INTEGRATION_TASK_FINISHED_STATES = [
+    CognitionIntegrationState.REFINERY_SYNCING.value,
+    CognitionIntegrationState.FAILED.value,
+]
 
 
 def get_by_ids(ids: List[str]) -> List[CognitionIntegration]:
@@ -341,7 +345,7 @@ def execution_finished(id: str) -> bool:
         session.query(CognitionIntegration)
         .filter(
             CognitionIntegration.id == id,
-            CognitionIntegration.state.in_(FINISHED_STATES),
+            CognitionIntegration.state.in_(INTEGRATION_TASK_FINISHED_STATES),
         )
         .first()
     )
