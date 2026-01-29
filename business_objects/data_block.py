@@ -8,11 +8,12 @@ from submodules.model import DataBlock
 from submodules.model.enums import DataBlockType
 
 
-def get(org_id: str, id: str) -> DataBlock:
+def get(org_id: str, project_id: str, id: str) -> DataBlock:
     return (
         session.query(DataBlock)
         .filter(
             DataBlock.organization_id == org_id,
+            DataBlock.project_id == project_id,
             DataBlock.id == id,
         )
         .first()
@@ -88,6 +89,7 @@ def create(
 
 def update(
     org_id: str,
+    project_id: str,
     data_block_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -96,7 +98,7 @@ def update(
     overwrite_sql: bool = False,
     with_commit: bool = True,
 ) -> DataBlock:
-    data_block = get(org_id, data_block_id)
+    data_block = get(org_id, project_id, data_block_id)
 
     if name:
         data_block.name = name
