@@ -5,9 +5,11 @@ from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
 from . import general
-from ..enums import AttributeState, DataTypes
+from ..enums import Tablenames, AttributeState, DataTypes
 from ..models import DataBlockAttribute
+from ..business_objects.attribute import DEFAULT_ATTRIBUTE_STATES_USEABLE
 from ..session import session
+from ..util import prevent_sql_injection
 
 
 def get(data_block_id: str, attribute_id: str) -> DataBlockAttribute:
@@ -35,15 +37,32 @@ def get_by_name(data_block_id: str, name: str) -> DataBlockAttribute:
 def get_all(
     data_block_id: str,
     state_filter: Optional[List[str]] = None,
+    user_created: Optional[bool] = None,
 ) -> List[DataBlockAttribute]:
     # if state_filter is None:
     #     state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     query = session.query(DataBlockAttribute).filter(
         DataBlockAttribute.data_block_id == data_block_id
     )
-    if state_filter:
+    if state_filter is not None:
         query = query.filter(DataBlockAttribute.state.in_(state_filter))
+    if user_created is not None:
+        query = query.filter(DataBlockAttribute.user_created == user_created)
     return query.order_by(DataBlockAttribute.relative_position.asc()).all()
+
+
+def get_all_by_ids(
+    data_block_id: str,
+    attribute_ids: List[str],
+) -> List[DataBlockAttribute]:
+    return (
+        session.query(DataBlockAttribute)
+        .filter(
+            DataBlockAttribute.data_block_id == data_block_id,
+            DataBlockAttribute.id.in_(attribute_ids),
+        )
+        .all()
+    )
 
 
 def get_all_by_names(
@@ -143,10 +162,7 @@ def create_many(
         general.add(attribute, with_commit=False)
         created_attributes.append(attribute)
 
-    for attr in get_all(
-        data_block_id,
-        state_filter=[AttributeState.UPLOADED.value, AttributeState.USABLE.value],
-    ):
+    for attr in get_all(data_block_id, user_created=True):
         relative_position += 1
         attr.relative_position = relative_position
         general.add(attr, with_commit=False)
@@ -227,6 +243,25 @@ def delete_many(
         DataBlockAttribute.data_block_id == data_block_id,
         DataBlockAttribute.id.in_(attribute_ids),
     ).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_user_created_attribute(
+    data_block_id: str, attribute_name: str, with_commit: bool = False
+) -> None:
+    data_block_id = prevent_sql_injection(data_block_id, isinstance(data_block_id, str))
+    attribute_name = prevent_sql_injection(
+        attribute_name, isinstance(attribute_name, str)
+    )
+    sql = f"""
+    UPDATE {Tablenames.DATA_BLOCK.value}
+    SET sql_data = ARRAY(
+        SELECT (elem::jsonb - '{attribute_name}')::json
+        FROM unnest(sql_data) AS elem
+    )
+    WHERE id = '{data_block_id}'
+    """
+    general.execute(sql)
     general.flush_or_commit(with_commit)
 
 
