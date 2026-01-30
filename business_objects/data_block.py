@@ -133,3 +133,8 @@ def delete_many(
         DataBlock.id.in_(ids),
     ).delete()
     general.flush_or_commit(with_commit)
+
+
+def execute_query(data_block: DataBlock) -> List[Dict[str, Any]]:
+    sql = data_block.sql_config.get("query", "")
+    return general.execute_all(sql)

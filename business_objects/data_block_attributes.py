@@ -106,10 +106,8 @@ def create(
         data_type=data_type,
         relative_position=relative_position,
         user_created=user_created,
+        source_code=source_code,
     )
-
-    if source_code is not None:
-        attribute.source_code = source_code
 
     if state is not None:
         attribute.state = state
