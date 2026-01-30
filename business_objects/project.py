@@ -667,7 +667,15 @@ def get_project_by_project_id_sql(project_id: str) -> Dict[str, Any]:
 
 
 def is_integration_project(org_id: str, project_id: str) -> bool:
-    all_integration_project_ids = {
-        str(i.project_id) for i in integration_db_co.get_all_in_org(org_id)
-    }
-    return project_id in all_integration_project_ids
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+
+    query = f"""
+    SELECT 1 
+    FROM cognition.integration i
+    WHERE i.organization_id = '{org_id}' 
+        AND i.project_id = '{project_id}'
+    """
+    if general.execute_first(query):
+        return True
+    return False

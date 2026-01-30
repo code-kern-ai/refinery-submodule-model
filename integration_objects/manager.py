@@ -106,58 +106,6 @@ def get_all_by_integration_id(
     )
 
 
-def get_all_sharepoints_by_integration_ids(
-    integration_ids: List[str],
-    search_term: Optional[str] = None,
-    group_by: Optional[List[str]] = None,
-    aggregate_by: Optional[List[str]] = None,
-    aggregate_functions: Optional[List[str]] = None,
-) -> Tuple[List[object], Type]:
-    if group_by and aggregate_functions:
-        query = session.query(
-            *[getattr(IntegrationSharepoint, col) for col in group_by]
-        ).filter(IntegrationSharepoint.integration_id.in_(integration_ids))
-    else:
-        query = session.query(IntegrationSharepoint).filter(
-            IntegrationSharepoint.integration_id.in_(integration_ids)
-        )
-    if search_term:
-        query = query.filter(IntegrationSharepoint.source.ilike(f"%{search_term}%"))
-
-    if group_by and aggregate_functions:
-        group_by_columns = [getattr(IntegrationSharepoint, col) for col in group_by]
-        query = query.group_by(*group_by_columns)
-
-    if aggregate_functions:
-        for func_name in aggregate_functions:
-            if not aggregate_by:
-                aggregate_by = [None]
-            for col in aggregate_by:
-                column = getattr(IntegrationSharepoint, col or "", None)
-                if col:
-                    agg_label = f"{func_name}_{col}"
-                else:
-                    agg_label = f"{func_name}"
-
-                if func_name.lower() == "count":
-                    query = query.add_columns(func.count(column).label(agg_label))
-                elif func_name.lower() == "sum":
-                    query = query.add_columns(func.sum(column).label(agg_label))
-                elif func_name.lower() == "avg":
-                    query = query.add_columns(func.avg(column).label(agg_label))
-                elif func_name.lower() == "max":
-                    query = query.add_columns(func.max(column).label(agg_label))
-                elif func_name.lower() == "min":
-                    query = query.add_columns(func.min(column).label(agg_label))
-
-    return list(
-        map(
-            lambda x: x._asdict() if not isinstance(x, IntegrationSharepoint) else x,
-            query.all(),
-        )
-    )
-
-
 def integration_model(
     integration_id: Optional[str] = None,
     integration: Optional[CognitionIntegration] = None,
@@ -300,7 +248,7 @@ def update(
                 f"Invalid field '{key}' for {IntegrationModel.__tablename__}"
             )
         existing_value = getattr(integration_record, key, None)
-        if value != existing_value:
+        if value is not None and value != existing_value:
             setattr(integration_record, key, value)
             flag_modified(integration_record, key)
             record_updated = True

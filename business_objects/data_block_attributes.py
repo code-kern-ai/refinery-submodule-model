@@ -147,7 +147,7 @@ def create_many(
 
     for idx, attr in enumerate(attributes):
         relative_position += idx + 1
-        attribute = DataBlockAttribute(
+        attribute = create(
             data_block_id=data_block_id,
             name=attr.get("column_name"),
             data_type=attr.get("column_data_type", DataTypes.TEXT.value),
@@ -156,14 +156,18 @@ def create_many(
             state=attr.get("state", AttributeState.AUTOMATICALLY_CREATED.value),
             is_primary_key=attr.get("is_primary_key", False),
             additional_config=attr.get("additional_config", {}),
+            with_commit=False,
         )
-        general.add(attribute, with_commit=False)
         created_attributes.append(attribute)
 
     for attr in get_all(data_block_id, user_created=True):
         relative_position += 1
-        attr.relative_position = relative_position
-        general.add(attr, with_commit=False)
+        update(
+            data_block_id=data_block_id,
+            attribute_id=attr.id,
+            relative_position=relative_position,
+            with_commit=False,
+        )
 
     general.flush_or_commit(with_commit)
     return created_attributes
