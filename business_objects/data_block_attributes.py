@@ -39,8 +39,6 @@ def get_all(
     state_filter: Optional[List[str]] = None,
     user_created: Optional[bool] = None,
 ) -> List[DataBlockAttribute]:
-    # if state_filter is None:
-    #     state_filter = DEFAULT_ATTRIBUTE_STATES_USEABLE
     query = session.query(DataBlockAttribute).filter(
         DataBlockAttribute.data_block_id == data_block_id
     )

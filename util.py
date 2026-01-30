@@ -115,12 +115,15 @@ def sql_alchemy_to_dict(
     column_blacklist: Optional[Iterable[str]] = None,
     column_rename_map: Optional[Dict[str, str]] = None,
     dont_wrap_uuids: bool = True,
+    dont_convert_keys: bool = False,
 ):
     result = __sql_alchemy_to_dict(
         sql_alchemy_object, column_whitelist, column_blacklist, column_rename_map
     )
     if for_frontend:
-        return to_frontend_obj(result, dont_wrap_uuids=dont_wrap_uuids)
+        return to_frontend_obj(
+            result, dont_wrap_uuids=dont_wrap_uuids, dont_convert_keys=dont_convert_keys
+        )
     return result
 
 
@@ -185,12 +188,20 @@ def to_frontend_obj(
     value: Union[List, Dict],
     blacklist_keys: List[str] = [],
     dont_wrap_uuids: bool = True,
+    dont_convert_keys: bool = False,
 ):
     if isinstance(value, dict):
         return {
-            to_camel_case(k, dont_wrap_uuids=dont_wrap_uuids): (
+            (
+                to_camel_case(k, dont_wrap_uuids=dont_wrap_uuids)
+                if not dont_convert_keys
+                else k
+            ): (
                 to_frontend_obj(
-                    v, blacklist_keys=blacklist_keys, dont_wrap_uuids=dont_wrap_uuids
+                    v,
+                    blacklist_keys=blacklist_keys,
+                    dont_wrap_uuids=dont_wrap_uuids,
+                    dont_convert_keys=dont_convert_keys,
                 )
                 if k not in blacklist_keys
                 else v
@@ -200,7 +211,10 @@ def to_frontend_obj(
     elif is_list_like(value):
         return [
             to_frontend_obj(
-                x, blacklist_keys=blacklist_keys, dont_wrap_uuids=dont_wrap_uuids
+                x,
+                blacklist_keys=blacklist_keys,
+                dont_wrap_uuids=dont_wrap_uuids,
+                dont_convert_keys=dont_convert_keys,
             )
             for x in value
         ]
