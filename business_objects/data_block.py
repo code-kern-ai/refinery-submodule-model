@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Any
 
 from sqlalchemy.types import Text
+from sqlalchemy.orm.attributes import flag_modified
 
 from submodules.model.business_objects import general
 from submodules.model.session import session
@@ -115,10 +116,12 @@ def update(
             if not data_block.sql_data:
                 data_block.sql_data = []
             data_block.sql_data.extend(sql_data)
+            flag_modified(data_block, "sql_data")
         if sql_config is not None:
             if not data_block.sql_config:
                 data_block.sql_config = {}
             data_block.sql_config.update(sql_config)
+            flag_modified(data_block, "sql_config")
 
     general.add(data_block, with_commit)
     return data_block
@@ -136,5 +139,7 @@ def delete_many(
 
 
 def execute_query(data_block: DataBlock) -> List[Dict[str, Any]]:
-    sql = data_block.sql_config.get("query", "")
-    return general.execute_all(sql)
+    assert (
+        "query" in data_block.sql_config
+    ), "Data block SQL config must contain a 'query' key"
+    return general.execute_all(data_block.sql_config["query"])

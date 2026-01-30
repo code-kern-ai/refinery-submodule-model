@@ -94,6 +94,7 @@ def create(
     source_code: Optional[str] = None,
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
+    is_primary_key: Optional[bool] = None,
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
     progress: Optional[float] = None,
@@ -107,6 +108,7 @@ def create(
         relative_position=relative_position,
         user_created=user_created,
         source_code=source_code,
+        is_primary_key=is_primary_key,
     )
 
     if state is not None:
@@ -181,6 +183,7 @@ def update(
     source_code: Optional[str] = None,
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
+    is_primary_key: Optional[bool] = None,
     started_at: Optional[datetime] = None,
     finished_at: Optional[datetime] = None,
     progress: Optional[float] = None,
@@ -206,6 +209,8 @@ def update(
     if logs is not None:
         attribute.logs = logs
         flag_modified(attribute, "logs")
+    if is_primary_key is not None:
+        attribute.is_primary_key = is_primary_key
     if started_at is not None:
         attribute.started_at = started_at
     if finished_at is not None:
