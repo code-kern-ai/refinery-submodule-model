@@ -11,7 +11,7 @@ from ..cognition_objects import integration as integration_db_bo
 from ..global_objects import etl_task as etl_task_db_bo
 from ..session import session
 from .helper import get_integration_record_identifier, get_supported_metadata_keys
-from enum import Enum
+import traceback
 from ..models import (
     IntegrationSharepoint,
     IntegrationPdf,
@@ -259,7 +259,7 @@ def get_running_ids(
     return dict(
         session.query(
             getattr(IntegrationModel, by, IntegrationModel.source),
-            func.coalesce(func.max(IntegrationModel.running_id), 0),
+            func.max(IntegrationModel.running_id),
         )
         .filter(IntegrationModel.integration_id == integration_id)
         .group_by(getattr(IntegrationModel, by, IntegrationModel.source))
@@ -270,34 +270,41 @@ def get_running_ids(
 def duplicate(
     integration_record: object,
     content: str,
-    running_id: int,
+    running_id: str,
     chunk_idx: int,
     by: str = "source",
 ) -> object:
-    IntegrationModel = type(integration_record)
+    try:
+        IntegrationModel = type(integration_record)
 
-    duplicated_record = IntegrationModel(
-        created_by=integration_record.created_by,
-        integration_id=integration_record.integration_id,
-        etl_task_id=integration_record.etl_task_id,
-        error_message=integration_record.error_message,
-        content=content,
-        updated_by=integration_record.updated_by,
-        updated_at=integration_record.updated_at,
-        refinery_synced=integration_record.refinery_synced,
-    )
+        duplicated_record = IntegrationModel(
+            created_by=integration_record.created_by,
+            integration_id=integration_record.integration_id,
+            etl_task_id=integration_record.etl_task_id,
+            error_message=integration_record.error_message,
+            content=content,
+            updated_by=integration_record.updated_by,
+            updated_at=integration_record.updated_at,
+            refinery_synced=integration_record.refinery_synced,
+        )
 
-    for key in get_supported_metadata_keys(IntegrationModel.__tablename__):
-        value = getattr(integration_record, key)
-        setattr(duplicated_record, key, value)
+        for key in get_supported_metadata_keys(IntegrationModel.__tablename__):
+            value = getattr(integration_record, key)
+            setattr(duplicated_record, key, value)
 
-    duplicated_record.running_id = running_id
+        duplicated_record.running_id = running_id
 
-    new_attr_value = f"{getattr(integration_record, by)}#{chunk_idx}"
-    setattr(duplicated_record, by, new_attr_value)
+        new_attr_value = f"{getattr(integration_record, by)}#{chunk_idx}"
+        setattr(duplicated_record, by, new_attr_value)
 
-    general.add(duplicated_record, with_commit=False)
-    return duplicated_record
+        general.add(duplicated_record, with_commit=False)
+
+        return duplicated_record
+
+    except Exception as e:
+        print("An error occurred during duplication:", flush=True)
+        print(traceback.format_exc(), flush=True)
+        raise
 
 
 def create(

@@ -12,14 +12,18 @@ from ..enums import CognitionIntegrationType, CognitionIntegrationState
 from ..util import prevent_sql_injection
 from submodules.model import enums
 
-FINISHED_STATES = [
+# We can reuse this integration states for simplicity
+ETL_FINISHED_STATES = [
     CognitionIntegrationState.FINISHED.value,
-    CognitionIntegrationState.ETL_PROCESSING.value,
+    CognitionIntegrationState.FAILED.value,
 ]
 INTEGRATION_TASK_FINISHED_STATES = [
     CognitionIntegrationState.REFINERY_SYNCING.value,
     CognitionIntegrationState.FAILED.value,
 ]
+
+# TODO: Maybe add failed or finished for graceful shutdown in some cases
+INTEGRATION_ETL_PROCESSING_STATES = [CognitionIntegrationState.ETL_PROCESSING.value]
 
 
 def get_by_ids(ids: List[str]) -> List[CognitionIntegration]:
@@ -576,11 +580,29 @@ def get_integration_etl_all_finished(integration_id: str) -> bool:
             & (IntegrationModel.integration_id == integration_id),
         )
         .filter(EtlTask.is_active)
-        .filter(EtlTask.state.notin_(FINISHED_STATES))
+        .filter(EtlTask.state.notin_(ETL_FINISHED_STATES))
         .first()
     ) is None
 
     if not etl_tasks_finished:
         return False
     integration = get_by_id(integration_id)
-    return integration.state in FINISHED_STATES
+    # Only if all ETL task were scheduled, the state will switch to ETL_PROCESSING
+    return integration.state in INTEGRATION_ETL_PROCESSING_STATES
+
+
+def get_integration_etl_all_failed(integration_id: str) -> bool:
+    IntegrationModel = integration_records_bo.integration_model(integration_id)
+
+    etl_tasks_not_failed = (
+        session.query(EtlTask)
+        .join(
+            IntegrationModel,
+            (EtlTask.id == IntegrationModel.etl_task_id)
+            & (IntegrationModel.integration_id == integration_id),
+        )
+        .filter(EtlTask.state.notin_([CognitionIntegrationState.FAILED.value]))
+        .first()
+    ) is None
+
+    return etl_tasks_not_failed
