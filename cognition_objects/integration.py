@@ -569,40 +569,18 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
     return general.execute_all(query)
 
 
-def get_integration_etl_all_finished(integration_id: str) -> bool:
-    IntegrationModel = integration_records_bo.integration_model(integration_id)
-
-    etl_tasks_finished = (
-        session.query(EtlTask)
-        .join(
-            IntegrationModel,
-            (EtlTask.id == IntegrationModel.etl_task_id)
-            & (IntegrationModel.integration_id == integration_id),
-        )
-        .filter(EtlTask.is_active)
-        .filter(EtlTask.state.notin_(ETL_FINISHED_STATES))
-        .first()
-    ) is None
-
-    if not etl_tasks_finished:
-        return False
+def get_integration_etl_task_all_scheduled(integration_id: str) -> bool:
     integration = get_by_id(integration_id)
     # Only if all ETL task were scheduled, the state will switch to ETL_PROCESSING
     return integration.state in INTEGRATION_ETL_PROCESSING_STATES
 
 
-def get_integration_etl_all_failed(integration_id: str) -> bool:
-    IntegrationModel = integration_records_bo.integration_model(integration_id)
-
-    etl_tasks_not_failed = (
+def get_integration_is_last_etl_task(integration_id: str) -> bool:
+    n_remaining = (
         session.query(EtlTask)
-        .join(
-            IntegrationModel,
-            (EtlTask.id == IntegrationModel.etl_task_id)
-            & (IntegrationModel.integration_id == integration_id),
-        )
-        .filter(EtlTask.state.notin_([CognitionIntegrationState.FAILED.value]))
-        .first()
-    ) is None
-
-    return etl_tasks_not_failed
+        .filter(EtlTask.meta_data.op("->>")("integration_id") == integration_id)
+        .filter(EtlTask.is_active)
+        .filter(EtlTask.state.notin_(ETL_FINISHED_STATES))
+        .count()
+    )
+    return n_remaining == 1
