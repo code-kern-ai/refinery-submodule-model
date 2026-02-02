@@ -18,7 +18,7 @@ ETL_FINISHED_STATES = [
     CognitionIntegrationState.FAILED.value,
 ]
 INTEGRATION_TASK_FINISHED_STATES = [
-    CognitionIntegrationState.REFINERY_SYNCING.value,
+    CognitionIntegrationState.FINISHED.value,
     CognitionIntegrationState.FAILED.value,
 ]
 
