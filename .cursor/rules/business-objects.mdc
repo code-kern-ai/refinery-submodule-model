@@ -1,6 +1,153 @@
 ---
 alwaysApply: true
 ---
+
+# Business Objects Guidelines
+
+Rules and conventions for business object modules in `business_objects/`, `cognition_objects/`, and `global_objects/`.
+
+## Module Organization
+
+### Directory Structure
+
+- **`business_objects/`**: Business domain entities (User, Project, Organization, etc.)
+- **`cognition_objects/`**: Cognition domain entities (Conversation, Message, Strategy, etc.)
+- **`global_objects/`**: Global/shared entities (AdminQueries, EtlTask, etc.)
+- **`integration_objects/`**: Integration-specific entities (SharePoint, GitHub, PDF, etc.) with specialized CRUD patterns
+
+### File Naming
+
+- One file per entity
+- File name matches entity name in `snake_case`
+- Example: `user.py` for `User` entity, `conversation.py` for `Conversation` entity
+
+## Standard CRUD Functions
+
+Every business object module should provide these standard functions:
+
+### Get Functions
+
+#### Single Entity
+
+```python
+def get(project_id: str, entity_id: str) -> Entity:
+    return (
+        session.query(Entity)
+        .filter(Entity.project_id == project_id, Entity.id == entity_id)
+        .first()
+    )
+```
+
+#### By ID Only
+
+```python
+def get(entity_id: str) -> Entity:
+    return session.query(Entity).get(entity_id)
+```
+
+#### By ID Only (Alternative Pattern)
+
+Some entities use `get_by_id()` when only ID is needed (no project_id scope):
+
+```python
+def get_by_id(entity_id: str) -> Entity:
+    return session.query(Entity).filter(Entity.id == entity_id).first()
+```
+
+#### Multiple Entities
+
+```python
+def get_all(project_id: str) -> List[Entity]:
+    return session.query(Entity).filter(Entity.project_id == project_id).all()
+
+def get_by_id_list(entity_ids: List[str]) -> List[Entity]:
+    return session.query(Entity).filter(Entity.id.in_(entity_ids)).all()
+```
+
+#### Existence Check
+
+```python
+def exists(project_id: str, entity_id: str) -> bool:
+    return (
+        session.query(Entity)
+        .filter(Entity.project_id == project_id, Entity.id == entity_id)
+        .first()
+        is not None
+    )
+```
+
+#### Scoped Queries
+
+For user-scoped queries (entities owned by a user):
+
+```python
+def get_scoped(project_id: str, entity_id: str, user_id: str) -> Entity:
+    return (
+        session.query(Entity)
+        .filter(
+            Entity.project_id == project_id,
+            Entity.id == entity_id,
+            Entity.created_by == user_id,
+        )
+        .first()
+    )
+```
+
+#### Count Queries
+
+```python
+def get_count(project_id: str) -> int:
+    return (
+        session.query(Entity)
+        .filter(Entity.project_id == project_id)
+        .count()
+    )
+```
+
+#### Get By Name/Field
+
+```python
+def get_by_name(name: str) -> Entity:
+    return session.query(Entity).filter(Entity.name == name).first()
+```
+
+### Create Function
+
+```python
+def create(
+    project_id: str,
+    name: str,
+    created_by: str,
+    with_commit: bool = False,
+    created_at: Optional[datetime] = None,
+    # ... other parameters
+) -> Entity:
+    entity = Entity(
+        project_id=project_id,
+        name=name,
+        created_by=created_by,
+        created_at=created_at,
+        # ... other fields
+    )
+    
+    general.add(entity, with_commit)
+    return entity
+```
+
+**Rules:**
+- Always accept `with_commit` parameter (default `False`)
+- Accept optional `created_at` for testing/time travel scenarios
+- Use `general.add()` to add to session
+- Return the created entity
+
+### Update Function
+
+```python
+def update(
+    project_id: str,
+    entity_id: str,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     with_commit: bool = True,
     # ... other optional parameters
 ) -> Entity:
