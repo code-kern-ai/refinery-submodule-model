@@ -232,6 +232,8 @@ class User(Base):
     auto_logout_minutes = Column(Integer)
     messages_created_this_month = Column(BigInteger, default=0)
     one_drive_path = Column(String)
+    sound_settings = Column(JSON)
+    notification_settings = Column(JSON)
     messages_created_today = Column(Integer, default=0)
     # light users have limited access (e.g. 5 msg per day)
     is_light_user = Column(Boolean, default=False)
