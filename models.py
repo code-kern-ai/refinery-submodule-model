@@ -2519,6 +2519,7 @@ class IntegrationWebpage(Base):
     minio_file_name = Column(String)
     error_message = Column(String)
     refinery_synced = Column(Boolean, default=False)
+    extension = Column(String)
 
     title = Column(String)
     raw_markdown_content_hash = Column(String)
