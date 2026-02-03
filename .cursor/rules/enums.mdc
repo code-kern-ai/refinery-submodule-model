@@ -228,47 +228,9 @@ from .enums import (
 
 1. **Always inherit from `EnumKern`** for helper methods
 2. **Use descriptive names** that clearly indicate purpose
-3. **Keep values consistent** - prefer matching member names
-4. **Add to `Tablenames` enum** when creating new tables
-5. **Use `.value`** when storing in database columns
-6. **Use enum comparisons** instead of string comparisons
-7. **Document complex enums** with comments
-8. **Group related enums** together in the file
-9. **Use `try_parse_enum_value()`** for safe parsing
-10. **Keep enum values stable** - don't change existing values (add new ones instead)
+3. **Add to `Tablenames` enum** when creating new tables
+4. **Use `.value`** when storing in database columns
+5. **Use enum comparisons** instead of string comparisons
+6. **Use `try_parse_enum_value()`** for safe parsing
+7. **Keep enum values stable** - don't change existing values (add new ones instead)
 
-## Common Patterns
-
-### Enum with Methods
-
-```python
-class UserRoles(EnumKern):
-    ENGINEER = "ENGINEER"
-    EXPERT = "EXPERT"
-    ANNOTATOR = "ANNOTATOR"
-    
-    def is_admin(self) -> bool:
-        return self in [UserRoles.ENGINEER, UserRoles.EXPERT]
-```
-
-### Enum Validation
-
-```python
-def validate_role(role: str) -> UserRoles:
-    try:
-        return UserRoles.from_string(role)
-    except ValueError:
-        raise ValueError(f"Invalid role: {role}")
-```
-
-### Enum in Type Hints
-
-```python
-from typing import Literal
-
-UserRoleType = Literal[
-    UserRoles.ENGINEER.value,
-    UserRoles.EXPERT.value,
-    UserRoles.ANNOTATOR.value,
-]
-```

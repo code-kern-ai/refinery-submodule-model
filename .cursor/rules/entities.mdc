@@ -136,41 +136,24 @@ Use the helper function for 1:N relationships:
 ```python
 from ..models import parent_to_child_relationship
 
+# Basic relationship
 projects = parent_to_child_relationship(
     Tablenames.ORGANIZATION,
     Tablenames.PROJECT,
 )
-```
 
-### Cascade Behavior
-
-Specify cascade behavior:
-
-```python
-# Keep parent when child is deleted (default)
-projects = parent_to_child_relationship(
-    Tablenames.ORGANIZATION,
-    Tablenames.PROJECT,
-    cascase_behaviour=CascadeBehaviour.KEEP_PARENT_ON_CHILD_DELETION,
-)
-
-# Delete both if either is deleted
-projects = parent_to_child_relationship(
-    Tablenames.ORGANIZATION,
-    Tablenames.PROJECT,
-    cascase_behaviour=CascadeBehaviour.DELETE_BOTH_IF_EITHER_IS_DELETED,
-)
-```
-
-### Ordering
-
-Specify `order_by` for relationships:
-
-```python
+# With ordering
 projects = parent_to_child_relationship(
     Tablenames.USER,
     Tablenames.PROJECT,
     order_by="created_at.desc()",
+)
+
+# With cascade behavior
+projects = parent_to_child_relationship(
+    Tablenames.ORGANIZATION,
+    Tablenames.PROJECT,
+    cascase_behaviour=CascadeBehaviour.KEEP_PARENT_ON_CHILD_DELETION,
 )
 ```
 

@@ -76,23 +76,6 @@ def exists(project_id: str, entity_id: str) -> bool:
     )
 ```
 
-#### Scoped Queries
-
-For user-scoped queries (entities owned by a user):
-
-```python
-def get_scoped(project_id: str, entity_id: str, user_id: str) -> Entity:
-    return (
-        session.query(Entity)
-        .filter(
-            Entity.project_id == project_id,
-            Entity.id == entity_id,
-            Entity.created_by == user_id,
-        )
-        .first()
-    )
-```
-
 #### Count Queries
 
 ```python
@@ -287,27 +270,6 @@ def get_with_relations(project_id: str) -> List[Entity]:
     )
 ```
 
-### Subqueries
-
-Use subqueries for complex filtering:
-
-```python
-def get_by_subquery(project_id: str, user_id: str) -> List[Entity]:
-    teams_subquery = (
-        session.query(TeamMember.team_id)
-        .filter(TeamMember.user_id == user_id)
-        .subquery()
-    )
-    return (
-        session.query(Entity)
-        .join(TeamMember, TeamMember.entity_id == Entity.id)
-        .filter(
-            Entity.project_id == project_id,
-            TeamMember.team_id.in_(teams_subquery),
-        )
-        .all()
-    )
-```
 
 ## SQL Injection Prevention
 
@@ -450,41 +412,14 @@ def create(project_id: str, name: str, **kwargs) -> Entity:
     # ... create entity
 ```
 
-## Helper Functions
-
-### Setting Values
-
-Use `set_values_on_item()` helper:
-
-```python
-from .util import set_values_on_item
-
-def update(entity_id: str, **kwargs) -> Entity:
-    entity = get(entity_id)
-    return set_values_on_item(entity, **kwargs)
-```
-
-### Database Time
-
-Use `get_db_now()` for consistent timestamps:
-
-```python
-from .util import get_db_now
-
-created_at = get_db_now()
-```
 
 ## Integration Objects Pattern
 
-The `integration_objects/` directory contains specialized patterns for integration entities:
-
-### Manager Pattern
-
-Integration objects use a manager pattern with type-based model selection:
+The `integration_objects/` directory contains specialized patterns for integration entities using a manager pattern with type-based model selection:
 
 ```python
 from ..integration_objects.manager import get, create, update, delete_many
-from ..integration_objects.helper import get_supported_metadata_keys
+from ..integration_objects.helper import get_supported_metadata
 
 # Get integration model type based on integration
 IntegrationModel = integration_model(integration_id=integration_id)
@@ -492,14 +427,6 @@ IntegrationModel = integration_model(integration_id=integration_id)
 # Use manager functions with model type
 records = get(IntegrationModel, integration_id)
 record = create(IntegrationModel, created_by=user_id, integration_id=integration_id, ...)
-```
-
-### Metadata Handling
-
-Integration objects have dynamic metadata fields:
-
-```python
-from ..integration_objects.helper import get_supported_metadata
 
 # Filter metadata to only supported keys
 supported_metadata = get_supported_metadata(table_name, raw_metadata)
@@ -508,7 +435,6 @@ supported_metadata = get_supported_metadata(table_name, raw_metadata)
 **Rules:**
 - Use `integration_objects/manager.py` for CRUD operations
 - Use `integration_objects/helper.py` for metadata validation
-- Metadata keys are defined per integration type in `helper.py`
 
 ## Best Practices
 
@@ -518,9 +444,7 @@ supported_metadata = get_supported_metadata(table_name, raw_metadata)
 4. **Use type hints** for all function parameters and return types
 5. **Handle None cases** appropriately (return None or raise exception)
 6. **Use `flag_modified()`** for JSON field updates
-7. **Prevent SQL injection** in all queries
-8. **Cache appropriately** for read-heavy operations
-9. **Group related queries** in the same module
-10. **Keep functions focused** - one responsibility per function
-11. **Use `exists()`** for existence checks instead of checking `get()` result
-12. **Use `get_count()`** for counting entities instead of `len(get_all())`
+7. **Prevent SQL injection** in all queries using parameterized queries or `prevent_sql_injection()`
+8. **Cache appropriately** for read-heavy operations using `TTLCacheDecorator`
+9. **Use `exists()`** for existence checks instead of checking `get()` result
+10. **Use `get_count()`** for counting entities instead of `len(get_all())`
