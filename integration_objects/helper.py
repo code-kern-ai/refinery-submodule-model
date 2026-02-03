@@ -35,7 +35,11 @@ TABLE_METADATA = {
         "permissions",
         "file_properties",
     },
-    Tablenames.INTEGRATION_WEBPAGE.value: {"raw_markdown_content", "title"},
+    Tablenames.INTEGRATION_WEBPAGE.value: {
+        "raw_markdown_content_hash",
+        "title",
+        "extension",
+    },
 }
 
 

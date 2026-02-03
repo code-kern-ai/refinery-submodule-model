@@ -227,8 +227,8 @@ def get_existing_integration_records(
         records = filter(
             lambda x: re.search(r"#\d$", getattr(x, by, x.source) or ""), records
         )
-
-    return {getattr(record, by, record.source): record for record in records}
+    records_by = {getattr(record, by, record.source): record for record in records}
+    return records_by
 
 
 def get_related_chunk_records(
