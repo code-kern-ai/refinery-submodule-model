@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Model Guidelines
 
 This directory contains guidelines and conventions for the `submodules/model` module. These guidelines ensure consistency, maintainability, and correctness across all database models, business objects, and related code.

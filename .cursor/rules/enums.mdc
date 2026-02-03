@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Enum Guidelines
 
 Rules and conventions for enum definitions in `enums.py`.

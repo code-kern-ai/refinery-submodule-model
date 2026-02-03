@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Database Operations Guidelines
 
 Rules and conventions for database operations, session management, and transactions.

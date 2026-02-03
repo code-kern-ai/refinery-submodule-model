@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Entity Model Guidelines
 
 Rules and conventions for defining SQLAlchemy entity models in `models.py`.
