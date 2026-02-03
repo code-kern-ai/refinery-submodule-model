@@ -1,0 +1,315 @@
+# Entity Model Guidelines
+
+Rules and conventions for defining SQLAlchemy entity models in `models.py`.
+
+## Table Definition
+
+### Base Class
+
+All entity models must inherit from `Base`:
+
+```python
+from sqlalchemy.ext.declarative import declarative_base
+Base = declarative_base()
+
+class MyEntity(Base):
+    __tablename__ = Tablenames.MY_ENTITY.value
+    # ...
+```
+
+### Table Name
+
+- Use the `Tablenames` enum for table names
+- Table names must be in `snake_case`
+- Always use `__tablename__ = Tablenames.ENTITY_NAME.value`
+
+```python
+class User(Base):
+    __tablename__ = Tablenames.USER.value
+```
+
+## Column Ordering Convention
+
+Follow this order (guideline, not strict rule - context-based columns should be grouped together):
+
+1. **`__tablename__` & `__table_args__`** (if needed)
+2. **Primary key(s)** - typically `id`
+3. **Foreign keys** - sorted from broader scope to more specific
+   - Example: `org_id` → `project_id` → `user_id`
+4. **Other columns** - sorted from broader scope to more specific
+   - Example: `name` → `description` → `some_flag`
+5. **Columns added after initial creation** - append at the end
+
+### Example
+
+```python
+class Project(Base):
+    __tablename__ = Tablenames.PROJECT.value
+    
+    # 1. Primary key
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # 2. Foreign keys (broader to specific)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    
+    # 3. Other columns (broader to specific)
+    name = Column(String)
+    description = Column(String)
+    is_active = Column(Boolean, default=True)
+    
+    # 4. Timestamps
+    created_at = Column(DateTime, default=sql.func.now())
+```
+
+## Primary Keys
+
+### UUID Primary Keys
+
+- Use `UUID(as_uuid=True)` for primary keys
+- Default to `uuid.uuid4` for new entities
+- Exception: Composite keys or string-based keys when appropriate
+
+```python
+id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+```
+
+### Composite Primary Keys
+
+When needed, define multiple columns as primary keys:
+
+```python
+__table_args__ = (
+    PrimaryKeyConstraint('col1', 'col2'),
+)
+```
+
+## Foreign Keys
+
+### Definition
+
+- Always specify `ForeignKey` with table reference
+- Use `ondelete` cascade behavior explicitly
+- Add `index=True` for foreign keys (performance)
+
+```python
+project_id = Column(
+    UUID(as_uuid=True),
+    ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+    index=True,
+)
+```
+
+### Cascade Behaviors
+
+- **`CASCADE`**: Delete child when parent is deleted
+- **`SET NULL`**: Set foreign key to NULL when parent is deleted (requires nullable=True)
+- **`RESTRICT`**: Prevent deletion if children exist
+
+Common patterns:
+- User-created entities: `ondelete="SET NULL"` (preserve data if user deleted)
+- Ownership relationships: `ondelete="CASCADE"` (delete children with parent)
+
+### Naming
+
+- Foreign key columns: `{entity}_id` (snake_case)
+- Example: `organization_id`, `project_id`, `user_id`
+
+## Relationships
+
+### Using `parent_to_child_relationship()`
+
+Use the helper function for 1:N relationships:
+
+```python
+from ..models import parent_to_child_relationship
+
+projects = parent_to_child_relationship(
+    Tablenames.ORGANIZATION,
+    Tablenames.PROJECT,
+)
+```
+
+### Cascade Behavior
+
+Specify cascade behavior:
+
+```python
+# Keep parent when child is deleted (default)
+projects = parent_to_child_relationship(
+    Tablenames.ORGANIZATION,
+    Tablenames.PROJECT,
+    cascase_behaviour=CascadeBehaviour.KEEP_PARENT_ON_CHILD_DELETION,
+)
+
+# Delete both if either is deleted
+projects = parent_to_child_relationship(
+    Tablenames.ORGANIZATION,
+    Tablenames.PROJECT,
+    cascase_behaviour=CascadeBehaviour.DELETE_BOTH_IF_EITHER_IS_DELETED,
+)
+```
+
+### Ordering
+
+Specify `order_by` for relationships:
+
+```python
+projects = parent_to_child_relationship(
+    Tablenames.USER,
+    Tablenames.PROJECT,
+    order_by="created_at.desc()",
+)
+```
+
+## Column Types
+
+### Common Types
+
+- **UUID**: `UUID(as_uuid=True)`
+- **String**: `String` (no length unless required)
+- **Integer**: `Integer`
+- **BigInteger**: `BigInteger` (for large numbers)
+- **Boolean**: `Boolean` (with `default=False` or `default=True`)
+- **DateTime**: `DateTime` (with `default=sql.func.now()` for timestamps)
+- **JSON**: `JSON` (for structured data)
+- **LargeBinary**: `LargeBinary` (for binary data)
+- **ARRAY**: `ARRAY(String)` or `ARRAY(Integer)` (PostgreSQL arrays)
+
+### Timestamps
+
+Always include `created_at` for entities:
+
+```python
+created_at = Column(DateTime, default=sql.func.now())
+```
+
+Add `updated_at` when modification tracking is needed:
+
+```python
+updated_at = Column(DateTime, onupdate=sql.func.now())
+```
+
+## Defaults
+
+### Boolean Defaults
+
+Always specify explicit defaults:
+
+```python
+is_active = Column(Boolean, default=True)
+is_deleted = Column(Boolean, default=False)
+```
+
+### JSON Defaults
+
+Use dictionaries for JSON defaults:
+
+```python
+config = Column(JSON, default={})
+metadata = Column(JSON, default={})
+```
+
+### Enum Defaults
+
+Use enum values:
+
+```python
+from ..enums import UserRoles
+
+role = Column(String, default=UserRoles.ENGINEER.value)
+```
+
+## Indexes
+
+### Foreign Keys
+
+Always index foreign keys:
+
+```python
+project_id = Column(
+    UUID(as_uuid=True),
+    ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+    index=True,  # Required
+)
+```
+
+### Composite Indexes
+
+Use `Index` for composite indexes:
+
+```python
+from sqlalchemy import Index
+
+__table_args__ = (
+    Index('idx_project_user', 'project_id', 'user_id'),
+)
+```
+
+### Unique Constraints
+
+Use `UniqueConstraint` for unique combinations:
+
+```python
+from sqlalchemy import UniqueConstraint
+
+__table_args__ = (
+    UniqueConstraint('project_id', 'name', name='uq_project_name'),
+)
+```
+
+## Comments
+
+Add comments for:
+- Non-obvious foreign keys (e.g., multi-field foreign keys)
+- Enum types
+- Complex business logic
+
+```python
+# no foreign key since its a multi field
+xfkey = Column(UUID(as_uuid=True), index=True)
+# of type CommentCategory e.g. USER
+xftype = Column(String, index=True)
+```
+
+## Class Naming
+
+- Use **PascalCase** for class names
+- Match the table name concept (singular form)
+- Examples: `User`, `Project`, `Organization`, `CommentData`
+
+## Import Organization
+
+Group imports logically:
+
+```python
+# Standard library
+import uuid
+
+# Third-party
+from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
+
+# Local imports
+from .enums import Tablenames, UserRoles
+from .models import Base
+```
+
+## Best Practices
+
+1. **Always use enums** for table names and enum values
+2. **Index foreign keys** for query performance
+3. **Specify cascade behaviors** explicitly
+4. **Use UUIDs** for primary keys unless there's a specific reason not to
+5. **Add timestamps** (`created_at`) to track entity creation
+6. **Document complex relationships** with comments
+7. **Follow column ordering** convention for maintainability
+8. **Use appropriate column types** (don't use String for everything)

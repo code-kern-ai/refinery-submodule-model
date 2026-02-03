@@ -1,0 +1,522 @@
+# Business Objects Guidelines
+
+Rules and conventions for business object modules in `business_objects/`, `cognition_objects/`, and `global_objects/`.
+
+## Module Organization
+
+### Directory Structure
+
+- **`business_objects/`**: Business domain entities (User, Project, Organization, etc.)
+- **`cognition_objects/`**: Cognition domain entities (Conversation, Message, Strategy, etc.)
+- **`global_objects/`**: Global/shared entities (AdminQueries, EtlTask, etc.)
+- **`integration_objects/`**: Integration-specific entities (SharePoint, GitHub, PDF, etc.) with specialized CRUD patterns
+
+### File Naming
+
+- One file per entity
+- File name matches entity name in `snake_case`
+- Example: `user.py` for `User` entity, `conversation.py` for `Conversation` entity
+
+## Standard CRUD Functions
+
+Every business object module should provide these standard functions:
+
+### Get Functions
+
+#### Single Entity
+
+```python
+def get(project_id: str, entity_id: str) -> Entity:
+    return (
+        session.query(Entity)
+        .filter(Entity.project_id == project_id, Entity.id == entity_id)
+        .first()
+    )
+```
+
+#### By ID Only
+
+```python
+def get(entity_id: str) -> Entity:
+    return session.query(Entity).get(entity_id)
+```
+
+#### By ID Only (Alternative Pattern)
+
+Some entities use `get_by_id()` when only ID is needed (no project_id scope):
+
+```python
+def get_by_id(entity_id: str) -> Entity:
+    return session.query(Entity).filter(Entity.id == entity_id).first()
+```
+
+#### Multiple Entities
+
+```python
+def get_all(project_id: str) -> List[Entity]:
+    return session.query(Entity).filter(Entity.project_id == project_id).all()
+
+def get_by_id_list(entity_ids: List[str]) -> List[Entity]:
+    return session.query(Entity).filter(Entity.id.in_(entity_ids)).all()
+```
+
+#### Existence Check
+
+```python
+def exists(project_id: str, entity_id: str) -> bool:
+    return (
+        session.query(Entity)
+        .filter(Entity.project_id == project_id, Entity.id == entity_id)
+        .first()
+        is not None
+    )
+```
+
+#### Scoped Queries
+
+For user-scoped queries (entities owned by a user):
+
+```python
+def get_scoped(project_id: str, entity_id: str, user_id: str) -> Entity:
+    return (
+        session.query(Entity)
+        .filter(
+            Entity.project_id == project_id,
+            Entity.id == entity_id,
+            Entity.created_by == user_id,
+        )
+        .first()
+    )
+```
+
+#### Count Queries
+
+```python
+def get_count(project_id: str) -> int:
+    return (
+        session.query(Entity)
+        .filter(Entity.project_id == project_id)
+        .count()
+    )
+```
+
+#### Get By Name/Field
+
+```python
+def get_by_name(name: str) -> Entity:
+    return session.query(Entity).filter(Entity.name == name).first()
+```
+
+### Create Function
+
+```python
+def create(
+    project_id: str,
+    name: str,
+    created_by: str,
+    with_commit: bool = False,
+    created_at: Optional[datetime] = None,
+    # ... other parameters
+) -> Entity:
+    entity = Entity(
+        project_id=project_id,
+        name=name,
+        created_by=created_by,
+        created_at=created_at,
+        # ... other fields
+    )
+    
+    general.add(entity, with_commit)
+    return entity
+```
+
+**Rules:**
+- Always accept `with_commit` parameter (default `False`)
+- Accept optional `created_at` for testing/time travel scenarios
+- Use `general.add()` to add to session
+- Return the created entity
+
+### Update Function
+
+```python
+def update(
+    project_id: str,
+    entity_id: str,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    with_commit: bool = True,
+    # ... other optional parameters
+) -> Entity:
+    entity = get(project_id, entity_id)
+    if not entity:
+        raise ValueError(f"Entity {entity_id} not found")
+    
+    if name is not None:
+        entity.name = name
+    if description is not None:
+        entity.description = description
+    
+    # For JSON fields, use flag_modified
+    if some_json_field is not None:
+        entity.some_json_field = some_json_field
+        flag_modified(entity, 'some_json_field')
+    
+    flush_or_commit(with_commit)
+    return entity
+```
+
+**Rules:**
+- All update parameters should be `Optional`
+- Use `None` checks to only update provided fields
+- Use `flag_modified()` for JSON fields
+- Default `with_commit=True` for updates (different from create)
+- Return the updated entity
+
+### Delete Function
+
+```python
+def delete(
+    project_id: str,
+    entity_id: str,
+    with_commit: bool = False,
+) -> None:
+    entity = get(project_id, entity_id)
+    if not entity:
+        return  # Or raise exception
+    
+    general.delete(entity, with_commit)
+```
+
+**Rules:**
+- Default `with_commit=False` for deletes
+- Handle missing entities appropriately (return or raise)
+- Use `general.delete()` helper
+
+### Batch Delete Function
+
+For deleting multiple entities:
+
+```python
+def delete_many(entity_ids: List[str], with_commit: bool = False) -> None:
+    entities = session.query(Entity).filter(Entity.id.in_(entity_ids)).all()
+    for entity in entities:
+        general.delete(entity, with_commit=False)
+    general.flush_or_commit(with_commit)
+```
+
+**Rules:**
+- Use for bulk deletion operations
+- Default `with_commit=False` to allow batching
+- Consider performance implications for large batches
+
+## Transaction Management
+
+### `with_commit` Parameter
+
+- **`False`**: Flush to database but don't commit (default for create/delete)
+- **`True`**: Commit transaction immediately (default for update)
+- **`None`**: No flush or commit (rare, for batch operations)
+
+### Flush vs Commit
+
+- **Flush**: Writes to database but transaction can be rolled back
+- **Commit**: Permanently saves changes
+- Use `general.flush_or_commit(with_commit)` helper
+
+```python
+from ..business_objects import general
+
+general.add(entity, with_commit=False)  # Flush only
+general.add(entity, with_commit=True)   # Commit
+```
+
+## Query Patterns
+
+### Basic Query
+
+```python
+from ..session import session
+from ..models import Entity
+
+def get(project_id: str, entity_id: str) -> Entity:
+    return (
+        session.query(Entity)
+        .filter(Entity.project_id == project_id)
+        .filter(Entity.id == entity_id)
+        .first()
+    )
+```
+
+### Filtering
+
+```python
+def get_active(project_id: str) -> List[Entity]:
+    return (
+        session.query(Entity)
+        .filter(Entity.project_id == project_id)
+        .filter(Entity.is_active == True)
+        .all()
+    )
+```
+
+### Ordering
+
+```python
+def get_all_ordered(project_id: str) -> List[Entity]:
+    return (
+        session.query(Entity)
+        .filter(Entity.project_id == project_id)
+        .order_by(Entity.created_at.desc())
+        .all()
+    )
+```
+
+### Joins
+
+```python
+def get_with_relations(project_id: str) -> List[Entity]:
+    return (
+        session.query(Entity)
+        .join(RelatedEntity)
+        .filter(Entity.project_id == project_id)
+        .all()
+    )
+```
+
+### Subqueries
+
+Use subqueries for complex filtering:
+
+```python
+def get_by_subquery(project_id: str, user_id: str) -> List[Entity]:
+    teams_subquery = (
+        session.query(TeamMember.team_id)
+        .filter(TeamMember.user_id == user_id)
+        .subquery()
+    )
+    return (
+        session.query(Entity)
+        .join(TeamMember, TeamMember.entity_id == Entity.id)
+        .filter(
+            Entity.project_id == project_id,
+            TeamMember.team_id.in_(teams_subquery),
+        )
+        .all()
+    )
+```
+
+## SQL Injection Prevention
+
+### Always Use Parameterized Queries
+
+**❌ Bad:**
+```python
+query = f"SELECT * FROM table WHERE id = '{user_id}'"
+```
+
+**✅ Good:**
+```python
+entity = session.query(Entity).filter(Entity.id == user_id).first()
+```
+
+### Raw SQL Queries
+
+For raw SQL, use `prevent_sql_injection()`:
+
+```python
+from ..util import prevent_sql_injection
+
+user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
+query = f"SELECT * FROM users WHERE id = '{user_id}'"
+```
+
+**When to use raw SQL:**
+- Complex aggregations (JSON aggregation, counts, etc.)
+- Performance-critical queries that benefit from raw SQL
+- Queries that are difficult to express with ORM
+
+**Pattern for complex raw SQL:**
+
+```python
+def get_with_aggregations(project_id: str) -> Dict:
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+    
+    query = f"""
+    SELECT
+        json_agg(json_build_object(
+            'id', entity.id,
+            'name', entity.name
+        )) AS entities
+    FROM entity
+    WHERE project_id = '{project_id}'::UUID
+    """
+    
+    result = general.execute_first(query)
+    return result[0] if result and result[0] else {}
+```
+
+**Rules:**
+- Always use `prevent_sql_injection()` for user-provided values
+- Use `general.execute_first()` for single-row results
+- Use `general.execute_all()` for multiple-row results
+- Prefer ORM queries when possible for type safety
+
+## JSON Field Updates
+
+When updating JSON fields, use `flag_modified()`:
+
+```python
+from sqlalchemy.orm.attributes import flag_modified
+
+def update_metadata(project_id: str, entity_id: str, metadata: Dict):
+    entity = get(project_id, entity_id)
+    entity.metadata = metadata
+    flag_modified(entity, 'metadata')
+    general.flush_or_commit(True)
+```
+
+## Caching
+
+Use `TTLCacheDecorator` for frequently accessed, rarely changing data:
+
+```python
+from ..db_cache import TTLCacheDecorator, CacheEnum
+
+@TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
+def get_user_cached(user_id: str) -> User:
+    user = get(user_id)
+    if not user:
+        return None
+    
+    # Expunge and make transient to avoid session issues
+    general.expunge(user)
+    general.make_transient(user)
+    return user
+```
+
+**Rules:**
+- Use caching for read-heavy, rarely changing data
+- Always expunge and make transient cached objects
+- Specify appropriate TTL (time-to-live) in seconds
+
+## Imports
+
+### Standard Import Pattern
+
+```python
+from datetime import datetime
+from typing import List, Optional, Dict, Any
+
+from . import general  # Always import general for CRUD operations
+from ..session import session
+from ..models import Entity, RelatedEntity
+from ..enums import SomeEnum
+from ..util import prevent_sql_injection
+```
+
+### Cross-Module Imports
+
+Import other business objects when needed:
+
+```python
+from . import user, project, organization
+```
+
+## Error Handling
+
+### Entity Not Found
+
+```python
+def get_or_raise(project_id: str, entity_id: str) -> Entity:
+    entity = get(project_id, entity_id)
+    if not entity:
+        raise ValueError(f"Entity {entity_id} not found in project {project_id}")
+    return entity
+```
+
+### Validation
+
+Validate inputs before database operations:
+
+```python
+def create(project_id: str, name: str, **kwargs) -> Entity:
+    if not name or not name.strip():
+        raise ValueError("Name cannot be empty")
+    
+    # ... create entity
+```
+
+## Helper Functions
+
+### Setting Values
+
+Use `set_values_on_item()` helper:
+
+```python
+from .util import set_values_on_item
+
+def update(entity_id: str, **kwargs) -> Entity:
+    entity = get(entity_id)
+    return set_values_on_item(entity, **kwargs)
+```
+
+### Database Time
+
+Use `get_db_now()` for consistent timestamps:
+
+```python
+from .util import get_db_now
+
+created_at = get_db_now()
+```
+
+## Integration Objects Pattern
+
+The `integration_objects/` directory contains specialized patterns for integration entities:
+
+### Manager Pattern
+
+Integration objects use a manager pattern with type-based model selection:
+
+```python
+from ..integration_objects.manager import get, create, update, delete_many
+from ..integration_objects.helper import get_supported_metadata_keys
+
+# Get integration model type based on integration
+IntegrationModel = integration_model(integration_id=integration_id)
+
+# Use manager functions with model type
+records = get(IntegrationModel, integration_id)
+record = create(IntegrationModel, created_by=user_id, integration_id=integration_id, ...)
+```
+
+### Metadata Handling
+
+Integration objects have dynamic metadata fields:
+
+```python
+from ..integration_objects.helper import get_supported_metadata
+
+# Filter metadata to only supported keys
+supported_metadata = get_supported_metadata(table_name, raw_metadata)
+```
+
+**Rules:**
+- Use `integration_objects/manager.py` for CRUD operations
+- Use `integration_objects/helper.py` for metadata validation
+- Metadata keys are defined per integration type in `helper.py`
+
+## Best Practices
+
+1. **Always use `general.add()`** instead of `session.add()` directly
+2. **Default `with_commit=False`** for create/delete, `True` for update
+3. **Return entities** from create/update functions
+4. **Use type hints** for all function parameters and return types
+5. **Handle None cases** appropriately (return None or raise exception)
+6. **Use `flag_modified()`** for JSON field updates
+7. **Prevent SQL injection** in all queries
+8. **Cache appropriately** for read-heavy operations
+9. **Group related queries** in the same module
+10. **Keep functions focused** - one responsibility per function
+11. **Use `exists()`** for existence checks instead of checking `get()` result
+12. **Use `get_count()`** for counting entities instead of `len(get_all())`

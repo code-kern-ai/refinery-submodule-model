@@ -1,0 +1,377 @@
+# Database Operations Guidelines
+
+Rules and conventions for database operations, session management, and transactions.
+
+## Session Management
+
+### Session Access
+
+Always use the session from `session.py`:
+
+```python
+from ..session import session
+```
+
+**Never create your own session** - use the shared scoped session.
+
+### Context Variables
+
+The session uses context variables for request tracking:
+
+```python
+from ..session import request_id_ctx_var, get_request_id
+
+# Get current request ID
+request_id = get_request_id()
+```
+
+### Session Lifecycle
+
+- Sessions are automatically scoped per request
+- Use `general.get_ctx_token()` to create a new session context
+- Use `general.reset_ctx_token()` to clean up session context
+
+## CRUD Operations
+
+### Adding Entities
+
+Use `general.add()` instead of `session.add()`:
+
+```python
+from ..business_objects import general
+
+def create(...) -> Entity:
+    entity = Entity(...)
+    general.add(entity, with_commit=False)
+    return entity
+```
+
+### Adding Multiple Entities
+
+Use `general.add_all()` for batch operations:
+
+```python
+entities = [Entity(...), Entity(...)]
+general.add_all(entities, with_commit=False)
+```
+
+### Deleting Entities
+
+Use `general.delete()`:
+
+```python
+def delete(entity_id: str, with_commit: bool = False):
+    entity = get(entity_id)
+    general.delete(entity, with_commit)
+```
+
+## Transaction Control
+
+### Flush vs Commit
+
+- **Flush**: Writes changes to database but transaction can be rolled back
+- **Commit**: Permanently saves changes to database
+
+### `flush_or_commit()` Helper
+
+```python
+from ..business_objects import general
+
+# Flush only (default)
+general.flush_or_commit(False)
+
+# Commit transaction
+general.flush_or_commit(True)
+
+# No operation
+general.flush_or_commit(None)
+```
+
+### `with_commit` Parameter Pattern
+
+- **Create/Delete**: Default `with_commit=False` (flush only)
+- **Update**: Default `with_commit=True` (commit immediately)
+
+```python
+def create(..., with_commit: bool = False) -> Entity:
+    # ...
+    general.add(entity, with_commit)
+
+def update(..., with_commit: bool = True) -> Entity:
+    # ...
+    general.flush_or_commit(with_commit)
+```
+
+## Commit and Rollback
+
+### Manual Commit
+
+```python
+from ..business_objects import general
+
+general.commit()
+```
+
+### Rollback
+
+```python
+from ..business_objects import general
+
+general.rollback()
+```
+
+**Use rollback** when errors occur to maintain data consistency.
+
+### Session Removal
+
+```python
+from ..business_objects import general
+
+# Remove and refresh session
+general.remove_and_refresh_session()
+
+# Remove session only
+general.remove_session()
+```
+
+## Query Execution
+
+### ORM Queries
+
+Use SQLAlchemy ORM for type-safe queries:
+
+```python
+from ..session import session
+from ..models import User
+
+users = session.query(User).filter(User.role == "ENGINEER").all()
+```
+
+### Raw SQL Queries
+
+For raw SQL, use `general.execute()`:
+
+```python
+from ..business_objects import general
+
+# Execute and get all results
+results = general.execute_all("SELECT * FROM users")
+
+# Execute and get first result
+result = general.execute_first("SELECT COUNT(*) FROM users")
+
+# Execute with parameters
+query = "SELECT * FROM users WHERE id = :user_id"
+result = general.execute(query, {"user_id": user_id})
+```
+
+### SQL Injection Prevention
+
+**Always use parameterized queries** or `prevent_sql_injection()`:
+
+```python
+from ..util import prevent_sql_injection
+
+# For raw SQL
+user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
+query = f"SELECT * FROM users WHERE id = '{user_id}'"
+
+# Prefer ORM queries (automatically safe)
+user = session.query(User).filter(User.id == user_id).first()
+```
+
+## Object State Management
+
+### Expunge
+
+Remove object from session (useful for caching):
+
+```python
+from ..business_objects import general
+
+general.expunge(entity)
+```
+
+### Make Transient
+
+Make object transient (detached from session):
+
+```python
+from ..business_objects import general
+
+general.make_transient(entity)
+```
+
+**Common pattern for cached objects:**
+
+```python
+@TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
+def get_user_cached(user_id: str) -> User:
+    user = get(user_id)
+    if not user:
+        return None
+    
+    general.expunge(user)
+    general.make_transient(user)
+    return user
+```
+
+### Refresh
+
+Refresh object from database:
+
+```python
+from ..business_objects import general
+
+entity = general.refresh(entity)
+```
+
+## Error Handling
+
+### Session Rollback on Error
+
+Always rollback on exceptions:
+
+```python
+from ..business_objects import general
+
+try:
+    # Database operations
+    general.add(entity, with_commit=True)
+except Exception as e:
+    general.rollback()
+    raise
+```
+
+### Check Session State
+
+```python
+from ..session import check_session_and_rollback
+
+try:
+    check_session_and_rollback()
+except Exception:
+    # Handle session error
+    pass
+```
+
+## Connection Pooling
+
+### Configuration
+
+Connection pool settings are configured via environment variables:
+
+- `POSTGRES_POOL_SIZE`: Pool size (default: 20)
+- `POSTGRES_POOL_MAX_OVERFLOW`: Max overflow (default: 10)
+- `POSTGRES_POOL_RECYCLE`: Recycle time in seconds (default: 3600)
+- `POSTGRES_POOL_USE_LIFO`: Use LIFO instead of FIFO (default: false)
+- `POSTGRES_POOL_PRE_PING`: Test connections on checkout (default: true)
+
+### Best Practices
+
+- Don't hold connections longer than necessary
+- Use appropriate pool size for your workload
+- Enable `pool_pre_ping` to handle stale connections
+- Set appropriate `pool_recycle` to refresh connections
+
+## Query Building Helpers
+
+### `construct_select_columns()`
+
+Build SELECT column lists dynamically:
+
+```python
+from ..business_objects import general
+
+columns = general.construct_select_columns(
+    table="user",
+    prefix="u",
+    exclude_columns=["password"],
+    include_columns=["id", "email", "name"],
+)
+```
+
+### `simple_selection_builder()`
+
+Build simple SELECT queries:
+
+```python
+from ..business_objects import general
+
+query = general.simple_selection_builder(
+    table="user",
+    exclude_columns=["password"],
+    where_condition="role = 'ENGINEER'",
+    order_by="created_at DESC",
+)
+```
+
+## Debugging
+
+### Print ORM Query
+
+Print the SQL generated by ORM queries:
+
+```python
+from ..business_objects import general
+
+query = session.query(User).filter(User.role == "ENGINEER")
+general.print_orm_query(query)
+```
+
+### Get Dialect
+
+```python
+from ..business_objects import general
+
+dialect = general.get_dialect()
+```
+
+## Best Practices
+
+1. **Always use `general.add()`** instead of `session.add()` directly
+2. **Use `with_commit` parameter** to control transaction boundaries
+3. **Default `with_commit=False`** for create/delete, `True` for update
+4. **Rollback on errors** to maintain data consistency
+5. **Use ORM queries** when possible (type-safe, prevents SQL injection)
+6. **Prevent SQL injection** in all raw SQL queries
+7. **Expunge and make transient** cached objects
+8. **Don't hold sessions** longer than necessary
+9. **Use batch operations** (`add_all`) when adding multiple entities
+10. **Refresh objects** when you need latest data from database
+
+## Common Patterns
+
+### Transaction Pattern
+
+```python
+def create_with_related(project_id: str, name: str, user_id: str):
+    try:
+        project = create(project_id, name, with_commit=False)
+        user_project = create_user_project(user_id, project.id, with_commit=False)
+        general.commit()
+        return project
+    except Exception:
+        general.rollback()
+        raise
+```
+
+### Batch Create Pattern
+
+```python
+def create_batch(entities_data: List[Dict]) -> List[Entity]:
+    entities = [Entity(**data) for data in entities_data]
+    general.add_all(entities, with_commit=True)
+    return entities
+```
+
+### Safe Query Pattern
+
+```python
+def get_safe(project_id: str, entity_id: str) -> Optional[Entity]:
+    try:
+        return get(project_id, entity_id)
+    except Exception:
+        general.rollback()
+        return None
+```

@@ -1,0 +1,64 @@
+# Model Guidelines
+
+This directory contains guidelines and conventions for the `submodules/model` module. These guidelines ensure consistency, maintainability, and correctness across all database models, business objects, and related code.
+
+## Overview
+
+The `submodules/model` module follows a layered architecture:
+
+- **Entity Models** (`models.py`): SQLAlchemy ORM models representing database tables
+- **Business Objects** (`business_objects/`, `cognition_objects/`, `global_objects/`): Business logic and CRUD operations for entities
+- **Integration Objects** (`integration_objects/`): Specialized logic for integration entities (SharePoint, GitHub, PDF, etc.)
+- **Enums** (`enums.py`): Type-safe enumeration definitions
+- **Utilities** (`util.py`, `session.py`): Helper functions and database session management
+
+## Guideline Files
+
+- **[entities.mdc](./entities.mdc)** - Rules for defining SQLAlchemy entity models
+- **[business-objects.mdc](./business-objects.mdc)** - Rules for business object modules and CRUD operations
+- **[enums.mdc](./enums.mdc)** - Rules for enum definitions and usage
+- **[database-operations.mdc](./database-operations.mdc)** - Rules for database operations, session management, and transactions
+
+## General Principles
+
+1. **Separation of Concerns**: Entity models define structure, business objects contain logic
+2. **Type Safety**: Use enums and type hints consistently
+3. **Consistency**: Follow established naming conventions and patterns
+4. **Security**: Always use parameterized queries and prevent SQL injection
+5. **Performance**: Use appropriate indexes, caching, and query optimization
+
+## Quick Reference
+
+### Directory Structure
+
+```
+submodules/model/
+├── models.py              # All SQLAlchemy entity models
+├── enums.py               # Enum definitions
+├── session.py             # Database session management
+├── util.py                # Utility functions
+├── business_objects/      # Business domain logic
+│   ├── user.py
+│   ├── project.py
+│   └── ...
+├── cognition_objects/     # Cognition domain logic
+│   ├── conversation.py
+│   ├── message.py
+│   └── ...
+├── global_objects/        # Global/shared logic
+│   └── ...
+└── integration_objects/   # Integration-specific logic
+    ├── helper.py
+    └── manager.py
+```
+
+### Common Patterns
+
+- Entity models inherit from `Base` (SQLAlchemy declarative_base)
+- Business objects provide `get()`, `create()`, `update()`, `delete()` functions
+- Use `with_commit` parameter to control transaction boundaries
+- Foreign keys use `ondelete` cascades appropriately
+- UUIDs are used for primary keys
+- Timestamps use `created_at` with `default=sql.func.now()`
+
+For detailed rules, see the individual guideline files referenced above.
