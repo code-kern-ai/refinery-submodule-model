@@ -4,7 +4,7 @@ from typing import List, Dict, Optional, Union
 from submodules.model import enums
 
 
-from ..session import session, request_id_ctx_var
+from ..session import session
 from ..models import Organization, Project, User
 from ..business_objects import project, user, general
 from ..util import prevent_sql_injection
@@ -74,8 +74,20 @@ def get_organization_overview_stats(
     return []
 
 
-def get_user_count(organization_id: str) -> int:
-    return session.query(User).filter(User.organization_id == organization_id).count()
+def get_user_count(organization_id: str) -> Dict[str, int]:
+    org_counts = {
+        "normal": session.query(User)
+        .filter(
+            User.organization_id == organization_id,
+            User.is_light_user.is_(False) | User.is_light_user.is_(None),
+        )
+        .count(),
+        "light": session.query(User)
+        .filter(User.organization_id == organization_id, User.is_light_user.is_(True))
+        .count(),
+    }
+    org_counts["total"] = org_counts["normal"] + org_counts["light"]
+    return org_counts
 
 
 def __get_organization_overview_stats_query(organization_id: str):

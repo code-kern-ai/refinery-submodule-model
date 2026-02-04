@@ -868,7 +868,6 @@ class AdminMacrosDisplay(Enum):
 
 
 class CustomerButtonType(Enum):
-
     DATA_MAPPER = "DATA_MAPPER"
     # sends data to the data mapper, needs to ensure the request has the key included!
 
@@ -1035,6 +1034,7 @@ class MessageType(Enum):
 
 class TimedExecutionKey(Enum):
     LAST_RESET_USER_MESSAGE_COUNT = "LAST_RESET_USER_MESSAGE_COUNT"
+    LAST_RESET_USER_MESSAGE_COUNT_DAY = "LAST_RESET_USER_MESSAGE_COUNT_DAY"
 
 
 class ETLSplitStrategy(EnumKern):

@@ -59,5 +59,18 @@ def __execute_timed_execution_by_key(
         session.query(User).update({User.messages_created_this_month: 0})
         general.flush_or_commit(False)
         return True
+    elif key == TimedExecutionKey.LAST_RESET_USER_MESSAGE_COUNT_DAY:
+        # check if day has changed since last execution
+        now = datetime.now()
+        if (
+            last_executed_at.year == now.year
+            and last_executed_at.month == now.month
+            and last_executed_at.day == now.day
+        ):
+            return False  # already executed this day
+
+        session.query(User).update({User.messages_created_today: 0})
+        general.flush_or_commit(False)
+        return True
 
     raise NotImplementedError(f"Timed execution for key {key} is not implemented yet")
