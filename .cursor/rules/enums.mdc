@@ -1,4 +1,6 @@
 ---
+description: Rules for enum definitions and usage
+globs: ["enums.py"]
 alwaysApply: true
 ---
 

@@ -1,4 +1,6 @@
 ---
+description: Rules for business object modules and CRUD operations
+globs: ["business_objects/**/*.py", "cognition_objects/**/*.py", "global_objects/**/*.py", "integration_objects/**/*.py"]
 alwaysApply: true
 ---
 

@@ -1,4 +1,6 @@
 ---
+description: Rules for database operations, session management, and transactions
+globs: ["session.py", "session_wrapper.py", "business_objects/general.py", "db_cache.py"]
 alwaysApply: true
 ---
 

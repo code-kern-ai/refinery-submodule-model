@@ -1,4 +1,5 @@
 ---
+description: Main guidelines and architecture overview for submodules/model
 alwaysApply: true
 ---
 
@@ -30,6 +31,7 @@ The `submodules/model` module follows a layered architecture:
 3. **Consistency**: Follow established naming conventions and patterns
 4. **Security**: Always use parameterized queries and prevent SQL injection
 5. **Performance**: Use appropriate indexes, caching, and query optimization
+6. **Database Migrations**: Always create and apply migrations after schema changes (see [entities.mdc](./entities.mdc) for details)
 
 ## Quick Reference
 
@@ -64,5 +66,6 @@ submodules/model/
 - Foreign keys use `ondelete` cascades appropriately
 - UUIDs are used for primary keys
 - Timestamps use `created_at` with `default=sql.func.now()`
+- **After schema changes**: Run `./db commit "message"` then `./db migrate`
 
 For detailed rules, see the individual guideline files referenced above.
