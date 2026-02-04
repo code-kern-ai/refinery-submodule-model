@@ -294,6 +294,10 @@ from .models import Base
 
 ## Database Migrations
 
+### Important: Migration Location
+
+**Database migrations MUST be done only from `refinery-gateway`.** The migration commands (`./db commit` and `./db migrate`) must be executed from the refinery-gateway root directory, not from within the submodule.
+
 ### Critical Workflow
 
 **When adding new tables or columns to existing tables**, you MUST follow this migration workflow:
