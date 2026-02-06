@@ -66,6 +66,5 @@ submodules/model/
 - Foreign keys use `ondelete` cascades appropriately
 - UUIDs are used for primary keys
 - Timestamps use `created_at` with `default=sql.func.now()`
-- **After schema changes**: Run `./db commit "message"` then `./db migrate`
 
 For detailed rules, see the individual guideline files referenced above.

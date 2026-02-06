@@ -25,31 +25,11 @@ Rules and conventions for business object modules in `business_objects/`, `cogni
 
 ## Standard CRUD Functions
 
-Every business object module should provide these standard functions:
+Every business object module should provide these standard functions. **Note**: Not all entities are project-scoped. Some entities are global, organization-scoped, user-scoped, or independent. Choose the appropriate pattern based on your entity's scope.
 
 ### Get Functions
 
 #### Single Entity
-
-```python
-def get(project_id: str, entity_id: str) -> Entity:
-    return (
-        session.query(Entity)
-        .filter(Entity.project_id == project_id, Entity.id == entity_id)
-        .first()
-    )
-```
-
-#### By ID Only
-
-```python
-def get(entity_id: str) -> Entity:
-    return session.query(Entity).get(entity_id)
-```
-
-#### By ID Only (Alternative Pattern)
-
-Some entities use `get_by_id()` when only ID is needed (no project_id scope):
 
 ```python
 def get_by_id(entity_id: str) -> Entity:
@@ -59,8 +39,8 @@ def get_by_id(entity_id: str) -> Entity:
 #### Multiple Entities
 
 ```python
-def get_all(project_id: str) -> List[Entity]:
-    return session.query(Entity).filter(Entity.project_id == project_id).all()
+def get_all() -> List[Entity]:
+    return session.query(Entity).all()
 
 def get_by_id_list(entity_ids: List[str]) -> List[Entity]:
     return session.query(Entity).filter(Entity.id.in_(entity_ids)).all()
@@ -69,10 +49,10 @@ def get_by_id_list(entity_ids: List[str]) -> List[Entity]:
 #### Existence Check
 
 ```python
-def exists(project_id: str, entity_id: str) -> bool:
+def exists(entity_id: str) -> bool:
     return (
         session.query(Entity)
-        .filter(Entity.project_id == project_id, Entity.id == entity_id)
+        .filter(Entity.id == entity_id)
         .first()
         is not None
     )
@@ -81,13 +61,10 @@ def exists(project_id: str, entity_id: str) -> bool:
 #### Count Queries
 
 ```python
-def get_count(project_id: str) -> int:
-    return (
-        session.query(Entity)
-        .filter(Entity.project_id == project_id)
-        .count()
-    )
+def get_count() -> int:
+    return session.query(Entity).count()
 ```
+
 
 #### Get By Name/Field
 
@@ -100,7 +77,6 @@ def get_by_name(name: str) -> Entity:
 
 ```python
 def create(
-    project_id: str,
     name: str,
     created_by: str,
     with_commit: bool = False,
@@ -108,7 +84,6 @@ def create(
     # ... other parameters
 ) -> Entity:
     entity = Entity(
-        project_id=project_id,
         name=name,
         created_by=created_by,
         created_at=created_at,
@@ -120,7 +95,6 @@ def create(
 ```
 
 **Rules:**
-- Always accept `with_commit` parameter (default `False`)
 - Accept optional `created_at` for testing/time travel scenarios
 - Use `general.add()` to add to session
 - Return the created entity
@@ -129,14 +103,13 @@ def create(
 
 ```python
 def update(
-    project_id: str,
     entity_id: str,
     name: Optional[str] = None,
     description: Optional[str] = None,
     with_commit: bool = True,
     # ... other optional parameters
 ) -> Entity:
-    entity = get(project_id, entity_id)
+    entity = get(entity_id)
     if not entity:
         raise ValueError(f"Entity {entity_id} not found")
     
@@ -150,7 +123,7 @@ def update(
         entity.some_json_field = some_json_field
         flag_modified(entity, 'some_json_field')
     
-    flush_or_commit(with_commit)
+    general.flush_or_commit(with_commit)
     return entity
 ```
 
@@ -158,18 +131,16 @@ def update(
 - All update parameters should be `Optional`
 - Use `None` checks to only update provided fields
 - Use `flag_modified()` for JSON fields
-- Default `with_commit=True` for updates (different from create)
 - Return the updated entity
 
 ### Delete Function
 
 ```python
 def delete(
-    project_id: str,
     entity_id: str,
     with_commit: bool = False,
 ) -> None:
-    entity = get(project_id, entity_id)
+    entity = get(entity_id)
     if not entity:
         return  # Or raise exception
     
@@ -221,28 +192,24 @@ general.add(entity, with_commit=True)   # Commit
 
 ## Query Patterns
 
-### Basic Query
-
-```python
-from ..session import session
-from ..models import Entity
-
-def get(project_id: str, entity_id: str) -> Entity:
-    return (
-        session.query(Entity)
-        .filter(Entity.project_id == project_id)
-        .filter(Entity.id == entity_id)
-        .first()
-    )
-```
-
 ### Filtering
 
 ```python
-def get_active(project_id: str) -> List[Entity]:
+def get_active() -> List[Entity]:
     return (
         session.query(Entity)
-        .filter(Entity.project_id == project_id)
+        .filter(Entity.is_active == True)
+        .all()
+    )
+```
+
+**Organization-scoped example:**
+
+```python
+def get_active(organization_id: str) -> List[Entity]:
+    return (
+        session.query(Entity)
+        .filter(Entity.organization_id == organization_id)
         .filter(Entity.is_active == True)
         .all()
     )
@@ -251,10 +218,9 @@ def get_active(project_id: str) -> List[Entity]:
 ### Ordering
 
 ```python
-def get_all_ordered(project_id: str) -> List[Entity]:
+def get_all_ordered() -> List[Entity]:
     return (
         session.query(Entity)
-        .filter(Entity.project_id == project_id)
         .order_by(Entity.created_at.desc())
         .all()
     )
@@ -263,11 +229,10 @@ def get_all_ordered(project_id: str) -> List[Entity]:
 ### Joins
 
 ```python
-def get_with_relations(project_id: str) -> List[Entity]:
+def get_with_relations() -> List[Entity]:
     return (
         session.query(Entity)
         .join(RelatedEntity)
-        .filter(Entity.project_id == project_id)
         .all()
     )
 ```
@@ -306,17 +271,14 @@ query = f"SELECT * FROM users WHERE id = '{user_id}'"
 **Pattern for complex raw SQL:**
 
 ```python
-def get_with_aggregations(project_id: str) -> Dict:
-    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
-    
-    query = f"""
+def get_with_aggregations() -> Dict:
+    query = """
     SELECT
         json_agg(json_build_object(
             'id', entity.id,
             'name', entity.name
         )) AS entities
     FROM entity
-    WHERE project_id = '{project_id}'::UUID
     """
     
     result = general.execute_first(query)
@@ -336,8 +298,8 @@ When updating JSON fields, use `flag_modified()`:
 ```python
 from sqlalchemy.orm.attributes import flag_modified
 
-def update_metadata(project_id: str, entity_id: str, metadata: Dict):
-    entity = get(project_id, entity_id)
+def update_metadata(entity_id: str, metadata: Dict):
+    entity = get(entity_id)
     entity.metadata = metadata
     flag_modified(entity, 'metadata')
     general.flush_or_commit(True)
@@ -395,10 +357,10 @@ from . import user, project, organization
 ### Entity Not Found
 
 ```python
-def get_or_raise(project_id: str, entity_id: str) -> Entity:
-    entity = get(project_id, entity_id)
+def get_or_raise(entity_id: str) -> Entity:
+    entity = get(entity_id)
     if not entity:
-        raise ValueError(f"Entity {entity_id} not found in project {project_id}")
+        raise ValueError(f"Entity {entity_id} not found")
     return entity
 ```
 
@@ -407,7 +369,7 @@ def get_or_raise(project_id: str, entity_id: str) -> Entity:
 Validate inputs before database operations:
 
 ```python
-def create(project_id: str, name: str, **kwargs) -> Entity:
+def create(name: str, **kwargs) -> Entity:
     if not name or not name.strip():
         raise ValueError("Name cannot be empty")
     
