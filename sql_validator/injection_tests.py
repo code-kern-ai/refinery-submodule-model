@@ -1,7 +1,9 @@
 # injection_tests.py
 import os
+import re
 import sys
 import importlib
+import importlib.util
 
 def _get_validate():
     try:
@@ -17,15 +19,33 @@ def _get_validate():
 
 validate_sql_clause = _get_validate()
 
+# Only allow valid Python module names when loading test modules by path
+_SAFE_MODULE_NAME = re.compile(r"^[a-zA-Z0-9_]+$")
+
+
+def _load_test_module_by_path(test_file: str):
+    """Load a test module from tests/ by file path. Uses importlib.util to avoid dynamic import_module."""
+    path = os.path.join("tests", test_file + ".py")
+    spec = importlib.util.spec_from_file_location("tests.dynamic", path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def run_tests():
-    # Dynamic import from tests/ folder
+    # Load test modules from tests/ folder by path (no dynamic import_module)
     test_files = [f[:-3] for f in os.listdir("tests") if f.endswith(".py") and f != "__init__.py"]
-    
     all_valid = []
     all_invalid = []
-    
+
     for test_file in test_files:
-        module = importlib.import_module(f"tests.{test_file}")
+        if not _SAFE_MODULE_NAME.match(test_file):
+            continue
+        module = _load_test_module_by_path(test_file)
+        if module is None:
+            continue
         if hasattr(module, "VALID_CASES"):
             all_valid.extend(module.VALID_CASES)
         if hasattr(module, "INVALID_CASES"):
