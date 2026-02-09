@@ -1,5 +1,6 @@
 from typing import List, Optional, Dict, Union
 from sqlalchemy import text
+from sqlalchemy.sql.expression import bindparam
 
 from . import general
 from .. import enums
@@ -10,6 +11,20 @@ from ..util import prevent_sql_injection
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.expression import cast
 from datetime import datetime, timedelta
+
+
+def _task_info_json_eq(template: str, **params: str):
+    """Build a SQLAlchemy text() filter with bound parameters to avoid SQL injection.
+    template must be a literal string with :param placeholders (e.g. \"task_info->>'project_id' = :project_id\").
+    """
+    return text(template).bindparams(**params)
+
+
+def _task_info_json_in(ids: List[str]):
+    """Build a SQLAlchemy text() filter for task_info->>'group_execution_id' IN :ids with bound params."""
+    return text("task_info->>'group_execution_id' IN :ids").bindparams(
+        bindparam("ids", ids, expanding=True)
+    )
 
 
 def get(task_id: str) -> Optional[TaskQueue]:
@@ -41,9 +56,13 @@ def get_all_queued_etl_task_for_conversation(
         .filter(
             TaskQueue.organization_id == org_id,
             TaskQueue.task_type == enums.TaskType.EXECUTE_ETL.value,
-            text(f"task_info->'tmp_doc_metadata'->>'project_id' = '{project_id}'"),
-            text(
-                f"task_info->'tmp_doc_metadata'->>'conversation_id' = '{conversation_id}'"
+            _task_info_json_eq(
+                "task_info->'tmp_doc_metadata'->>'project_id' = :project_id",
+                project_id=project_id,
+            ),
+            _task_info_json_eq(
+                "task_info->'tmp_doc_metadata'->>'conversation_id' = :conversation_id",
+                conversation_id=conversation_id,
             ),
         )
         .all()
@@ -64,7 +83,7 @@ def get_all_waiting_by_type(
     return (
         session.query(TaskQueue)
         .filter(
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            _task_info_json_eq("task_info->>'project_id' = :project_id", project_id=project_id),
             TaskQueue.task_type == task_type.value,
             TaskQueue.is_active == False,
         )
@@ -78,8 +97,8 @@ def get_waiting_by_attribute_id(project_id: str, attribute_id: str) -> TaskQueue
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.ATTRIBUTE_CALCULATION.value,
-            text(f"task_info->>'attribute_id' = '{attribute_id}'"),
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            _task_info_json_eq("task_info->>'attribute_id' = :attribute_id", attribute_id=attribute_id),
+            _task_info_json_eq("task_info->>'project_id' = :project_id", project_id=project_id),
             TaskQueue.is_active == False,
         )
         .first()
@@ -92,8 +111,11 @@ def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQu
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.INFORMATION_SOURCE.value,
-            text(f"task_info->>'information_source_id' = '{source_id}'"),
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            _task_info_json_eq(
+                "task_info->>'information_source_id' = :information_source_id",
+                information_source_id=source_id,
+            ),
+            _task_info_json_eq("task_info->>'project_id' = :project_id", project_id=project_id),
             TaskQueue.is_active == False,
         )
         .first()
@@ -108,10 +130,8 @@ def get_waiting_by_macro_group_execution_ids(
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.RUN_COGNITION_MACRO.value,
-            text(
-                f"task_info->>'group_execution_id' IN ({','.join(map(repr, source_ids))})"
-            ),
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            _task_info_json_in(source_ids),
+            _task_info_json_eq("task_info->>'project_id' = :project_id", project_id=project_id),
         )
         .first()
     )
@@ -124,7 +144,7 @@ def get_by_tokenization(project_id: str) -> TaskQueue:
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.TOKENIZATION.value,
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            _task_info_json_eq("task_info->>'project_id' = :project_id", project_id=project_id),
         )
         .order_by(TaskQueue.created_at.asc())
         .first()
