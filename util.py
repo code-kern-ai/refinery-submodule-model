@@ -326,3 +326,29 @@ def __mask_sql_str(sql_str: str, remove_quotes: bool) -> str:
 
 def ensure_sql_text(sql: str) -> str:
     return sql_text(sql)
+
+
+def safe_text(sql_template: str, **params: Any) -> "sqlalchemy.sql.expression.TextClause":
+    """
+    Build a SQLAlchemy text() clause with bound parameters to prevent SQL injection.
+    Use :param_name placeholders in sql_template; pass values as keyword arguments.
+    Values are sent as bound parameters and never interpolated into the SQL string.
+    Exportable for use by parent repos.
+    """
+    return sql_text(sql_template).bindparams(**params)
+
+
+def safe_text_in_list(
+    sql_expr: str, values: List[Any], param_prefix: str = "v"
+) -> "sqlalchemy.sql.expression.TextClause":
+    """
+    Build a SQLAlchemy text() clause for 'sql_expr IN (:p0, :p1, ...)' with bound parameters.
+    sql_expr is a literal expression (e.g. "task_info->>'group_execution_id'"); values are bound.
+    Exportable for use by parent repos.
+    """
+    if not values:
+        # Empty IN is typically false; use a condition that matches nothing
+        return sql_text("1 = 0")
+    placeholders = ", ".join(f":{param_prefix}{i}" for i in range(len(values)))
+    params = {f"{param_prefix}{i}": v for i, v in enumerate(values)}
+    return sql_text(f"{sql_expr} IN ({placeholders})").bindparams(**params)
