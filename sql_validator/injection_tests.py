@@ -1,7 +1,19 @@
 # injection_tests.py
 import os
+import re
 import sys
 import importlib
+
+# Only allow Python identifier-style names to prevent arbitrary code load via import_module.
+_SAFE_MODULE_NAME = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+
+def _safe_import_test_module(module_name: str):
+    """Import tests.<module_name> only if module_name is a safe identifier (whitelist)."""
+    if not _SAFE_MODULE_NAME.match(module_name):
+        raise ValueError(f"Invalid test module name: {module_name!r}")
+    return importlib.import_module(f"tests.{module_name}")
+
 
 def _get_validate():
     try:
@@ -25,7 +37,7 @@ def run_tests():
     all_invalid = []
     
     for test_file in test_files:
-        module = importlib.import_module(f"tests.{test_file}")
+        module = _safe_import_test_module(test_file)
         if hasattr(module, "VALID_CASES"):
             all_valid.extend(module.VALID_CASES)
         if hasattr(module, "INVALID_CASES"):

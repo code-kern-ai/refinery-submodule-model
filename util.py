@@ -326,3 +326,17 @@ def __mask_sql_str(sql_str: str, remove_quotes: bool) -> str:
 
 def ensure_sql_text(sql: str) -> str:
     return sql_text(sql)
+
+
+def safe_text(sql_template: str, **params: Any) -> Any:
+    """Build a SQLAlchemy text() clause with bound parameters to prevent SQL injection.
+
+    Use only literal SQL templates with named placeholders (e.g. :param_name).
+    Values are passed as bound parameters and never interpolated into the SQL string.
+    Export for use by parent repos that need parameterized raw SQL.
+
+    Example:
+        safe_text("task_info->>'project_id' = :project_id", project_id=project_id)
+        safe_text("task_info->>'id' = ANY(:ids)", ids=id_list)
+    """
+    return sql_text(sql_template).bindparams(**params)
