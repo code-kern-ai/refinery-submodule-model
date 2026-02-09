@@ -181,7 +181,9 @@ def create(
     if not integration_db_bo.get_by_id(integration_id):
         # If the integration does not exist,
         # it was likely deleted during runtime
-        print(f"Integration with id '{integration_id}' not found", flush=True)
+        print(
+            f"ERROR:     integration with id '{integration_id}' not found", flush=True
+        )
         return
     integration_record = IntegrationModel(
         created_by=created_by,
@@ -215,7 +217,9 @@ def update(
     if not integration_db_bo.get_by_id(integration_id):
         # If the integration does not exist,
         # it was likely deleted during runtime
-        print(f"Integration with id '{integration_id}' not found", flush=True)
+        print(
+            f"ERROR:     integration with id '{integration_id}' not found", flush=True
+        )
         return
 
     record_updated = False
@@ -284,11 +288,12 @@ def clear_history(
 def get_supported_metadata(
     table_name: str, metadata: Dict[str, Union[str, int, float, bool]]
 ) -> Dict[str, Any]:
+    metadata = __rename_metadata(table_name, metadata)
     supported_keys = get_supported_metadata_keys(table_name)
     supported_metadata = {
         key: metadata[key] for key in supported_keys.intersection(metadata.keys())
     }
-    return __rename_metadata(table_name, supported_metadata)
+    return supported_metadata
 
 
 def __rename_metadata(

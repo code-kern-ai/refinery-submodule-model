@@ -1060,28 +1060,144 @@ class AdminMessage(Base):
     scheduled_date = Column(DateTime)
 
 
-class TaskQueue(Base):
-    # start without indexing since the idea is to remove on calculation start
-    # only meant as persistent layer, queue itself accesses cache
-    __tablename__ = Tablenames.TASK_QUEUE.value
-    __table_args__ = {"schema": "global"}
+class EvaluationSet(Base):
+    __tablename__ = Tablenames.EVALUATION_SET.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    task_type = Column(String)  # enum.TaskType e.g. EMBEDDING
-    task_info = Column(JSON)
-    # priority queue is for probable fast execution tasks (e.g. lf calculation)
-    priority = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=False)
+    question = Column(String)
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
         index=True,
     )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    record_ids = Column(JSON)
+
+
+class EvaluationGroup(Base):
+    __tablename__ = Tablenames.EVALUATION_GROUP.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    evaluation_set_ids = Column(JSON)
+
+
+class EvaluationRun(Base):
+    __tablename__ = Tablenames.EVALUATION_RUN.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    evaluation_group_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.EVALUATION_GROUP.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    embedding_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    state = Column(String)
+    results = Column(JSON)
+    meta_info = Column(JSON)
+
+
+class PlaygroundQuestion(Base):
+    __tablename__ = Tablenames.PLAYGROUND_QUESTION.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    """
+    Playground question can be extended with the below properties to allow the following:
+        - User can see questions with specific results relating to the embedding used
+        - Can be used for comparison with new results using same question but different embedding
+    """
+    # embedding_id = Column(
+    #     UUID(as_uuid=True),
+    #     ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="SET NULL"),
+    #     index=True,
+    # )
+    # record_ids = Column(JSON)
+    # meta_info = Column(JSON)
+
+
+class DataBlock(Base):
+    __tablename__ = Tablenames.DATA_BLOCK.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    description = Column(String)
+    type = Column(String)  # enum.DataBlockType
+
+    sql_config = Column(JSON)
+    sql_data = Column(ARRAY(JSON))
+
+
+class DataBlockAttribute(Base):
+    """Similar to Attribute, but for DataBlocks"""
+
+    __tablename__ = Tablenames.DATA_BLOCK_ATTRIBUTES.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    data_block_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.DATA_BLOCK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    data_type = Column(String)  # of type enums.DataTypes
+    is_primary_key = Column(Boolean, default=False)
+    relative_position = Column(Integer)
+    user_created = Column(Boolean, default=False)
+    source_code = Column(String)
+    state = Column(String, default=AttributeState.UPLOADED.value)
+    logs = Column(ARRAY(String))
+    started_at = Column(DateTime, default=sql.func.now())
+    finished_at = Column(DateTime)
+    progress = Column(Float)
+    additional_config = Column(JSON, comment="used when data_type == LLM_RESPONSE")
 
 
 # --- COGNITION TABLES
@@ -2026,176 +2142,6 @@ class CognitionGroupMember(Base):
     created_at = Column(DateTime, default=sql.func.now())
 
 
-class ETLConfigPresets(Base):
-    __tablename__ = Tablenames.ETL_CONFIG_PRESET.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    name = Column(String)
-    description = Column(String)
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    etl_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
-    add_config = Column(JSON)  # additional config for e.g. setting scope dict values
-
-
-# =========================== Global tables ===========================
-class GlobalWebsocketAccess(Base):
-    # table to store prepared websocket configuration.
-    # to ensure stateless communication, the configuration is stored in the database
-    # an entry doesn't mean it will be used but can be used
-    # example code runner that prepares the access but the custom code doesn't have to use it
-    # entries should be cleared on startup
-
-    __tablename__ = Tablenames.WEBSOCKET_ACCESS.value
-    __table_args__ = {"schema": "global"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    config = Column(JSON)
-    in_use = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-
-
-class CustomerButton(Base):
-    # table to configuration customer buttons
-
-    __tablename__ = Tablenames.CUSTOMER_BUTTON.value
-    __table_args__ = {"schema": "global"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
-        index=True,
-        # not part of p-key since a customer could have multiple
-    )
-    type = Column(String)  # enums.CustomerButtonType
-    location = Column(String)  # enums.CustomerButtonLocation
-    visible = Column(Boolean, default=False)  # for easy disable
-    config = Column(JSON)  # changes based on type
-    # e.g. for DATA_MAPPER
-    # {
-    #     "url":"http://localhost:9060/hdi/map-to-collect-data?key=abc123", # including access key for e.g. external mapper
-    #     "icon":"<icon_name>",
-    #     "tooltip":"Map results to HDI D&O Excel"
-    # }
-
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-
-
-class EvaluationSet(Base):
-    __tablename__ = Tablenames.EVALUATION_SET.value
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    question = Column(String)
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    record_ids = Column(JSON)
-
-
-class EvaluationGroup(Base):
-    __tablename__ = Tablenames.EVALUATION_GROUP.value
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String)
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    evaluation_set_ids = Column(JSON)
-
-
-class EvaluationRun(Base):
-    __tablename__ = Tablenames.EVALUATION_RUN.value
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    evaluation_group_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.EVALUATION_GROUP.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    embedding_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    state = Column(String)
-    results = Column(JSON)
-    meta_info = Column(JSON)
-
-
-class PlaygroundQuestion(Base):
-    __tablename__ = Tablenames.PLAYGROUND_QUESTION.value
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    question = Column(String)
-    created_at = Column(DateTime, default=sql.func.now())
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    """
-    Playground question can be extended with the below properties to allow the following:
-        - User can see questions with specific results relating to the embedding used
-        - Can be used for comparison with new results using same question but different embedding
-    """
-    # embedding_id = Column(
-    #     UUID(as_uuid=True),
-    #     ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="SET NULL"),
-    #     index=True,
-    # )
-    # record_ids = Column(JSON)
-    # meta_info = Column(JSON)
-
-
-class FullAdminAccess(Base):
-    __tablename__ = Tablenames.FULL_ADMIN_ACCESS.value
-    __table_args__ = {"schema": "global"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email = Column(String, unique=True)
-    meta_info = Column(JSON)
-
-
 class CognitionIntegration(Base):
     __tablename__ = Tablenames.INTEGRATION.value
     __table_args__ = {"schema": "cognition"}
@@ -2265,6 +2211,365 @@ class CognitionIntegrationAccess(Base):
     )  # of type enums.CognitionIntegrationType.*.value
 
 
+class CognitionConversationTag(Base):
+    __tablename__ = Tablenames.CONVERSATION_TAG.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    config = Column(JSON)
+    # JSON schema for the tag configuration, e.g. global tag, use for projects, maybe at some point color, sort_by (conv creation, last message creation, tag creation, conv header)
+
+
+class CognitionConversationTagAssociation(Base):
+    __tablename__ = Tablenames.CONVERSATION_TAG_ASSOCIATION.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    tag_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"cognition.{Tablenames.CONVERSATION_TAG.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+class AdminQueryMessageSummary(Base):
+    __tablename__ = Tablenames.ADMIN_QUERY_MESSAGE_SUMMARY.value
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "project_id",
+            "day",
+            name="unique_admin_query_msg_activity_summary",
+        ),
+        {"schema": "cognition"},
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    day = Column(Date, nullable=False)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+    )
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
+    )
+
+    total_conversations = Column(Integer, default=0)
+    total_messages = Column(Integer, default=0)
+    messages_via_api = Column(Integer, default=0)
+    messages_via_ui = Column(Integer, default=0)
+    messages_via_macro = Column(Integer, default=0)
+    confidential_messages = Column(Integer, default=0)
+    kern_user_messages = Column(Integer, default=0)
+    deleted_messages_by_user = Column(Integer, default=0)
+    deleted_messages_by_system = Column(Integer, default=0)
+    incognito_messages = Column(Integer, default=0)
+
+
+class ConversationShare(Base):
+    __tablename__ = Tablenames.CONVERSATION_SHARE.value
+    __table_args__ = {"schema": "cognition"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    shared_with = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    shared_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    can_copy = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+class ConversationGlobalShare(Base):
+    __tablename__ = Tablenames.CONVERSATION_GLOBAL_SHARE.value
+    __table_args__ = {"schema": "cognition"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    shared_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+class ETLConfigPresets(Base):
+    __tablename__ = Tablenames.ETL_CONFIG_PRESET.value
+    __table_args__ = {"schema": "cognition"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    etl_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
+    add_config = Column(JSON)  # additional config for e.g. setting scope dict values
+
+
+# =========================== Global tables ===========================
+class GlobalWebsocketAccess(Base):
+    # table to store prepared websocket configuration.
+    # to ensure stateless communication, the configuration is stored in the database
+    # an entry doesn't mean it will be used but can be used
+    # example code runner that prepares the access but the custom code doesn't have to use it
+    # entries should be cleared on startup
+
+    __tablename__ = Tablenames.WEBSOCKET_ACCESS.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    config = Column(JSON)
+    in_use = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+
+class TaskQueue(Base):
+    # start without indexing since the idea is to remove on calculation start
+    # only meant as persistent layer, queue itself accesses cache
+    __tablename__ = Tablenames.TASK_QUEUE.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    task_type = Column(String)  # enum.TaskType e.g. EMBEDDING
+    task_info = Column(JSON)
+    # priority queue is for probable fast execution tasks (e.g. lf calculation)
+    priority = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class CustomerButton(Base):
+    # table to configuration customer buttons
+
+    __tablename__ = Tablenames.CUSTOMER_BUTTON.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+        # not part of p-key since a customer could have multiple
+    )
+    type = Column(String)  # enums.CustomerButtonType
+    location = Column(String)  # enums.CustomerButtonLocation
+    visible = Column(Boolean, default=False)  # for easy disable
+    config = Column(JSON)  # changes based on type
+    # e.g. for DATA_MAPPER
+    # {
+    #     "url":"http://localhost:9060/hdi/map-to-collect-data?key=abc123", # including access key for e.g. external mapper
+    #     "icon":"<icon_name>",
+    #     "tooltip":"Map results to HDI D&O Excel"
+    # }
+
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+
+
+class FullAdminAccess(Base):
+    __tablename__ = Tablenames.FULL_ADMIN_ACCESS.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email = Column(String, unique=True)
+    meta_info = Column(JSON)
+
+
+class SumsTable(Base):
+    __tablename__ = Tablenames.SUMS_TABLE.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    sum_key = Column(String, index=True)  # e.g. enums.AdminQueries
+    created_at = Column(DateTime, default=sql.func.now())
+    data = Column(JSON)
+
+
+class ReleaseNotification(Base):
+    __tablename__ = Tablenames.RELEASE_NOTIFICATION.value
+    __table_args__ = {"schema": "global"}
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    link = Column(String, nullable=False)
+    config = Column(JSON)  # e.g. {"en": {"headline":"", "description":""}, "de": {...}}
+
+
+class TimedExecutions(Base):
+    __tablename__ = Tablenames.TIMED_EXECUTIONS.value
+    __table_args__ = {"schema": "global"}
+    time_key = Column(String, unique=True, primary_key=True)  # enums.TimedExecutionKey
+    last_executed_at = Column(DateTime)
+
+
+class EtlTask(Base):
+    __tablename__ = Tablenames.ETL_TASK.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    original_file_name = Column(String)
+    file_path = Column(String)
+    file_size_bytes = Column(BigInteger)
+    tokenizer = Column(String)
+
+    # array of indivitual tasks to be executed including fallback etc.
+    full_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
+
+    started_at = Column(DateTime)
+    finished_at = Column(DateTime)
+    state = Column(
+        String, default=CognitionMarkdownFileState.QUEUE.value
+    )  # of type enums.CognitionMarkdownFileState
+    is_active = Column(Boolean, default=False)
+
+    priority = Column(Integer, default=0)
+    error_message = Column(String)
+    meta_data = Column(JSON)
+
+    full_config_hash = Column(String, index=True)
+    is_stale = Column(Boolean, default=False)
+    llm_ops = Column(JSON)
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+
+
+class InboxMailThread(Base):
+    __tablename__ = Tablenames.INBOX_MAIL_THREAD.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    subject = Column(String)
+    meta_data = Column(JSON)
+    is_important = Column(Boolean, default=False)
+    progress_state = Column(
+        String
+    )  # of type enums. InboxMailThreadSupportProgressState *.value
+    support_owner_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    is_admin_support_thread = Column(Boolean, default=False)
+
+
+class InboxMail(Base):
+    __tablename__ = Tablenames.INBOX_MAIL.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime, default=sql.func.now())
+    sender_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    thread_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"global.{Tablenames.INBOX_MAIL_THREAD.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    content = Column(String)
+
+
+class InboxMailThreadAssociation(Base):
+    __tablename__ = Tablenames.INBOX_MAIL_THREAD_ASSOCIATION.value
+    __table_args__ = {"schema": "global"}
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    thread_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            f"global.{Tablenames.INBOX_MAIL_THREAD.value}.id", ondelete="CASCADE"
+        ),
+        index=True,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    unread_mail_count = Column(Integer, default=0)
+
+
+# =========================== INTEGRATION tables ===========================
 class IntegrationGithubFile(Base):
     __tablename__ = Tablenames.INTEGRATION_GITHUB_FILE.value
     __table_args__ = (
@@ -2488,256 +2793,3 @@ class IntegrationSharepointPropertySync(Base):
     config = Column(JSON)  # JSON object containing the rules for property sync
     logs = Column(ARRAY(String))
     state = Column(String)
-
-
-class CognitionConversationTag(Base):
-    __tablename__ = Tablenames.CONVERSATION_TAG.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    name = Column(String)
-    created_at = Column(DateTime, default=sql.func.now())
-    config = Column(JSON)
-    # JSON schema for the tag configuration, e.g. global tag, use for projects, maybe at some point color, sort_by (conv creation, last message creation, tag creation, conv header)
-
-
-class CognitionConversationTagAssociation(Base):
-    __tablename__ = Tablenames.CONVERSATION_TAG_ASSOCIATION.value
-    __table_args__ = {"schema": "cognition"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    conversation_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    tag_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"cognition.{Tablenames.CONVERSATION_TAG.value}.id", ondelete="CASCADE"
-        ),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-
-
-class SumsTable(Base):
-    __tablename__ = Tablenames.SUMS_TABLE.value
-    __table_args__ = {"schema": "global"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    sum_key = Column(String, index=True)  # e.g. enums.AdminQueries
-    created_at = Column(DateTime, default=sql.func.now())
-    data = Column(JSON)
-
-
-class AdminQueryMessageSummary(Base):
-    __tablename__ = Tablenames.ADMIN_QUERY_MESSAGE_SUMMARY.value
-    __table_args__ = (
-        UniqueConstraint(
-            "organization_id",
-            "project_id",
-            "day",
-            name="unique_admin_query_msg_activity_summary",
-        ),
-        {"schema": "cognition"},
-    )
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    day = Column(Date, nullable=False)
-    organization_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
-    )
-    project_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="SET NULL"),
-    )
-
-    total_conversations = Column(Integer, default=0)
-    total_messages = Column(Integer, default=0)
-    messages_via_api = Column(Integer, default=0)
-    messages_via_ui = Column(Integer, default=0)
-    messages_via_macro = Column(Integer, default=0)
-    confidential_messages = Column(Integer, default=0)
-    kern_user_messages = Column(Integer, default=0)
-    deleted_messages_by_user = Column(Integer, default=0)
-    deleted_messages_by_system = Column(Integer, default=0)
-    incognito_messages = Column(Integer, default=0)
-
-
-class ReleaseNotification(Base):
-    __tablename__ = Tablenames.RELEASE_NOTIFICATION.value
-    __table_args__ = {"schema": "global"}
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    link = Column(String, nullable=False)
-    config = Column(JSON)  # e.g. {"en": {"headline":"", "description":""}, "de": {...}}
-
-
-class TimedExecutions(Base):
-    __tablename__ = Tablenames.TIMED_EXECUTIONS.value
-    __table_args__ = {"schema": "global"}
-    time_key = Column(String, unique=True, primary_key=True)  # enums.TimedExecutionKey
-    last_executed_at = Column(DateTime)
-
-
-class EtlTask(Base):
-    __tablename__ = Tablenames.ETL_TASK.value
-    __table_args__ = {"schema": "global"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    original_file_name = Column(String)
-    file_path = Column(String)
-    file_size_bytes = Column(BigInteger)
-    tokenizer = Column(String)
-
-    # array of indivitual tasks to be executed including fallback etc.
-    full_config = Column(JSON)  # full ETL config JSON schema for how to run the ETL
-
-    started_at = Column(DateTime)
-    finished_at = Column(DateTime)
-    state = Column(
-        String, default=CognitionMarkdownFileState.QUEUE.value
-    )  # of type enums.CognitionMarkdownFileState
-    is_active = Column(Boolean, default=False)
-
-    priority = Column(Integer, default=0)
-    error_message = Column(String)
-    meta_data = Column(JSON)
-
-    full_config_hash = Column(String, index=True)
-    is_stale = Column(Boolean, default=False)
-    llm_ops = Column(JSON)
-    updated_at = Column(DateTime, onupdate=sql.func.now())
-
-
-class ConversationShare(Base):
-    __tablename__ = Tablenames.CONVERSATION_SHARE.value
-    __table_args__ = {"schema": "cognition"}
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    conversation_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    shared_with = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    shared_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    can_copy = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=sql.func.now())
-
-
-class ConversationGlobalShare(Base):
-    __tablename__ = Tablenames.CONVERSATION_GLOBAL_SHARE.value
-    __table_args__ = {"schema": "cognition"}
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    conversation_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"cognition.{Tablenames.CONVERSATION.value}.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    shared_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-
-
-class InboxMailThread(Base):
-    __tablename__ = Tablenames.INBOX_MAIL_THREAD.value
-    __table_args__ = {"schema": "global"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    created_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    organization_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    created_at = Column(DateTime, default=sql.func.now())
-    subject = Column(String)
-    meta_data = Column(JSON)
-    is_important = Column(Boolean, default=False)
-    progress_state = Column(
-        String
-    )  # of type enums. InboxMailThreadSupportProgressState *.value
-    support_owner_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    is_admin_support_thread = Column(Boolean, default=False)
-
-
-class InboxMail(Base):
-    __tablename__ = Tablenames.INBOX_MAIL.value
-    __table_args__ = {"schema": "global"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    created_at = Column(DateTime, default=sql.func.now())
-    sender_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
-        index=True,
-    )
-    thread_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"global.{Tablenames.INBOX_MAIL_THREAD.value}.id", ondelete="CASCADE"
-        ),
-        index=True,
-    )
-    content = Column(String)
-
-
-class InboxMailThreadAssociation(Base):
-    __tablename__ = Tablenames.INBOX_MAIL_THREAD_ASSOCIATION.value
-    __table_args__ = {"schema": "global"}
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    thread_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            f"global.{Tablenames.INBOX_MAIL_THREAD.value}.id", ondelete="CASCADE"
-        ),
-        index=True,
-    )
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
-        index=True,
-    )
-    unread_mail_count = Column(Integer, default=0)

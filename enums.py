@@ -199,6 +199,9 @@ class Tablenames(Enum):
     INBOX_MAIL = "inbox_mail"
     INBOX_MAIL_THREAD = "inbox_mail_thread"
     INBOX_MAIL_THREAD_ASSOCIATION = "inbox_mail_thread_association"
+    DATA_BLOCK = "data_block"
+    DATA_BLOCK_ATTRIBUTES = "data_block_attributes"
+    DATA_BLOCK_RESULTS = "data_block_results"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -381,6 +384,9 @@ class NotificationType(Enum):
     DATA_SLICE_UPDATE_FAILED = "DATA_SLICE_UPDATE_FAILED"
     BAD_PASSWORD_DURING_IMPORT = "BAD_PASSWORD_DURING_IMPORT"
     RECREATION_OF_EMBEDDINGS_ERROR = "RECREATION_OF_EMBEDDINGS_ERROR"
+    DATA_BLOCK_ALREADY_EXISTS = "DATA_BLOCK_EXISTS"
+    DATA_BLOCK_NOT_SUPPORTED = "DATA_BLOCK_NOT_SUPPORTED"
+    DATA_BLOCK_NOT_FOUND = "DATA_BLOCK_NOT_FOUND"
 
     # CUSTOM
     CUSTOM = "CUSTOM"
@@ -398,6 +404,7 @@ class Pages(Enum):
     INFORMATION_SOURCES = "heuristics"
     KNOWLEDGE_BASE = "lookup-lists"
     SETTINGS = "settings"
+    DATA_BLOCK = "data-blocks"
 
 
 class SliceTypes(Enum):
@@ -579,6 +586,7 @@ class StrategyStepType(Enum):
     FULL_TEXT_SEARCH = "FULL_TEXT_SEARCH"
     CURRENT_TIME = "CURRENT_TIME"
     COMPLIANT_WEBSEARCH = "COMPLIANT_WEBSEARCH"
+    DATA_BLOCK = "DATA_BLOCK"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -611,6 +619,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.FULL_TEXT_SEARCH: "Full text search",
     StrategyStepType.CURRENT_TIME: "Get current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "Web search",
+    StrategyStepType.DATA_BLOCK: "Create a data block",
 }
 
 STEP_WHEN_TO_USE = {
@@ -633,6 +642,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.FULL_TEXT_SEARCH: "When you want to perform a full text search",
     StrategyStepType.CURRENT_TIME: "When you want to get the current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "When you want to perform a web search",
+    StrategyStepType.DATA_BLOCK: "When you want to understand how the project is used",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -656,6 +666,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.FULL_TEXT_SEARCH: "Running full text search",
     StrategyStepType.CURRENT_TIME: "Getting current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "Searching the web",
+    StrategyStepType.DATA_BLOCK: "Evaluating data block",
 }
 
 STEP_ERRORS = {
@@ -1083,6 +1094,15 @@ class ETLFileType(Enum):
         return [".txt"]
 
     @staticmethod
+    def get_all_supported_file_extensions():
+        all_supported_file_extensions = []
+        for FileType in ETLFileType:
+            all_supported_file_extensions.extend(
+                FileType.get_supported_file_extensions()
+            )
+        return all_supported_file_extensions
+
+    @staticmethod
     def from_extension(value: str):
         changed_value = value.lower()
         if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
@@ -1274,3 +1294,8 @@ class InboxMailThreadSupportProgressState(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     RESOLVED = "RESOLVED"
     FAILED = "FAILED"
+
+
+class DataBlockType(EnumKern):
+    LIVE = "LIVE"
+    STABLE = "STABLE"

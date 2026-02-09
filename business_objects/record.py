@@ -983,26 +983,38 @@ def get_records_by_running_ids(project_id: str, running_ids: List[int]) -> List[
     )
 
 
-def get_record_data_by_sanitized_where(
+def get_record_data_by_sanitized_params(
     refinery_project_id: str,
     sanitized_where: str,
-    limit: int,
+    limit: Optional[int] = None,
+    sanitized_select: Optional[str] = None,
     order_by: Optional[str] = None,
+    sanitized_group_by: Optional[str] = None,
+    return_query: bool = False,
 ) -> List[Dict[str, Any]]:
     ## only to be used in cognition and with sql_validator check!!
     refinery_project_id = prevent_sql_injection(
         refinery_project_id, isinstance(refinery_project_id, str)
     )
+    final_where = ""
     final_order = ""
+    final_group = ""
+    if sanitized_where:
+        final_where = f" AND ({sanitized_where}) "
     if order_by:
         order_by = prevent_sql_injection(order_by, isinstance(order_by, str))
         final_order = f" ORDER BY {order_by} "
+    if sanitized_group_by:
+        final_group = f" GROUP BY {sanitized_group_by} "
     query = f"""
-    SELECT r.data::JSON
+    SELECT {sanitized_select or 'r.data::JSON'}
     FROM public.record r
-    WHERE project_id = '{refinery_project_id}' AND ({sanitized_where})
+    WHERE project_id = '{refinery_project_id}' {final_where}
+    {final_group}
     {final_order}
-    LIMIT {limit}
+    {f"LIMIT {limit}" if limit is not None else ""}
     """
+    if return_query:
+        return query
     data = general.execute_all(query)
     return [row[0] for row in data] if data else []
