@@ -6,7 +6,7 @@ from .. import enums
 from ..models import TaskQueue, Project
 from ..session import session
 
-from ..util import prevent_sql_injection
+from ..util import prevent_sql_injection, get_sql_text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.expression import cast
 from datetime import datetime, timedelta
@@ -41,9 +41,13 @@ def get_all_queued_etl_task_for_conversation(
         .filter(
             TaskQueue.organization_id == org_id,
             TaskQueue.task_type == enums.TaskType.EXECUTE_ETL.value,
-            text(f"task_info->'tmp_doc_metadata'->>'project_id' = '{project_id}'"),
-            text(
-                f"task_info->'tmp_doc_metadata'->>'conversation_id' = '{conversation_id}'"
+            get_sql_text(
+                "task_info->'tmp_doc_metadata'->>'project_id' = :project_id",
+                project_id=project_id,
+            ),
+            get_sql_text(
+                "task_info->'tmp_doc_metadata'->>'conversation_id' = :conversation_id",
+                conversation_id=conversation_id,
             ),
         )
         .all()
@@ -64,7 +68,7 @@ def get_all_waiting_by_type(
     return (
         session.query(TaskQueue)
         .filter(
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            get_sql_text("task_info->>'project_id' = :project_id", project_id=project_id),
             TaskQueue.task_type == task_type.value,
             TaskQueue.is_active == False,
         )
@@ -78,8 +82,10 @@ def get_waiting_by_attribute_id(project_id: str, attribute_id: str) -> TaskQueue
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.ATTRIBUTE_CALCULATION.value,
-            text(f"task_info->>'attribute_id' = '{attribute_id}'"),
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            get_sql_text(
+                "task_info->>'attribute_id' = :attribute_id", attribute_id=attribute_id
+            ),
+            get_sql_text("task_info->>'project_id' = :project_id", project_id=project_id),
             TaskQueue.is_active == False,
         )
         .first()
@@ -87,13 +93,12 @@ def get_waiting_by_attribute_id(project_id: str, attribute_id: str) -> TaskQueue
 
 
 def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQueue:
-    source_id = prevent_sql_injection(source_id, isinstance(source_id, str))
     return (
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.INFORMATION_SOURCE.value,
-            text(f"task_info->>'information_source_id' = '{source_id}'"),
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            get_sql_text("task_info->>'information_source_id' = :source_id", source_id=source_id),
+            get_sql_text("task_info->>'project_id' = :project_id", project_id=project_id),
             TaskQueue.is_active == False,
         )
         .first()
@@ -103,15 +108,15 @@ def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQu
 def get_waiting_by_macro_group_execution_ids(
     project_id: str, source_ids: List[str]
 ) -> TaskQueue:
-    source_ids = prevent_sql_injection(source_ids, isinstance(source_ids, list))
     return (
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.RUN_COGNITION_MACRO.value,
-            text(
-                f"task_info->>'group_execution_id' IN ({','.join(map(repr, source_ids))})"
+            get_sql_text(
+                "task_info->>'group_execution_id' IN :source_ids",
+                source_ids=tuple(source_ids),
             ),
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            get_sql_text("task_info->>'project_id' = :project_id", project_id=project_id),
         )
         .first()
     )
@@ -124,7 +129,7 @@ def get_by_tokenization(project_id: str) -> TaskQueue:
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.TOKENIZATION.value,
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            get_sql_text("task_info->>'project_id' = :project_id", project_id=project_id),
         )
         .order_by(TaskQueue.created_at.asc())
         .first()

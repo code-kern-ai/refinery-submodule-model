@@ -19,13 +19,33 @@ validate_sql_clause = _get_validate()
 
 def run_tests():
     # Dynamic import from tests/ folder
-    test_files = [f[:-3] for f in os.listdir("tests") if f.endswith(".py") and f != "__init__.py"]
-    
+    test_dir = os.path.join(os.path.dirname(__file__), "tests")
+    test_files = [
+        f[:-3]
+        for f in os.listdir(test_dir)
+        if f.endswith(".py") and f != "__init__.py"
+    ]
+
     all_valid = []
     all_invalid = []
-    
+
+    # Whitelist of allowed test modules to prevent arbitrary code execution
+    allowed_test_files = {
+        "complex_queries",
+        "complexity_cases",
+        "injection_cases",
+        "multi_clause_cases",
+        "order_group_cases",
+        "subquery_cases",
+        "tautology_cases",
+        "valid_cases",
+        "window_function_cases",
+    }
+
     for test_file in test_files:
-        module = importlib.import_module(f"tests.{test_file}")
+        if test_file not in allowed_test_files:
+            continue
+        module = importlib.import_module(f".tests.{test_file}", package=__package__)
         if hasattr(module, "VALID_CASES"):
             all_valid.extend(module.VALID_CASES)
         if hasattr(module, "INVALID_CASES"):

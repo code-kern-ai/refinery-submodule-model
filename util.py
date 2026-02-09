@@ -326,3 +326,7 @@ def __mask_sql_str(sql_str: str, remove_quotes: bool) -> str:
 
 def ensure_sql_text(sql: str) -> str:
     return sql_text(sql)
+
+
+def get_sql_text(sql: str, **params) -> str:
+    return sql_text(sql).bindparams(**params)
