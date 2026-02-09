@@ -25,6 +25,8 @@ def run_tests():
     all_invalid = []
     
     for test_file in test_files:
+        if not all(c.isalnum() or c == "_" for c in test_file):
+            continue
         module = importlib.import_module(f"tests.{test_file}")
         if hasattr(module, "VALID_CASES"):
             all_valid.extend(module.VALID_CASES)
