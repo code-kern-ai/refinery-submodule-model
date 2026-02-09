@@ -1,0 +1,414 @@
+---
+description: Rules for business object modules and CRUD operations
+globs: ["business_objects/**/*.py", "cognition_objects/**/*.py", "global_objects/**/*.py", "integration_objects/**/*.py"]
+alwaysApply: true
+---
+
+# Business Objects Guidelines
+
+Rules and conventions for business object modules in `business_objects/`, `cognition_objects/`, and `global_objects/`.
+
+## Module Organization
+
+### Directory Structure
+
+- **`business_objects/`**: Business domain entities (User, Project, Organization, etc.)
+- **`cognition_objects/`**: Cognition domain entities (Conversation, Message, Strategy, etc.)
+- **`global_objects/`**: Global/shared entities (AdminQueries, EtlTask, etc.)
+- **`integration_objects/`**: Integration-specific entities (SharePoint, GitHub, PDF, etc.) with specialized CRUD patterns
+
+### File Naming
+
+- One file per entity
+- File name matches entity name in `snake_case`
+- Example: `user.py` for `User` entity, `conversation.py` for `Conversation` entity
+
+## Standard CRUD Functions
+
+Every business object module should provide these standard functions. **Note**: Not all entities are project-scoped. Some entities are global, organization-scoped, user-scoped, or independent. Choose the appropriate pattern based on your entity's scope.
+
+### Get Functions
+
+#### Single Entity
+
+```python
+def get_by_id(entity_id: str) -> Entity:
+    return session.query(Entity).filter(Entity.id == entity_id).first()
+```
+
+#### Multiple Entities
+
+```python
+def get_all() -> List[Entity]:
+    return session.query(Entity).all()
+
+def get_by_id_list(entity_ids: List[str]) -> List[Entity]:
+    return session.query(Entity).filter(Entity.id.in_(entity_ids)).all()
+```
+
+#### Existence Check
+
+```python
+def exists(entity_id: str) -> bool:
+    return (
+        session.query(Entity)
+        .filter(Entity.id == entity_id)
+        .first()
+        is not None
+    )
+```
+
+#### Count Queries
+
+```python
+def get_count() -> int:
+    return session.query(Entity).count()
+```
+
+
+#### Get By Name/Field
+
+```python
+def get_by_name(name: str) -> Entity:
+    return session.query(Entity).filter(Entity.name == name).first()
+```
+
+### Create Function
+
+```python
+def create(
+    name: str,
+    created_by: str,
+    with_commit: bool = False,
+    created_at: Optional[datetime] = None,
+    # ... other parameters
+) -> Entity:
+    entity = Entity(
+        name=name,
+        created_by=created_by,
+        created_at=created_at,
+        # ... other fields
+    )
+    
+    general.add(entity, with_commit)
+    return entity
+```
+
+**Rules:**
+- Accept optional `created_at` for testing/time travel scenarios
+- Use `general.add()` to add to session
+- Return the created entity
+
+### Update Function
+
+```python
+def update(
+    entity_id: str,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    with_commit: bool = True,
+    # ... other optional parameters
+) -> Entity:
+    entity = get(entity_id)
+    if not entity:
+        raise ValueError(f"Entity {entity_id} not found")
+    
+    if name is not None:
+        entity.name = name
+    if description is not None:
+        entity.description = description
+    
+    # For JSON fields, use flag_modified
+    if some_json_field is not None:
+        entity.some_json_field = some_json_field
+        flag_modified(entity, 'some_json_field')
+    
+    general.flush_or_commit(with_commit)
+    return entity
+```
+
+**Rules:**
+- All update parameters should be `Optional`
+- Use `None` checks to only update provided fields
+- Use `flag_modified()` for JSON fields
+- Return the updated entity
+
+### Delete Function
+
+```python
+def delete(
+    entity_id: str,
+    with_commit: bool = False,
+) -> None:
+    entity = get(entity_id)
+    if not entity:
+        return  # Or raise exception
+    
+    general.delete(entity, with_commit)
+```
+
+**Rules:**
+- Default `with_commit=False` for deletes
+- Handle missing entities appropriately (return or raise)
+- Use `general.delete()` helper
+
+### Batch Delete Function
+
+For deleting multiple entities:
+
+```python
+def delete_many(entity_ids: List[str], with_commit: bool = False) -> None:
+    entities = session.query(Entity).filter(Entity.id.in_(entity_ids)).all()
+    for entity in entities:
+        general.delete(entity, with_commit=False)
+    general.flush_or_commit(with_commit)
+```
+
+**Rules:**
+- Use for bulk deletion operations
+- Default `with_commit=False` to allow batching
+- Consider performance implications for large batches
+
+## Transaction Management
+
+### `with_commit` Parameter
+
+- **`False`**: Flush to database but don't commit (default for create/delete)
+- **`True`**: Commit transaction immediately (default for update)
+- **`None`**: No flush or commit (rare, for batch operations)
+
+### Flush vs Commit
+
+- **Flush**: Writes to database but transaction can be rolled back
+- **Commit**: Permanently saves changes
+- Use `general.flush_or_commit(with_commit)` helper
+
+```python
+from ..business_objects import general
+
+general.add(entity, with_commit=False)  # Flush only
+general.add(entity, with_commit=True)   # Commit
+```
+
+## Query Patterns
+
+### Filtering
+
+```python
+def get_active() -> List[Entity]:
+    return (
+        session.query(Entity)
+        .filter(Entity.is_active == True)
+        .all()
+    )
+```
+
+**Organization-scoped example:**
+
+```python
+def get_active(organization_id: str) -> List[Entity]:
+    return (
+        session.query(Entity)
+        .filter(Entity.organization_id == organization_id)
+        .filter(Entity.is_active == True)
+        .all()
+    )
+```
+
+### Ordering
+
+```python
+def get_all_ordered() -> List[Entity]:
+    return (
+        session.query(Entity)
+        .order_by(Entity.created_at.desc())
+        .all()
+    )
+```
+
+### Joins
+
+```python
+def get_with_relations() -> List[Entity]:
+    return (
+        session.query(Entity)
+        .join(RelatedEntity)
+        .all()
+    )
+```
+
+
+## SQL Injection Prevention
+
+### Always Use Parameterized Queries
+
+**❌ Bad:**
+```python
+query = f"SELECT * FROM table WHERE id = '{user_id}'"
+```
+
+**✅ Good:**
+```python
+entity = session.query(Entity).filter(Entity.id == user_id).first()
+```
+
+### Raw SQL Queries
+
+For raw SQL, use `prevent_sql_injection()`:
+
+```python
+from ..util import prevent_sql_injection
+
+user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
+query = f"SELECT * FROM users WHERE id = '{user_id}'"
+```
+
+**When to use raw SQL:**
+- Complex aggregations (JSON aggregation, counts, etc.)
+- Performance-critical queries that benefit from raw SQL
+- Queries that are difficult to express with ORM
+
+**Pattern for complex raw SQL:**
+
+```python
+def get_with_aggregations() -> Dict:
+    query = """
+    SELECT
+        json_agg(json_build_object(
+            'id', entity.id,
+            'name', entity.name
+        )) AS entities
+    FROM entity
+    """
+    
+    result = general.execute_first(query)
+    return result[0] if result and result[0] else {}
+```
+
+**Rules:**
+- Always use `prevent_sql_injection()` for user-provided values
+- Use `general.execute_first()` for single-row results
+- Use `general.execute_all()` for multiple-row results
+- Prefer ORM queries when possible for type safety
+
+## JSON Field Updates
+
+When updating JSON fields, use `flag_modified()`:
+
+```python
+from sqlalchemy.orm.attributes import flag_modified
+
+def update_metadata(entity_id: str, metadata: Dict):
+    entity = get(entity_id)
+    entity.metadata = metadata
+    flag_modified(entity, 'metadata')
+    general.flush_or_commit(True)
+```
+
+## Caching
+
+Use `TTLCacheDecorator` for frequently accessed, rarely changing data:
+
+```python
+from ..db_cache import TTLCacheDecorator, CacheEnum
+
+@TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
+def get_user_cached(user_id: str) -> User:
+    user = get(user_id)
+    if not user:
+        return None
+    
+    # Expunge and make transient to avoid session issues
+    general.expunge(user)
+    general.make_transient(user)
+    return user
+```
+
+**Rules:**
+- Use caching for read-heavy, rarely changing data
+- Always expunge and make transient cached objects
+- Specify appropriate TTL (time-to-live) in seconds
+
+## Imports
+
+### Standard Import Pattern
+
+```python
+from datetime import datetime
+from typing import List, Optional, Dict, Any
+
+from . import general  # Always import general for CRUD operations
+from ..session import session
+from ..models import Entity, RelatedEntity
+from ..enums import SomeEnum
+from ..util import prevent_sql_injection
+```
+
+### Cross-Module Imports
+
+Import other business objects when needed:
+
+```python
+from . import user, project, organization
+```
+
+## Error Handling
+
+### Entity Not Found
+
+```python
+def get_or_raise(entity_id: str) -> Entity:
+    entity = get(entity_id)
+    if not entity:
+        raise ValueError(f"Entity {entity_id} not found")
+    return entity
+```
+
+### Validation
+
+Validate inputs before database operations:
+
+```python
+def create(name: str, **kwargs) -> Entity:
+    if not name or not name.strip():
+        raise ValueError("Name cannot be empty")
+    
+    # ... create entity
+```
+
+
+## Integration Objects Pattern
+
+The `integration_objects/` directory contains specialized patterns for integration entities using a manager pattern with type-based model selection:
+
+```python
+from ..integration_objects.manager import get, create, update, delete_many
+from ..integration_objects.helper import get_supported_metadata
+
+# Get integration model type based on integration
+IntegrationModel = integration_model(integration_id=integration_id)
+
+# Use manager functions with model type
+records = get(IntegrationModel, integration_id)
+record = create(IntegrationModel, created_by=user_id, integration_id=integration_id, ...)
+
+# Filter metadata to only supported keys
+supported_metadata = get_supported_metadata(table_name, raw_metadata)
+```
+
+**Rules:**
+- Use `integration_objects/manager.py` for CRUD operations
+- Use `integration_objects/helper.py` for metadata validation
+
+## Best Practices
+
+1. **Always use `general.add()`** instead of `session.add()` directly
+2. **Default `with_commit=False`** for create/delete, `True` for update
+3. **Return entities** from create/update functions
+4. **Use type hints** for all function parameters and return types
+5. **Handle None cases** appropriately (return None or raise exception)
+6. **Use `flag_modified()`** for JSON field updates
+7. **Prevent SQL injection** in all queries using parameterized queries or `prevent_sql_injection()`
+8. **Cache appropriately** for read-heavy operations using `TTLCacheDecorator`
+9. **Use `exists()`** for existence checks instead of checking `get()` result
+10. **Use `get_count()`** for counting entities instead of `len(get_all())`

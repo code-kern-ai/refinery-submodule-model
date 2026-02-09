@@ -1,0 +1,238 @@
+---
+description: Rules for enum definitions and usage
+globs: ["enums.py"]
+alwaysApply: true
+---
+
+# Enum Guidelines
+
+Rules and conventions for enum definitions in `enums.py`.
+
+## Base Enum Class
+
+All enums should inherit from `EnumKern` which provides helper methods:
+
+```python
+from enum import Enum
+
+class EnumKern(Enum):
+    @classmethod
+    def all(cls):
+        return [e.value for e in cls]
+    
+    @classmethod
+    def from_string(cls, value: str):
+        changed_value = value.upper().replace(" ", "_").replace("-", "_")
+        for member in cls:
+            if member.value == changed_value:
+                return member
+        raise ValueError(f"Unknown enum {cls.__name__}: {value}")
+```
+
+## Enum Definition
+
+### Basic Structure
+
+```python
+class MyEnum(EnumKern):
+    VALUE_ONE = "VALUE_ONE"
+    VALUE_TWO = "VALUE_TWO"
+    VALUE_THREE = "VALUE_THREE"
+```
+
+### Naming Conventions
+
+- **Enum class names**: PascalCase (e.g., `UserRoles`, `ProjectStatus`)
+- **Enum member names**: UPPER_SNAKE_CASE (e.g., `ENGINEER`, `INIT_COMPLETE`)
+- **Enum values**: Match member names or use descriptive strings
+
+```python
+class UserRoles(EnumKern):
+    ENGINEER = "ENGINEER"
+    EXPERT = "EXPERT"
+    ANNOTATOR = "ANNOTATOR"
+```
+
+## Common Enums
+
+### Tablenames Enum
+
+**Critical**: All table names must be defined in `Tablenames` enum:
+
+```python
+class Tablenames(EnumKern):
+    USER = "user"
+    PROJECT = "project"
+    ORGANIZATION = "organization"
+    # ...
+```
+
+**Rules:**
+- Values are `snake_case` (matching database table names)
+- Must match `__tablename__` in entity models exactly
+- Used throughout codebase for table references
+
+### Status/State Enums
+
+```python
+class ProjectStatus(EnumKern):
+    INIT_UPLOAD = "INIT_UPLOAD"
+    INIT_COMPLETE = "INIT_COMPLETE"
+    IN_DELETION = "IN_DELETION"
+    HIDDEN = "HIDDEN"
+```
+
+### Role Enums
+
+```python
+class UserRoles(EnumKern):
+    ENGINEER = "ENGINEER"
+    EXPERT = "EXPERT"
+    ANNOTATOR = "ANNOTATOR"
+```
+
+### Type Enums
+
+```python
+class DataTypes(EnumKern):
+    INTEGER = "INTEGER"
+    FLOAT = "FLOAT"
+    BOOLEAN = "BOOLEAN"
+    TEXT = "TEXT"
+    CATEGORY = "CATEGORY"
+```
+
+## Using Enums
+
+### In Entity Models
+
+```python
+from ..enums import UserRoles
+
+class User(Base):
+    role = Column(String, default=UserRoles.ENGINEER.value)
+```
+
+**Always use `.value`** when storing in database columns.
+
+### In Business Objects
+
+```python
+from ..enums import UserRoles
+
+def get_engineers(org_id: str) -> List[User]:
+    return (
+        session.query(User)
+        .filter(User.role == UserRoles.ENGINEER.value)
+        .all()
+    )
+```
+
+### Enum Comparison
+
+```python
+# Compare enum values
+if user.role == UserRoles.ENGINEER.value:
+    # ...
+
+# Check if value is in enum
+if value in UserRoles.all():
+    # ...
+```
+
+## Helper Methods
+
+### `all()` Method
+
+Get all enum values as a list:
+
+```python
+roles = UserRoles.all()  # ["ENGINEER", "EXPERT", "ANNOTATOR"]
+```
+
+### `from_string()` Method
+
+Convert string to enum member (case-insensitive, handles spaces/dashes):
+
+```python
+role = UserRoles.from_string("engineer")  # Returns UserRoles.ENGINEER
+role = UserRoles.from_string("expert")     # Returns UserRoles.EXPERT
+```
+
+**Note**: This method normalizes input (uppercase, replaces spaces/dashes with underscores).
+
+## Enum Parsing
+
+### `try_parse_enum_value()` Helper
+
+Use for safe enum parsing:
+
+```python
+from ..enums import try_parse_enum_value, Tablenames
+
+table_enum = try_parse_enum_value(table_name, Tablenames)
+```
+
+This safely converts a string to an enum member, handling errors gracefully.
+
+## Enum Values in Database
+
+### Storage
+
+- Enums are stored as **strings** in the database (`String` column type)
+- Always store `.value` property, not the enum member itself
+- Database columns use `String` type, not PostgreSQL ENUM type
+
+### Defaults
+
+```python
+class User(Base):
+    role = Column(String, default=UserRoles.ENGINEER.value)
+    status = Column(String, default=ProjectStatus.INIT_UPLOAD.value)
+```
+
+## Enum Organization
+
+### Group Related Enums
+
+Keep related enums together:
+
+```python
+# User-related enums
+class UserRoles(EnumKern):
+    # ...
+
+class UserStatus(EnumKern):
+    # ...
+
+# Project-related enums
+class ProjectStatus(EnumKern):
+    # ...
+
+class ProjectType(EnumKern):
+    # ...
+```
+
+### Import Organization
+
+When importing enums:
+
+```python
+from .enums import (
+    UserRoles,
+    ProjectStatus,
+    Tablenames,
+    DataTypes,
+)
+```
+
+## Best Practices
+
+1. **Always inherit from `EnumKern`** for helper methods
+2. **Use descriptive names** that clearly indicate purpose
+3. **Add to `Tablenames` enum** when creating new tables
+4. **Use `.value`** when storing in database columns
+5. **Use enum comparisons** instead of string comparisons
+6. **Use `try_parse_enum_value()`** for safe parsing
+7. **Keep enum values stable** - don't change existing values (add new ones instead)
+
