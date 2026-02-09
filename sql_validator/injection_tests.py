@@ -3,6 +3,20 @@ import os
 import sys
 import importlib
 
+# Whitelist of test module names to avoid non-literal-import. Only these are loaded.
+ALLOWED_TEST_MODULE_NAMES = (
+    "complex_queries",
+    "complexity_cases",
+    "injection_cases",
+    "multi_clause_cases",
+    "order_group_cases",
+    "subquery_cases",
+    "tautology_cases",
+    "valid_cases",
+    "window_function_cases",
+)
+
+
 def _get_validate():
     try:
         from .sql_validator import validate_sql_clause
@@ -15,17 +29,20 @@ def _get_validate():
         mod = importlib.import_module("sql_validator")
         return mod.validate_sql_clause
 
+
 validate_sql_clause = _get_validate()
 
+
 def run_tests():
-    # Dynamic import from tests/ folder
-    test_files = [f[:-3] for f in os.listdir("tests") if f.endswith(".py") and f != "__init__.py"]
-    
+    # Import tests package once with literal module path; then use whitelist for names.
+    tests_pkg = importlib.import_module("tests")
     all_valid = []
     all_invalid = []
-    
-    for test_file in test_files:
-        module = importlib.import_module(f"tests.{test_file}")
+
+    for test_file in ALLOWED_TEST_MODULE_NAMES:
+        if not hasattr(tests_pkg, test_file):
+            continue
+        module = getattr(tests_pkg, test_file)
         if hasattr(module, "VALID_CASES"):
             all_valid.extend(module.VALID_CASES)
         if hasattr(module, "INVALID_CASES"):

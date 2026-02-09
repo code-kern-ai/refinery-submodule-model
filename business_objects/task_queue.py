@@ -1,11 +1,14 @@
 from typing import List, Optional, Dict, Union
-from sqlalchemy import text
 
 from . import general
 from .. import enums
 from ..models import TaskQueue, Project
 from ..session import session
-
+from ..sql_helpers import (
+    jsonb_key_equals,
+    jsonb_key_in,
+    jsonb_nested_key_equals,
+)
 from ..util import prevent_sql_injection
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.expression import cast
@@ -41,9 +44,14 @@ def get_all_queued_etl_task_for_conversation(
         .filter(
             TaskQueue.organization_id == org_id,
             TaskQueue.task_type == enums.TaskType.EXECUTE_ETL.value,
-            text(f"task_info->'tmp_doc_metadata'->>'project_id' = '{project_id}'"),
-            text(
-                f"task_info->'tmp_doc_metadata'->>'conversation_id' = '{conversation_id}'"
+            jsonb_nested_key_equals(
+                TaskQueue.task_info, "tmp_doc_metadata", "project_id", project_id
+            ),
+            jsonb_nested_key_equals(
+                TaskQueue.task_info,
+                "tmp_doc_metadata",
+                "conversation_id",
+                conversation_id,
             ),
         )
         .all()
@@ -64,7 +72,7 @@ def get_all_waiting_by_type(
     return (
         session.query(TaskQueue)
         .filter(
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            jsonb_key_equals(TaskQueue.task_info, "project_id", project_id),
             TaskQueue.task_type == task_type.value,
             TaskQueue.is_active == False,
         )
@@ -78,8 +86,8 @@ def get_waiting_by_attribute_id(project_id: str, attribute_id: str) -> TaskQueue
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.ATTRIBUTE_CALCULATION.value,
-            text(f"task_info->>'attribute_id' = '{attribute_id}'"),
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            jsonb_key_equals(TaskQueue.task_info, "attribute_id", attribute_id),
+            jsonb_key_equals(TaskQueue.task_info, "project_id", project_id),
             TaskQueue.is_active == False,
         )
         .first()
@@ -92,8 +100,10 @@ def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQu
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.INFORMATION_SOURCE.value,
-            text(f"task_info->>'information_source_id' = '{source_id}'"),
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            jsonb_key_equals(
+                TaskQueue.task_info, "information_source_id", source_id
+            ),
+            jsonb_key_equals(TaskQueue.task_info, "project_id", project_id),
             TaskQueue.is_active == False,
         )
         .first()
@@ -108,10 +118,8 @@ def get_waiting_by_macro_group_execution_ids(
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.RUN_COGNITION_MACRO.value,
-            text(
-                f"task_info->>'group_execution_id' IN ({','.join(map(repr, source_ids))})"
-            ),
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            jsonb_key_in(TaskQueue.task_info, "group_execution_id", source_ids),
+            jsonb_key_equals(TaskQueue.task_info, "project_id", project_id),
         )
         .first()
     )
@@ -124,7 +132,7 @@ def get_by_tokenization(project_id: str) -> TaskQueue:
         session.query(TaskQueue)
         .filter(
             TaskQueue.task_type == enums.TaskType.TOKENIZATION.value,
-            text(f"task_info->>'project_id' = '{project_id}'"),
+            jsonb_key_equals(TaskQueue.task_info, "project_id", project_id),
         )
         .order_by(TaskQueue.created_at.asc())
         .first()
