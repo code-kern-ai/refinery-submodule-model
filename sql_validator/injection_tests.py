@@ -1,7 +1,12 @@
 # injection_tests.py
 import os
+import re
 import sys
 import importlib
+
+# Only allow alphanumeric and underscore in test module names (no path traversal or injection).
+_SAFE_TEST_MODULE_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
+
 
 def _get_validate():
     try:
@@ -18,14 +23,16 @@ def _get_validate():
 validate_sql_clause = _get_validate()
 
 def run_tests():
-    # Dynamic import from tests/ folder
+    # Dynamic import from tests/ folder; only allow whitelisted module names.
     test_files = [f[:-3] for f in os.listdir("tests") if f.endswith(".py") and f != "__init__.py"]
-    
+
     all_valid = []
     all_invalid = []
-    
+
     for test_file in test_files:
-        module = importlib.import_module(f"tests.{test_file}")
+        if not _SAFE_TEST_MODULE_PATTERN.match(test_file):
+            continue
+        module = importlib.import_module("tests." + test_file)
         if hasattr(module, "VALID_CASES"):
             all_valid.extend(module.VALID_CASES)
         if hasattr(module, "INVALID_CASES"):
