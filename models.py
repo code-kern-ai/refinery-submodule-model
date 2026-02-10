@@ -137,6 +137,13 @@ class CommentData(Base):
     created_at = Column(DateTime, default=sql.func.now())
 
 
+class CrossSelling(Base):
+    __tablename__ = Tablenames.CROSS_SELLING.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=True)
+    created_at = Column(DateTime, default=sql.func.now())
+
+
 class Organization(Base):
     __tablename__ = Tablenames.ORGANIZATION.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -146,6 +153,12 @@ class Organization(Base):
     # database entry
     is_paying = Column(Boolean, default=False)
     created_at = Column(DateTime, default=sql.func.now())
+    cross_selling_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.CROSS_SELLING.value}.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    )
     projects = parent_to_child_relationship(
         Tablenames.ORGANIZATION,
         Tablenames.PROJECT,

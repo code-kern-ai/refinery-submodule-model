@@ -147,6 +147,7 @@ class Tablenames(Enum):
     WEBSOCKET_ACCESS = "websocket_access"
     CONSUMPTION_LOG = "consumption_log"
     CONSUMPTION_SUMMARY = "consumption_summary"
+    CROSS_SELLING = "cross_selling"
     MACRO = "macro"  # general definition
     MACRO_NODE = "macro_node"  # step/action of a macro
     MACRO_EDGE = "macro_edge"  # connection between steps of a macro
