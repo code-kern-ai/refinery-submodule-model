@@ -1007,16 +1007,3 @@ def get_record_data_by_sanitized_where(
     """
     data = general.execute_all(query)
     return [row[0] for row in data] if data else []
-
-
-def get_record_by_attribute_value(
-    project_id: str, attribute_name: str, attribute_value: Any
-) -> List[str]:
-    query_result = (
-        session.query(Record.id)
-        .filter(
-            Record.project_id == project_id,
-            Record.data[attribute_name].as_string() == str(attribute_value),
-        )
-        .all()
-    )

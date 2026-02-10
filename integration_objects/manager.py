@@ -42,21 +42,17 @@ def count(
     by: str = "source",
 ) -> int:
     IntegrationModel = integration_model(integration=integration)
-    records = (
-        session.query(IntegrationModel)
-        .filter(
-            IntegrationModel.integration_id == integration.id,
+    record_identifier = getattr(IntegrationModel, by, IntegrationModel.source)
+    return len(
+        (
+            session.query(IntegrationModel)
+            .filter(
+                IntegrationModel.integration_id == integration.id,
+                record_identifier.op("regexp")(r"#\d$"),
+            )
+            .all()
         )
-        .all()
     )
-    filtered_records = [
-        x for x in records if re.search(r"#\d$", getattr(x, by, x.source) or "")
-    ]
-
-    for record in filtered_records:
-        print(getattr(record, by, record.source), flush=True)
-
-    return len(filtered_records)
 
 
 def get_last_record(integration: CognitionIntegration) -> Optional[object]:
