@@ -7,6 +7,39 @@ import importlib
 # Only allow alphanumeric and underscore in test module names (no path traversal or injection).
 _SAFE_TEST_MODULE_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
 
+# Literal whitelist of test module names (no dynamic construction for import_module).
+_ALLOWED_TEST_MODULES = frozenset({
+    "complex_queries", "complexity_cases", "injection_cases", "multi_clause_cases",
+    "order_group_cases", "subquery_cases", "tautology_cases", "valid_cases",
+    "window_function_cases",
+})
+
+
+def _import_test_module(name: str):
+    """Import a test module by name; only allowed names are imported (literal paths only)."""
+    if name not in _ALLOWED_TEST_MODULES:
+        raise ValueError(f"Test module not in whitelist: {name}")
+    # Dispatch with literal-only arguments so import_module never receives a dynamic string.
+    if name == "complex_queries":
+        return importlib.import_module("tests.complex_queries")
+    if name == "complexity_cases":
+        return importlib.import_module("tests.complexity_cases")
+    if name == "injection_cases":
+        return importlib.import_module("tests.injection_cases")
+    if name == "multi_clause_cases":
+        return importlib.import_module("tests.multi_clause_cases")
+    if name == "order_group_cases":
+        return importlib.import_module("tests.order_group_cases")
+    if name == "subquery_cases":
+        return importlib.import_module("tests.subquery_cases")
+    if name == "tautology_cases":
+        return importlib.import_module("tests.tautology_cases")
+    if name == "valid_cases":
+        return importlib.import_module("tests.valid_cases")
+    if name == "window_function_cases":
+        return importlib.import_module("tests.window_function_cases")
+    raise ValueError(f"Test module not in whitelist: {name}")
+
 
 def _get_validate():
     try:
@@ -30,9 +63,9 @@ def run_tests():
     all_invalid = []
 
     for test_file in test_files:
-        if not _SAFE_TEST_MODULE_PATTERN.match(test_file):
+        if not _SAFE_TEST_MODULE_PATTERN.match(test_file) or test_file not in _ALLOWED_TEST_MODULES:
             continue
-        module = importlib.import_module("tests." + test_file)
+        module = _import_test_module(test_file)
         if hasattr(module, "VALID_CASES"):
             all_valid.extend(module.VALID_CASES)
         if hasattr(module, "INVALID_CASES"):

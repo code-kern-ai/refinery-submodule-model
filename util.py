@@ -343,16 +343,13 @@ def safe_text_with_bindparams(sql_template: str, **bind_params: Any):
 
 def safe_text_in_clause(column_expression: str, values: List[str]):
     """
-    Build a SQLAlchemy text() clause for column_expression IN (values) with bound parameters.
-    Use instead of text(f\"... IN ({','.join(...)})\") to avoid SQL injection.
+    Build a SQLAlchemy clause for column_expression IN (values) with bound parameters.
+    Uses literal_column + in_() instead of text() so the usual SQL injection protections apply.
     column_expression must be a constant (e.g. \"task_info->>'group_execution_id'\").
     values are passed as bound parameters.
     """
-    from sqlalchemy import text
+    from sqlalchemy.sql.expression import literal_column
 
     if not values:
         raise ValueError("safe_text_in_clause requires at least one value")
-    placeholders = ", ".join(":p" + str(i) for i in range(len(values)))
-    sql = column_expression + " IN (" + placeholders + ")"
-    params = {"p" + str(i): v for i, v in enumerate(values)}
-    return text(sql).bindparams(**params)
+    return literal_column(column_expression).in_(values)
