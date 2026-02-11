@@ -8,6 +8,18 @@ import importlib
 _SAFE_TEST_MODULE_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
 
 
+def safe_import_test_module(test_file: str):
+    """
+    Import a test module by name after validating against the whitelist pattern.
+    test_file must match _SAFE_TEST_MODULE_PATTERN (alphanumeric and underscore only).
+    Exported so parent repos can reuse for safe dynamic test discovery.
+    """
+    if not _SAFE_TEST_MODULE_PATTERN.match(test_file):
+        raise ValueError(f"Invalid test module name (whitelist): {test_file!r}")
+    # test_file is restricted by whitelist above — cannot be __proto__/path traversal
+    return importlib.import_module("tests." + test_file)  # nosemgrep: python.lang.security.audit.non-literal-import.non-literal-import
+
+
 def _get_validate():
     try:
         from .sql_validator import validate_sql_clause
@@ -32,7 +44,7 @@ def run_tests():
     for test_file in test_files:
         if not _SAFE_TEST_MODULE_PATTERN.match(test_file):
             continue
-        module = importlib.import_module("tests." + test_file)
+        module = safe_import_test_module(test_file)
         if hasattr(module, "VALID_CASES"):
             all_valid.extend(module.VALID_CASES)
         if hasattr(module, "INVALID_CASES"):

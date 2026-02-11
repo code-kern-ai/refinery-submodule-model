@@ -10,7 +10,7 @@ from datetime import datetime, date
 from enum import Enum
 
 
-from sqlalchemy.sql import text as sql_text
+from sqlalchemy.sql import text as sql_text, literal_column
 from sqlalchemy.engine.row import Row
 from .models import Base
 from .business_objects import general
@@ -341,18 +341,30 @@ def safe_text_with_bindparams(sql_template: str, **bind_params: Any):
     return text(sql_template).bindparams(**bind_params)
 
 
+# Reject SQL comment markers and statement separators in column expressions (injection defense).
+_UNSAFE_COLUMN_EXPRESSION_PATTERN = compile(r";|\-\-|/\*|\*/|\n|\r")
+
+
+def validate_sql_column_expression(column_expression: str) -> None:
+    """
+    Validate that a column expression string is safe for use in literal_column().
+    Raises ValueError if the expression contains SQL injection risks (e.g. semicolons,
+    comment markers, or SQL keywords). Export for use by parent repos when building
+    safe IN clauses or other expression strings.
+    """
+    if not column_expression or not column_expression.strip():
+        raise ValueError("column_expression cannot be empty")
+    if _UNSAFE_COLUMN_EXPRESSION_PATTERN.search(column_expression):
+        raise ValueError(f"Unsafe column expression (rejected): {column_expression!r}")
+
+
 def safe_text_in_clause(column_expression: str, values: List[str]):
     """
-    Build a SQLAlchemy text() clause for column_expression IN (values) with bound parameters.
-    Use instead of text(f\"... IN ({','.join(...)})\") to avoid SQL injection.
-    column_expression must be a constant (e.g. \"task_info->>'group_execution_id'\").
-    values are passed as bound parameters.
+    Build a SQLAlchemy IN clause for column_expression IN (values) using literal_column and in_().
+    Avoids text() for injection safety; values are bound parameters.
+    column_expression must be a constant (e.g. \"task_info->>'group_execution_id'\"); validated by validate_sql_column_expression.
     """
-    from sqlalchemy import text
-
+    validate_sql_column_expression(column_expression)
     if not values:
         raise ValueError("safe_text_in_clause requires at least one value")
-    placeholders = ", ".join(":p" + str(i) for i in range(len(values)))
-    sql = column_expression + " IN (" + placeholders + ")"
-    params = {"p" + str(i): v for i, v in enumerate(values)}
-    return text(sql).bindparams(**params)
+    return literal_column(column_expression).in_(values)
