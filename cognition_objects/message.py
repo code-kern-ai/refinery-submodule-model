@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Union, Tuple
 from datetime import datetime
 
-from submodules.model.enums import MessageType
+from submodules.model.enums import MessageType, CrossSellingFilter
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMessage
@@ -613,15 +613,23 @@ def get_last_chat_messages(
     message_type: MessageType,
     starting_from: str,
     ending_to: Optional[str] = None,
+    cross_selling_filter: Optional[str] = None,
 ) -> List[Any]:
 
     message_type = prevent_sql_injection(message_type, isinstance(message_type, str))
     starting_from = prevent_sql_injection(starting_from, isinstance(starting_from, str))
     if ending_to:
         ending_to = prevent_sql_injection(ending_to, isinstance(ending_to, str))
+    if cross_selling_filter and not isinstance(
+        cross_selling_filter, CrossSellingFilter
+    ):
+        cross_selling_filter = prevent_sql_injection(
+            cross_selling_filter, isinstance(cross_selling_filter, str)
+        )
 
     message_type_filter = ""
     ending_to_filter = ""
+    cross_selling_filter_sql = ""
 
     if message_type == MessageType.WITH_ERROR:
         message_type_filter = "AND c.error IS NOT NULL"
@@ -630,10 +638,26 @@ def get_last_chat_messages(
     if ending_to:
         ending_to_filter = f"AND m.created_at <= '{ending_to}'"
 
+    _cs_filter = cross_selling_filter
+    if isinstance(cross_selling_filter, str):
+        _cs_filter = getattr(
+            CrossSellingFilter, cross_selling_filter, cross_selling_filter
+        )
+    if _cs_filter == CrossSellingFilter.HAS_CROSS_SELLING:
+        cross_selling_filter_sql = "AND o.cross_selling_id IS NOT NULL"
+    elif _cs_filter == CrossSellingFilter.NO_CROSS_SELLING:
+        cross_selling_filter_sql = "AND o.cross_selling_id IS NULL"
+    elif (
+        cross_selling_filter
+        and _cs_filter != CrossSellingFilter.NO_FILTER
+        and isinstance(cross_selling_filter, str)
+    ):
+        cross_selling_filter_sql = f"AND o.cross_selling_id = '{cross_selling_filter}'"
+
     query = f"""
     SELECT *
     FROM (
-        SELECT m.created_at, m.created_by, m.question, m.answer, m.initiated_via, c.error, cp.id AS project_id, cp.name AS project_name, cp.organization_id, o.name AS organization_name, c.id AS conversation_id,
+        SELECT m.created_at, m.created_by, m.question, m.answer, m.initiated_via, c.error, cp.id AS project_id, cp.name AS project_name, cp.organization_id, o.name AS organization_name, c.id AS conversation_id, cs.name AS cross_selling_name,
             ROW_NUMBER() OVER (
                 PARTITION BY cp.organization_id, cp.id 
                 ORDER BY m.created_at DESC
@@ -642,10 +666,12 @@ def get_last_chat_messages(
             JOIN cognition.conversation c ON c.id = m.conversation_id
             JOIN cognition.project cp ON cp.id = m.project_id
             JOIN organization o ON o.id = cp.organization_id
+            LEFT JOIN cross_selling cs ON cs.id = o.cross_selling_id
         WHERE 
             m.created_at >= '{starting_from}'
             {message_type_filter}
             {ending_to_filter}
+            {cross_selling_filter_sql}
     ) sub
     WHERE rn <= 5
     ORDER BY organization_id, project_id, created_at DESC
