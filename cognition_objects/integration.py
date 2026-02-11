@@ -11,6 +11,7 @@ from ..models import CognitionIntegration, CognitionGroup, EtlTask
 from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
+    CrossSellingFilter,
 )
 from ..util import prevent_sql_injection
 from submodules.model import enums
@@ -410,7 +411,33 @@ def get_distinct_item_ids_for_all_permissions(
     return [row[0] for row in results if row and row[0]]
 
 
-def get_last_integrations_tasks() -> List[Dict[str, Any]]:
+def get_last_integrations_tasks(
+    cross_selling_filter: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    cross_selling_filter_sql = ""
+    if cross_selling_filter and not isinstance(
+        cross_selling_filter, CrossSellingFilter
+    ):
+        cross_selling_filter = prevent_sql_injection(
+            cross_selling_filter, isinstance(cross_selling_filter, str)
+        )
+
+    _cs_filter = cross_selling_filter
+    if isinstance(cross_selling_filter, str):
+        _cs_filter = getattr(
+            CrossSellingFilter, cross_selling_filter, cross_selling_filter
+        )
+    if _cs_filter == CrossSellingFilter.HAS_CROSS_SELLING:
+        cross_selling_filter_sql = "AND o.cross_selling_id IS NOT NULL"
+    elif _cs_filter == CrossSellingFilter.NO_CROSS_SELLING:
+        cross_selling_filter_sql = "AND o.cross_selling_id IS NULL"
+    elif (
+        cross_selling_filter
+        and _cs_filter != CrossSellingFilter.NO_FILTER
+        and isinstance(cross_selling_filter, str)
+    ):
+        cross_selling_filter_sql = f"AND o.cross_selling_id = '{cross_selling_filter}'"
+
     query = f"""
     WITH embedding_agg AS (
         SELECT
@@ -519,6 +546,7 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
             i.type,
             o.name AS organization_name,
             p.name AS project_name,
+            cs.name AS cross_selling_name,
             jsonb_build_object(
                 'embeddingsByState', coalesce(ea.embeddings_by_state, '[]'::jsonb),
                 'attributesByState', coalesce(aa.attributes_by_state, '[]'::jsonb),
@@ -533,8 +561,10 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
         ON rtt.project_id = i.project_id
         JOIN organization o
         ON o.id = i.organization_id
-        JOIN project p
+        LEFT JOIN cross_selling cs ON cs.id = o.cross_selling_id
+        JOIN cognition.project p
         ON p.id = i.project_id
+        {cross_selling_filter_sql}
     )
 
     SELECT 
@@ -549,7 +579,8 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
         int_data.full_data,
         int_data.created_by,
         int_data.type,
-        int_data.project_name
+        int_data.project_name,
+        int_data.cross_selling_name
     FROM integration_data int_data
     ORDER BY int_data.organization_id, int_data.started_at DESC
     """

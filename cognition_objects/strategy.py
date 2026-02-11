@@ -6,7 +6,7 @@ from submodules.model.util import prevent_sql_injection
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionStrategy
-from ..enums import StrategyComplexity, StrategyStepType
+from ..enums import CrossSellingFilter, StrategyComplexity, StrategyStepType
 
 
 def get(project_id: str, strategy_id: str) -> CognitionStrategy:
@@ -115,6 +115,7 @@ def get_strategies_info(
     step_types: List[str],
     created_at_from: str,
     created_at_to: Optional[str] = None,
+    cross_selling_filter: Optional[str] = None,
 ) -> List[Any]:
 
     step_types = [prevent_sql_injection(st, isinstance(st, str)) for st in step_types]
@@ -128,10 +129,34 @@ def get_strategies_info(
         created_at_to = prevent_sql_injection(
             created_at_to, isinstance(created_at_to, str)
         )
+    if cross_selling_filter and not isinstance(
+        cross_selling_filter, CrossSellingFilter
+    ):
+        cross_selling_filter = prevent_sql_injection(
+            cross_selling_filter, isinstance(cross_selling_filter, str)
+        )
+
     created_at_to_filter = ""
+    cross_selling_filter_sql = ""
 
     if created_at_to:
         created_at_to_filter = f"AND ss.created_at <= '{created_at_to}'"
+
+    _cs_filter = cross_selling_filter
+    if isinstance(cross_selling_filter, str):
+        _cs_filter = getattr(
+            CrossSellingFilter, cross_selling_filter, cross_selling_filter
+        )
+    if _cs_filter == CrossSellingFilter.HAS_CROSS_SELLING:
+        cross_selling_filter_sql = "AND o.cross_selling_id IS NOT NULL"
+    elif _cs_filter == CrossSellingFilter.NO_CROSS_SELLING:
+        cross_selling_filter_sql = "AND o.cross_selling_id IS NULL"
+    elif (
+        cross_selling_filter
+        and _cs_filter != CrossSellingFilter.NO_FILTER
+        and isinstance(cross_selling_filter, str)
+    ):
+        cross_selling_filter_sql = f"AND o.cross_selling_id = '{cross_selling_filter}'"
 
     step_types_sql = ", ".join([f"'{st}'" for st in step_types])
 
@@ -142,6 +167,7 @@ def get_strategies_info(
             ss.id AS step_id, ss.created_by,ss.created_at, ss.name AS step_name, ss.step_type,
             p.name AS project_name, p.id AS project_id,
             o.name AS organization_name, o.id AS organization_id,
+            cs.name AS cross_selling_name,
             st.config::jsonb AS template_config,
             CASE 
                 WHEN ss.step_type = '{StrategyStepType.TEMPLATED.value}' AND st.config IS NOT NULL
@@ -166,12 +192,14 @@ def get_strategies_info(
         ON p.id = s.project_id
         JOIN organization o 
         ON o.id = p.organization_id
+        LEFT JOIN cross_selling cs ON cs.id = o.cross_selling_id
         LEFT JOIN cognition.step_templates st 
         ON st.id = (ss.config->>'templateId')::uuid
         WHERE ss.created_at >= '{created_at_from}'
         {created_at_to_filter}
+        {cross_selling_filter_sql}
     )
-    SELECT strategy_id, strategy_name, step_id, created_by, created_at, step_name, step_type, project_name, project_id, organization_name, organization_id,
+    SELECT strategy_id, strategy_name, step_id, created_by, created_at, step_name, step_type, project_name, project_id, organization_name, organization_id, cross_selling_name,
         CASE
             WHEN step_type = '{StrategyStepType.TEMPLATED.value}' THEN template_step_names
             ELSE ARRAY[step_type || ':' || step_name]
