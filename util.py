@@ -326,3 +326,33 @@ def __mask_sql_str(sql_str: str, remove_quotes: bool) -> str:
 
 def ensure_sql_text(sql: str) -> str:
     return sql_text(sql)
+
+
+def safe_text_with_bindparams(sql_template: str, **bind_params: Any):
+    """
+    Build a SQLAlchemy text() clause with bound parameters to avoid SQL injection.
+    Use this instead of text(f\"...\") when variable values must be included in the query.
+    sql_template must be a constant string with named placeholders (:name).
+    All variable values must be passed as keyword arguments; they are sent as bound parameters.
+    Returns a SQLAlchemy text() construct suitable for use in filter(), etc.
+    """
+    from sqlalchemy import text
+
+    return text(sql_template).bindparams(**bind_params)
+
+
+def safe_text_in_clause(column_expression: str, values: List[str]):
+    """
+    Build a SQLAlchemy text() clause for column_expression IN (values) with bound parameters.
+    Use instead of text(f\"... IN ({','.join(...)})\") to avoid SQL injection.
+    column_expression must be a constant (e.g. \"task_info->>'group_execution_id'\").
+    values are passed as bound parameters.
+    """
+    from sqlalchemy import text
+
+    if not values:
+        raise ValueError("safe_text_in_clause requires at least one value")
+    placeholders = ", ".join(":p" + str(i) for i in range(len(values)))
+    sql = column_expression + " IN (" + placeholders + ")"
+    params = {"p" + str(i): v for i, v in enumerate(values)}
+    return text(sql).bindparams(**params)
