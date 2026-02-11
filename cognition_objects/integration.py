@@ -428,15 +428,15 @@ def get_last_integrations_tasks(
             CrossSellingFilter, cross_selling_filter, cross_selling_filter
         )
     if _cs_filter == CrossSellingFilter.HAS_CROSS_SELLING:
-        cross_selling_filter_sql = "AND o.cross_selling_id IS NOT NULL"
+        cross_selling_filter_sql = "o.cross_selling_id IS NOT NULL"
     elif _cs_filter == CrossSellingFilter.NO_CROSS_SELLING:
-        cross_selling_filter_sql = "AND o.cross_selling_id IS NULL"
+        cross_selling_filter_sql = "o.cross_selling_id IS NULL"
     elif (
         cross_selling_filter
         and _cs_filter != CrossSellingFilter.NO_FILTER
         and isinstance(cross_selling_filter, str)
     ):
-        cross_selling_filter_sql = f"AND o.cross_selling_id = '{cross_selling_filter}'"
+        cross_selling_filter_sql = f"o.cross_selling_id = '{cross_selling_filter}'"
 
     query = f"""
     WITH embedding_agg AS (
@@ -559,12 +559,13 @@ def get_last_integrations_tasks(
         ON aa.project_id = i.project_id
         LEFT JOIN record_tokenization_task_agg rtt 
         ON rtt.project_id = i.project_id
-        JOIN organization o
+        LEFT JOIN organization o
         ON o.id = i.organization_id
-        LEFT JOIN cross_selling cs ON cs.id = o.cross_selling_id
-        JOIN cognition.project p
+        LEFT JOIN cross_selling cs 
+        ON cs.id = o.cross_selling_id
+        LEFT JOIN cognition.project p
         ON p.id = i.project_id
-        {cross_selling_filter_sql}
+        {"WHERE " + cross_selling_filter_sql if cross_selling_filter_sql else ""}
     )
 
     SELECT 
