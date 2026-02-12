@@ -165,15 +165,27 @@ role = UserRoles.from_string("expert")     # Returns UserRoles.EXPERT
 
 ### `try_parse_enum_value()` Helper
 
-Use for safe enum parsing:
+**Always use `try_parse_enum_value()`** instead of `getattr(Enum, value, value)` when parsing string inputs to enums:
 
 ```python
 from ..enums import try_parse_enum_value, Tablenames
 
 table_enum = try_parse_enum_value(table_name, Tablenames)
+
+parsed = try_parse_enum_value(cross_selling_filter, CrossSellingFilter, raise_me=False)
+_cs_filter = parsed if parsed is not None else cross_selling_filter
 ```
 
-This safely converts a string to an enum member, handling errors gracefully.
+**Parameters:**
+- `string`: Input string to parse (uses `string.upper()` for lookup)
+- `enumType`: The enum class to parse into
+- `raise_me`: If `True` (default), raises `ValueError` on invalid input; if `False`, returns `None`
+
+**Avoid:**
+```python
+# Don't use getattr for enum parsing
+_cs_filter = getattr(CrossSellingFilter, cross_selling_filter, cross_selling_filter)
+```
 
 ## Enum Values in Database
 

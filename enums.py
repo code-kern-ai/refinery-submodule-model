@@ -147,6 +147,7 @@ class Tablenames(Enum):
     WEBSOCKET_ACCESS = "websocket_access"
     CONSUMPTION_LOG = "consumption_log"
     CONSUMPTION_SUMMARY = "consumption_summary"
+    CROSS_SELLING = "cross_selling"
     MACRO = "macro"  # general definition
     MACRO_NODE = "macro_node"  # step/action of a macro
     MACRO_EDGE = "macro_edge"  # connection between steps of a macro
@@ -1039,6 +1040,12 @@ class MessageType(Enum):
     WITH_ERROR = "WITH_ERROR"
     WITHOUT_ERROR = "WITHOUT_ERROR"
     ALL = "ALL"
+
+
+class CrossSellingFilter(Enum):
+    NO_FILTER = "NO_FILTER"
+    HAS_CROSS_SELLING = "HAS_CROSS_SELLING"
+    NO_CROSS_SELLING = "NO_CROSS_SELLING"
 
 
 class TimedExecutionKey(Enum):

@@ -8,6 +8,7 @@ import datetime
 import mimetypes
 
 from submodules.model import enums, etl_utils
+from submodules.model.business_objects import cross_selling as cross_selling_bo
 from submodules.model.session import session
 from submodules.model.business_objects import general
 from submodules.model.cognition_objects import file_reference as file_reference_co_bo
@@ -427,6 +428,7 @@ def get_last_etl_tasks(
     states: List[enums.CognitionMarkdownFileState],
     created_at_from: str,
     created_at_to: Optional[str] = None,
+    cross_selling_filter: Optional[str] = None,
 ) -> List[Any]:
 
     states = [state.value for state in states]
@@ -441,6 +443,11 @@ def get_last_etl_tasks(
             created_at_to, isinstance(created_at_to, str)
         )
     created_at_to_filter = ""
+    cross_selling_filter_sql = cross_selling_bo.build_cross_selling_filter_sql(
+        cross_selling_filter
+    )
+    if cross_selling_filter_sql:
+        cross_selling_filter_sql = " AND " + cross_selling_filter_sql
 
     if created_at_to:
         created_at_to_filter = f"AND mf.created_at <= '{created_at_to}'"
@@ -464,12 +471,14 @@ def get_last_etl_tasks(
             ig.id AS integration_id,
             ig.name AS integration_name,
             o.name AS organization_name,
+            cs.name AS cross_selling_name,
             ROW_NUMBER() OVER (
                 PARTITION BY md.organization_id, md.id
                 ORDER BY et.created_at DESC
             ) AS rn
         FROM global.etl_task et
         JOIN organization o ON o.id = et.organization_id
+        LEFT JOIN cross_selling cs ON cs.id = o.cross_selling_id
         LEFT JOIN cognition.markdown_file mf ON et.id = mf.etl_task_id
         LEFT JOIN cognition.markdown_dataset md ON md.id = mf.dataset_id
         LEFT JOIN cognition.integration ig ON et.meta_data->>'integration_id' = ig.id::TEXT
@@ -477,6 +486,7 @@ def get_last_etl_tasks(
             et.created_at >= '{created_at_from}'
             AND et.state IN ({states_filter_sql})
             {created_at_to_filter}
+            {cross_selling_filter_sql}
     ) sub
     WHERE sub.rn <= 5
     ORDER BY organization_id, dataset_id, created_at DESC
