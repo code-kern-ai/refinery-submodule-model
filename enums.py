@@ -1069,6 +1069,7 @@ class ETLFileType(Enum):
     EXCEL = "EXCEL"
     POWERPOINT = "POWERPOINT"
     IMG = "IMG"
+    CSV = "CSV"
 
     @classmethod
     def from_string(cls, value: str):
@@ -1089,6 +1090,8 @@ class ETLFileType(Enum):
             return [".xlsx", ".xls"]
         elif self == ETLFileType.POWERPOINT:
             return [".pptx", ".ppt"]
+        elif self == ETLFileType.CSV:
+            return [".csv", ".tsv"]
         elif self == ETLFileType.IMG:
             return [
                 ".png",
@@ -1124,6 +1127,8 @@ class ETLFileType(Enum):
             return ETLFileType.EXCEL
         elif changed_value in [".pptx", ".ppt"]:
             return ETLFileType.POWERPOINT
+        elif changed_value in [".csv", ".tsv"]:
+            return ETLFileType.CSV
         elif changed_value in [
             ".png",
             ".jpg",
@@ -1162,6 +1167,11 @@ class ETLFileType(Enum):
             return ETLFileType.POWERPOINT
         elif changed_value.startswith("image/"):
             return ETLFileType.IMG
+        elif changed_value in [
+            "text/csv",
+            "text/tab-separated-values",
+        ]:
+            return ETLFileType.CSV
         else:
             return ETLFileType.DEFAULT
 
@@ -1181,6 +1191,8 @@ class ETLFileType(Enum):
             return ETLExtractorPowerpoint.LANGCHAIN
         elif file_type == ETLFileType.IMG:
             return ETLExtractorImg.LANGCHAIN
+        elif file_type == ETLFileType.CSV:
+            return ETLExtractorCsv.LANGCHAIN
         elif file_type == ETLFileType.DEFAULT or file_type == ETLFileType.TXT:
             return ETLExtractorTxt.LANGCHAIN
         raise ValueError(f"No default extractor for given file type {file_type}")
@@ -1200,7 +1212,10 @@ class ETLFileType(Enum):
             return ETLExtractorPowerpoint.from_string(extractor)
         elif self == ETLFileType.IMG:
             return ETLExtractorImg.from_string(extractor)
-        return self.get_default_extractor(self)
+        elif self == ETLFileType.CSV:
+            return ETLExtractorCsv.from_string(extractor)
+        elif self == ETLFileType.DEFAULT or self == ETLFileType.TXT:
+            return ETLExtractorTxt.from_string(extractor)
 
     def get_supported_extractors(self) -> List[str]:
         if self == ETLFileType.MD:
@@ -1215,6 +1230,8 @@ class ETLFileType(Enum):
             return ETLExtractorPowerpoint.all()
         elif self == ETLFileType.IMG:
             return ETLExtractorImg.all()
+        elif self == ETLFileType.CSV:
+            return ETLExtractorCsv.all()
         return ETLExtractorTxt.all()
 
 
@@ -1261,6 +1278,10 @@ class ETLExtractorImg(EnumKern):
 
 
 class ETLExtractorTxt(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorCsv(EnumKern):
     LANGCHAIN = "LANGCHAIN"
 
 
