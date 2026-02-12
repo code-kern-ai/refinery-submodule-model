@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional, Union, Tuple
 from datetime import datetime
 
-from submodules.model.enums import MessageType, CrossSellingFilter
+from submodules.model.enums import MessageType
+from submodules.model.business_objects import cross_selling as cross_selling_bo
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMessage
@@ -620,16 +621,13 @@ def get_last_chat_messages(
     starting_from = prevent_sql_injection(starting_from, isinstance(starting_from, str))
     if ending_to:
         ending_to = prevent_sql_injection(ending_to, isinstance(ending_to, str))
-    if cross_selling_filter and not isinstance(
-        cross_selling_filter, CrossSellingFilter
-    ):
-        cross_selling_filter = prevent_sql_injection(
-            cross_selling_filter, isinstance(cross_selling_filter, str)
-        )
-
     message_type_filter = ""
     ending_to_filter = ""
-    cross_selling_filter_sql = ""
+    cross_selling_filter_sql = cross_selling_bo.build_cross_selling_filter_sql(
+        cross_selling_filter
+    )
+    if cross_selling_filter_sql:
+        cross_selling_filter_sql = " AND " + cross_selling_filter_sql
 
     if message_type == MessageType.WITH_ERROR:
         message_type_filter = "AND c.error IS NOT NULL"
@@ -637,22 +635,6 @@ def get_last_chat_messages(
         message_type_filter = "AND c.error IS NULL"
     if ending_to:
         ending_to_filter = f"AND m.created_at <= '{ending_to}'"
-
-    _cs_filter = cross_selling_filter
-    if isinstance(cross_selling_filter, str):
-        _cs_filter = getattr(
-            CrossSellingFilter, cross_selling_filter, cross_selling_filter
-        )
-    if _cs_filter == CrossSellingFilter.HAS_CROSS_SELLING:
-        cross_selling_filter_sql = "AND o.cross_selling_id IS NOT NULL"
-    elif _cs_filter == CrossSellingFilter.NO_CROSS_SELLING:
-        cross_selling_filter_sql = "AND o.cross_selling_id IS NULL"
-    elif (
-        cross_selling_filter
-        and _cs_filter != CrossSellingFilter.NO_FILTER
-        and isinstance(cross_selling_filter, str)
-    ):
-        cross_selling_filter_sql = f"AND o.cross_selling_id = '{cross_selling_filter}'"
 
     query = f"""
     SELECT *

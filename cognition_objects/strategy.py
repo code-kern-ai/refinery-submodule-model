@@ -6,7 +6,8 @@ from submodules.model.util import prevent_sql_injection
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionStrategy
-from ..enums import CrossSellingFilter, StrategyComplexity, StrategyStepType
+from ..enums import StrategyComplexity, StrategyStepType
+from ..business_objects import cross_selling as cross_selling_bo
 
 
 def get(project_id: str, strategy_id: str) -> CognitionStrategy:
@@ -129,34 +130,15 @@ def get_strategies_info(
         created_at_to = prevent_sql_injection(
             created_at_to, isinstance(created_at_to, str)
         )
-    if cross_selling_filter and not isinstance(
-        cross_selling_filter, CrossSellingFilter
-    ):
-        cross_selling_filter = prevent_sql_injection(
-            cross_selling_filter, isinstance(cross_selling_filter, str)
-        )
-
     created_at_to_filter = ""
-    cross_selling_filter_sql = ""
+    cross_selling_filter_sql = cross_selling_bo.build_cross_selling_filter_sql(
+        cross_selling_filter
+    )
+    if cross_selling_filter_sql:
+        cross_selling_filter_sql = " AND " + cross_selling_filter_sql
 
     if created_at_to:
         created_at_to_filter = f"AND ss.created_at <= '{created_at_to}'"
-
-    _cs_filter = cross_selling_filter
-    if isinstance(cross_selling_filter, str):
-        _cs_filter = getattr(
-            CrossSellingFilter, cross_selling_filter, cross_selling_filter
-        )
-    if _cs_filter == CrossSellingFilter.HAS_CROSS_SELLING:
-        cross_selling_filter_sql = "AND o.cross_selling_id IS NOT NULL"
-    elif _cs_filter == CrossSellingFilter.NO_CROSS_SELLING:
-        cross_selling_filter_sql = "AND o.cross_selling_id IS NULL"
-    elif (
-        cross_selling_filter
-        and _cs_filter != CrossSellingFilter.NO_FILTER
-        and isinstance(cross_selling_filter, str)
-    ):
-        cross_selling_filter_sql = f"AND o.cross_selling_id = '{cross_selling_filter}'"
 
     step_types_sql = ", ".join([f"'{st}'" for st in step_types])
 

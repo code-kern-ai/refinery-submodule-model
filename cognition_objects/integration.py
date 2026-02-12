@@ -11,8 +11,8 @@ from ..models import CognitionIntegration, CognitionGroup, EtlTask
 from ..enums import (
     CognitionMarkdownFileState,
     CognitionIntegrationType,
-    CrossSellingFilter,
 )
+from ..business_objects import cross_selling as cross_selling_bo
 from ..util import prevent_sql_injection
 from submodules.model import enums
 
@@ -414,29 +414,11 @@ def get_distinct_item_ids_for_all_permissions(
 def get_last_integrations_tasks(
     cross_selling_filter: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    cross_selling_filter_sql = ""
-    if cross_selling_filter and not isinstance(
-        cross_selling_filter, CrossSellingFilter
-    ):
-        cross_selling_filter = prevent_sql_injection(
-            cross_selling_filter, isinstance(cross_selling_filter, str)
-        )
-
-    _cs_filter = cross_selling_filter
-    if isinstance(cross_selling_filter, str):
-        _cs_filter = getattr(
-            CrossSellingFilter, cross_selling_filter, cross_selling_filter
-        )
-    if _cs_filter == CrossSellingFilter.HAS_CROSS_SELLING:
-        cross_selling_filter_sql = "o.cross_selling_id IS NOT NULL"
-    elif _cs_filter == CrossSellingFilter.NO_CROSS_SELLING:
-        cross_selling_filter_sql = "o.cross_selling_id IS NULL"
-    elif (
+    cross_selling_filter_sql = cross_selling_bo.build_cross_selling_filter_sql(
         cross_selling_filter
-        and _cs_filter != CrossSellingFilter.NO_FILTER
-        and isinstance(cross_selling_filter, str)
-    ):
-        cross_selling_filter_sql = f"o.cross_selling_id = '{cross_selling_filter}'"
+    )
+    if cross_selling_filter_sql:
+        cross_selling_filter_sql = "WHERE " + cross_selling_filter_sql
 
     query = f"""
     WITH embedding_agg AS (
@@ -565,7 +547,7 @@ def get_last_integrations_tasks(
         ON cs.id = o.cross_selling_id
         LEFT JOIN cognition.project p
         ON p.id = i.project_id
-        {"WHERE " + cross_selling_filter_sql if cross_selling_filter_sql else ""}
+        {cross_selling_filter_sql}
     )
 
     SELECT 

@@ -8,7 +8,7 @@ import datetime
 import mimetypes
 
 from submodules.model import enums, etl_utils
-from submodules.model.enums import CrossSellingFilter
+from submodules.model.business_objects import cross_selling as cross_selling_bo
 from submodules.model.session import session
 from submodules.model.business_objects import general
 from submodules.model.cognition_objects import file_reference as file_reference_co_bo
@@ -442,34 +442,15 @@ def get_last_etl_tasks(
         created_at_to = prevent_sql_injection(
             created_at_to, isinstance(created_at_to, str)
         )
-    if cross_selling_filter and not isinstance(
-        cross_selling_filter, CrossSellingFilter
-    ):
-        cross_selling_filter = prevent_sql_injection(
-            cross_selling_filter, isinstance(cross_selling_filter, str)
-        )
-
     created_at_to_filter = ""
-    cross_selling_filter_sql = ""
+    cross_selling_filter_sql = cross_selling_bo.build_cross_selling_filter_sql(
+        cross_selling_filter
+    )
+    if cross_selling_filter_sql:
+        cross_selling_filter_sql = " AND " + cross_selling_filter_sql
 
     if created_at_to:
         created_at_to_filter = f"AND mf.created_at <= '{created_at_to}'"
-
-    _cs_filter = cross_selling_filter
-    if isinstance(cross_selling_filter, str):
-        _cs_filter = getattr(
-            CrossSellingFilter, cross_selling_filter, cross_selling_filter
-        )
-    if _cs_filter == CrossSellingFilter.HAS_CROSS_SELLING:
-        cross_selling_filter_sql = "AND o.cross_selling_id IS NOT NULL"
-    elif _cs_filter == CrossSellingFilter.NO_CROSS_SELLING:
-        cross_selling_filter_sql = "AND o.cross_selling_id IS NULL"
-    elif (
-        cross_selling_filter
-        and _cs_filter != CrossSellingFilter.NO_FILTER
-        and isinstance(cross_selling_filter, str)
-    ):
-        cross_selling_filter_sql = f"AND o.cross_selling_id = '{cross_selling_filter}'"
 
     states_filter_sql = ", ".join([f"'{state}'" for state in states])
 
