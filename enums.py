@@ -158,7 +158,6 @@ class Tablenames(Enum):
     MACRO_EXECUTION_SUMMARY = (
         "macro_execution_summary"  # summary of macro folder executions
     )
-    CUSTOMER_BUTTON = "customer_button"
     FILE_REFERENCE = "file_reference"
     FILE_EXTRACTION = "file_extraction"
     FILE_TRANSFORMATION = "file_transformation"
@@ -876,20 +875,6 @@ class AdminMacrosDisplay(Enum):
     FOR_ADMINS = "FOR_ADMINS"
     FOR_ENGINEERS = "FOR_ENGINEERS"
     FOR_ALL = "FOR_ALL"
-
-
-class CustomerButtonType(Enum):
-    DATA_MAPPER = "DATA_MAPPER"
-    # sends data to the data mapper, needs to ensure the request has the key included!
-
-    # ______________________________
-    # extended on demand over time
-
-
-class CustomerButtonLocation(Enum):
-    COGNITION_MACRO_RESULTS_TABLE = "COGNITION_MACRO_RESULTS_TABLE"  # url /macros/<macro_id> # only visible if meta data display is active
-
-    # extended on demand over time
 
 
 class FileCachingInitiator(Enum):
