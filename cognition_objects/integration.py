@@ -9,6 +9,7 @@ from ..integration_objects import manager as integration_records_bo
 from ..session import session
 from ..models import CognitionIntegration, CognitionGroup, EtlTask
 from ..enums import CognitionIntegrationType, CognitionIntegrationState
+from ..business_objects import cross_selling as cross_selling_bo
 from ..util import prevent_sql_injection
 from submodules.model import enums
 
@@ -384,7 +385,15 @@ def get_distinct_item_ids_for_all_permissions(
     return [row[0] for row in results if row and row[0]]
 
 
-def get_last_integrations_tasks() -> List[Dict[str, Any]]:
+def get_last_integrations_tasks(
+    cross_selling_filter: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    cross_selling_filter_sql = cross_selling_bo.build_cross_selling_filter_sql(
+        cross_selling_filter
+    )
+    if cross_selling_filter_sql:
+        cross_selling_filter_sql = "WHERE " + cross_selling_filter_sql
+
     query = f"""
     WITH embedding_agg AS (
         SELECT
@@ -493,6 +502,7 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
             i.type,
             o.name AS organization_name,
             p.name AS project_name,
+            cs.name AS cross_selling_name,
             jsonb_build_object(
                 'embeddingsByState', coalesce(ea.embeddings_by_state, '[]'::jsonb),
                 'attributesByState', coalesce(aa.attributes_by_state, '[]'::jsonb),
@@ -505,10 +515,13 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
         ON aa.project_id = i.project_id
         LEFT JOIN record_tokenization_task_agg rtt 
         ON rtt.project_id = i.project_id
-        JOIN organization o
+        LEFT JOIN organization o
         ON o.id = i.organization_id
-        JOIN project p
+        LEFT JOIN cross_selling cs 
+        ON cs.id = o.cross_selling_id
+        LEFT JOIN cognition.project p
         ON p.id = i.project_id
+        {cross_selling_filter_sql}
     )
 
     SELECT 
@@ -523,7 +536,8 @@ def get_last_integrations_tasks() -> List[Dict[str, Any]]:
         int_data.full_data,
         int_data.created_by,
         int_data.type,
-        int_data.project_name
+        int_data.project_name,
+        int_data.cross_selling_name
     FROM integration_data int_data
     ORDER BY int_data.organization_id, int_data.started_at DESC
     """

@@ -147,6 +147,7 @@ class Tablenames(Enum):
     WEBSOCKET_ACCESS = "websocket_access"
     CONSUMPTION_LOG = "consumption_log"
     CONSUMPTION_SUMMARY = "consumption_summary"
+    CROSS_SELLING = "cross_selling"
     MACRO = "macro"  # general definition
     MACRO_NODE = "macro_node"  # step/action of a macro
     MACRO_EDGE = "macro_edge"  # connection between steps of a macro
@@ -199,6 +200,9 @@ class Tablenames(Enum):
     INBOX_MAIL = "inbox_mail"
     INBOX_MAIL_THREAD = "inbox_mail_thread"
     INBOX_MAIL_THREAD_ASSOCIATION = "inbox_mail_thread_association"
+    DATA_BLOCK = "data_block"
+    DATA_BLOCK_ATTRIBUTES = "data_block_attributes"
+    DATA_BLOCK_RESULTS = "data_block_results"
     INTEGRATION_WEBPAGE = "webpage"
 
     def snake_case_to_pascal_case(self):
@@ -382,6 +386,9 @@ class NotificationType(Enum):
     DATA_SLICE_UPDATE_FAILED = "DATA_SLICE_UPDATE_FAILED"
     BAD_PASSWORD_DURING_IMPORT = "BAD_PASSWORD_DURING_IMPORT"
     RECREATION_OF_EMBEDDINGS_ERROR = "RECREATION_OF_EMBEDDINGS_ERROR"
+    DATA_BLOCK_ALREADY_EXISTS = "DATA_BLOCK_EXISTS"
+    DATA_BLOCK_NOT_SUPPORTED = "DATA_BLOCK_NOT_SUPPORTED"
+    DATA_BLOCK_NOT_FOUND = "DATA_BLOCK_NOT_FOUND"
 
     # CUSTOM
     CUSTOM = "CUSTOM"
@@ -399,6 +406,7 @@ class Pages(Enum):
     INFORMATION_SOURCES = "heuristics"
     KNOWLEDGE_BASE = "lookup-lists"
     SETTINGS = "settings"
+    DATA_BLOCK = "data-blocks"
 
 
 class SliceTypes(Enum):
@@ -580,6 +588,7 @@ class StrategyStepType(Enum):
     FULL_TEXT_SEARCH = "FULL_TEXT_SEARCH"
     CURRENT_TIME = "CURRENT_TIME"
     COMPLIANT_WEBSEARCH = "COMPLIANT_WEBSEARCH"
+    DATA_BLOCK = "DATA_BLOCK"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -612,6 +621,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.FULL_TEXT_SEARCH: "Full text search",
     StrategyStepType.CURRENT_TIME: "Get current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "Web search",
+    StrategyStepType.DATA_BLOCK: "Create a data block",
 }
 
 STEP_WHEN_TO_USE = {
@@ -634,6 +644,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.FULL_TEXT_SEARCH: "When you want to perform a full text search",
     StrategyStepType.CURRENT_TIME: "When you want to get the current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "When you want to perform a web search",
+    StrategyStepType.DATA_BLOCK: "When you want to understand how the project is used",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -657,6 +668,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.FULL_TEXT_SEARCH: "Running full text search",
     StrategyStepType.CURRENT_TIME: "Getting current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "Searching the web",
+    StrategyStepType.DATA_BLOCK: "Evaluating data block",
 }
 
 STEP_ERRORS = {
@@ -1032,6 +1044,12 @@ class MessageType(Enum):
     ALL = "ALL"
 
 
+class CrossSellingFilter(Enum):
+    NO_FILTER = "NO_FILTER"
+    HAS_CROSS_SELLING = "HAS_CROSS_SELLING"
+    NO_CROSS_SELLING = "NO_CROSS_SELLING"
+
+
 class TimedExecutionKey(Enum):
     LAST_RESET_USER_MESSAGE_COUNT = "LAST_RESET_USER_MESSAGE_COUNT"
     LAST_RESET_USER_MESSAGE_COUNT_DAY = "LAST_RESET_USER_MESSAGE_COUNT_DAY"
@@ -1083,6 +1101,15 @@ class ETLFileType(Enum):
                 ".avif",
             ]
         return [".txt"]
+
+    @staticmethod
+    def get_all_supported_file_extensions():
+        all_supported_file_extensions = []
+        for FileType in ETLFileType:
+            all_supported_file_extensions.extend(
+                FileType.get_supported_file_extensions()
+            )
+        return all_supported_file_extensions
 
     @staticmethod
     def from_extension(value: str):
@@ -1276,6 +1303,11 @@ class InboxMailThreadSupportProgressState(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     RESOLVED = "RESOLVED"
     FAILED = "FAILED"
+
+
+class DataBlockType(EnumKern):
+    LIVE = "LIVE"
+    STABLE = "STABLE"
 
 
 class CognitionIntegrationState(Enum):

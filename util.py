@@ -115,12 +115,15 @@ def sql_alchemy_to_dict(
     column_blacklist: Optional[Iterable[str]] = None,
     column_rename_map: Optional[Dict[str, str]] = None,
     dont_wrap_uuids: bool = True,
+    dont_convert_keys: bool = False,
 ):
     result = __sql_alchemy_to_dict(
         sql_alchemy_object, column_whitelist, column_blacklist, column_rename_map
     )
     if for_frontend:
-        return to_frontend_obj(result, dont_wrap_uuids=dont_wrap_uuids)
+        return to_frontend_obj(
+            result, dont_wrap_uuids=dont_wrap_uuids, dont_convert_keys=dont_convert_keys
+        )
     return result
 
 
@@ -185,12 +188,20 @@ def to_frontend_obj(
     value: Union[List, Dict],
     blacklist_keys: List[str] = [],
     dont_wrap_uuids: bool = True,
+    dont_convert_keys: bool = False,
 ):
     if isinstance(value, dict):
         return {
-            to_camel_case(k, dont_wrap_uuids=dont_wrap_uuids): (
+            (
+                to_camel_case(k, dont_wrap_uuids=dont_wrap_uuids)
+                if not dont_convert_keys
+                else k
+            ): (
                 to_frontend_obj(
-                    v, blacklist_keys=blacklist_keys, dont_wrap_uuids=dont_wrap_uuids
+                    v,
+                    blacklist_keys=blacklist_keys,
+                    dont_wrap_uuids=dont_wrap_uuids,
+                    dont_convert_keys=dont_convert_keys,
                 )
                 if k not in blacklist_keys
                 else v
@@ -200,7 +211,10 @@ def to_frontend_obj(
     elif is_list_like(value):
         return [
             to_frontend_obj(
-                x, blacklist_keys=blacklist_keys, dont_wrap_uuids=dont_wrap_uuids
+                x,
+                blacklist_keys=blacklist_keys,
+                dont_wrap_uuids=dont_wrap_uuids,
+                dont_convert_keys=dont_convert_keys,
             )
             for x in value
         ]
@@ -312,3 +326,33 @@ def __mask_sql_str(sql_str: str, remove_quotes: bool) -> str:
 
 def ensure_sql_text(sql: str) -> str:
     return sql_text(sql)
+
+
+def safe_text_with_bindparams(sql_template: str, **bind_params: Any):
+    """
+    Build a SQLAlchemy text() clause with bound parameters to avoid SQL injection.
+    Use this instead of text(f\"...\") when variable values must be included in the query.
+    sql_template must be a constant string with named placeholders (:name).
+    All variable values must be passed as keyword arguments; they are sent as bound parameters.
+    Returns a SQLAlchemy text() construct suitable for use in filter(), etc.
+    """
+    from sqlalchemy import text
+
+    return text(sql_template).bindparams(**bind_params)
+
+
+def safe_text_in_clause(column_expression: str, values: List[str]):
+    """
+    Build a SQLAlchemy text() clause for column_expression IN (values) with bound parameters.
+    Use instead of text(f\"... IN ({','.join(...)})\") to avoid SQL injection.
+    column_expression must be a constant (e.g. \"task_info->>'group_execution_id'\").
+    values are passed as bound parameters.
+    """
+    from sqlalchemy import text
+
+    if not values:
+        raise ValueError("safe_text_in_clause requires at least one value")
+    placeholders = ", ".join(":p" + str(i) for i in range(len(values)))
+    sql = column_expression + " IN (" + placeholders + ")"
+    params = {"p" + str(i): v for i, v in enumerate(values)}
+    return text(sql).bindparams(**params)

@@ -1,0 +1,444 @@
+---
+description: Rules for database operations, session management, and transactions
+globs: ["session.py", "session_wrapper.py", "business_objects/general.py", "db_cache.py", "daemon.py"]
+alwaysApply: true
+---
+
+# Database Operations Guidelines
+
+Rules and conventions for database operations, session management, and transactions.
+
+## Session Management
+
+### Session Access
+
+Always use the session from `session.py`:
+
+```python
+from ..session import session
+```
+
+**Never create your own session** - use the shared scoped session.
+
+### Context Variables
+
+The session uses context variables for request tracking:
+
+```python
+from ..session import request_id_ctx_var, get_request_id
+
+# Get current request ID
+request_id = get_request_id()
+```
+
+### Session Lifecycle
+
+- Sessions are automatically scoped per request
+- **Normally you do not need to manage context tokens** - sessions are handled automatically by the repository's middleware
+- Use `general.get_ctx_token()` to create a new session context **only for threads in very specific cases** when context is not handled by the middleware
+- Use `general.reset_ctx_token()` to clean up session context **only when you manually created a context token**
+
+### Daemon Threads with Database Sessions
+
+**SQLAlchemy sessions are not thread-safe** and must be managed carefully in threaded contexts. Use the daemon utilities for background tasks that need database access.
+
+#### `run_with_db_token()` - Automatic Session Management
+
+For threads that need database access, use `run_with_db_token()` which automatically creates and cleans up session context:
+
+```python
+from submodules.model import daemon
+
+def run_background_task(*args, **kwargs) -> None:
+    daemon.run_with_db_token(
+        my_background_function,
+        *args,
+        **kwargs,
+    )
+```
+
+**How it works:**
+- Automatically creates a new session context token using `general.get_ctx_token()`
+- Runs the target function in a daemon thread
+- Automatically cleans up session with `general.remove_and_refresh_session()` in `finally` block
+- Includes telemetry tracking for task monitoring
+
+**Important for long-running threads:**
+- Sessions have a timeout limit (`SESSION_TIMEOUT_LIMIT`, default 30 minutes)
+- Long-running threads may need periodic session refresh to prevent timeouts
+- A cleanup thread automatically removes sessions older than the timeout limit
+- For very long operations, consider breaking work into smaller chunks or periodically refreshing the session
+
+#### `run_without_db_token()` - Manual Session Management
+
+For threads that don't need database access, or when you need manual control:
+
+```python
+from submodules.model import daemon
+from submodules.model.business_objects import general
+
+def run_background_task_no_db() -> None:
+    daemon.run_without_db_token(
+        my_background_function,
+    )
+```
+
+**Manual session management pattern:**
+
+```python
+def __background_function_with_manual_session(*args, **kwargs):
+    # Manually create session context
+    general.get_ctx_token()
+    try:
+        # Database operations
+        entity = entity.get(args[0])
+        # ... do work ...
+    finally:
+        # Always clean up session
+        general.remove_and_refresh_session()
+```
+
+**When to use `run_without_db_token()`:**
+- Background tasks that don't need database access
+- Tasks that need custom session lifecycle management
+- Tasks that need to create multiple session contexts
+
+#### Best Practices for Daemon Threads
+
+1. **Use `run_with_db_token()` by default** - It handles session lifecycle automatically
+2. **Keep threads focused** - Each thread should handle a single logical unit of work
+3. **Always clean up sessions** - Sessions are automatically cleaned up by `run_with_db_token()`, but manually managed sessions must call `general.remove_and_refresh_session()`
+4. **Handle exceptions properly** - Daemon threads log exceptions but don't propagate them to the main thread
+5. **Consider session timeouts** - For operations longer than `SESSION_TIMEOUT_LIMIT`, break work into smaller chunks
+6. **Use daemon threads for fire-and-forget tasks** - Don't wait for daemon thread completion in request handlers
+
+**Example: Background task execution**
+
+```python
+from submodules.model import daemon
+
+@router.post("/run-task")
+def run_task(entity_id: str):
+    # Fire and forget - returns immediately
+    daemon.run_with_db_token(
+        process_entities,
+        entity_id,
+    )
+    return get_silent_success()
+```
+
+**Example: Manual session management in thread**
+
+```python
+from submodules.model import daemon
+from submodules.model.business_objects import general
+
+def __check_and_notify(entity_id: str, related_id: str):
+    general.get_ctx_token()
+    try:
+        if check_condition(entity_id, related_id):
+            notification.send_update(entity_id, f"update:{related_id}")
+    finally:
+        general.remove_and_refresh_session()
+
+# Usage
+daemon.run_without_db_token(__check_and_notify, entity_id, related_id)
+```
+
+## CRUD Operations
+
+### Adding Entities
+
+Use `general.add()` instead of `session.add()`:
+
+```python
+from ..business_objects import general
+
+def create(...) -> Entity:
+    entity = Entity(...)
+    general.add(entity, with_commit=False)
+    return entity
+```
+
+### Adding Multiple Entities
+
+Use `general.add_all()` for batch operations:
+
+```python
+entities = [Entity(...), Entity(...)]
+general.add_all(entities, with_commit=False)
+```
+
+### Deleting Entities
+
+Use `general.delete()`:
+
+```python
+def delete(entity_id: str, with_commit: bool = False):
+    entity = get(entity_id)
+    general.delete(entity, with_commit)
+```
+
+## Transaction Control
+
+### Flush vs Commit
+
+- **Flush**: Writes changes to database but transaction can be rolled back
+- **Commit**: Permanently saves changes to database
+
+### `flush_or_commit()` Helper
+
+```python
+from ..business_objects import general
+
+# Flush only (default)
+general.flush_or_commit(False)
+
+# Commit transaction
+general.flush_or_commit(True)
+
+# No operation
+general.flush_or_commit(None)
+```
+
+### `with_commit` Parameter Pattern
+
+- **Create/Delete**: Default `with_commit=False` (flush only)
+- **Update**: Default `with_commit=True` (commit immediately)
+
+```python
+def create(..., with_commit: bool = False) -> Entity:
+    # ...
+    general.add(entity, with_commit)
+
+def update(..., with_commit: bool = True) -> Entity:
+    # ...
+    general.flush_or_commit(with_commit)
+```
+
+## Commit and Rollback
+
+### Manual Commit
+
+```python
+from ..business_objects import general
+
+general.commit()
+```
+
+### Rollback
+
+```python
+from ..business_objects import general
+
+general.rollback()
+```
+
+**Note**: Rollback is typically handled automatically by `remove_and_refresh_session()`, which calls `check_session_and_rollback()` internally. Manual rollback is rarely needed - only use it in specific cases where you need immediate rollback before session cleanup occurs.
+
+### Session Removal
+
+```python
+from ..business_objects import general
+
+# Remove and refresh session
+general.remove_and_refresh_session()
+
+# Remove session only
+general.remove_session()
+```
+
+## Query Execution
+
+### ORM Queries
+
+Use SQLAlchemy ORM for type-safe queries:
+
+```python
+from ..session import session
+from ..models import User
+
+users = session.query(User).filter(User.role == "ENGINEER").all()
+```
+
+### Raw SQL Queries
+
+For raw SQL, use `general.execute()`:
+
+```python
+from ..business_objects import general
+
+# Execute and get all results
+results = general.execute_all("SELECT * FROM users")
+
+# Execute and get first result
+result = general.execute_first("SELECT COUNT(*) FROM users")
+
+# Execute with parameters
+query = "SELECT * FROM users WHERE id = :user_id"
+result = general.execute(query, {"user_id": user_id})
+```
+
+### SQL Injection Prevention
+
+**Always use parameterized queries** or `prevent_sql_injection()`:
+
+```python
+from ..util import prevent_sql_injection
+
+# For raw SQL
+user_id = prevent_sql_injection(user_id, isinstance(user_id, str))
+query = f"SELECT * FROM users WHERE id = '{user_id}'"
+
+# Prefer ORM queries (automatically safe)
+user = session.query(User).filter(User.id == user_id).first()
+```
+
+## Object State Management
+
+### Expunge
+
+Remove object from session (useful for caching):
+
+```python
+from ..business_objects import general
+
+general.expunge(entity)
+```
+
+### Make Transient
+
+Make object transient (detached from session):
+
+```python
+from ..business_objects import general
+
+general.make_transient(entity)
+```
+
+**Common pattern for cached objects:**
+
+```python
+@TTLCacheDecorator(CacheEnum.USER, 5, "user_id")
+def get_user_cached(user_id: str) -> User:
+    user = get(user_id)
+    if not user:
+        return None
+    
+    general.expunge(user)
+    general.make_transient(user)
+    return user
+```
+
+### Refresh
+
+Refresh object from database:
+
+```python
+from ..business_objects import general
+
+entity = general.refresh(entity)
+```
+
+## Error Handling
+
+### Session Rollback on Error
+
+**Rollback is handled automatically** by `remove_and_refresh_session()`, which calls `check_session_and_rollback()` internally. The session cleanup function automatically detects pending rollbacks and handles them.
+
+You typically don't need to manually rollback in exception handlers - the session management system handles this:
+
+```python
+from ..business_objects import general
+
+# Database operations - rollback handled automatically by session cleanup
+general.add(entity, with_commit=True)
+```
+
+**Note**: If you're manually managing session lifecycle (e.g., in daemon threads), ensure you call `general.remove_and_refresh_session()` in a `finally` block, which will handle rollback automatically.
+
+### Check Session State
+
+```python
+from ..session import check_session_and_rollback
+
+try:
+    check_session_and_rollback()
+except Exception:
+    # Handle session error
+    pass
+```
+
+## Connection Pooling
+
+### Configuration
+
+Connection pool settings are configured via environment variables:
+
+- `POSTGRES_POOL_SIZE`: Pool size (default: 20)
+- `POSTGRES_POOL_MAX_OVERFLOW`: Max overflow (default: 10)
+- `POSTGRES_POOL_RECYCLE`: Recycle time in seconds (default: 3600)
+- `POSTGRES_POOL_USE_LIFO`: Use LIFO instead of FIFO (default: false)
+- `POSTGRES_POOL_PRE_PING`: Test connections on checkout (default: true)
+
+### Best Practices
+
+- Don't hold connections longer than necessary
+- Use appropriate pool size for your workload
+- Enable `pool_pre_ping` to handle stale connections
+- Set appropriate `pool_recycle` to refresh connections
+
+## Query Building Helpers
+
+### `construct_select_columns()`
+
+Build SELECT column lists dynamically:
+
+```python
+from ..business_objects import general
+
+columns = general.construct_select_columns(
+    table="user",
+    prefix="u",
+    exclude_columns=["password"],
+    include_columns=["id", "email", "name"],
+)
+```
+
+## Best Practices
+
+1. **Always use `general.add()`** instead of `session.add()` directly
+2. **Use `with_commit` parameter** to control transaction boundaries (default `False` for create/delete, `True` for update)
+3. **Rollback is handled automatically** by `remove_and_refresh_session()` - no manual rollback needed in exception handlers
+4. **Use ORM queries** when possible (type-safe, prevents SQL injection)
+5. **Prevent SQL injection** in all raw SQL queries using `prevent_sql_injection()`
+6. **Expunge and make transient** cached objects
+7. **Use batch operations** (`add_all`) when adding multiple entities
+
+## Common Patterns
+
+### Transaction Pattern
+
+```python
+def create_with_related(project_id: str, name: str, user_id: str):
+    try:
+        project = create(project_id, name, with_commit=False)
+        user_project = create_user_project(user_id, project.id, with_commit=False)
+        general.commit()
+        return project
+    except Exception:
+        # Rollback is handled automatically by remove_and_refresh_session()
+        # which is called by middleware or in finally blocks
+        raise
+```
+
+**Note**: Manual rollback is not required - `remove_and_refresh_session()` automatically handles rollback via `check_session_and_rollback()`. The exception is re-raised to allow proper error handling upstream.
+
+### Batch Create Pattern
+
+```python
+def create_batch(entities_data: List[Dict]) -> List[Entity]:
+    entities = [Entity(**data) for data in entities_data]
+    general.add_all(entities, with_commit=True)
+    return entities
+```

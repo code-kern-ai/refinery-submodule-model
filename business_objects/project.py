@@ -6,6 +6,7 @@ from . import general, attribute
 from .. import enums
 from ..session import session
 from ..models import Project, Record, Attribute
+from ..cognition_objects import integration as integration_db_co
 from ..integration_objects.helper import (
     REFINERY_ATTRIBUTE_ACCESS_GROUPS,
     REFINERY_ATTRIBUTE_ACCESS_USERS,
@@ -663,3 +664,18 @@ def get_project_by_project_id_sql(project_id: str) -> Dict[str, Any]:
         return value[0]
     else:
         return None
+
+
+def is_integration_project(org_id: str, project_id: str) -> bool:
+    org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
+    project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
+
+    query = f"""
+    SELECT 1 
+    FROM cognition.integration i
+    WHERE i.organization_id = '{org_id}' 
+        AND i.project_id = '{project_id}'
+    """
+    if general.execute_first(query):
+        return True
+    return False
