@@ -11,7 +11,6 @@ from ..cognition_objects import integration as integration_db_bo
 from ..global_objects import etl_task as etl_task_db_bo
 from ..session import session
 from .helper import get_integration_record_identifier, get_supported_metadata_keys
-import traceback
 from ..models import (
     IntegrationSharepoint,
     IntegrationPdf,
@@ -160,7 +159,9 @@ def get_all_by_integration_id(
         IntegrationModel.integration_id == integration_id
     )
     if only_refinery_unsynced:
-        query = query.filter((IntegrationModel.refinery_synced == False))
+        query = query.join(EtlTask, IntegrationModel.etl_task_id == EtlTask.id).filter(
+            EtlTask.state.in_(integration_db_bo.ETL_FINISHED_STATES)
+        )
     if scope:
         integration_entity = integration_db_bo.get_by_id(integration_id)
         record_identifier = getattr(
