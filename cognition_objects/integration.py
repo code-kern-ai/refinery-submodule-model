@@ -171,6 +171,23 @@ def get_active_etl_tasks(
     )
 
 
+def exists_active_etl_tasks(
+    integration_id: str,
+) -> bool:
+    IntegrationModel = integration_records_bo.integration_model(integration_id)
+    return (
+        session.query(EtlTask)
+        .filter(EtlTask.is_active == True)
+        .join(
+            IntegrationModel,
+            (EtlTask.id == IntegrationModel.etl_task_id)
+            & (IntegrationModel.integration_id == integration_id),
+        )
+        .count()
+        > 0
+    )
+
+
 def get_all_etl_tasks(
     integration_id: str,
 ) -> List[EtlTask]:
@@ -306,16 +323,13 @@ def update(
 
 
 def execution_finished(id: str) -> bool:
-    if not get_by_id(id):
+    integration = get_by_id(id)
+    if not integration:
         return True
-    return bool(
-        session.query(CognitionIntegration)
-        .filter(
-            CognitionIntegration.id == id,
-            CognitionIntegration.state.in_(INTEGRATION_TASK_FINISHED_STATES),
-        )
-        .first()
-    )
+    if integration.state not in INTEGRATION_ETL_PROCESSING_STATES:
+        return False
+    finished = exists_active_etl_tasks(id)
+    return finished
 
 
 def delete_many(
