@@ -289,7 +289,6 @@ def duplicate(
         content=content,
         updated_by=integration_record.updated_by,
         updated_at=integration_record.updated_at,
-        refinery_synced=integration_record.refinery_synced,
     )
 
     for key in get_supported_metadata_keys(IntegrationModel.__tablename__):
