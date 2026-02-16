@@ -2738,6 +2738,13 @@ class IntegrationSharepoint(Base):
             "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "object_id",
+            "etl_task_id",
+            name=f"unique_{__tablename__}_object_id",
+        ),
         {"schema": "integration"},
     )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -2762,10 +2769,9 @@ class IntegrationSharepoint(Base):
     source = Column(String, index=True)
     minio_file_name = Column(String)
     error_message = Column(String)
-    refinery_synced = Column(Boolean, default=False)
 
     extension = Column(String)
-    object_id = Column(String)
+    object_id = Column(String, index=True)
     parent_path = Column(String)
     name = Column(String)
     web_url = Column(String)
@@ -2842,7 +2848,6 @@ class IntegrationWebpage(Base):
     source = Column(String, index=True)
     minio_file_name = Column(String)
     error_message = Column(String)
-    refinery_synced = Column(Boolean, default=False)
     extension = Column(String)
 
     title = Column(String)

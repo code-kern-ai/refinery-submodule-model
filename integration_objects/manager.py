@@ -19,6 +19,7 @@ from ..models import (
     IntegrationGithubFile,
     IntegrationWebpage,
     CognitionIntegration,
+    EtlTask,
 )
 from submodules.model import enums
 
@@ -101,14 +102,21 @@ def get_by_id(
     return session.query(IntegrationModel).filter(IntegrationModel.id == id).first()
 
 
-def get_by_etl_task_id(
-    IntegrationModel: Type,
-    etl_task_id: str,
-) -> object:
+def get_all_by_etl_task(
+    etl_task: EtlTask,
+) -> List[object]:
+    integration_id: str = etl_task.meta_data.get("integration_id")
+    if not integration_id:
+        print(
+            f"WARNING:  integration_id not found in etl_task meta_data for etl_task_id '{etl_task.id}'",
+            flush=True,
+        )
+        return []
+    IntegrationModel = integration_model(integration_id=integration_id)
     return (
         session.query(IntegrationModel)
-        .filter(IntegrationModel.etl_task_id == etl_task_id)
-        .first()
+        .filter(IntegrationModel.etl_task_id == etl_task.id)
+        .all()
     )
 
 
@@ -270,37 +278,35 @@ def duplicate(
     chunk_idx: int,
     by: str = "source",
 ) -> object:
+    IntegrationModel = type(integration_record)
+
+    duplicated_record = IntegrationModel(
+        created_by=integration_record.created_by,
+        integration_id=integration_record.integration_id,
+        etl_task_id=integration_record.etl_task_id,
+        error_message=integration_record.error_message,
+        content=content,
+        updated_by=integration_record.updated_by,
+        updated_at=integration_record.updated_at,
+        refinery_synced=integration_record.refinery_synced,
+    )
+
+    for key in get_supported_metadata_keys(IntegrationModel.__tablename__):
+        value = getattr(integration_record, key)
+        setattr(duplicated_record, key, value)
+
+    duplicated_record.running_id = running_id
+
+    new_attr_value = f"{getattr(integration_record, by)}#{chunk_idx}"
+    setattr(duplicated_record, by, new_attr_value)
+
     try:
-        IntegrationModel = type(integration_record)
-
-        duplicated_record = IntegrationModel(
-            created_by=integration_record.created_by,
-            integration_id=integration_record.integration_id,
-            etl_task_id=integration_record.etl_task_id,
-            error_message=integration_record.error_message,
-            content=content,
-            updated_by=integration_record.updated_by,
-            updated_at=integration_record.updated_at,
-            refinery_synced=integration_record.refinery_synced,
-        )
-
-        for key in get_supported_metadata_keys(IntegrationModel.__tablename__):
-            value = getattr(integration_record, key)
-            setattr(duplicated_record, key, value)
-
-        duplicated_record.running_id = running_id
-
-        new_attr_value = f"{getattr(integration_record, by)}#{chunk_idx}"
-        setattr(duplicated_record, by, new_attr_value)
-
         general.add(duplicated_record, with_commit=False)
-
-        return duplicated_record
-
     except Exception as e:
-        print("An error occurred during duplication:", flush=True)
-        print(traceback.format_exc(), flush=True)
-        raise
+        print("ERROR:    ", str(e), flush=True)
+        raise e
+
+    return duplicated_record
 
 
 def create(
@@ -346,7 +352,6 @@ def update(
     error_message: Optional[str] = None,
     etl_task_id: Optional[str] = None,
     content: Optional[str] = None,
-    refinery_synced: Optional[bool] = None,
     with_commit: bool = True,
     **metadata,
 ) -> Optional[object]:
@@ -376,9 +381,6 @@ def update(
         record_updated = True
     if etl_task_id is not None:
         integration_record.etl_task_id = etl_task_id
-        record_updated = True
-    if refinery_synced is not None:
-        integration_record.refinery_synced = refinery_synced
         record_updated = True
     for key, value in metadata.items():
         if not hasattr(integration_record, key):

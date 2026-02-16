@@ -48,8 +48,8 @@ def get_supported_metadata_keys(table_name: str) -> Set[str]:
     Function for controlling and documenting the dynamic metadata fields associated with different integration types.
 
     The `TABLE_METADATA` dictionary defines which metadata keys are expected and allowed for each integration table
-    (e.g., `integration.sharepoint`, `integration.github_file`). Each value contains a set of keys specific to that integration, while
-    the `DEFAULT_METADATA` (`source`, `running_id`, `minio_file_name`) are always included.
+    (e.g., `integration.sharepoint`, `integration.github_file`). Each value contains a set of keys specific to that integration,
+    while `DEFAULT_METADATA` (`source`, `running_id`, `minio_file_name`) is always included.
 
     During extraction, metadata is dynamically attached to each document according to the rules defined here.
 

@@ -1336,10 +1336,12 @@ class CognitionIntegrationState(Enum):
     STARTED = "STARTED"
     EXTRACTING = "EXTRACTING"
     ETL_PROCESSING = "ETL_PROCESSING"
-    LOADING = "LOADING"  # e.g. to integration records
     REFINERY_SYNCING = "REFINERY_SYNCING"  ## e.g. syncing with refinery (records + postprocessing permissions)
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+
+    def get_state_name(self):
+        return self.value.replace("_", " ")
 
 
 class IntegrationRecordScope(Enum):

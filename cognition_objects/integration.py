@@ -545,18 +545,6 @@ def get_last_integrations_tasks(
     return general.execute_all(query)
 
 
-def get_integration_etl_task_all_scheduled(integration_id: str) -> bool:
+def has_scheduled_etl_tasks(integration_id: str) -> bool:
     integration = get_by_id(integration_id)
-    # Only if all ETL task were scheduled, the state will switch to ETL_PROCESSING
-    return integration.state in INTEGRATION_ETL_PROCESSING_STATES
-
-
-def get_integration_is_last_etl_task(integration_id: str) -> bool:
-    n_remaining = (
-        session.query(EtlTask)
-        .filter(EtlTask.meta_data.op("->>")("integration_id") == integration_id)
-        .filter(EtlTask.is_active)
-        .filter(EtlTask.state.notin_(ETL_FINISHED_STATES))
-        .count()
-    )
-    return n_remaining == 1
+    return integration.state not in INTEGRATION_TASK_FINISHED_STATES
