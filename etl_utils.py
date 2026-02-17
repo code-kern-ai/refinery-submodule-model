@@ -208,16 +208,16 @@ def get_full_config_for_webpage_integration(
                 },
             },
         },
-        {
-            "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
-            "task_config": {
-                "integration": [
-                    {
-                        "integration_id": str(integration.id),
-                    }
-                ]
-            },
-        },
+        # {
+        #     "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
+        #     "task_config": {
+        #         "integration": [
+        #             {
+        #                 "integration_id": str(integration.id),
+        #             }
+        #         ]
+        #     },
+        # },
     ]
     return full_config
 
@@ -285,16 +285,16 @@ def get_full_config_for_sharepoint_integration(
                 },
             },
         },
-        {
-            "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
-            "task_config": {
-                "integration": [
-                    {
-                        "integration_id": str(integration.id),
-                    }
-                ]
-            },
-        },
+        # {
+        #     "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
+        #     "task_config": {
+        #         "integration": [
+        #             {
+        #                 "integration_id": str(integration.id),
+        #             }
+        #         ]
+        #     },
+        # },
     ]
 
     return full_config
