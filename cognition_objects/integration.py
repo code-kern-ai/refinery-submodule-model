@@ -328,8 +328,7 @@ def execution_finished(id: str) -> bool:
         return True
     if integration.state not in INTEGRATION_ETL_PROCESSING_STATES:
         return False
-    finished = exists_active_etl_tasks(id)
-    return finished
+    return not exists_active_etl_tasks(id)
 
 
 def delete_many(
