@@ -189,15 +189,9 @@ def get_full_config_for_webpage_integration(
             "task_config": {
                 "use_cache": False,
                 "strategy": enums.ETLSplitStrategy.CHUNK.value,
-                "chunk_size": integration.config.get("split_kwargs", {}).get(
-                    "chunk_size", 16384
-                ),
-                "keep_first_n": integration.config.get("split_kwargs", {}).get(
-                    "keep_first_n", 5
-                ),
-                "keep_last_n": integration.config.get("split_kwargs", {}).get(
-                    "keep_last_n", 1
-                ),
+                # chunk_size is hardcoded to 8192 due to embedder text-embedding-large-3
+                # having a context window of 8192 tokens (only applies to CHUNKS because SHRINK gets summarized)
+                "chunk_size": 6000,
             },
         },
         {
@@ -247,9 +241,7 @@ def get_full_config_for_sharepoint_integration(
             "task_config": {
                 "use_cache": False,
                 "strategy": enums.ETLSplitStrategy.CHUNK.value,
-                "chunk_size": integration.config.get("split_kwargs", {}).get(
-                    "chunk_size", 16384
-                ),
+                "chunk_size": 6000,
                 "keep_first_n": integration.config.get("split_kwargs", {}).get(
                     "keep_first_n", 5
                 ),
