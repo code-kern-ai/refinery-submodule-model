@@ -8,23 +8,19 @@ from ..business_objects import general
 from ..integration_objects import manager as integration_records_bo
 from ..session import session
 from ..models import CognitionIntegration, CognitionGroup, EtlTask
-from ..enums import CognitionIntegrationType, CognitionIntegrationState
+from ..enums import (
+    CognitionIntegrationType,
+    CognitionIntegrationState,
+)
 from ..business_objects import cross_selling as cross_selling_bo
 from ..util import prevent_sql_injection
-from submodules.model import enums
 
-# We can reuse this integration states for simplicity
-ETL_FINISHED_STATES = [
-    CognitionIntegrationState.FINISHED.value,
-    CognitionIntegrationState.FAILED.value,
-]
-INTEGRATION_TASK_FINISHED_STATES = [
+FINISHED_STATES = [
     CognitionIntegrationState.FINISHED.value,
     CognitionIntegrationState.FAILED.value,
 ]
 
-# TODO: Maybe add failed or finished for graceful shutdown in some cases
-INTEGRATION_ETL_PROCESSING_STATES = [CognitionIntegrationState.ETL_PROCESSING.value]
+ETL_PROCESSING_STATES = [CognitionIntegrationState.ETL_PROCESSING.value]
 
 
 def get_by_ids(ids: List[str]) -> List[CognitionIntegration]:
@@ -326,7 +322,7 @@ def execution_finished(id: str) -> bool:
     integration = get_by_id(id)
     if not integration:
         return True
-    if integration.state not in INTEGRATION_ETL_PROCESSING_STATES:
+    if integration.state not in ETL_PROCESSING_STATES:
         return False
     return not exists_active_etl_tasks(id)
 
@@ -560,4 +556,4 @@ def get_last_integrations_tasks(
 
 def has_scheduled_etl_tasks(integration_id: str) -> bool:
     integration = get_by_id(integration_id)
-    return integration.state not in INTEGRATION_TASK_FINISHED_STATES
+    return integration.state not in FINISHED_STATES

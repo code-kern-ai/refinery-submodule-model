@@ -160,7 +160,7 @@ def get_all_by_integration_id(
     )
     if only_refinery_unsynced:
         query = query.join(EtlTask, IntegrationModel.etl_task_id == EtlTask.id).filter(
-            EtlTask.state.in_(integration_db_bo.ETL_FINISHED_STATES)
+            EtlTask.state.in_(etl_task_db_bo.FINISHED_STATES)
         )
     if scope:
         integration_entity = integration_db_bo.get_by_id(integration_id)
