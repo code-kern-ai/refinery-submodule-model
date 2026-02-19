@@ -1082,7 +1082,7 @@ class ETLFileType(Enum):
 
     def get_supported_file_extensions(self) -> List[str]:
         if self == ETLFileType.MD:
-            return [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]
+            return [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".mdc"]
         elif self == ETLFileType.PDF:
             return [".pdf"]
         elif self == ETLFileType.WORD:
@@ -1092,7 +1092,9 @@ class ETLFileType(Enum):
         elif self == ETLFileType.POWERPOINT:
             return [".pptx", ".ppt"]
         elif self == ETLFileType.CSV:
-            return [".csv", ".tsv"]
+            return [".csv"]
+        elif self == ETLFileType.TSV:
+            return [".tsv"]
         elif self == ETLFileType.IMG:
             return [
                 ".png",
@@ -1118,7 +1120,7 @@ class ETLFileType(Enum):
     @staticmethod
     def from_extension(value: str):
         changed_value = value.lower()
-        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
+        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".mdc"]:
             return ETLFileType.MD
         elif changed_value in [".pdf"]:
             return ETLFileType.PDF
@@ -1128,8 +1130,10 @@ class ETLFileType(Enum):
             return ETLFileType.EXCEL
         elif changed_value in [".pptx", ".ppt"]:
             return ETLFileType.POWERPOINT
-        elif changed_value in [".csv", ".tsv"]:
+        elif changed_value in [".csv"]:
             return ETLFileType.CSV
+        elif changed_value in [".tsv"]:
+            return ETLFileType.TSV
         elif changed_value in [
             ".png",
             ".jpg",
@@ -1170,9 +1174,12 @@ class ETLFileType(Enum):
             return ETLFileType.IMG
         elif changed_value in [
             "text/csv",
-            "text/tab-separated-values",
         ]:
             return ETLFileType.CSV
+        elif changed_value in [
+            "text/tab-separated-values",
+        ]:
+            return ETLFileType.TSV
         else:
             return ETLFileType.DEFAULT
 
@@ -1187,7 +1194,7 @@ class ETLFileType(Enum):
         elif file_type == ETLFileType.WORD:
             return ETLExtractorWord.LANGCHAIN
         elif file_type == ETLFileType.EXCEL:
-            return ETLExtractorExcel.LANGCHAIN
+            return ETLExtractorExcel.OPENPYXL
         elif file_type == ETLFileType.POWERPOINT:
             return ETLExtractorPowerpoint.LANGCHAIN
         elif file_type == ETLFileType.IMG:
@@ -1215,6 +1222,8 @@ class ETLFileType(Enum):
             return ETLExtractorImg.from_string(extractor)
         elif self == ETLFileType.CSV:
             return ETLExtractorCsv.from_string(extractor)
+        elif self == ETLFileType.TSV:
+            return ETLExtractorTsv.from_string(extractor)
         elif self == ETLFileType.DEFAULT or self == ETLFileType.TXT:
             return ETLExtractorTxt.from_string(extractor)
 
@@ -1233,6 +1242,8 @@ class ETLFileType(Enum):
             return ETLExtractorImg.all()
         elif self == ETLFileType.CSV:
             return ETLExtractorCsv.all()
+        elif self == ETLFileType.TSV:
+            return ETLExtractorTsv.all()
         return ETLExtractorTxt.all()
 
 
@@ -1264,6 +1275,7 @@ class ETLExtractorPDF(EnumKern):
 
 class ETLExtractorWord(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+    OPENPYXL = "OPENPYXL"
 
 
 class ETLExtractorExcel(EnumKern):
@@ -1283,6 +1295,10 @@ class ETLExtractorTxt(EnumKern):
 
 
 class ETLExtractorCsv(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorTsv(EnumKern):
     LANGCHAIN = "LANGCHAIN"
 
 
