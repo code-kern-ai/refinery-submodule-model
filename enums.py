@@ -1275,11 +1275,11 @@ class ETLExtractorPDF(EnumKern):
 
 class ETLExtractorWord(EnumKern):
     LANGCHAIN = "LANGCHAIN"
-    OPENPYXL = "OPENPYXL"
 
 
 class ETLExtractorExcel(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+    OPENPYXL = "OPENPYXL"
 
 
 class ETLExtractorPowerpoint(EnumKern):
