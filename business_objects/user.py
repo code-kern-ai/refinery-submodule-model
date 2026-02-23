@@ -200,9 +200,9 @@ def delete(user_id: str, with_commit: bool = False) -> None:
     general.flush_or_commit(with_commit)
 
 
-def get_missing_users(user_ids: List[str]):
+def get_missing_kratos_data(user_ids: List[str]):
     query = f"""
-    SELECT jsonb_object_agg(u.id, jsonb_build_object('last_interaction', u.last_interaction,'messages_created_this_month', u.messages_created_this_month, 'messages_created_today', u.messages_created_today))
+    SELECT jsonb_object_agg(u.id, jsonb_build_object('last_interaction', u.last_interaction,'messages_created_this_month', u.messages_created_this_month, 'messages_created_today', u.messages_created_today, 'is_light_user', u.is_light_user))
     FROM public.user u
     WHERE id IN ({",".join([f"'{user_id}'" for user_id in user_ids])})
     """
