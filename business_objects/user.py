@@ -19,7 +19,7 @@ def get_user_cached_if_not_admin(user_id: str) -> Optional[User]:
     if not user:
         # cache is None, but user is automatically created so we recollect to be sure
         return get(user_id)
-    if (user.email or "").endswith("@kern.ai") and user.verified:
+    if user.is_admin:
         # for admins this could result in two db requests shortly after each other
         # but it's better than having the jumping users without the correct org id
         return get(user_id)
@@ -29,7 +29,7 @@ def get_user_cached_if_not_admin(user_id: str) -> Optional[User]:
 def get_admin_users() -> List[User]:
     kernai_admins = (
         session.query(User)
-        .filter(User.email.ilike("%@kern.ai"), User.verified == True)
+        .filter(User.is_admin == True)
         .all()
     )
 
@@ -271,6 +271,8 @@ def update_last_interaction(user_id: str) -> None:
     general.commit()
 
 
+# added cache to prevent constant recollection for semi stable table values
+@TTLCacheDecorator(CacheEnum.USER, 5, "email")
 def check_email_in_full_admin(email: str) -> bool:
     email = email.lower()
     email = prevent_sql_injection(email, isinstance(email, str))

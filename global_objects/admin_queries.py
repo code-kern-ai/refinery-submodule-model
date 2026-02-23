@@ -225,7 +225,7 @@ def __get_multitagged_conversations(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON c.created_by = u.id AND u.email NOT LIKE '%@kern.ai'"""
+            ON c.created_by = u.id AND u.is_admin = FALSE"""
 
     query = f"""
         SELECT o.name organization_name, p.name project_name, COUNT(*) conv_with_gr_1_tag
@@ -268,7 +268,7 @@ def __get_conversations_per_tag(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON c.created_by = u.id AND u.email NOT LIKE '%@kern.ai'"""
+            ON c.created_by = u.id AND u.is_admin = FALSE"""
 
     count_query = "*"
     if distinct_conversations:
@@ -308,7 +308,7 @@ def __get_created_tags_per_org(
 
     filter_join = ""
     if without_kern_email:
-        filter_join = """AND u.email NOT LIKE '%@kern.ai'"""
+        filter_join = """AND u.is_admin = FALSE"""
 
     query = f"""
     SELECT 
@@ -422,7 +422,7 @@ def __get_macro_executions(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON me.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+            ON me.created_by = u.id AND u.is_admin = FALSE
         """
 
     query = f"""
@@ -511,7 +511,7 @@ def __get_avg_messages_per_conversation(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+            ON m.created_by = u.id AND u.is_admin = FALSE
         """
     query = f"""
     WITH params AS (
@@ -612,7 +612,7 @@ def __get_global_messages_per_conversation(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+            ON m.created_by = u.id AND u.is_admin = FALSE
         """
 
     incognito_join = """INNER JOIN cognition.conversation c
@@ -681,7 +681,7 @@ def __get_messages_feedback_by_project(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+            ON m.created_by = u.id AND u.is_admin = FALSE
         """
     query = f"""
     WITH params AS (
@@ -828,7 +828,7 @@ def __get_messages_created_by_project(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+            ON m.created_by = u.id AND u.is_admin = FALSE
         """
     query = f"""
     WITH params AS (
@@ -927,7 +927,7 @@ def __get_messages_created(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+            ON m.created_by = u.id AND u.is_admin = FALSE
         """
     query = f"""
     WITH
@@ -1005,7 +1005,7 @@ def __get_active_users_by_org(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+            ON m.created_by = u.id AND u.is_admin = FALSE
         """
 
     query = f"""
@@ -1099,7 +1099,7 @@ def __get_active_users_global(
     if without_kern_email:
         filter_join = """
         INNER JOIN PUBLIC.user u
-            ON m.created_by = u.id AND u.email NOT LIKE '%@kern.ai'
+            ON m.created_by = u.id AND u.is_admin = FALSE
         """
 
     query = f"""
@@ -1178,7 +1178,7 @@ def __get_users_by_org(
             where_add += " AND"
         else:
             where_add = "WHERE"
-        where_add += " u.email NOT LIKE '%@kern.ai'"
+        where_add += " u.is_admin = FALSE"
 
     query = f"""
     SELECT o.name, u.role, COUNT(*)
@@ -1212,7 +1212,7 @@ def __get_users_to_projects(
 
     user_where = ""
     if without_kern_email:
-        user_where = "AND u.email NOT LIKE '%@kern.ai'"
+        user_where = "AND u.is_admin = FALSE"
 
     query = f"""
     WITH user_lookup AS (
