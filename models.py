@@ -250,6 +250,8 @@ class User(Base):
     messages_created_today = Column(Integer, default=0)
     # light users have limited access (e.g. 5 msg per day)
     is_light_user = Column(Boolean, default=False)
+    # shouldn't be used for validation, this is only a helper for queries, authentication still via kratos/jwt
+    is_admin = Column(Boolean, default=False)
 
 
 class Team(Base):
