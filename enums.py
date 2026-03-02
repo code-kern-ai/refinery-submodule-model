@@ -1071,6 +1071,7 @@ class ETLFileType(Enum):
     POWERPOINT = "POWERPOINT"
     IMG = "IMG"
     CSV = "CSV"
+    TSV = "TSV"
     JSON = "JSON"
 
     @classmethod
