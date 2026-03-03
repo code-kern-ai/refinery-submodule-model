@@ -1,7 +1,7 @@
 import re
 from typing import List, Optional, Dict, Tuple, Union, Type, Any
 from datetime import datetime
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from sqlalchemy.orm.attributes import flag_modified
 from submodules.s3 import enums
 
@@ -101,6 +101,13 @@ def get_by_id(
     return session.query(IntegrationModel).filter(IntegrationModel.id == id).first()
 
 
+def get_by_ids(
+    IntegrationModel: Type,
+    ids: List[str],
+) -> list:
+    return session.query(IntegrationModel).filter(IntegrationModel.id.in_(ids)).all()
+
+
 def get_all_by_etl_task(
     etl_task: EtlTask,
 ) -> List[object]:
@@ -163,12 +170,26 @@ def get_all_by_integration_id(
         integration = integration_db_bo.get_by_id(integration_id)
 
         if integration and integration.delta_criteria:
-            delta_record_ids = set(
-                integration.delta_criteria.get("delta_record_ids", [])
-            )
+            delta_record_ids = integration.delta_criteria.get("delta_record_ids", [])
 
             if delta_record_ids:
-                query = query.filter(~IntegrationModel.id.in_(delta_record_ids))
+                if scope == IntegrationRecordScope.ALL.value:
+                    delta_record_ids = [
+                        record.id
+                        for record in get_related_chunk_records_by_ids(
+                            integration_id, delta_record_ids
+                        )
+                    ] + delta_record_ids
+                if scope == IntegrationRecordScope.CHUNKS.value:
+                    by = get_integration_record_identifier(integration)
+                    delta_record_ids = [
+                        record.id
+                        for record in get_related_chunk_records_by_ids(
+                            integration_id, delta_record_ids, by=by
+                        )
+                    ]
+                # TODO check uuid or str cast
+                query = query.filter(IntegrationModel.id.in_(delta_record_ids))
 
     if scope:
         integration_entity = integration_db_bo.get_by_id(integration_id)
@@ -258,6 +279,35 @@ def get_related_chunk_records(
         .filter(
             record_identifier.like(
                 f"{getattr(integration_record, by, integration_record.source)}#%"
+            )
+        )
+        .all()
+    )
+
+
+def get_related_chunk_records_by_ids(
+    integration_id: str,
+    integration_record_ids: List[str],
+    by: str = "source",
+) -> List[object]:
+    if not integration_record_ids:
+        return []
+    IntegrationModel = integration_model(integration_id)
+    record_identifier = getattr(integration_model, by, IntegrationModel.source)
+    integration_records = get_by_ids(IntegrationModel, integration_record_ids)
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration_id,
+        )
+        .filter(
+            or_(
+                *[
+                    record_identifier.like(
+                        f"{getattr(integration_record, by, integration_record.source)}#%"
+                    )
+                    for integration_record in integration_records
+                ]
             )
         )
         .all()
