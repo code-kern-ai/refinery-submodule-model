@@ -151,17 +151,25 @@ def get_by_source(
 
 def get_all_by_integration_id(
     integration_id: str,
-    only_refinery_unsynced: bool = False,
+    only_refinery_delta: bool = False,
     scope: Optional[IntegrationRecordScope] = None,
 ) -> Tuple[List[object], Type]:
     IntegrationModel = integration_model(integration_id)
     query = session.query(IntegrationModel).filter(
         IntegrationModel.integration_id == integration_id
     )
-    if only_refinery_unsynced:
-        query = query.join(EtlTask, IntegrationModel.etl_task_id == EtlTask.id).filter(
-            EtlTask.state.in_(etl_task_db_bo.FINISHED_STATES)
-        )
+
+    if only_refinery_delta:
+        integration = integration_db_bo.get_by_id(integration_id)
+
+        if integration and integration.delta_criteria:
+            delta_record_ids = set(
+                integration.delta_criteria.get("delta_record_ids", [])
+            )
+
+            if delta_record_ids:
+                query = query.filter(~IntegrationModel.id.in_(delta_record_ids))
+
     if scope:
         integration_entity = integration_db_bo.get_by_id(integration_id)
         record_identifier = getattr(
@@ -171,7 +179,7 @@ def get_all_by_integration_id(
         )
         query = query.filter(
             record_identifier.like(
-                f"%#%" if scope == IntegrationRecordScope.CHUNKS.value else f"%[^#]%"
+                "%#%" if scope == IntegrationRecordScope.CHUNKS.value else "%[^#]%"
             )
         )
     return (
