@@ -2852,6 +2852,8 @@ class IntegrationWebpage(Base):
 
     title = Column(String)
     raw_markdown_content_hash = Column(String)
+    etag = Column(String)
+    last_modified = Column(String)
 
     etl_task_id = Column(
         UUID(as_uuid=True),
