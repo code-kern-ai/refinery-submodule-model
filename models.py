@@ -1255,6 +1255,7 @@ class CognitionProject(Base):
     icon = Column(String, default="IconBolt")
     allow_conversation_sharing_organization = Column(Boolean, default=False)
     allow_conversation_sharing_global = Column(Boolean, default=False)
+    allow_microsoft_copilot_connection = Column(Boolean, default=False)
 
 
 class CognitionStrategy(Base):
