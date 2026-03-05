@@ -7,6 +7,7 @@ from .. import enums
 from datetime import datetime
 from ..util import prevent_sql_injection
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.sql.expression import true
 from copy import deepcopy
 from ..db_cache import TTLCacheDecorator, CacheEnum
 
@@ -78,9 +79,10 @@ def get_all(org_id: str, order_by_name: bool = False) -> List[CognitionProject]:
 def get_all_allowed_copilot(
     org_id: str, order_by_name: bool = False
 ) -> List[CognitionProject]:
-    query = session.query(CognitionProject).filter(
-        CognitionProject.organization_id == org_id,
-        CognitionProject.allow_microsoft_copilot_connection is True,
+    query = (
+        session.query(CognitionProject)
+        .filter(CognitionProject.organization_id == org_id)
+        .filter(CognitionProject.allow_microsoft_copilot_connection == true())
     )
 
     if order_by_name:
