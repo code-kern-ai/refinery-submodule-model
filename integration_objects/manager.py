@@ -293,7 +293,7 @@ def get_related_chunk_records_by_ids(
     if not integration_record_ids:
         return []
     IntegrationModel = integration_model(integration_id)
-    record_identifier = getattr(integration_model, by, IntegrationModel.source)
+    record_identifier = getattr(IntegrationModel, by, IntegrationModel.source)
     integration_records = get_by_ids(IntegrationModel, integration_record_ids)
     return (
         session.query(IntegrationModel)
