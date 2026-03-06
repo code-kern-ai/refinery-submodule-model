@@ -242,6 +242,7 @@ class User(Base):
     metadata_public = Column(JSON)
     sso_provider = Column(String)
     use_new_cognition_ui = Column(Boolean, default=True)
+    use_chat_auto_scroll = Column(Boolean, default=True)
     auto_logout_minutes = Column(Integer)
     messages_created_this_month = Column(BigInteger, default=0)
     one_drive_path = Column(String)
