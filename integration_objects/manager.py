@@ -281,6 +281,7 @@ def get_related_chunk_records(
                 f"{getattr(integration_record, by, integration_record.source)}#%"
             )
         )
+        .filter(IntegrationModel.id != integration_record.id)
         .all()
     )
 
