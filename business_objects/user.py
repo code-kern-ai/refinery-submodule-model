@@ -19,7 +19,7 @@ def get_user_cached_if_not_admin(user_id: str) -> Optional[User]:
     if not user:
         # cache is None, but user is automatically created so we recollect to be sure
         return get(user_id)
-    if (user.email or "").endswith("@kern.ai") and user.verified:
+    if user.is_admin:
         # for admins this could result in two db requests shortly after each other
         # but it's better than having the jumping users without the correct org id
         return get(user_id)
@@ -29,7 +29,7 @@ def get_user_cached_if_not_admin(user_id: str) -> Optional[User]:
 def get_admin_users() -> List[User]:
     kernai_admins = (
         session.query(User)
-        .filter(User.email.ilike("%@kern.ai"), User.verified == True)
+        .filter(User.is_admin == True)
         .all()
     )
 
@@ -200,9 +200,9 @@ def delete(user_id: str, with_commit: bool = False) -> None:
     general.flush_or_commit(with_commit)
 
 
-def get_missing_users(user_ids: List[str]):
+def get_missing_kratos_data(user_ids: List[str]):
     query = f"""
-    SELECT jsonb_object_agg(u.id, jsonb_build_object('last_interaction', u.last_interaction,'messages_created_this_month', u.messages_created_this_month, 'messages_created_today', u.messages_created_today))
+    SELECT jsonb_object_agg(u.id, jsonb_build_object('last_interaction', u.last_interaction,'messages_created_this_month', u.messages_created_this_month, 'messages_created_today', u.messages_created_today, 'is_light_user', u.is_light_user))
     FROM public.user u
     WHERE id IN ({",".join([f"'{user_id}'" for user_id in user_ids])})
     """
@@ -271,6 +271,8 @@ def update_last_interaction(user_id: str) -> None:
     general.commit()
 
 
+# added cache to prevent constant recollection for semi stable table values
+@TTLCacheDecorator(CacheEnum.USER, 5, "email")
 def check_email_in_full_admin(email: str) -> bool:
     email = email.lower()
     email = prevent_sql_injection(email, isinstance(email, str))

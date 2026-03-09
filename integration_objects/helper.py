@@ -39,6 +39,8 @@ TABLE_METADATA = {
         "raw_markdown_content_hash",
         "title",
         "extension",
+        "etag",
+        "last_modified",
     },
 }
 

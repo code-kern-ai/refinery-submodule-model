@@ -51,7 +51,7 @@ def get_privatemode_sum_snapshot(as_query: bool = False) -> Dict[str, Any]:
     FROM (
         SELECT  o.id organization_id, o.name organization_name, p.id project_id, p.name project_name, is_kern_user, COUNT(*) 
         FROM (
-            SELECT pl.project_id, pl.message_id, CASE WHEN u.email LIKE '%@kern.ai' THEN TRUE ELSE FALSE END is_kern_user
+            SELECT pl.project_id, pl.message_id, u.is_admin as is_kern_user
             FROM cognition.pipeline_logs pl
             INNER JOIN cognition.strategy_step ss
                 ON pl.project_id = ss.project_id AND pl.strategy_step_id = ss.id
@@ -61,7 +61,7 @@ def get_privatemode_sum_snapshot(as_query: bool = False) -> Dict[str, Any]:
             AND ss.step_type IN ('{StrategyStepType.LLM.value}' ,'{StrategyStepType.QUERY_REPHRASING.value}','{StrategyStepType.HEADER.value}')
               AND ss.config->>'llmIdentifier' = '{LLMProvider.PRIVATEMODE_AI.value}'
             UNION
-            SELECT pl.project_id, pl.message_id, CASE WHEN u.email LIKE '%@kern.ai' THEN TRUE ELSE FALSE END is_kern_user
+            SELECT pl.project_id, pl.message_id, u.is_admin as is_kern_user
             FROM cognition.pipeline_logs pl
             INNER JOIN cognition.strategy_step ss
                 ON pl.project_id = ss.project_id AND pl.strategy_step_id = ss.id AND ss.step_type = '{StrategyStepType.TEMPLATED.value}'
@@ -73,7 +73,7 @@ def get_privatemode_sum_snapshot(as_query: bool = False) -> Dict[str, Any]:
             AND pl.strategy_step_type = '{StrategyStepType.TEMPLATED.value}'
             AND st.config::jsonb -> 'steps' @> '[{{"config": {{"llmIdentifier": "{LLMProvider.PRIVATEMODE_AI.value}"}}}}]'
             UNION
-            SELECT pl.project_id, pl.message_id, CASE WHEN u.email LIKE '%@kern.ai' THEN TRUE ELSE FALSE END is_kern_user
+            SELECT pl.project_id, pl.message_id, u.is_admin as is_kern_user
             FROM cognition.pipeline_logs pl
             INNER JOIN (
                     SELECT  p.id

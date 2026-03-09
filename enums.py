@@ -1056,6 +1056,8 @@ class ETLFileType(Enum):
     POWERPOINT = "POWERPOINT"
     IMG = "IMG"
     CSV = "CSV"
+    TSV = "TSV"
+    JSON = "JSON"
 
     @classmethod
     def from_string(cls, value: str):
@@ -1091,6 +1093,8 @@ class ETLFileType(Enum):
                 ".webp",
                 ".avif",
             ]
+        elif self == ETLFileType.JSON:
+            return [".json"]
         return [".txt"]
 
     @staticmethod
@@ -1130,6 +1134,8 @@ class ETLFileType(Enum):
             ".avif",
         ]:
             return ETLFileType.IMG
+        elif changed_value in [".json"]:
+            return ETLFileType.JSON
         # default is treated like txt so no extension mapping needed
         else:
             return ETLFileType.DEFAULT
@@ -1165,6 +1171,8 @@ class ETLFileType(Enum):
             "text/tab-separated-values",
         ]:
             return ETLFileType.TSV
+        elif changed_value in ["application/json"]:
+            return ETLFileType.JSON
         else:
             return ETLFileType.DEFAULT
 
@@ -1174,8 +1182,8 @@ class ETLFileType(Enum):
             return ETLExtractorMD.FILESYSTEM
         elif file_type == ETLFileType.PDF:
             # integrations can exhaust cognition-pdf2md
-            # return ETLExtractorPDF.PDF2MD
-            return ETLExtractorPDF.LANGCHAIN
+            return ETLExtractorPDF.PDF2MD
+            # return ETLExtractorPDF.LANGCHAIN
         elif file_type == ETLFileType.WORD:
             return ETLExtractorWord.LANGCHAIN
         elif file_type == ETLFileType.EXCEL:
@@ -1186,6 +1194,8 @@ class ETLFileType(Enum):
             return ETLExtractorImg.LANGCHAIN
         elif file_type == ETLFileType.CSV:
             return ETLExtractorCsv.LANGCHAIN
+        elif file_type == ETLFileType.JSON:
+            return ETLExtractorJson.PANDAS
         elif file_type == ETLFileType.DEFAULT or file_type == ETLFileType.TXT:
             return ETLExtractorTxt.LANGCHAIN
         raise ValueError(f"No default extractor for given file type {file_type}")
@@ -1209,6 +1219,8 @@ class ETLFileType(Enum):
             return ETLExtractorCsv.from_string(extractor)
         elif self == ETLFileType.TSV:
             return ETLExtractorTsv.from_string(extractor)
+        elif self == ETLFileType.JSON:
+            return ETLExtractorJson.from_string(extractor)
         elif self == ETLFileType.DEFAULT or self == ETLFileType.TXT:
             return ETLExtractorTxt.from_string(extractor)
 
@@ -1229,6 +1241,8 @@ class ETLFileType(Enum):
             return ETLExtractorCsv.all()
         elif self == ETLFileType.TSV:
             return ETLExtractorTsv.all()
+        elif self == ETLFileType.JSON:
+            return ETLExtractorJson.all()
         return ETLExtractorTxt.all()
 
 
@@ -1285,6 +1299,11 @@ class ETLExtractorCsv(EnumKern):
 
 class ETLExtractorTsv(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorJson(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+    PANDAS = "PANDAS"
 
 
 class ETLExtractors:
