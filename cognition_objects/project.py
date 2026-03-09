@@ -170,7 +170,6 @@ def routing(
 
 DEFAULT_MACRO_CONFIG = {
     "enable": False,
-    "show": enums.AdminMacrosDisplay.DONT_SHOW.value,
 }
 
 
