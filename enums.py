@@ -1182,8 +1182,8 @@ class ETLFileType(Enum):
             return ETLExtractorMD.FILESYSTEM
         elif file_type == ETLFileType.PDF:
             # integrations can exhaust cognition-pdf2md
-            # return ETLExtractorPDF.PDF2MD
-            return ETLExtractorPDF.LANGCHAIN
+            return ETLExtractorPDF.PDF2MD
+            # return ETLExtractorPDF.LANGCHAIN
         elif file_type == ETLFileType.WORD:
             return ETLExtractorWord.LANGCHAIN
         elif file_type == ETLFileType.EXCEL:
