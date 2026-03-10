@@ -31,7 +31,7 @@ def get_by_ids(ids: List[str]) -> List[CognitionIntegration]:
     )
 
 
-def get_by_id(id: str) -> CognitionIntegration:
+def get_by_id(id: str) -> Optional[CognitionIntegration]:
     return (
         session.query(CognitionIntegration)
         .filter(CognitionIntegration.id == id)
