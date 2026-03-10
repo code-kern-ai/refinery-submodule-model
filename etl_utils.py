@@ -30,7 +30,7 @@ def get_full_config_and_tokenizer_from_config_id(
     conversation_id: Optional[str] = None,  # or in file_reference.meta_data
     rows_per_section: Optional[
         int
-    ] = 50,  # only applies to CSV/TSV files, default to 10 rows per section
+    ] = 50,  # only applies to JSON/EXCEL/CSV/TSV files, default to 50 rows per section
 ) -> Tuple[Dict[str, Any], str]:
     for_dataset = False
     for_project = False
@@ -177,6 +177,7 @@ def get_full_config_and_tokenizer_from_config_id(
 def get_full_config_for_webpage_integration(
     integration: CognitionIntegration,
     record: IntegrationWebpage,
+    rows_per_section: Optional[int] = 50,
 ) -> List[Dict[str, Any]]:
     full_config = [
         {
@@ -193,10 +194,8 @@ def get_full_config_for_webpage_integration(
             "task_config": {
                 "use_cache": False,
                 "strategy": enums.ETLSplitStrategy.CHUNK.value,
-                # chunk_size is hardcoded to 8192 due to embedder text-embedding-large-3
-                # having a context window of 8192 tokens (only applies to CHUNKS because SHRINK gets summarized)
-                "chunk_size": 1000,  # TODO: chunk size doesn't work well with rows_per_section so it isn't evaluated for csv files
-                "rows_per_section": 10,
+                "chunk_size": 1000,  # TODO: chunk size doesn't work well with rows_per_section so it isn't evaluated for json,csv,excel structured files
+                "rows_per_section": rows_per_section,
             },
         },
         {
@@ -230,6 +229,7 @@ def get_full_config_for_webpage_integration(
 def get_full_config_for_sharepoint_integration(
     integration: CognitionIntegration,
     record: IntegrationSharepoint,
+    rows_per_section: Optional[int] = 50,
 ) -> List[Dict[str, Any]]:
     full_config = [
         {
@@ -247,7 +247,7 @@ def get_full_config_for_sharepoint_integration(
                 "use_cache": False,
                 "strategy": enums.ETLSplitStrategy.CHUNK.value,
                 "chunk_size": 1000,
-                "rows_per_section": 10,
+                "rows_per_section": rows_per_section,
                 # "keep_first_n": integration.config.get("split_kwargs", {}).get(
                 #     "keep_first_n", 5
                 # ),
