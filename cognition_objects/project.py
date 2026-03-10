@@ -223,6 +223,7 @@ def update(
     icon: Optional[str] = None,
     allow_conversation_sharing_organization: Optional[bool] = None,
     allow_conversation_sharing_global: Optional[bool] = None,
+    allow_microsoft_copilot_connection: Optional[bool] = None,
     with_commit: bool = True,
 ) -> CognitionProject:
     project: CognitionProject = get(project_id)
@@ -282,6 +283,8 @@ def update(
         )
     if allow_conversation_sharing_global is not None:
         project.allow_conversation_sharing_global = allow_conversation_sharing_global
+    if allow_microsoft_copilot_connection is not None:
+        project.allow_microsoft_copilot_connection = allow_microsoft_copilot_connection
     general.flush_or_commit(with_commit)
     return project
 
