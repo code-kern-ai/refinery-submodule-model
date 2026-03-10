@@ -196,7 +196,7 @@ def get_full_config_for_webpage_integration(
                 # chunk_size is hardcoded to 8192 due to embedder text-embedding-large-3
                 # having a context window of 8192 tokens (only applies to CHUNKS because SHRINK gets summarized)
                 "chunk_size": 1000,  # TODO: chunk size doesn't work well with rows_per_section so it isn't evaluated for csv files
-                "rows_per_section": 50,
+                "rows_per_section": 10,
             },
         },
         {
@@ -247,7 +247,7 @@ def get_full_config_for_sharepoint_integration(
                 "use_cache": False,
                 "strategy": enums.ETLSplitStrategy.CHUNK.value,
                 "chunk_size": 1000,
-                "rows_per_section": 50,
+                "rows_per_section": 10,
                 # "keep_first_n": integration.config.get("split_kwargs", {}).get(
                 #     "keep_first_n", 5
                 # ),
