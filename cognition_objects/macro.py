@@ -11,7 +11,6 @@ from ..models import (
     CognitionMacroExecutionLink,
 )
 from ..enums import (
-    AdminMacrosDisplay,
     UserRoles,
     MacroScope,
     MacroType,
@@ -22,7 +21,6 @@ from ..enums import (
 )
 from ..util import prevent_sql_injection, is_list_like
 from . import project
-from sqlalchemy import or_, and_
 from sqlalchemy.orm.attributes import flag_modified
 
 
@@ -62,16 +60,13 @@ def get_with_nodes_and_edges(macro_id: str) -> Dict[str, Any]:
 
 def get_overview_for_all_for_me(
     user: User,
-    is_admin: bool,
     project_id: Optional[str] = None,
     only_production: bool = False,
 ) -> List[CognitionMacro]:
     project_item = project.get(project_id) if project_id else None
-    final_list = []
-    final_list = __get_admin_macros_for_me(
-        user, is_admin, project_item, only_production
-    )
-    final_list.extend(__get_org_macros_for_me(user, only_production))
+    if project_item and project_item.organization_id != user.organization_id:
+        raise ValueError("Project doesn't belong to user org")
+    final_list = list(__get_org_macros_for_me(user, only_production))
     if project_id:
         final_list.extend(__get_project_macros_for_me(project_item, only_production))
     return final_list
@@ -140,37 +135,6 @@ def macro_execution_finished(
         .first()
         is None
     )
-
-
-def __get_admin_macros_for_me(
-    user: User, is_admin: bool, project: CognitionProject, only_production: bool
-) -> List[CognitionMacro]:
-
-    if (
-        not project
-        or not project.macro_config
-        or not (show := project.macro_config.get("show"))
-    ):
-        return []
-
-    if (
-        (show == AdminMacrosDisplay.DONT_SHOW.value)
-        or (show == AdminMacrosDisplay.FOR_ADMINS.value and not is_admin)
-        or (
-            show == AdminMacrosDisplay.FOR_ENGINEERS.value
-            and user.role != UserRoles.ENGINEER.value
-            and not is_admin
-        )
-    ):
-        return []
-    query = session.query(CognitionMacro).filter(
-        CognitionMacro.scope == MacroScope.ADMIN.value
-    )
-
-    if only_production:
-        query = query.filter(CognitionMacro.state == MacroState.PRODUCTION.value)
-
-    return query.all()
 
 
 def __get_org_macros_for_me(user: User, only_production: bool) -> List[CognitionMacro]:
@@ -272,29 +236,15 @@ def create_edge(
 def delete_macros(
     org_id: str,
     ids: Iterable[str],
-    is_admin: bool,
     user: User,
     with_commit: bool = True,
-    # returns the ids that couldn't be deleted
 ) -> List[str]:
-    #
     query = session.query(CognitionMacro).filter(
         CognitionMacro.id.in_(ids),
-        or_(
-            CognitionMacro.organization_id == org_id,
-            and_(
-                CognitionMacro.scope == MacroScope.ADMIN.value,
-                CognitionMacro.organization_id.is_(None),
-            ),
-        ),
+        CognitionMacro.organization_id == org_id,
     )
-    # filter_org =
     if user.role != UserRoles.ENGINEER.value:
-        # can only delete their own macros
         query = query.filter(CognitionMacro.created_by == user.id)
-    if not is_admin:
-        # can't delete admin macros
-        query = query.filter(CognitionMacro.scope != MacroScope.ADMIN.value)
     query.delete()
     general.flush_or_commit(with_commit)
 
@@ -551,7 +501,6 @@ def get_macro_execution_data_for_message_queue(
         MacroType.DOCUMENT_MESSAGE_QUEUE.value,
         MacroType.FOLDER_MESSAGE_QUEUE.value,
     ]:
-
         raise ValueError(f"Macro with id {macro_id} not found or wrong type")
     macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
     group_ids = [prevent_sql_injection(g, isinstance(g, str)) for g in group_ids]
@@ -615,7 +564,6 @@ def get_macro_execution_data_for_message_queue(
 
     result = general.execute_first(query)
     if result and result[0]:
-
         project_ids = {e["meta_info"]["project_id"] for e in result[0]}
         project_lookup = project.get_lookup_by_ids(project_ids)
         if len(project_lookup) != len(project_ids):
