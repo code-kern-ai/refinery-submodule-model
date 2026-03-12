@@ -64,6 +64,8 @@ def get_overview_for_all_for_me(
     only_production: bool = False,
 ) -> List[CognitionMacro]:
     project_item = project.get(project_id) if project_id else None
+    if project_item and project_item.organization_id != user.organization_id:
+        raise ValueError("Project doesn't belong to user org")
     final_list = list(__get_org_macros_for_me(user, only_production))
     if project_id:
         final_list.extend(__get_project_macros_for_me(project_item, only_production))
@@ -499,7 +501,6 @@ def get_macro_execution_data_for_message_queue(
         MacroType.DOCUMENT_MESSAGE_QUEUE.value,
         MacroType.FOLDER_MESSAGE_QUEUE.value,
     ]:
-
         raise ValueError(f"Macro with id {macro_id} not found or wrong type")
     macro_id = prevent_sql_injection(macro_id, isinstance(macro_id, str))
     group_ids = [prevent_sql_injection(g, isinstance(g, str)) for g in group_ids]
@@ -563,7 +564,6 @@ def get_macro_execution_data_for_message_queue(
 
     result = general.execute_first(query)
     if result and result[0]:
-
         project_ids = {e["meta_info"]["project_id"] for e in result[0]}
         project_lookup = project.get_lookup_by_ids(project_ids)
         if len(project_lookup) != len(project_ids):
