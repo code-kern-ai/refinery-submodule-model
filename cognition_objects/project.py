@@ -7,6 +7,7 @@ from .. import enums
 from datetime import datetime
 from ..util import prevent_sql_injection
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.sql.expression import true
 from copy import deepcopy
 from ..db_cache import TTLCacheDecorator, CacheEnum
 
@@ -75,6 +76,22 @@ def get_all(org_id: str, order_by_name: bool = False) -> List[CognitionProject]:
     return query.all()
 
 
+def get_all_allowed_copilot(
+    org_id: str, order_by_name: bool = False
+) -> List[CognitionProject]:
+    query = (
+        session.query(CognitionProject)
+        .filter(CognitionProject.organization_id == org_id)
+        .filter(CognitionProject.allow_microsoft_copilot_connection == true())
+    )
+
+    if order_by_name:
+        query = query.order_by(CognitionProject.name.asc())
+    else:
+        query = query.order_by(CognitionProject.created_at.asc())
+    return query.all()
+
+
 def get_all_all() -> List[CognitionProject]:
     return session.query(CognitionProject).all()
 
@@ -105,6 +122,16 @@ def get_all_by_user(org_id: str, user_id: str) -> List[CognitionProject]:
         .order_by(CognitionProject.created_at.asc())
         .all()
     )
+
+
+def get_all_by_user_allowed_copilot(
+    org_id: str, user_id: str
+) -> List[CognitionProject]:
+    user_item = user.get(user_id)
+    if user_item.role == enums.UserRoles.ENGINEER.value:
+        return get_all_allowed_copilot(org_id)
+
+    raise PermissionError("ERROR:    Unauthorized")
 
 
 # returns a dict with ENGINEERING_TEAM as key for all users that are not annotators
