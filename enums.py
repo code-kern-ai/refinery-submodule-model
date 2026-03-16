@@ -849,7 +849,6 @@ class MacroEdgeConditionType(Enum):
 
 
 class MacroScope(Enum):
-    ADMIN = "ADMIN"
     ORGANIZATION = "ORGANIZATION"
     PROJECT = "PROJECT"
 
@@ -871,12 +870,6 @@ class MacroExecutionLinkAction(Enum):
     DELETE = "DELETE"
     UPDATE = "UPDATE"
 
-
-class AdminMacrosDisplay(Enum):
-    DONT_SHOW = "DONT_SHOW"
-    FOR_ADMINS = "FOR_ADMINS"
-    FOR_ENGINEERS = "FOR_ENGINEERS"
-    FOR_ALL = "FOR_ALL"
 
 
 class FileCachingInitiator(Enum):

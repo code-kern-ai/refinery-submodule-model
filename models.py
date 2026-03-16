@@ -1249,7 +1249,6 @@ class CognitionProject(Base):
     max_file_size_mb = Column(Float, default=3.0)
     useable_etl_configurations = Column(JSON)
     max_folder_size_mb = Column(Float, default=20.0)
-    # holds e.g. show, admin macro setting etc.
     macro_config = Column(JSON)
     # options from <SVGIcon/> component - only visible with new UI selected (user setting)
     icon = Column(String, default="IconBolt")
@@ -1775,13 +1774,12 @@ class CognitionMacro(Base):
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
-        nullable=True,  # ADMIN MACROS dont have a org_id
     )
     project_id = Column(
         UUID(as_uuid=True),
         ForeignKey(f"cognition.{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
-        nullable=True,  # ADMIN or ORGANIZATION MACROS dont have a project_id
+        nullable=True,  # ORGANIZATION MACROS dont have a project_id
     )
     created_by = Column(
         UUID(as_uuid=True),
@@ -1890,7 +1888,6 @@ class CognitionMacroExecutionLink(Base):
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
-        nullable=True,  # ADMIN MACROS dont have a org_id
     )
     execution_id = Column(
         UUID(as_uuid=True),
