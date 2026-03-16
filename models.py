@@ -252,6 +252,7 @@ class User(Base):
     is_light_user = Column(Boolean, default=False)
     # shouldn't be used for validation, this is only a helper for queries, authentication still via kratos/jwt
     is_admin = Column(Boolean, default=False)
+    use_chat_auto_scroll = Column(Boolean, default=True)
 
 
 class Team(Base):
