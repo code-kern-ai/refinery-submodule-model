@@ -48,7 +48,7 @@ def count(
             session.query(IntegrationModel)
             .filter(
                 IntegrationModel.integration_id == integration.id,
-                record_identifier.op("regexp")(r"#\d$"),
+                record_identifier.op("regexp")(r"#\d+$"),
             )
             .all()
         )
@@ -253,14 +253,16 @@ def get_existing_integration_records(
 
     records, _ = get_all_by_integration_id(integration_id, scope)
 
+    # Match # followed by one or more digits at end of string (strip so whitespace doesn't break it)
+    _fragment_re = re.compile(r"#\d+$")
+
+    def _has_fragment(val):
+        return bool(_fragment_re.search((val or "").strip()))
+
     if scope == IntegrationRecordScope.ROOT.value:
-        records = filter(
-            lambda x: not re.search(r"#\d$", getattr(x, by, x.source) or ""), records
-        )
+        records = filter(lambda x: not _has_fragment(getattr(x, by, x.source)), records)
     elif scope == IntegrationRecordScope.CHUNKS.value:
-        records = filter(
-            lambda x: re.search(r"#\d$", getattr(x, by, x.source) or ""), records
-        )
+        records = filter(lambda x: _has_fragment(getattr(x, by, x.source)), records)
     records_by = {getattr(record, by, record.source): record for record in records}
     return records_by
 
