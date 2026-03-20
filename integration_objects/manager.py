@@ -43,15 +43,14 @@ def count(
 ) -> int:
     IntegrationModel = integration_model(integration=integration)
     record_identifier = getattr(IntegrationModel, by, IntegrationModel.source)
-    return len(
-        (
-            session.query(IntegrationModel)
-            .filter(
-                IntegrationModel.integration_id == integration.id,
-                record_identifier.op("regexp")(r"#\d$"),
-            )
-            .all()
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration.id,
+            record_identifier.op("regexp")(r"#\d+$"),
         )
+        .all()
+        .count()
     )
 
 
@@ -193,16 +192,18 @@ def get_all_by_integration_id(
 
     if scope:
         integration_entity = integration_db_bo.get_by_id(integration_id)
+
         record_identifier = getattr(
             IntegrationModel,
             get_integration_record_identifier(integration=integration_entity),
             IntegrationModel.source,
         )
-        query = query.filter(
-            record_identifier.like(
-                "%#%" if scope == IntegrationRecordScope.CHUNKS.value else "%[^#]%"
-            )
-        )
+
+        if scope == IntegrationRecordScope.CHUNKS.value:
+            query = query.filter(record_identifier.like("%#%"))
+
+        elif scope == IntegrationRecordScope.ROOT.value:
+            query = query.filter(~record_identifier.like("%#%"))
     return (
         query.order_by(IntegrationModel.created_at).all(),
         IntegrationModel,
@@ -253,14 +254,16 @@ def get_existing_integration_records(
 
     records, _ = get_all_by_integration_id(integration_id, scope)
 
+    # Match # followed by one or more digits at end of string (strip so whitespace doesn't break it)
+    _fragment_re = re.compile(r"#\d+$")
+
+    def _has_fragment(val):
+        return bool(_fragment_re.search((val or "").strip()))
+
     if scope == IntegrationRecordScope.ROOT.value:
-        records = filter(
-            lambda x: not re.search(r"#\d$", getattr(x, by, x.source) or ""), records
-        )
+        records = filter(lambda x: not _has_fragment(getattr(x, by, x.source)), records)
     elif scope == IntegrationRecordScope.CHUNKS.value:
-        records = filter(
-            lambda x: re.search(r"#\d$", getattr(x, by, x.source) or ""), records
-        )
+        records = filter(lambda x: _has_fragment(getattr(x, by, x.source)), records)
     records_by = {getattr(record, by, record.source): record for record in records}
     return records_by
 
@@ -512,15 +515,3 @@ def get_metadata_from_record(record: object) -> Dict[str, Any]:
     supported_keys = get_supported_metadata_keys(record.__tablename__)
     supported_metadata = {key: getattr(record, key) for key in supported_keys}
     return supported_metadata
-
-
-def set_refinery_synced_by_record_ids(
-    integration_id: str,
-    record_ids: List[str],
-    with_commit: bool = True,
-) -> None:
-    IntegrationModel = integration_model(integration_id=integration_id)
-    session.query(IntegrationModel).filter(IntegrationModel.id.in_(record_ids)).update(
-        {IntegrationModel.refinery_synced: True}, synchronize_session=False
-    )
-    general.flush_or_commit(with_commit)

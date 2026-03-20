@@ -558,4 +558,6 @@ def get_last_integrations_tasks(
 
 def has_scheduled_etl_tasks(integration_id: str) -> bool:
     integration = get_by_id(integration_id)
+    if not integration:
+        return False
     return integration.state not in FINISHED_STATES
