@@ -322,6 +322,8 @@ def execution_finished(id: str) -> bool:
     integration = get_by_id(id)
     if not integration:
         return True
+    if integration.state in FINISHED_STATES:
+        return True
     if integration.state not in ETL_PROCESSING_STATES:
         return False
     return not exists_active_etl_tasks(id)
