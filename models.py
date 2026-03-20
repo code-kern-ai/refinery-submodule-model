@@ -2187,7 +2187,7 @@ class CognitionIntegration(Base):
     name = Column(String)
     description = Column(String)
     tokenizer = Column(String)
-    state = Column(String)  # of type enums.CognitionMarkdownFileState.*.value
+    state = Column(String)  # of type enums.CognitionIntegrationState.*.value
     type = Column(String)  # of type enums.CognitionIntegrationType.*.value
     config = Column(JSON)
     """JSON object that contains the configuration for the integration type.
@@ -2708,6 +2708,13 @@ class IntegrationSharepoint(Base):
             "etl_task_id",
             name=f"unique_{__tablename__}_source",
         ),
+        UniqueConstraint(
+            "integration_id",
+            "running_id",
+            "object_id",
+            "etl_task_id",
+            name=f"unique_{__tablename__}_object_id",
+        ),
         {"schema": "integration"},
     )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -2734,7 +2741,7 @@ class IntegrationSharepoint(Base):
     error_message = Column(String)
 
     extension = Column(String)
-    object_id = Column(String)
+    object_id = Column(String, index=True)
     parent_path = Column(String)
     name = Column(String)
     web_url = Column(String)
@@ -2776,3 +2783,51 @@ class IntegrationSharepointPropertySync(Base):
     config = Column(JSON)  # JSON object containing the rules for property sync
     logs = Column(ARRAY(String))
     state = Column(String)
+
+
+class IntegrationWebpage(Base):
+    __tablename__ = Tablenames.INTEGRATION_WEBPAGE.value
+    __table_args__ = (
+        UniqueConstraint(
+            "integration_id",
+            "source",
+            "etl_task_id",
+            name=f"unique_{__tablename__}_source",
+        ),
+        {"schema": "integration"},
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    updated_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="SET NULL"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+    updated_at = Column(DateTime, onupdate=sql.func.now())
+    integration_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"cognition.{Tablenames.INTEGRATION.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    running_id = Column(Integer, index=True)
+    source = Column(String, index=True)
+    minio_file_name = Column(String)
+    error_message = Column(String)
+    extension = Column(String)
+
+    title = Column(String)
+    raw_markdown_content_hash = Column(String)
+    etag = Column(String)
+    last_modified = Column(String)
+
+    etl_task_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"global.{Tablenames.ETL_TASK.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    content = Column(String)

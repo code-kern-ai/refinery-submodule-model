@@ -189,18 +189,14 @@ def get_or_create_integration_etl_task(
     file_path: Optional[str],
     full_config: Optional[Dict[str, Any]],
     priority: Optional[int] = -1,
+    file_size_bytes: Optional[int] = None,
 ) -> EtlTask:
-    if etl_task := (
-        session.query(EtlTask).filter(EtlTask.id == record.etl_task_id).first()
-    ):
-        return etl_task
-
     return create(
         org_id=org_id,
         user_id=integration.created_by,
         original_file_name=original_file_name,
         file_path=file_path,
-        file_size_bytes=record.size,
+        file_size_bytes=record.size if hasattr(record, "size") else file_size_bytes,
         full_config=full_config,
         tokenizer=integration.tokenizer,
         meta_data={"integration_id": str(integration.id)},

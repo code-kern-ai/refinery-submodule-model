@@ -9,17 +9,18 @@ from ..integration_objects import manager as integration_records_bo
 from ..session import session
 from ..models import CognitionIntegration, CognitionGroup, EtlTask
 from ..enums import (
-    CognitionMarkdownFileState,
     CognitionIntegrationType,
+    CognitionIntegrationState,
 )
 from ..business_objects import cross_selling as cross_selling_bo
 from ..util import prevent_sql_injection
-from submodules.model import enums
 
 FINISHED_STATES = [
-    CognitionMarkdownFileState.FINISHED.value,
-    CognitionMarkdownFileState.FAILED.value,
+    CognitionIntegrationState.FINISHED.value,
+    CognitionIntegrationState.FAILED.value,
 ]
+
+ETL_PROCESSING_STATES = [CognitionIntegrationState.ETL_PROCESSING.value]
 
 
 def get_by_ids(ids: List[str]) -> List[CognitionIntegration]:
@@ -30,7 +31,7 @@ def get_by_ids(ids: List[str]) -> List[CognitionIntegration]:
     )
 
 
-def get_by_id(id: str) -> CognitionIntegration:
+def get_by_id(id: str) -> Optional[CognitionIntegration]:
     return (
         session.query(CognitionIntegration)
         .filter(CognitionIntegration.id == id)
@@ -48,7 +49,7 @@ def get_all(
         query = query.filter(CognitionIntegration.type == integration_type)
     if exclude_failed:
         query = query.filter(
-            CognitionIntegration.state != CognitionMarkdownFileState.FAILED.value
+            CognitionIntegration.state != CognitionIntegrationState.FAILED.value
         )
     if only_synced:
         query = query.filter(CognitionIntegration.is_synced == True)
@@ -101,7 +102,7 @@ def get_all_in_org(
         query = query.filter(CognitionIntegration.is_synced == True)
     if exclude_failed:
         query = query.filter(
-            CognitionIntegration.state != CognitionMarkdownFileState.FAILED.value
+            CognitionIntegration.state != CognitionIntegrationState.FAILED.value
         )
     return query.order_by(CognitionIntegration.created_at.desc()).all()
 
@@ -166,6 +167,23 @@ def get_active_etl_tasks(
     )
 
 
+def exists_active_etl_tasks(
+    integration_id: str,
+) -> bool:
+    IntegrationModel = integration_records_bo.integration_model(integration_id)
+    return (
+        session.query(EtlTask)
+        .filter(EtlTask.is_active == True)
+        .join(
+            IntegrationModel,
+            (EtlTask.id == IntegrationModel.etl_task_id)
+            & (IntegrationModel.integration_id == integration_id),
+        )
+        .count()
+        > 0
+    )
+
+
 def get_all_etl_tasks(
     integration_id: str,
 ) -> List[EtlTask]:
@@ -179,37 +197,6 @@ def get_all_etl_tasks(
         )
         .all()
     )
-
-
-def get_integration_progress(
-    integration_id: str,
-) -> float:
-    integration = get_by_id(integration_id)
-    count_all_records = integration_records_bo.count(integration)
-
-    if (
-        count_all_records == 0
-        or integration.state == enums.CognitionMarkdownFileState.FAILED.value
-    ):
-        return 0.0
-
-    all_tasks = get_all_etl_tasks(integration_id)
-    finished_tasks = [task for task in all_tasks if task.state in FINISHED_STATES]
-    count_finished_tasks = len(finished_tasks)
-
-    # backward compatibility
-    if not all_tasks or len(all_tasks) != count_all_records:
-        all_records, _ = integration_records_bo.get_all_by_integration_id(
-            integration_id
-        )
-        count_finished_tasks += len(
-            [record for record in all_records if not record.etl_task_id]
-        )
-
-    integration_progress = round((count_finished_tasks / count_all_records) * 100.0, 2)
-    if integration.state not in FINISHED_STATES:
-        integration_progress = min(integration_progress - 1, 0)
-    return integration_progress
 
 
 def count_org_integrations(org_id: str) -> Dict[str, int]:
@@ -271,7 +258,7 @@ def update(
     name: Optional[str] = None,
     description: Optional[str] = None,
     tokenizer: Optional[str] = None,
-    state: Optional[CognitionMarkdownFileState] = None,
+    state: Optional[CognitionIntegrationState] = None,
     integration_config: Optional[int] = None,
     llm_config: Optional[Dict] = None,
     error_message: Optional[str] = None,
@@ -332,16 +319,14 @@ def update(
 
 
 def execution_finished(id: str) -> bool:
-    if not get_by_id(id):
+    integration = get_by_id(id)
+    if not integration:
         return True
-    return bool(
-        session.query(CognitionIntegration)
-        .filter(
-            CognitionIntegration.id == id,
-            CognitionIntegration.state.in_(FINISHED_STATES),
-        )
-        .first()
-    )
+    if integration.state in FINISHED_STATES:
+        return True
+    if integration.state not in ETL_PROCESSING_STATES:
+        return False
+    return not exists_active_etl_tasks(id)
 
 
 def delete_many(
@@ -569,3 +554,10 @@ def get_last_integrations_tasks(
     """
 
     return general.execute_all(query)
+
+
+def has_scheduled_etl_tasks(integration_id: str) -> bool:
+    integration = get_by_id(integration_id)
+    if not integration:
+        return False
+    return integration.state not in FINISHED_STATES

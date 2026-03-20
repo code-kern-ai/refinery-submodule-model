@@ -1,5 +1,6 @@
 from __future__ import with_statement
 from typing import List, Dict, Any, Optional, Tuple, Iterable
+
 from sqlalchemy import cast, Text, String
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.expression import bindparam

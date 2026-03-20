@@ -1,21 +1,26 @@
+import re
 from typing import List, Optional, Dict, Tuple, Union, Type, Any
 from datetime import datetime
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from sqlalchemy.orm.attributes import flag_modified
+from submodules.s3 import enums
 
-from ..enums import CognitionIntegrationType
+from ..enums import CognitionIntegrationType, IntegrationRecordScope
 from ..business_objects import general
 from ..cognition_objects import integration as integration_db_bo
 from ..global_objects import etl_task as etl_task_db_bo
 from ..session import session
-from .helper import get_supported_metadata_keys
+from .helper import get_integration_record_identifier, get_supported_metadata_keys
 from ..models import (
     IntegrationSharepoint,
     IntegrationPdf,
     IntegrationGithubIssue,
     IntegrationGithubFile,
+    IntegrationWebpage,
     CognitionIntegration,
+    EtlTask,
 )
+from submodules.model import enums
 
 
 def get(
@@ -32,15 +37,60 @@ def get(
     return query.order_by(IntegrationModel.created_at.desc()).all()
 
 
-def count(integration: CognitionIntegration) -> int:
+def count(
+    integration: CognitionIntegration,
+    by: str = "source",
+) -> int:
+    IntegrationModel = integration_model(integration=integration)
+    record_identifier = getattr(IntegrationModel, by, IntegrationModel.source)
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration.id,
+            record_identifier.op("regexp")(r"#\d+$"),
+        )
+        .all()
+        .count()
+    )
+
+
+def get_last_record(integration: CognitionIntegration) -> Optional[object]:
     IntegrationModel = integration_model(integration=integration)
     return (
         session.query(IntegrationModel)
         .filter(
             IntegrationModel.integration_id == integration.id,
         )
-        .count()
+        .order_by(IntegrationModel.created_at.desc())
+        .first()
     )
+
+
+def get_record_scope(integration_id: str) -> IntegrationRecordScope:
+    integration = integration_db_bo.get_by_id(integration_id)
+    last_record = get_last_record(integration)
+    if last_record is None:
+        return
+    etl_task = etl_task_db_bo.get_by_id(last_record.etl_task_id)
+    if etl_task is None:
+        return
+
+    full_config = etl_task.full_config or []
+    splitting_task = next(
+        (
+            task
+            for task in full_config
+            if task.get("task_type") == enums.CognitionMarkdownFileState.SPLITTING.value
+        ),
+        None,
+    )
+    if (
+        splitting_task
+        and splitting_task.get("task_config", {}).get("strategy")
+        == enums.ETLSplitStrategy.CHUNK.value
+    ):
+        return IntegrationRecordScope.CHUNKS.value
+    return IntegrationRecordScope.ROOT.value
 
 
 def get_by_id(
@@ -50,14 +100,28 @@ def get_by_id(
     return session.query(IntegrationModel).filter(IntegrationModel.id == id).first()
 
 
-def get_by_etl_task_id(
+def get_by_ids(
     IntegrationModel: Type,
-    etl_task_id: str,
-) -> object:
+    ids: List[str],
+) -> list:
+    return session.query(IntegrationModel).filter(IntegrationModel.id.in_(ids)).all()
+
+
+def get_all_by_etl_task(
+    etl_task: EtlTask,
+) -> List[object]:
+    integration_id: str = etl_task.meta_data.get("integration_id")
+    if not integration_id:
+        print(
+            f"WARNING:  integration_id not found in etl_task meta_data for etl_task_id '{etl_task.id}'",
+            flush=True,
+        )
+        return []
+    IntegrationModel = integration_model(integration_id=integration_id)
     return (
         session.query(IntegrationModel)
-        .filter(IntegrationModel.etl_task_id == etl_task_id)
-        .first()
+        .filter(IntegrationModel.etl_task_id == etl_task.id)
+        .all()
     )
 
 
@@ -93,15 +157,55 @@ def get_by_source(
 
 def get_all_by_integration_id(
     integration_id: str,
+    only_refinery_delta: bool = False,
+    scope: Optional[IntegrationRecordScope] = None,
 ) -> Tuple[List[object], Type]:
     IntegrationModel = integration_model(integration_id)
+    query = session.query(IntegrationModel).filter(
+        IntegrationModel.integration_id == integration_id
+    )
+
+    if only_refinery_delta:
+        integration = integration_db_bo.get_by_id(integration_id)
+
+        if integration and integration.delta_criteria:
+            delta_record_ids = integration.delta_criteria.get("delta_record_ids", [])
+
+            if delta_record_ids:
+                if scope == IntegrationRecordScope.ALL.value:
+                    delta_record_ids = [
+                        record.id
+                        for record in get_related_chunk_records_by_ids(
+                            integration_id, delta_record_ids
+                        )
+                    ] + delta_record_ids
+                if scope == IntegrationRecordScope.CHUNKS.value:
+                    by = get_integration_record_identifier(integration)
+                    delta_record_ids = [
+                        record.id
+                        for record in get_related_chunk_records_by_ids(
+                            integration_id, delta_record_ids, by=by
+                        )
+                    ]
+                # TODO check uuid or str cast
+                query = query.filter(IntegrationModel.id.in_(delta_record_ids))
+
+    if scope:
+        integration_entity = integration_db_bo.get_by_id(integration_id)
+
+        record_identifier = getattr(
+            IntegrationModel,
+            get_integration_record_identifier(integration=integration_entity),
+            IntegrationModel.source,
+        )
+
+        if scope == IntegrationRecordScope.CHUNKS.value:
+            query = query.filter(record_identifier.like("%#%"))
+
+        elif scope == IntegrationRecordScope.ROOT.value:
+            query = query.filter(~record_identifier.like("%#%"))
     return (
-        (
-            session.query(IntegrationModel)
-            .filter(IntegrationModel.integration_id == integration_id)
-            .order_by(IntegrationModel.created_at)
-            .all()
-        ),
+        query.order_by(IntegrationModel.created_at).all(),
         IntegrationModel,
     )
 
@@ -121,6 +225,8 @@ def integration_model(
         return IntegrationGithubFile
     elif integration.type == CognitionIntegrationType.GITHUB_ISSUE.value:
         return IntegrationGithubIssue
+    elif integration.type == CognitionIntegrationType.WEBPAGE.value:
+        return IntegrationWebpage
     else:
         raise ValueError(f"Unsupported integration type: {integration.type}")
 
@@ -143,11 +249,73 @@ def get_all_by_project_id(
 def get_existing_integration_records(
     integration_id: str,
     by: str = "source",
+    scope: IntegrationRecordScope = IntegrationRecordScope.ALL.value,
 ) -> Dict[str, object]:
-    # TODO(extension): make return type Dict[str, List[object]]
-    # once an object_id can reference multiple different integration records
-    records, _ = get_all_by_integration_id(integration_id)
-    return {getattr(record, by, record.source): record for record in records}
+
+    records, _ = get_all_by_integration_id(integration_id, scope)
+
+    # Match # followed by one or more digits at end of string (strip so whitespace doesn't break it)
+    _fragment_re = re.compile(r"#\d+$")
+
+    def _has_fragment(val):
+        return bool(_fragment_re.search((val or "").strip()))
+
+    if scope == IntegrationRecordScope.ROOT.value:
+        records = filter(lambda x: not _has_fragment(getattr(x, by, x.source)), records)
+    elif scope == IntegrationRecordScope.CHUNKS.value:
+        records = filter(lambda x: _has_fragment(getattr(x, by, x.source)), records)
+    records_by = {getattr(record, by, record.source): record for record in records}
+    return records_by
+
+
+def get_related_chunk_records(
+    integration_record: object,
+    by: str = "source",
+) -> List[object]:
+    IntegrationModel = type(integration_record)
+    record_identifier = getattr(IntegrationModel, by, IntegrationModel.source)
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration_record.integration_id,
+        )
+        .filter(
+            record_identifier.like(
+                f"{getattr(integration_record, by, integration_record.source)}#%"
+            )
+        )
+        .filter(IntegrationModel.id != integration_record.id)
+        .all()
+    )
+
+
+def get_related_chunk_records_by_ids(
+    integration_id: str,
+    integration_record_ids: List[str],
+    by: str = "source",
+) -> List[object]:
+    if not integration_record_ids:
+        return []
+    IntegrationModel = integration_model(integration_id)
+    record_identifier = getattr(IntegrationModel, by, IntegrationModel.source)
+    integration_records = get_by_ids(IntegrationModel, integration_record_ids)
+    return (
+        session.query(IntegrationModel)
+        .filter(
+            IntegrationModel.integration_id == integration_id,
+        )
+        .filter(
+            or_(
+                *[
+                    record_identifier.like(
+                        f"{getattr(integration_record, by, integration_record.source)}#%"
+                    )
+                    for integration_record in integration_records
+                ]
+            )
+        )
+        .all()
+    )
 
 
 def get_running_ids(
@@ -158,7 +326,7 @@ def get_running_ids(
     return dict(
         session.query(
             getattr(IntegrationModel, by, IntegrationModel.source),
-            func.coalesce(func.max(IntegrationModel.running_id), 0),
+            func.max(IntegrationModel.running_id),
         )
         .filter(IntegrationModel.integration_id == integration_id)
         .group_by(getattr(IntegrationModel, by, IntegrationModel.source))
@@ -166,11 +334,47 @@ def get_running_ids(
     )
 
 
+def duplicate(
+    integration_record: object,
+    content: str,
+    running_id: str,
+    chunk_idx: int,
+    by: str = "source",
+) -> object:
+    IntegrationModel = type(integration_record)
+
+    duplicated_record = IntegrationModel(
+        created_by=integration_record.created_by,
+        integration_id=integration_record.integration_id,
+        etl_task_id=integration_record.etl_task_id,
+        error_message=integration_record.error_message,
+        content=content,
+        updated_by=integration_record.updated_by,
+        updated_at=integration_record.updated_at,
+    )
+
+    for key in get_supported_metadata_keys(IntegrationModel.__tablename__):
+        value = getattr(integration_record, key)
+        setattr(duplicated_record, key, value)
+
+    duplicated_record.running_id = running_id
+
+    new_attr_value = f"{getattr(integration_record, by)}#{chunk_idx}"
+    setattr(duplicated_record, by, new_attr_value)
+
+    try:
+        general.add(duplicated_record, with_commit=False)
+    except Exception as e:
+        print("ERROR:    ", str(e), flush=True)
+        raise e
+
+    return duplicated_record
+
+
 def create(
     IntegrationModel: Type,
     created_by: str,
     integration_id: str,
-    running_id: int,
     created_at: Optional[datetime] = None,
     error_message: Optional[str] = None,
     id: Optional[str] = None,
@@ -188,7 +392,6 @@ def create(
     integration_record = IntegrationModel(
         created_by=created_by,
         integration_id=integration_id,
-        running_id=running_id,
         created_at=created_at,
         error_message=error_message,
         id=id,
@@ -238,10 +441,9 @@ def update(
     if content is not None:
         integration_record.content = content
         record_updated = True
-    if etl_task_id is not None and integration_record.etl_task_id is None:
+    if etl_task_id is not None:
         integration_record.etl_task_id = etl_task_id
         record_updated = True
-
     for key, value in metadata.items():
         if not hasattr(integration_record, key):
             raise ValueError(

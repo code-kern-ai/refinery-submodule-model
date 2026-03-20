@@ -202,6 +202,7 @@ class Tablenames(Enum):
     DATA_BLOCK = "data_block"
     DATA_BLOCK_ATTRIBUTES = "data_block_attributes"
     DATA_BLOCK_RESULTS = "data_block_results"
+    INTEGRATION_WEBPAGE = "webpage"
 
     def snake_case_to_pascal_case(self):
         # the type name (written in PascalCase) of a table is needed to create backrefs
@@ -539,6 +540,7 @@ class TaskQueueAction(Enum):
     FINISH_COGNITION_SETUP = "FINISH_COGNITION_SETUP"
     RUN_WEAK_SUPERVISION = "RUN_WEAK_SUPERVISION"
     POSTPROCESS_INTEGRATION = "POSTPROCESS_INTEGRATION"
+    REFINERY_INTEGRATION_SYNC = "REFINERY_INTEGRATION_SYNC"
 
 
 class AgreementType(Enum):
@@ -956,6 +958,7 @@ class CognitionIntegrationType(Enum):
     GITHUB_FILE = "GITHUB_FILE"
     GITHUB_ISSUE = "GITHUB_ISSUE"
     PDF = "PDF"
+    WEBPAGE = "WEBPAGE"
 
     @staticmethod
     def from_string(value: str):
@@ -1045,6 +1048,9 @@ class ETLFileType(Enum):
     EXCEL = "EXCEL"
     POWERPOINT = "POWERPOINT"
     IMG = "IMG"
+    CSV = "CSV"
+    TSV = "TSV"
+    JSON = "JSON"
 
     @classmethod
     def from_string(cls, value: str):
@@ -1056,7 +1062,7 @@ class ETLFileType(Enum):
 
     def get_supported_file_extensions(self) -> List[str]:
         if self == ETLFileType.MD:
-            return [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]
+            return [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".mdc"]
         elif self == ETLFileType.PDF:
             return [".pdf"]
         elif self == ETLFileType.WORD:
@@ -1065,6 +1071,10 @@ class ETLFileType(Enum):
             return [".xlsx", ".xls"]
         elif self == ETLFileType.POWERPOINT:
             return [".pptx", ".ppt"]
+        elif self == ETLFileType.CSV:
+            return [".csv"]
+        elif self == ETLFileType.TSV:
+            return [".tsv"]
         elif self == ETLFileType.IMG:
             return [
                 ".png",
@@ -1076,6 +1086,8 @@ class ETLFileType(Enum):
                 ".webp",
                 ".avif",
             ]
+        elif self == ETLFileType.JSON:
+            return [".json"]
         return [".txt"]
 
     @staticmethod
@@ -1090,7 +1102,7 @@ class ETLFileType(Enum):
     @staticmethod
     def from_extension(value: str):
         changed_value = value.lower()
-        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd"]:
+        if changed_value in [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".mdc"]:
             return ETLFileType.MD
         elif changed_value in [".pdf"]:
             return ETLFileType.PDF
@@ -1100,6 +1112,10 @@ class ETLFileType(Enum):
             return ETLFileType.EXCEL
         elif changed_value in [".pptx", ".ppt"]:
             return ETLFileType.POWERPOINT
+        elif changed_value in [".csv"]:
+            return ETLFileType.CSV
+        elif changed_value in [".tsv"]:
+            return ETLFileType.TSV
         elif changed_value in [
             ".png",
             ".jpg",
@@ -1111,6 +1127,8 @@ class ETLFileType(Enum):
             ".avif",
         ]:
             return ETLFileType.IMG
+        elif changed_value in [".json"]:
+            return ETLFileType.JSON
         # default is treated like txt so no extension mapping needed
         else:
             return ETLFileType.DEFAULT
@@ -1138,6 +1156,16 @@ class ETLFileType(Enum):
             return ETLFileType.POWERPOINT
         elif changed_value.startswith("image/"):
             return ETLFileType.IMG
+        elif changed_value in [
+            "text/csv",
+        ]:
+            return ETLFileType.CSV
+        elif changed_value in [
+            "text/tab-separated-values",
+        ]:
+            return ETLFileType.TSV
+        elif changed_value in ["application/json"]:
+            return ETLFileType.JSON
         else:
             return ETLFileType.DEFAULT
 
@@ -1147,16 +1175,20 @@ class ETLFileType(Enum):
             return ETLExtractorMD.FILESYSTEM
         elif file_type == ETLFileType.PDF:
             # integrations can exhaust cognition-pdf2md
-            # return ETLExtractorPDF.PDF2MD
-            return ETLExtractorPDF.LANGCHAIN
+            return ETLExtractorPDF.PDF2MD
+            # return ETLExtractorPDF.LANGCHAIN
         elif file_type == ETLFileType.WORD:
             return ETLExtractorWord.LANGCHAIN
         elif file_type == ETLFileType.EXCEL:
-            return ETLExtractorExcel.LANGCHAIN
+            return ETLExtractorExcel.OPENPYXL
         elif file_type == ETLFileType.POWERPOINT:
             return ETLExtractorPowerpoint.LANGCHAIN
         elif file_type == ETLFileType.IMG:
             return ETLExtractorImg.LANGCHAIN
+        elif file_type == ETLFileType.CSV:
+            return ETLExtractorCsv.LANGCHAIN
+        elif file_type == ETLFileType.JSON:
+            return ETLExtractorJson.PANDAS
         elif file_type == ETLFileType.DEFAULT or file_type == ETLFileType.TXT:
             return ETLExtractorTxt.LANGCHAIN
         raise ValueError(f"No default extractor for given file type {file_type}")
@@ -1176,7 +1208,14 @@ class ETLFileType(Enum):
             return ETLExtractorPowerpoint.from_string(extractor)
         elif self == ETLFileType.IMG:
             return ETLExtractorImg.from_string(extractor)
-        return self.get_default_extractor(self)
+        elif self == ETLFileType.CSV:
+            return ETLExtractorCsv.from_string(extractor)
+        elif self == ETLFileType.TSV:
+            return ETLExtractorTsv.from_string(extractor)
+        elif self == ETLFileType.JSON:
+            return ETLExtractorJson.from_string(extractor)
+        elif self == ETLFileType.DEFAULT or self == ETLFileType.TXT:
+            return ETLExtractorTxt.from_string(extractor)
 
     def get_supported_extractors(self) -> List[str]:
         if self == ETLFileType.MD:
@@ -1191,6 +1230,12 @@ class ETLFileType(Enum):
             return ETLExtractorPowerpoint.all()
         elif self == ETLFileType.IMG:
             return ETLExtractorImg.all()
+        elif self == ETLFileType.CSV:
+            return ETLExtractorCsv.all()
+        elif self == ETLFileType.TSV:
+            return ETLExtractorTsv.all()
+        elif self == ETLFileType.JSON:
+            return ETLExtractorJson.all()
         return ETLExtractorTxt.all()
 
 
@@ -1226,6 +1271,7 @@ class ETLExtractorWord(EnumKern):
 
 class ETLExtractorExcel(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+    OPENPYXL = "OPENPYXL"
 
 
 class ETLExtractorPowerpoint(EnumKern):
@@ -1238,6 +1284,19 @@ class ETLExtractorImg(EnumKern):
 
 class ETLExtractorTxt(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorCsv(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorTsv(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
+class ETLExtractorJson(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+    PANDAS = "PANDAS"
 
 
 class ETLExtractors:
@@ -1284,3 +1343,22 @@ class InboxMailThreadSupportProgressState(Enum):
 class DataBlockType(EnumKern):
     LIVE = "LIVE"
     STABLE = "STABLE"
+
+
+class CognitionIntegrationState(Enum):
+    QUEUE = "QUEUE"
+    STARTED = "STARTED"
+    EXTRACTING = "EXTRACTING"
+    ETL_PROCESSING = "ETL_PROCESSING"
+    REFINERY_SYNCING = "REFINERY_SYNCING"  ## e.g. syncing with refinery (records + postprocessing permissions)
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
+
+    def get_state_name(self):
+        return self.value.replace("_", " ")
+
+
+class IntegrationRecordScope(Enum):
+    ALL = "ALL"
+    ROOT = "ROOT"
+    CHUNKS = "CHUNKS"

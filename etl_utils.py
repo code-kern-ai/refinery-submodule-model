@@ -11,6 +11,7 @@ from .models import (
     FileReference,
     CognitionIntegration,
     IntegrationSharepoint,
+    IntegrationWebpage,
 )
 
 ETL_DIR = Path(os.getenv("ETL_DIR", "/app/data/etl"))
@@ -27,6 +28,9 @@ def get_full_config_and_tokenizer_from_config_id(
     # only set for chat messages
     project_id: Optional[str] = None,  # or in file_reference.meta_data
     conversation_id: Optional[str] = None,  # or in file_reference.meta_data
+    rows_per_section: Optional[
+        int
+    ] = 50,  # only applies to JSON/EXCEL/CSV/TSV files, default to 50 rows per section
 ) -> Tuple[Dict[str, Any], str]:
     for_dataset = False
     for_project = False
@@ -87,6 +91,7 @@ def get_full_config_and_tokenizer_from_config_id(
                     "use_cache": True,
                     "strategy": enums.ETLSplitStrategy.CHUNK.value,
                     "chunk_size": chunk_size,
+                    "rows_per_section": rows_per_section,
                 },
             }
 
@@ -169,9 +174,10 @@ def get_full_config_and_tokenizer_from_config_id(
     return full_config, etl_preset_item.etl_config.get("tokenizer")
 
 
-def get_full_config_for_integration(
+def get_full_config_for_webpage_integration(
     integration: CognitionIntegration,
-    record: IntegrationSharepoint,
+    record: IntegrationWebpage,
+    rows_per_section: Optional[int] = 50,
 ) -> List[Dict[str, Any]]:
     full_config = [
         {
@@ -187,16 +193,67 @@ def get_full_config_for_integration(
             "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
             "task_config": {
                 "use_cache": False,
-                "strategy": enums.ETLSplitStrategy.SHRINK.value,
-                "chunk_size": integration.config.get("split_kwargs", {}).get(
-                    "chunk_size", 16384
-                ),
-                "keep_first_n": integration.config.get("split_kwargs", {}).get(
-                    "keep_first_n", 5
-                ),
-                "keep_last_n": integration.config.get("split_kwargs", {}).get(
-                    "keep_last_n", 1
-                ),
+                "strategy": enums.ETLSplitStrategy.CHUNK.value,
+                "chunk_size": 1000,  # TODO: chunk size doesn't work well with rows_per_section so it isn't evaluated for json,csv,excel structured files
+                "rows_per_section": rows_per_section,
+            },
+        },
+        {
+            "task_type": enums.CognitionMarkdownFileState.LOADING.value,
+            "task_config": {
+                "integration_record": {
+                    "enabled": True,
+                    "id": str(record.id),
+                    "integration_id": str(integration.id),
+                },
+                "markdown_file": {
+                    "enabled": False,
+                    "id": None,
+                },
+            },
+        },
+        # {
+        #     "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
+        #     "task_config": {
+        #         "integration": [
+        #             {
+        #                 "integration_id": str(integration.id),
+        #             }
+        #         ]
+        #     },
+        # },
+    ]
+    return full_config
+
+
+def get_full_config_for_sharepoint_integration(
+    integration: CognitionIntegration,
+    record: IntegrationSharepoint,
+    rows_per_section: Optional[int] = 50,
+) -> List[Dict[str, Any]]:
+    full_config = [
+        {
+            "llm_config": integration.llm_config,
+            "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
+            "task_config": {
+                "use_cache": False,
+                "fallback": None,
+            },
+        },
+        {
+            "llm_config": integration.llm_config,
+            "task_type": enums.CognitionMarkdownFileState.SPLITTING.value,
+            "task_config": {
+                "use_cache": False,
+                "strategy": enums.ETLSplitStrategy.CHUNK.value,
+                "chunk_size": 1000,
+                "rows_per_section": rows_per_section,
+                # "keep_first_n": integration.config.get("split_kwargs", {}).get(
+                #     "keep_first_n", 5
+                # ),
+                # "keep_last_n": integration.config.get("split_kwargs", {}).get(
+                #     "keep_last_n", 1
+                # ),
             },
         },
         {
@@ -217,25 +274,6 @@ def get_full_config_for_integration(
                         "system_prompt": None,
                         "user_prompt": None,
                     },
-                    {
-                        "enabled": True,
-                        "name": enums.ETLTransformer.SUMMARIZE.value,
-                        "system_prompt": None,
-                        "user_prompt": " ".join(
-                            (
-                                "You are a helpful AI assistant that summarizes documents.",
-                                "Your task is to provide a concise summary of the provided text.",
-                                "You will be given a context, and you should summarize it in a clear and concise manner.",
-                                "The summary should capture the main points and key information from the context.",
-                                (
-                                    f"You are summarizing the list of file paths in folder `{record.parent_path}`."
-                                    if record.extension == "FOLDER"
-                                    else f"You are summarizing the file `{record.name}` in folder `{record.parent_path}`."
-                                ),
-                                f"IT IS CRUCIAL THAT YOU ONLY ANSWER IN ISO-639-1:{integration.tokenizer[:2]}",
-                            )
-                        ),
-                    },
                 ],
             },
         },
@@ -253,18 +291,16 @@ def get_full_config_for_integration(
                 },
             },
         },
-        {
-            "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
-            "task_config": {
-                "http": [
-                    {
-                        "url": "http://cognition-integration-provider:80/etl/status/{integration_id}",
-                        "url_format": {"integration_id": str(integration.id)},
-                        "method": "PUT",
-                    }
-                ]
-            },
-        },
+        # {
+        #     "task_type": enums.CognitionMarkdownFileState.NOTIFYING.value,
+        #     "task_config": {
+        #         "integration": [
+        #             {
+        #                 "integration_id": str(integration.id),
+        #             }
+        #         ]
+        #     },
+        # },
     ]
 
     return full_config
