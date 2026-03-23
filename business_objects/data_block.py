@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Any
 
+from sqlalchemy import and_, func
 from sqlalchemy.types import Text
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -26,15 +27,22 @@ def get_by_id(data_block_id: str) -> DataBlock:
     return session.query(DataBlock).filter(DataBlock.id == data_block_id).first()
 
 
-def get_all_by_project_id(org_id: str, project_id: str) -> List[DataBlock]:
-    return (
-        session.query(DataBlock)
-        .filter(
-            DataBlock.organization_id == org_id,
-            DataBlock.project_id == project_id,
-        )
-        .all()
+def get_all_by_project_id(
+    org_id: str, project_id: str, only_executed: bool = False
+) -> List[DataBlock]:
+    stmt = session.query(DataBlock).filter(
+        DataBlock.organization_id == org_id,
+        DataBlock.project_id == project_id,
     )
+    if only_executed:
+        query_text = DataBlock.sql_config.op("->>")("query")
+        stmt = stmt.filter(
+            and_(
+                query_text.isnot(None),
+                func.trim(query_text) != "",
+            )
+        )
+    return stmt.all()
 
 
 def get_by_project_id_and_type(
