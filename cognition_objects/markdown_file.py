@@ -252,14 +252,17 @@ def update(
 
 
 def delete(org_id: str, md_file_id: str, with_commit: bool = True) -> None:
-    md_file = session.query(CognitionMarkdownFile).filter(
+    md_file_query = session.query(CognitionMarkdownFile).filter(
         CognitionMarkdownFile.organization_id == org_id,
         CognitionMarkdownFile.id == md_file_id,
     )
-    session.query(EtlTask).filter(
-        EtlTask.organization_id == org_id, EtlTask.id == md_file.etl_task_id
-    ).delete()
-    md_file.delete()
+    md_file = md_file_query.first()
+    if md_file:
+        session.query(EtlTask).filter(
+            EtlTask.organization_id == org_id,
+            EtlTask.id == md_file.etl_task_id,
+        ).delete()
+        md_file_query.delete()
     general.flush_or_commit(with_commit)
 
 
