@@ -871,7 +871,6 @@ class MacroExecutionLinkAction(Enum):
     UPDATE = "UPDATE"
 
 
-
 class FileCachingInitiator(Enum):
     TMP_DOC_RETRIEVAL = "TMP_DOC_RETRIEVAL"
     DATASET_MARKDOWN_FILE = "DATASET_MARKDOWN_FILE"
@@ -1327,7 +1326,8 @@ class ETLTransformerType(EnumKern):
             return cls.NO_TRANSFORMATION
         if (
             len(transformers) == 1
-            and transformers[0]["type"] == ETLTransformer.SUMMARIZE.value
+            and transformers[0].get("name", transformers[0].get("type"))
+            == ETLTransformer.SUMMARIZE.value
         ):
             return cls.SUMMARIZE
         return cls.COMMON_ETL
