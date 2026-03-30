@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Set
+from typing import Dict, Optional
 from sqlglot import parse_one, tokenize
 from sqlglot.errors import ParseError
 from sqlglot import expressions as exp
@@ -8,6 +8,8 @@ from sqlglot import TokenType
 
 # relative import so it works in console and in module
 from .constants import (
+    AGGREGATE_EXPRESSION_TYPES,
+    HAVING_REQUIRES_GROUP_BY_MSG,
     ALLOWED_NODES,
     ALLOWED_TOKEN_TYPES,
     ALLOWED_COLUMN_PREFIX,
@@ -26,6 +28,7 @@ def validate_sql_clause(
     select: Optional[str] = None,
     where: Optional[str] = None,
     group_by: Optional[str] = None,
+    having: Optional[str] = None,
     order_by: Optional[str] = None,
     limit: Optional[str] = None,
     include_db_check: bool = False,
@@ -42,6 +45,7 @@ def validate_sql_clause(
         select: SELECT clause content (without SELECT keyword)
         where: WHERE clause content (without WHERE keyword)
         group_by: GROUP BY clause content (without GROUP BY keyword)
+        having: HAVING clause content (without HAVING keyword)
         order_by: ORDER BY clause content (without ORDER BY keyword)
         include_db_check: If True, validates syntax against the database
         extend_allowed_nodes: Additional AST nodes to allow
@@ -53,32 +57,36 @@ def validate_sql_clause(
             The tautology check evaluates: SELECT DISTINCT ({where}) FROM record WHERE project_id = '{id}'
             If result is a single TRUE value, the condition is flagged as always-true.
     """
-    provided_clauses = list(filter(None, [select, where, order_by, group_by]))
+    provided_clauses = list(filter(None, [select, where, order_by, group_by, having]))
     full_text_search_validation = (
         len(provided_clauses) == 1 and extend_allowed_nodes is None
     )
     if limit and not limit.isdigit():
         return "LIMIT is not a valid digit"
     if len(provided_clauses) == 0:
-        return "No SELECT, WHERE or ORDER BY clause provided"
+        return "No SELECT, WHERE, ORDER BY, GROUP BY, or HAVING clause provided"
     elif len(provided_clauses) > 1 and extend_allowed_nodes is None:
-        return "Only one of SELECT, WHERE, ORDER BY, or GROUP BY clauses can be provided at a time"
+        return "Only one of SELECT, WHERE, ORDER BY, GROUP BY, or HAVING clauses can be provided at a time"
     elif len(provided_clauses) > 1 and extend_allowed_nodes is not None:
         all_results = {}
         params = {
             "select": select,
             "where": where,
             "group_by": group_by,
+            "having": having,
             "order_by": order_by,
         }
         for key in params:
             val = params.get(key)
             if val:
-                deny_reason = validate_sql_clause(
-                    **{key: val},
-                    include_db_check=False,
-                    extend_allowed_nodes=extend_allowed_nodes,
-                )
+                if key == "having" and not group_by:
+                    deny_reason = HAVING_REQUIRES_GROUP_BY_MSG
+                else:
+                    deny_reason = validate_sql_clause(
+                        **{key: val},
+                        include_db_check=False,
+                        extend_allowed_nodes=extend_allowed_nodes,
+                    )
             else:
                 deny_reason = None
             all_results[key] = deny_reason
@@ -89,6 +97,7 @@ def validate_sql_clause(
             FROM public.record r
             WHERE project_id = '00000000-0000-0000-0000-000000000000' AND ({where})
             {group_by} 
+            {having}
             {order_by}
             LIMIT 0 """
             for key in params:
@@ -101,6 +110,8 @@ def validate_sql_clause(
                     params[key] = "1=1"
                 elif key == "group_by" and params[key]:
                     params[key] = "GROUP BY " + params[key]
+                elif key == "having" and params[key]:
+                    params[key] = "HAVING " + params[key]
                 elif key == "order_by" and params[key]:
                     params[key] = "ORDER BY " + params[key]
             full_sql = full_sql.format(**params)
@@ -134,18 +145,28 @@ def validate_sql_clause(
     what = (
         "SELECT"
         if select
-        else "WHERE" if where else "GROUP BY" if group_by else "ORDER BY"
+        else "WHERE"
+        if where
+        else "GROUP BY"
+        if group_by
+        else "HAVING"
+        if having
+        else "ORDER BY"
+        if order_by
+        else "LIMIT"
     )
 
     # Step 0: Check query length and empty/whitespace content
-    clause_text = select or where or group_by or order_by
+    clause_text = select or where or group_by or having or order_by
     if not clause_text or not clause_text.strip():
         return f"Empty or whitespace-only {what} clause is not allowed"
     if len(clause_text) > MAX_QUERY_LENGTH:
         return f"Query too long: {len(clause_text)} characters (maximum allowed: {MAX_QUERY_LENGTH})"
 
     # Step 1: reject unsafe tokens
-    if reason := __contains_disallowed_tokens(select or where or group_by or order_by):
+    if reason := __contains_disallowed_tokens(
+        select or where or group_by or having or order_by
+    ):
         return reason
 
     # Step 2: parse the clause in context
@@ -164,6 +185,12 @@ def validate_sql_clause(
         elif group_by:
             # We always wrap GROUP BY and ORDER BY to handle comma-separated lists
             parsed = parse_one(f"SELECT 1 GROUP BY {group_by}", read="postgres")
+        elif having:
+            # No FROM in the parse template — a FROM would introduce a disallowed `from` AST node
+            parsed = parse_one(
+                f"SELECT 1 GROUP BY 1 HAVING {having}",
+                read="postgres",
+            )
         elif order_by:
             parsed = parse_one(f"SELECT 1 ORDER BY {order_by}", read="postgres")
         elif limit:
@@ -337,27 +364,7 @@ def validate_sql_clause(
         for expr in order_node.expressions:
             ordered_expr = expr.this if isinstance(expr, exp.Ordered) else expr
             # Check if it's an aggregate function (safe - doesn't expose columns)
-            if isinstance(
-                ordered_expr,
-                (
-                    exp.Count,
-                    exp.Sum,
-                    exp.Avg,
-                    exp.Min,
-                    exp.Max,
-                    exp.Stddev,
-                    exp.Variance,
-                    exp.Corr,
-                    exp.CovarPop,
-                    exp.LogicalOr,
-                    exp.LogicalAnd,
-                    exp.BitwiseAndAgg,
-                    exp.BitwiseOrAgg,
-                    exp.ArrayAgg,
-                    exp.JSONArrayAgg,
-                    exp.AnyValue,
-                ),
-            ):
+            if isinstance(ordered_expr, AGGREGATE_EXPRESSION_TYPES):
                 has_column_or_aggregate = True
                 break
             # Check if it references our allowed columns
@@ -382,6 +389,29 @@ def validate_sql_clause(
         if not has_column_or_aggregate:
             return "ORDER BY clause must contain at least one column reference or aggregate function"
 
+    if having and parsed.args.get("having"):
+        predicate = parsed.args["having"].this
+        has_column_or_aggregate = False
+        for n in predicate.walk():
+            if isinstance(n, AGGREGATE_EXPRESSION_TYPES):
+                has_column_or_aggregate = True
+                break
+            if isinstance(n, exp.Literal) and n.is_number:
+                try:
+                    val = int(n.this)
+                    if val > 0:
+                        has_column_or_aggregate = True
+                        break
+                except ValueError:
+                    pass
+            if isinstance(n, (exp.Column, exp.Identifier)):
+                name = n.name.lower() if hasattr(n, "name") else str(n).lower()
+                if name in ["data", "r.data", "r"]:
+                    has_column_or_aggregate = True
+                    break
+        if not has_column_or_aggregate:
+            return "HAVING clause must contain at least one column reference or aggregate function"
+
     # Final check for always-true/constant expressions
     # Always check the original parsed tree for tautologies first
     if full_text_search_validation:
@@ -402,6 +432,9 @@ def validate_sql_clause(
             for e in parsed.args["group"].expressions:
                 if reason := __contains_always_true(e):
                     return reason
+        if parsed.args.get("having"):
+            if reason := __contains_always_true(parsed.args["having"].this):
+                return reason
         for e in parsed.expressions:
             if reason := __contains_always_true(e):
                 return reason
@@ -422,6 +455,9 @@ def validate_sql_clause(
         # If the WHERE clause disappeared during simplification, it was likely a tautology (e.g. 1=1)
         if parsed.args.get("where") and not simplified.args.get("where"):
             return "Tautology detected: WHERE clause simplified away"
+
+        if parsed.args.get("having") and not simplified.args.get("having"):
+            return "Tautology detected: HAVING clause simplified away"
 
         if full_text_search_validation:
             if reason := __contains_always_true(simplified):
@@ -456,6 +492,12 @@ def validate_sql_clause(
             elif group_by:
                 general.execute_all(
                     "SELECT 1 FROM public.record r GROUP BY " + group_by + " LIMIT 0"
+                )
+            elif having:
+                general.execute_all(
+                    "SELECT 1 FROM public.record r GROUP BY r.data HAVING "
+                    + having
+                    + " LIMIT 0"
                 )
         except Exception as e:
             general.rollback()

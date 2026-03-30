@@ -4,6 +4,8 @@ import re
 import sys
 import importlib
 
+from .constants import DATA_BLOCK_EXTENDED_AST_NODE_KEYS
+
 # Only allow alphanumeric and underscore in test module names (no path traversal or injection).
 _SAFE_TEST_MODULE_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
 
@@ -11,6 +13,7 @@ _SAFE_TEST_MODULE_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
 def _get_validate():
     try:
         from .sql_validator import validate_sql_clause
+
         return validate_sql_clause
     except Exception:
         this_dir = os.path.dirname(__file__)
@@ -20,11 +23,15 @@ def _get_validate():
         mod = importlib.import_module("sql_validator")
         return mod.validate_sql_clause
 
+
 validate_sql_clause = _get_validate()
+
 
 def run_tests():
     # Dynamic import from tests/ folder; only allow whitelisted module names.
-    test_files = [f[:-3] for f in os.listdir("tests") if f.endswith(".py") and f != "__init__.py"]
+    test_files = [
+        f[:-3] for f in os.listdir("tests") if f.endswith(".py") and f != "__init__.py"
+    ]
 
     all_valid = []
     all_invalid = []
@@ -42,9 +49,15 @@ def run_tests():
     pass_count = 0
     for sql in all_valid:
         if isinstance(sql, dict):
-            extend_allowed_nodes = {"select", "where", "group", "order", "ordered"}
-            rejection_reason = validate_sql_clause(extend_allowed_nodes=extend_allowed_nodes, **sql)
-            if any(rejection_reason.values() if isinstance(rejection_reason, dict) else [rejection_reason]):
+            extend_allowed_nodes = set(DATA_BLOCK_EXTENDED_AST_NODE_KEYS)
+            rejection_reason = validate_sql_clause(
+                extend_allowed_nodes=extend_allowed_nodes, **sql
+            )
+            if any(
+                rejection_reason.values()
+                if isinstance(rejection_reason, dict)
+                else [rejection_reason]
+            ):
                 print(f"FALSE NEGATIVE: {sql} => {rejection_reason}")
             else:
                 pass_count += 1
@@ -60,8 +73,10 @@ def run_tests():
     pass_count = 0
     for sql in all_invalid:
         if isinstance(sql, dict):
-            extend_allowed_nodes = {"select", "where", "group", "order", "ordered"}
-            rejection_reason = validate_sql_clause(extend_allowed_nodes=extend_allowed_nodes, **sql)
+            extend_allowed_nodes = set(DATA_BLOCK_EXTENDED_AST_NODE_KEYS)
+            rejection_reason = validate_sql_clause(
+                extend_allowed_nodes=extend_allowed_nodes, **sql
+            )
             if isinstance(rejection_reason, dict):
                 if not any(rejection_reason.values()):
                     print(f"FALSE POSITIVE: {sql}")
@@ -78,6 +93,7 @@ def run_tests():
             else:
                 pass_count += 1
     print(f"Passed: {pass_count}/{len(all_invalid)}")
+
 
 if __name__ == "__main__":
     run_tests()
