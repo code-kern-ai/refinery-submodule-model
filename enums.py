@@ -1,4 +1,6 @@
-from typing import Any, List, Optional, Dict
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional, Union
 from enum import Enum
 
 
@@ -1036,6 +1038,7 @@ class TimedExecutionKey(Enum):
 class ETLSplitStrategy(EnumKern):
     CHUNK = "CHUNK"
     SHRINK = "SHRINK"
+    NONE = "NONE"
 
 
 class ETLFileType(Enum):
@@ -1169,7 +1172,7 @@ class ETLFileType(Enum):
             return ETLFileType.DEFAULT
 
     @classmethod
-    def get_default_extractor(cls, file_type: Optional["ETLFileType"] = None):
+    def get_default_extractor(cls, file_type: Optional[ETLFileType] = None) -> ETLExtractorEnum:
         if file_type == ETLFileType.MD:
             return ETLExtractorMD.FILESYSTEM
         elif file_type == ETLFileType.PDF:
@@ -1192,7 +1195,7 @@ class ETLFileType(Enum):
             return ETLExtractorTxt.LANGCHAIN
         raise ValueError(f"No default extractor for given file type {file_type}")
 
-    def get_extractor_from_string(self, extractor: Optional[str] = None) -> EnumKern:
+    def get_extractor_from_string(self, extractor: Optional[str] = None) -> ETLExtractorEnum:
         if extractor is None:
             return self.get_default_extractor(self)
         if self == ETLFileType.MD:
@@ -1296,6 +1299,20 @@ class ETLExtractorTsv(EnumKern):
 class ETLExtractorJson(EnumKern):
     LANGCHAIN = "LANGCHAIN"
     PANDAS = "PANDAS"
+
+
+ETLExtractorEnum = Union[
+    ETLExtractorMD,
+    ETLExtractorPDF,
+    ETLExtractorWord,
+    ETLExtractorExcel,
+    ETLExtractorPowerpoint,
+    ETLExtractorImg,
+    ETLExtractorTxt,
+    ETLExtractorCsv,
+    ETLExtractorTsv,
+    ETLExtractorJson,
+]
 
 
 class ETLExtractors:

@@ -365,7 +365,7 @@ def get_download_key(org_id: str, download_id: str) -> Path:
 def get_extraction_key(
     org_id: str,
     download_id: str,
-    extractor: enums.ETLExtractorPDF,
+    extractor: enums.ETLExtractorEnum,
     llm_config: Dict[str, Any],
 ) -> Path:
     extraction_key = Path(org_id) / download_id / "extract" / extractor.value
@@ -400,72 +400,47 @@ def get_extraction_key(
 def get_splitting_key(
     org_id: str,
     download_id: str,
-    extractor: enums.ETLExtractorPDF,
+    extractor: enums.ETLExtractorEnum,
+    split_strategy: Optional[enums.ETLSplitStrategy] = None,
     llm_config: Optional[Dict[str, Any]] = None,
 ) -> Path:
-    extraction_key = Path(org_id) / download_id / "split" / extractor.value
-
+    resolved_strategy = split_strategy or enums.ETLSplitStrategy.NONE
+    extraction_key = get_extraction_key(
+        org_id, download_id, extractor, llm_config or {}
+    )
+    splitting_key = extraction_key / "split" / resolved_strategy.value
     if llm_config:
-        llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
-        extraction_key = extraction_key / llm_identifier.as_key()
-
-        if llm_identifier == enums.LLMProvider.AZURE:
-            engine = llm_config.get("engine", "")
-            api_base = llm_config.get("apiBase", "")
-            api_version = llm_config.get("apiVersion", "")
-            api_hash = get_hashed_string(api_base, api_version)
-            extraction_key = extraction_key / engine / api_hash
-        elif llm_identifier == enums.LLMProvider.OPENAI:
-            model = llm_config.get("model")
-            extraction_key = extraction_key / model
-
-        if overwrite_vision_prompt := llm_config.get("overwriteVisionPrompt"):
-            prompt_hash = get_hashed_string(overwrite_vision_prompt)
-            extraction_key = extraction_key / prompt_hash
-        else:
-            extraction_key = extraction_key / "DEFAULT_PROMPT"
-
-    return extraction_key
+        splitting_key = splitting_key / _llm_config_cache_path_suffix(
+            extractor, llm_config, ""
+        )
+    return splitting_key
 
 
 def get_transformation_key(
     org_id: str,
     download_id: str,
-    extractor: enums.ETLExtractorPDF,
+    extractor: enums.ETLExtractorEnum,
     llm_config: Dict[str, Any],
     prompt: Optional[str] = "",
     transformation_type: Optional[
         enums.ETLTransformerType
     ] = enums.ETLTransformerType.NO_TRANSFORMATION,
+    split_strategy: Optional[enums.ETLSplitStrategy] = None,
 ) -> Path:
-    llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
+    resolved_split = split_strategy or enums.ETLSplitStrategy.NONE
+    splitting_key = get_splitting_key(
+        org_id,
+        download_id,
+        extractor,
+        resolved_split,
+        llm_config,
+    )
     transformation_key = (
-        Path(org_id)
-        / download_id
+        splitting_key
         / "transform"
         / transformation_type.value
-        / llm_identifier.as_key()
+        / (_llm_config_cache_path_suffix(extractor, llm_config, prompt or ""))
     )
-
-    if llm_identifier == enums.LLMProvider.AZURE:
-        engine = llm_config.get("engine", "")
-        api_base = llm_config.get("apiBase", "")
-        api_version = llm_config.get("apiVersion", "")
-        api_hash = get_hashed_string(extractor.value, api_base, api_version, prompt)
-        transformation_key = transformation_key / engine / api_hash
-    elif llm_identifier == enums.LLMProvider.AZURE_FOUNDRY:
-        model = llm_config.get("model", "")
-        api_hash = get_hashed_string(
-            extractor.value, llm_config.get("apiBase", ""), prompt
-        )
-        transformation_key = transformation_key / model / api_hash
-    elif (
-        llm_identifier == enums.LLMProvider.OPENAI
-        or llm_identifier == enums.LLMProvider.PRIVATEMODE_AI
-    ):
-        model = llm_config.get("model")
-        extractor_hash = get_hashed_string(extractor.value, prompt)
-        transformation_key = transformation_key / model / extractor_hash
 
     return transformation_key
 
@@ -481,6 +456,35 @@ def get_hashed_string(*args, delimiter: str = "_", from_bytes: bool = False) -> 
 
     hasher = hashlib.sha256(_hash)
     return hasher.hexdigest()
+
+
+def _llm_config_cache_path_suffix(
+    extractor: enums.ETLExtractorEnum,
+    llm_config: Dict[str, Any],
+    prompt: str,
+) -> Path:
+    llm_identifier = enums.LLMProvider.from_string(llm_config.get("llmIdentifier"))
+    path = Path(llm_identifier.as_key())
+    if llm_identifier == enums.LLMProvider.AZURE:
+        engine = llm_config.get("engine", "")
+        api_base = llm_config.get("apiBase", "")
+        api_version = llm_config.get("apiVersion", "")
+        api_hash = get_hashed_string(extractor.value, api_base, api_version, prompt)
+        path = path / engine / api_hash
+    elif llm_identifier == enums.LLMProvider.AZURE_FOUNDRY:
+        model = llm_config.get("model", "")
+        api_hash = get_hashed_string(
+            extractor.value, llm_config.get("apiBase", ""), prompt
+        )
+        path = path / model / api_hash
+    elif (
+        llm_identifier == enums.LLMProvider.OPENAI
+        or llm_identifier == enums.LLMProvider.PRIVATEMODE_AI
+    ):
+        model = llm_config.get("model")
+        extractor_hash = get_hashed_string(extractor.value, prompt)
+        path = path / model / extractor_hash
+    return path
 
 
 def get_extraction_config_for_file_type(
