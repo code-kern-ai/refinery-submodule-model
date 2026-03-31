@@ -991,6 +991,7 @@ def get_record_data_by_sanitized_params(
     sanitized_select: Optional[str] = None,
     order_by: Optional[str] = None,
     sanitized_group_by: Optional[str] = None,
+    sanitized_having: Optional[str] = None,
     return_query: bool = False,
 ) -> List[Dict[str, Any]]:
     ## only to be used in cognition and with sql_validator check!!
@@ -1000,6 +1001,7 @@ def get_record_data_by_sanitized_params(
     final_where = ""
     final_order = ""
     final_group = ""
+    final_having = ""
     if sanitized_where:
         final_where = f" AND ({sanitized_where}) "
     if order_by:
@@ -1007,11 +1009,14 @@ def get_record_data_by_sanitized_params(
         final_order = f" ORDER BY {order_by} "
     if sanitized_group_by:
         final_group = f" GROUP BY {sanitized_group_by} "
+    if sanitized_having:
+        final_having = f" HAVING {sanitized_having} "
     query = f"""
     SELECT {sanitized_select or 'r.data::JSON'}
     FROM public.record r
     WHERE project_id = '{refinery_project_id}' {final_where}
     {final_group}
+    {final_having}
     {final_order}
     {f"LIMIT {limit}" if limit is not None else ""}
     """
