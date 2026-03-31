@@ -42,7 +42,7 @@ def get_full_config_and_tokenizer_from_config_id(
         for_dataset = True
 
     etl_preset_item = etl_config_presets_db_co.get(
-        etl_config_id or file_reference.meta_data.get("etl_config_id")
+        etl_config_id or (file_reference.meta_data or {}).get("etl_config_id")
     )
     extraction_config, etl_file_type = get_extraction_config_for_file_type(
         etl_preset_item, content_type or file_reference.content_type
