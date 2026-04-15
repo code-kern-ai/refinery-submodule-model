@@ -660,3 +660,63 @@ def get_last_chat_messages(
     """
 
     return general.execute_all(query)
+
+
+def get_last_negative_feedback_per_org(
+    created_at_from: str,
+    created_at_to: Optional[str] = None,
+    cross_selling_filter: Optional[str] = None,
+    feedback_category: Optional[str] = None,
+) -> List[Any]:
+    created_at_from = prevent_sql_injection(
+        created_at_from, isinstance(created_at_from, str)
+    )
+    if created_at_to:
+        created_at_to = prevent_sql_injection(
+            created_at_to, isinstance(created_at_to, str)
+        )
+    created_at_to_filter = ""
+    cross_selling_filter_sql = cross_selling_bo.build_cross_selling_filter_sql(
+        cross_selling_filter
+    )
+    if cross_selling_filter_sql:
+        cross_selling_filter_sql = " AND " + cross_selling_filter_sql
+
+    if created_at_to:
+        created_at_to_filter = f"AND m.created_at <= '{created_at_to}'"
+
+    feedback_category_filter = ""
+    if feedback_category is not None and feedback_category.strip() != "":
+        fc = prevent_sql_injection(feedback_category.strip(), True)
+        feedback_category_filter = f"AND m.feedback_category = '{fc}'"
+
+    query = f"""
+    SELECT *
+    FROM (
+        SELECT m.id AS message_id, m.created_at, m.created_by, m.question, m.answer,
+            m.feedback_category, m.feedback_message AS "feedbackMessage", m.initiated_via,
+            cp.id AS project_id, cp.name AS project_name, cp.organization_id,
+            o.name AS organization_name, c.id AS conversation_id, cs.name AS cross_selling_name,
+            ROW_NUMBER() OVER (
+                PARTITION BY cp.organization_id, cp.id
+                ORDER BY m.created_at DESC
+            ) AS rn
+        FROM cognition.message m
+            JOIN cognition.conversation c
+                ON c.id = m.conversation_id AND c.project_id = m.project_id
+            JOIN cognition.project cp ON cp.id = m.project_id
+            JOIN organization o ON o.id = cp.organization_id
+            LEFT JOIN cross_selling cs ON cs.id = o.cross_selling_id
+        WHERE
+            m.feedback_value = 'negative'
+            AND c.incognito_mode = FALSE
+            AND m.created_at >= '{created_at_from}'
+            {created_at_to_filter}
+            {cross_selling_filter_sql}
+            {feedback_category_filter}
+    ) sub
+    WHERE rn <= 5
+    ORDER BY organization_id, project_id, created_at DESC
+    """
+
+    return general.execute_all(query)
