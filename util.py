@@ -218,6 +218,13 @@ def to_frontend_obj(
             )
             for x in value
         ]
+    elif isinstance(value, Row) or isinstance(value, Base):
+        return sql_alchemy_to_dict(
+            value,
+            for_frontend=True,
+            dont_wrap_uuids=dont_wrap_uuids,
+            dont_convert_keys=dont_convert_keys,
+        )
     else:
         return to_json_serializable(value)
 

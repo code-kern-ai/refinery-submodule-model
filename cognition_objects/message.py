@@ -6,7 +6,7 @@ from submodules.model.business_objects import cross_selling as cross_selling_bo
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMessage
-from ..util import prevent_sql_injection
+from ..util import prevent_sql_injection, to_snake_case
 from .pipeline_version import get_current_version
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -196,51 +196,111 @@ def get_by_strategy_id(project_id: str, strategy_id: str) -> CognitionMessage:
     )
 
 
-def get_message_feedback_overview(
+def _coerce_feedback_overview_query_str(val: Any) -> Optional[str]:
+    if val is None:
+        return None
+    if isinstance(val, (list, tuple)):
+        if not val:
+            return None
+        for item in val:
+            coerced = _coerce_feedback_overview_query_str(item)
+            if coerced is not None:
+                return coerced
+        return None
+    s = val.strip() if isinstance(val, str) else str(val).strip()
+    if not s:
+        return None
+    low = s.lower()
+    if low in ("undefined", "null", "(null)"):
+        return None
+    return s
+
+
+def _normalize_feedback_overview_value_filter(feedback_value: Any) -> Optional[str]:
+    s = _coerce_feedback_overview_query_str(feedback_value)
+    if not s:
+        return None
+    v = s.lower()
+    if v == "all":
+        return None
+    if v in ("positive", "negative", "neutral"):
+        return v
+    return None
+
+
+def _feedback_overview_value_filter_invalid(feedback_value: Any) -> bool:
+    s = _coerce_feedback_overview_query_str(feedback_value)
+    if s is None or s.lower() == "all":
+        return False
+    return _normalize_feedback_overview_value_filter(feedback_value) is None
+
+
+def _message_feedback_overview_where_add(
     project_id: str,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    only_with_feedback: bool = True,
-    as_query: bool = False,
-) -> Union[str, List[Dict[str, Any]]]:
+    start_date: Optional[str],
+    end_date: Optional[str],
+    only_with_feedback: bool,
+    search: Optional[str] = None,
+    feedback_value: Optional[str] = None,
+    only_with_feedback_message: bool = False,
+) -> Tuple[str, str]:
     project_id = prevent_sql_injection(project_id, isinstance(project_id, str))
     where_add = ""
 
     if only_with_feedback:
         where_add += "AND (mo.feedback_value IS NOT NULL OR y.has_error)"
 
-    if start_date and end_date:
-        start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
-        end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
-        where_add += f"AND mo.created_at BETWEEN '{start_date}' AND '{end_date}'"
-    elif start_date:
-        start_date = prevent_sql_injection(start_date, isinstance(start_date, str))
-        where_add += f"AND mo.created_at >= '{start_date}'"
-    elif end_date:
-        end_date = prevent_sql_injection(end_date, isinstance(end_date, str))
-        where_add += f"AND mo.created_at <= '{end_date}'"
+    fv = _normalize_feedback_overview_value_filter(feedback_value)
+    if fv == "positive":
+        where_add += "AND mo.feedback_value = 'positive'"
+    elif fv == "negative":
+        where_add += "AND mo.feedback_value = 'negative'"
+    elif fv == "neutral":
+        where_add += (
+            "AND (mo.feedback_value = 'neutral' OR mo.feedback_value IS NULL)"
+        )
 
-    query = f"""
-    SELECT
-        COALESCE(feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END) feedback_value_or_error, 
-        feedback_message, 
-        CASE WHEN feedback_value='negative' THEN feedback_category ELSE NULL END feedback_category,
-        REGEXP_REPLACE(question, \'[\\000-\\010]|[\\013-\\014]|[\\016-\\037]\',\'\',\'\') question,
-        REGEXP_REPLACE(answer, \'[\\000-\\010]|[\\013-\\014]|[\\016-\\037]\',\'\',\'\') answer,
-        REGEXP_REPLACE(x.full_conversation_text, \'[\\000-\\010]|[\\013-\\014]|[\\016-\\037]\',\'\',\'\') full_conversation_text,
-        json_build_object(
-            'message_id',mo.id,
-            'conversation_id',mo.conversation_id,
-            'user_id',mo.created_by,
-            'message_created', mo.created_at,
-            'newest_log_has_error', COALESCE(y.has_error,FALSE),
-            'has_error_log_content', ARRAY_TO_STRING( y.content,'\n')
-        )::TEXT message_data
+    if start_date and end_date:
+        start_date_s = prevent_sql_injection(start_date, isinstance(start_date, str))
+        end_date_s = prevent_sql_injection(end_date, isinstance(end_date, str))
+        where_add += f"AND mo.created_at BETWEEN '{start_date_s}' AND '{end_date_s}'"
+    elif start_date:
+        start_date_s = prevent_sql_injection(start_date, isinstance(start_date, str))
+        where_add += f"AND mo.created_at >= '{start_date_s}'"
+    elif end_date:
+        end_date_s = prevent_sql_injection(end_date, isinstance(end_date, str))
+        where_add += f"AND mo.created_at <= '{end_date_s}'"
+
+    search_c = _coerce_feedback_overview_query_str(search)
+    if search_c:
+        search_s = prevent_sql_injection(search_c, isinstance(search_c, str))
+        where_add += f"""
+        AND (
+            COALESCE(mo.feedback_message, '') ILIKE '%{search_s}%'
+            OR COALESCE(mo.feedback_category, '') ILIKE '%{search_s}%'
+            OR COALESCE(mo.question, '') ILIKE '%{search_s}%'
+            OR COALESCE(mo.answer, '') ILIKE '%{search_s}%'
+            OR COALESCE(x.full_conversation_text, '') ILIKE '%{search_s}%'
+            OR CAST(mo.conversation_id AS TEXT) ILIKE '%{search_s}%'
+            OR CAST(mo.created_by AS TEXT) ILIKE '%{search_s}%'
+        )
+        """
+
+    if only_with_feedback_message:
+        where_add += (
+            "AND NULLIF(BTRIM(COALESCE(mo.feedback_message, '')), '') IS NOT NULL"
+        )
+
+    return where_add, project_id
+
+
+def _message_feedback_overview_from_where(project_id: str, where_add: str) -> str:
+    return f"""
     FROM cognition.message mo
     INNER JOIN cognition.conversation C
         ON mo.project_id = c.project_id AND mo.conversation_id = c.id
     INNER JOIN (
-        SELECT 
+        SELECT
             project_id,
             conversation_id,
             string_agg('Question ' || LPAD(rn::TEXT,3,'0') || ':\n' || question || '\n\nAnswer ' || LPAD(rn::TEXT,3,'0') || ':\n'|| answer,'\n') full_conversation_text
@@ -265,11 +325,173 @@ def get_message_feedback_overview(
     )y ON TRUE
     WHERE mo.project_id = '{project_id}'
     {where_add}
+    """
+
+
+_FV_OR_ERR_EXPR = (
+    "COALESCE(mo.feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END)"
+)
+_FEEDBACK_OVERVIEW_SORT_SQL: Dict[str, str] = {
+    "message_created": "mo.created_at",
+    "created_at": "mo.created_at",
+    "feedback_value_or_error": _FV_OR_ERR_EXPR,
+    "feedback_value": _FV_OR_ERR_EXPR,
+    "feedback_message": "mo.feedback_message",
+    "feedback_category": (
+        "CASE WHEN mo.feedback_value='negative' THEN mo.feedback_category ELSE NULL END"
+    ),
+    "question": "mo.question",
+    "answer": "mo.answer",
+    "full_conversation_text": "x.full_conversation_text",
+    "conversation_id": "mo.conversation_id",
+    "user_id": "mo.created_by",
+    "created_by": "mo.created_by",
+}
+
+
+def _message_feedback_overview_order_by_clause(
+    sort_by: Optional[str], sort_direction: Optional[str]
+) -> Tuple[str, str, str]:
+    raw_key = (sort_by or "").strip()
+    sort_key = to_snake_case(raw_key) if raw_key else "message_created"
+    if sort_key not in _FEEDBACK_OVERVIEW_SORT_SQL:
+        sort_key = "message_created"
+    expr = _FEEDBACK_OVERVIEW_SORT_SQL[sort_key]
+    direction = (sort_direction or "desc").strip().upper()
+    if direction not in ("ASC", "DESC"):
+        direction = "DESC"
+    clause = f"ORDER BY {expr} {direction} NULLS LAST, mo.id DESC"
+    return clause, sort_key, direction.lower()
+
+
+def _message_feedback_overview_select_columns() -> str:
+    return """
+    SELECT
+        COALESCE(feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END) feedback_value_or_error,
+        feedback_message,
+        CASE WHEN feedback_value='negative' THEN feedback_category ELSE NULL END feedback_category,
+        REGEXP_REPLACE(question, \'[\\000-\\010]|[\\013-\\014]|[\\016-\\037]\',\'\',\'\') question,
+        REGEXP_REPLACE(answer, \'[\\000-\\010]|[\\013-\\014]|[\\016-\\037]\',\'\',\'\') answer,
+        REGEXP_REPLACE(x.full_conversation_text, \'[\\000-\\010]|[\\013-\\014]|[\\016-\\037]\',\'\',\'\') full_conversation_text,
+        json_build_object(
+            'message_id',mo.id,
+            'conversation_id',mo.conversation_id,
+            'user_id',mo.created_by,
+            'message_created', mo.created_at,
+            'newest_log_has_error', COALESCE(y.has_error,FALSE),
+            'has_error_log_content', ARRAY_TO_STRING( y.content,'\n')
+        )::TEXT message_data
+    """
+
+
+def get_message_feedback_overview(
+    project_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    only_with_feedback: bool = True,
+    as_query: bool = False,
+    search: Optional[str] = None,
+    feedback_value: Optional[str] = None,
+    only_with_feedback_message: bool = False,
+) -> Union[str, List[Dict[str, Any]]]:
+    if _feedback_overview_value_filter_invalid(feedback_value):
+        project_id_s = prevent_sql_injection(project_id, isinstance(project_id, str))
+        if as_query:
+            return (
+                _message_feedback_overview_select_columns()
+                + _message_feedback_overview_from_where(project_id_s, "AND 1=0")
+                + "\n    ORDER BY mo.created_at DESC\n    "
+            )
+        return []
+    where_add, project_id_s = _message_feedback_overview_where_add(
+        project_id,
+        start_date,
+        end_date,
+        only_with_feedback,
+        search,
+        feedback_value,
+        only_with_feedback_message,
+    )
+    from_where = _message_feedback_overview_from_where(project_id_s, where_add)
+    query = _message_feedback_overview_select_columns() + from_where + """
     ORDER BY mo.created_at DESC
     """
     if as_query:
         return query
     return general.execute_all(query)
+
+
+def get_message_feedback_overview_paginated(
+    project_id: str,
+    limit: int,
+    offset: int,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    only_with_feedback: bool = True,
+    sort_by: Optional[str] = None,
+    sort_direction: Optional[str] = None,
+    search: Optional[str] = None,
+    feedback_value: Optional[str] = None,
+    only_with_feedback_message: bool = False,
+) -> Dict[str, Any]:
+    if _feedback_overview_value_filter_invalid(feedback_value):
+        _, effective_sort_key, effective_sort_dir = _message_feedback_overview_order_by_clause(
+            sort_by, sort_direction
+        )
+        return {
+            "rows": [],
+            "total_count": 0,
+            "limit": limit,
+            "offset": offset,
+            "sort_by": effective_sort_key,
+            "sort_direction": effective_sort_dir,
+            "search": _coerce_feedback_overview_query_str(search),
+            "feedback_value": None,
+            "only_with_feedback_message": bool(only_with_feedback_message),
+        }
+    where_add, project_id_s = _message_feedback_overview_where_add(
+        project_id,
+        start_date,
+        end_date,
+        only_with_feedback,
+        search,
+        feedback_value,
+        only_with_feedback_message,
+    )
+    from_where = _message_feedback_overview_from_where(project_id_s, where_add)
+    order_clause, effective_sort_key, effective_sort_dir = (
+        _message_feedback_overview_order_by_clause(sort_by, sort_direction)
+    )
+    count_query = f"""
+    SELECT COUNT(*)::int AS cnt
+    FROM (
+        SELECT 1 AS _row
+        {from_where}
+    ) _sub
+    """
+    count_row = general.execute_first(count_query)
+    total_count = int(count_row[0]) if count_row and count_row[0] is not None else 0
+
+    data_query = (
+        _message_feedback_overview_select_columns()
+        + from_where
+        + f"""
+    {order_clause}
+    LIMIT {int(limit)} OFFSET {int(offset)}
+    """
+    )
+    rows = general.execute_all(data_query)
+    return {
+        "rows": rows,
+        "total_count": total_count,
+        "limit": limit,
+        "offset": offset,
+        "sort_by": effective_sort_key,
+        "sort_direction": effective_sort_dir,
+        "search": _coerce_feedback_overview_query_str(search),
+        "feedback_value": _normalize_feedback_overview_value_filter(feedback_value),
+        "only_with_feedback_message": bool(only_with_feedback_message),
+    }
 
 
 def get_show_shield_dict_by_conversation_ids(
