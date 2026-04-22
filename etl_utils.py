@@ -253,6 +253,16 @@ def get_full_config_for_sharepoint_integration(
                 "fallback": None,
             },
         }
+    elif file_type == enums.ETLFileType.PDF:
+        fallback_config = {
+            "llm_config": integration.llm_config,
+            "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
+            "task_config": {
+                "extractor": enums.ETLExtractorPDF.LANGCHAIN,
+                "use_cache": False,
+                "fallback": None,
+            },
+        }
     full_config = [
         {
             "llm_config": integration.llm_config,
