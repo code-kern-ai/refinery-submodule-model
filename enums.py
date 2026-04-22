@@ -1286,6 +1286,7 @@ class ETLExtractorPDF(EnumKern):
 
 class ETLExtractorWord(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+    OOXML = "OOXML"
 
 
 class ETLExtractorExcel(EnumKern):
@@ -1295,6 +1296,7 @@ class ETLExtractorExcel(EnumKern):
 
 class ETLExtractorPowerpoint(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+    OOXML = "OOXML"
 
 
 class ETLExtractorImg(EnumKern):
@@ -1389,7 +1391,7 @@ class CognitionIntegrationState(Enum):
     STARTED = "STARTED"
     EXTRACTING = "EXTRACTING"
     ETL_PROCESSING = "ETL_PROCESSING"
-    REFINERY_SYNCING = "REFINERY_SYNCING"  ## e.g. syncing with refinery (records + postprocessing permissions)
+    REFINERY_SYNCING = "REFINERY_SYNCING"  # e.g. syncing with refinery (records + postprocessing permissions)
     FINISHED = "FINISHED"
     FAILED = "FAILED"
 
