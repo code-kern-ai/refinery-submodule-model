@@ -12,10 +12,89 @@ from ..models import (
 )
 from ..util import prevent_sql_injection
 from sqlalchemy.sql.expression import Subquery
-from sqlalchemy import or_
+from sqlalchemy import func, nullslast, or_
 from sqlalchemy.sql.expression import cast
 from sqlalchemy import String as sqlalchemy_string
 from sqlalchemy import select
+
+
+_CONVERSATION_LIST_SORT_COLUMNS = {
+    "created_at": CognitionConversation.created_at,
+    "header": CognitionConversation.header,
+    "archived": CognitionConversation.archived,
+    "has_tmp_files": CognitionConversation.has_tmp_files,
+    "error": CognitionConversation.error,
+    "incognito_mode": CognitionConversation.incognito_mode,
+    "created_by": CognitionConversation.created_by,
+}
+
+_EXTRA_CONVERSATION_SORT_KEYS = frozenset({"initial_message"})
+
+
+def __first_message_text_subquery(project_id: str):
+    ranked = (
+        session.query(
+            CognitionMessage.conversation_id.label("conversation_id"),
+            CognitionMessage.question.label("initial_question"),
+            func.row_number()
+            .over(
+                partition_by=CognitionMessage.conversation_id,
+                order_by=(
+                    CognitionMessage.created_at.asc(),
+                    CognitionMessage.id.asc(),
+                ),
+            )
+            .label("msg_rn"),
+        )
+        .filter(CognitionMessage.project_id == project_id)
+    ).subquery()
+    return (
+        session.query(
+            ranked.c.conversation_id,
+            ranked.c.initial_question,
+        )
+        .filter(ranked.c.msg_rn == 1)
+    ).subquery()
+
+
+def __normalize_conversation_sort_by(sort_by: Optional[str]) -> str:
+    if sort_by is None or not str(sort_by).strip():
+        return "created_at"
+    s = str(sort_by).strip()
+    key_map = {
+        "createdAt": "created_at",
+        "hasTmpFiles": "has_tmp_files",
+        "incognitoMode": "incognito_mode",
+        "createdBy": "created_by",
+        "initialMessage": "initial_message",
+    }
+    if s in key_map:
+        return key_map[s]
+    normalized = s.lower().replace("-", "_")
+    if normalized in _CONVERSATION_LIST_SORT_COLUMNS:
+        return normalized
+    if normalized in _EXTRA_CONVERSATION_SORT_KEYS:
+        return normalized
+    return "created_at"
+
+
+def __resolve_conversation_list_sort_key_and_asc(
+    sort_by: Optional[str],
+    sort_direction: Optional[str],
+    order_asc: bool,
+) -> Tuple[str, bool]:
+    sort_key = __normalize_conversation_sort_by(sort_by)
+    has_explicit_column = sort_by is not None and str(sort_by).strip() != ""
+    has_explicit_direction = (
+        sort_direction is not None and str(sort_direction).strip() != ""
+    )
+    if has_explicit_direction:
+        asc = str(sort_direction).strip().upper() == "ASC"
+    elif has_explicit_column:
+        asc = order_asc
+    else:
+        asc = order_asc
+    return sort_key, asc
 
 
 def get(project_id: str, conversation_id: str) -> CognitionConversation:
@@ -168,6 +247,8 @@ def get_all_paginated_by_project_id(
     user_id: Optional[str] = None,
     filter_dict: Optional[Dict[str, Any]] = None,
     filter_incognito: bool = False,
+    sort_by: Optional[str] = None,
+    sort_direction: Optional[str] = None,
 ) -> Tuple[int, int, List[CognitionConversation]]:
     total_count_query = session.query(CognitionConversation.id).filter(
         CognitionConversation.project_id == project_id
@@ -209,10 +290,38 @@ def get_all_paginated_by_project_id(
             query = query.filter(CognitionConversation.created_by == user_id)
         if subquery is not None:
             query = query.filter(CognitionConversation.id.in_(subquery))
-        if order_asc:
-            query = query.order_by(CognitionConversation.created_at.asc())
+        sort_key, sort_asc = __resolve_conversation_list_sort_key_and_asc(
+            sort_by, sort_direction, order_asc
+        )
+        if sort_key == "initial_message":
+            first_msg_sq = __first_message_text_subquery(project_id)
+            query = query.outerjoin(
+                first_msg_sq,
+                CognitionConversation.id == first_msg_sq.c.conversation_id,
+            )
+            order_col = func.lower(first_msg_sq.c.initial_question)
+            if sort_asc:
+                query = query.order_by(
+                    nullslast(order_col.asc()),
+                    CognitionConversation.id.asc(),
+                )
+            else:
+                query = query.order_by(
+                    nullslast(order_col.desc()),
+                    CognitionConversation.id.desc(),
+                )
         else:
-            query = query.order_by(CognitionConversation.created_at.desc())
+            sort_col = _CONVERSATION_LIST_SORT_COLUMNS[sort_key]
+            if sort_asc:
+                query = query.order_by(
+                    sort_col.asc(),
+                    CognitionConversation.id.asc(),
+                )
+            else:
+                query = query.order_by(
+                    sort_col.desc(),
+                    CognitionConversation.id.desc(),
+                )
         paginated_result = query.limit(limit).offset((page - 1) * limit).all()
     else:
         paginated_result = []

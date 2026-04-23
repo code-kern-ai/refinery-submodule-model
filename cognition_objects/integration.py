@@ -107,11 +107,25 @@ def get_all_in_org(
     return query.order_by(CognitionIntegration.created_at.desc()).all()
 
 
+_INTEGRATION_LIST_SORT_COLUMNS = {
+    "created_at": CognitionIntegration.created_at,
+    "updated_at": CognitionIntegration.updated_at,
+    "name": CognitionIntegration.name,
+    "state": CognitionIntegration.state,
+    "type": CognitionIntegration.type,
+    "started_at": CognitionIntegration.started_at,
+    "finished_at": CognitionIntegration.finished_at,
+    "last_synced_at": CognitionIntegration.last_synced_at,
+}
+
+
 def get_all_in_org_paginated(
     org_id: str,
     integration_type: Optional[str] = None,
     page: int = 1,
     page_size: int = 10,
+    sort_by: Optional[str] = None,
+    sort_direction: Optional[str] = None,
 ) -> List[CognitionIntegration]:
     query = session.query(CognitionIntegration).filter(
         CognitionIntegration.organization_id == org_id,
@@ -120,9 +134,21 @@ def get_all_in_org_paginated(
     if integration_type:
         query = query.filter(CognitionIntegration.type == integration_type)
 
+    raw = (sort_by or "").strip().lower()
+    order_col = _INTEGRATION_LIST_SORT_COLUMNS.get(
+        raw, CognitionIntegration.created_at
+    )
+    is_asc = (
+        sort_direction is not None
+        and str(sort_direction).strip().upper() == "ASC"
+    )
+    if is_asc:
+        query = query.order_by(order_col.asc(), CognitionIntegration.id.asc())
+    else:
+        query = query.order_by(order_col.desc(), CognitionIntegration.id.desc())
+
     return (
-        query.order_by(CognitionIntegration.created_at.desc())
-        .limit(page_size)
+        query.limit(page_size)
         .offset(max(0, (page - 1) * page_size))
         .all()
     )

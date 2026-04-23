@@ -72,11 +72,38 @@ def get_enriched(org_id: str, id: str) -> Dict[str, Any]:
     return general.execute_first(query)
 
 
+_DATASET_LIST_SORT_SQL = {
+    "created_at": "md.created_at",
+    "name": "md.name",
+    "description": "md.description",
+    "num_files": "COALESCE(mf.num_files, 0)",
+    "num_reviewed_files": "COALESCE(mf.num_reviewed_files, 0)",
+}
+
+
+def __dataset_list_order_sql(
+    sort_by: Optional[str], sort_direction: Optional[str]
+) -> str:
+    raw = (sort_by or "").strip().lower()
+    field = raw if raw in _DATASET_LIST_SORT_SQL else "created_at"
+    col_sql = _DATASET_LIST_SORT_SQL[field]
+    if (
+        sort_direction
+        and str(sort_direction).strip().upper() == "ASC"
+    ):
+        direction = "ASC"
+    else:
+        direction = "DESC"
+    return f"ORDER BY {col_sql} {direction}, md.id {direction}"
+
+
 def get_all_paginated_for_category_origin(
     org_id: str,
     page: int,
     limit: int,
     category_origin: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_direction: Optional[str] = None,
 ) -> Tuple[int, int, List[CognitionMarkdownDataset]]:
     total_count_query = session.query(CognitionMarkdownDataset.id).filter(
         CognitionMarkdownDataset.organization_id == org_id
@@ -99,7 +126,7 @@ def get_all_paginated_for_category_origin(
     page = prevent_sql_injection(page, isinstance(page, int))
 
     query_add = f"""
-        ORDER BY md.created_at DESC
+        {__dataset_list_order_sql(sort_by, sort_direction)}
         LIMIT {limit}
         OFFSET {(page - 1) * limit}
     """

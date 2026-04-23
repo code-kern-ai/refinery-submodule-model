@@ -1,8 +1,31 @@
 from ..business_objects import general
 from ..session import session
 from ..models import GraphRAGIndex
-from typing import Dict, Any, List, Optional, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from submodules.model.enums import GraphRAGIndexState
+
+_GRAPHRAG_OVERVIEW_SORT_COLUMNS = {
+    "created_at": GraphRAGIndex.created_at,
+    "name": GraphRAGIndex.name,
+    "description": GraphRAGIndex.description,
+    "state": GraphRAGIndex.state,
+    "error": GraphRAGIndex.error,
+    "id": GraphRAGIndex.id,
+}
+
+
+def __graphrag_overview_order_by(
+    sort_by: Optional[str], sort_direction: Optional[str]
+) -> Tuple[Any, Any]:
+    raw = (sort_by or "").strip().lower()
+    column = _GRAPHRAG_OVERVIEW_SORT_COLUMNS.get(raw, GraphRAGIndex.created_at)
+    ascending = (
+        sort_direction is not None
+        and str(sort_direction).strip().upper() == "ASC"
+    )
+    if ascending:
+        return column.asc(), GraphRAGIndex.id.asc()
+    return column.desc(), GraphRAGIndex.id.desc()
 
 
 def create(org_id: str, name: str, description: str, user_id: str) -> GraphRAGIndex:
@@ -53,7 +76,13 @@ def get_all_indexes_count(org_id: str, include_failed=True) -> int:
     )
 
 
-def get_all_paginated_by_org_id(org_id: str, page: int, limit: int) -> Dict[str, Any]:
+def get_all_paginated_by_org_id(
+    org_id: str,
+    page: int,
+    limit: int,
+    sort_by: Optional[str] = None,
+    sort_direction: Optional[str] = None,
+) -> Tuple[int, int, List[GraphRAGIndex]]:
     total_count = (
         session.query(GraphRAGIndex.id)
         .filter(GraphRAGIndex.organization_id == org_id)
@@ -64,10 +93,13 @@ def get_all_paginated_by_org_id(org_id: str, page: int, limit: int) -> Dict[str,
     if total_count % limit > 0:
         num_pages += 1
     if page > 0:
+        primary_order, tiebreaker_order = __graphrag_overview_order_by(
+            sort_by, sort_direction
+        )
         paginated_result = (
             session.query(GraphRAGIndex)
             .filter(GraphRAGIndex.organization_id == org_id)
-            .order_by(GraphRAGIndex.created_at.desc())
+            .order_by(primary_order, tiebreaker_order)
             .limit(limit)
             .offset((page - 1) * limit)
             .all()
