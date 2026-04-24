@@ -9,10 +9,11 @@ from ..models import (
     CognitionConversation,
     CognitionMessage,
     CognitionConversationTagAssociation,
+    CognitionPipelineLogs,
 )
 from ..util import prevent_sql_injection
 from sqlalchemy.sql.expression import Subquery
-from sqlalchemy import func, nullslast, or_
+from sqlalchemy import and_, case, func, nullslast, or_
 from sqlalchemy.sql.expression import cast
 from sqlalchemy import String as sqlalchemy_string
 from sqlalchemy import select
@@ -28,7 +29,16 @@ _CONVERSATION_LIST_SORT_COLUMNS = {
     "created_by": CognitionConversation.created_by,
 }
 
-_EXTRA_CONVERSATION_SORT_KEYS = frozenset({"initial_message"})
+_EXTRA_CONVERSATION_SORT_KEYS = frozenset(
+    {
+        "initial_message",
+        "initial_strategy",
+        "num_queries",
+        "num_answers",
+        "num_success",
+        "num_error",
+    }
+)
 
 
 def __first_message_text_subquery(project_id: str):
@@ -57,6 +67,100 @@ def __first_message_text_subquery(project_id: str):
     ).subquery()
 
 
+def __first_message_strategy_subquery(project_id: str):
+    ranked = (
+        session.query(
+            CognitionMessage.conversation_id.label("conversation_id"),
+            CognitionMessage.strategy_id.label("initial_strategy_id"),
+            func.row_number()
+            .over(
+                partition_by=CognitionMessage.conversation_id,
+                order_by=(
+                    CognitionMessage.created_at.asc(),
+                    CognitionMessage.id.asc(),
+                ),
+            )
+            .label("msg_rn"),
+        )
+        .filter(CognitionMessage.project_id == project_id)
+    ).subquery()
+    return (
+        session.query(
+            ranked.c.conversation_id,
+            ranked.c.initial_strategy_id,
+        )
+        .filter(ranked.c.msg_rn == 1)
+    ).subquery()
+
+
+def __messages_with_log_errors_subquery(project_id: str):
+    """Per message: SUM(has_error) > 0, matching table_view / get_error_and_time_elapsed."""
+    inner = (
+        session.query(
+            CognitionMessage.id.label("message_id"),
+            CognitionMessage.conversation_id.label("conversation_id"),
+        )
+        .select_from(CognitionMessage)
+        .join(
+            CognitionPipelineLogs,
+            and_(
+                CognitionMessage.project_id == CognitionPipelineLogs.project_id,
+                CognitionMessage.id == CognitionPipelineLogs.message_id,
+            ),
+        )
+        .filter(CognitionMessage.project_id == project_id)
+        .group_by(CognitionMessage.id, CognitionMessage.conversation_id)
+        .having(
+            func.sum(case((CognitionPipelineLogs.has_error.is_(True), 1), else_=0)) > 0
+        )
+    ).subquery()
+    return (
+        session.query(
+            inner.c.conversation_id,
+            func.count().label("num_error"),
+        )
+        .group_by(inner.c.conversation_id)
+    ).subquery()
+
+
+def __conversation_message_stats_subquery(project_id: str):
+    """Aggregates used for conversations table sorting (aligned with cognition-ui table prep)."""
+    err_sq = __messages_with_log_errors_subquery(project_id)
+    msg_agg = (
+        session.query(
+            CognitionMessage.conversation_id.label("conversation_id"),
+            func.count(CognitionMessage.id).label("num_queries"),
+            func.sum(
+                case(
+                    (
+                        and_(
+                            CognitionMessage.answer.isnot(None),
+                            CognitionMessage.answer != "",
+                        ),
+                        1,
+                    ),
+                    else_=0,
+                )
+            ).label("num_answers"),
+        )
+        .filter(CognitionMessage.project_id == project_id)
+        .group_by(CognitionMessage.conversation_id)
+    ).subquery()
+    return (
+        session.query(
+            msg_agg.c.conversation_id,
+            msg_agg.c.num_queries,
+            msg_agg.c.num_answers,
+            func.coalesce(err_sq.c.num_error, 0).label("num_error"),
+            (
+                msg_agg.c.num_queries - func.coalesce(err_sq.c.num_error, 0)
+            ).label("num_success"),
+        )
+        .select_from(msg_agg)
+        .outerjoin(err_sq, msg_agg.c.conversation_id == err_sq.c.conversation_id)
+    ).subquery()
+
+
 def __normalize_conversation_sort_by(sort_by: Optional[str]) -> str:
     if sort_by is None or not str(sort_by).strip():
         return "created_at"
@@ -67,6 +171,7 @@ def __normalize_conversation_sort_by(sort_by: Optional[str]) -> str:
         "incognitoMode": "incognito_mode",
         "createdBy": "created_by",
         "initialMessage": "initial_message",
+        "initialStrategy": "initial_strategy",
     }
     if s in key_map:
         return key_map[s]
@@ -308,6 +413,51 @@ def get_all_paginated_by_project_id(
             else:
                 query = query.order_by(
                     nullslast(order_col.desc()),
+                    CognitionConversation.id.desc(),
+                )
+        elif sort_key == "initial_strategy":
+            first_strat_sq = __first_message_strategy_subquery(project_id)
+            query = query.outerjoin(
+                first_strat_sq,
+                CognitionConversation.id == first_strat_sq.c.conversation_id,
+            )
+            order_col = first_strat_sq.c.initial_strategy_id
+            if sort_asc:
+                query = query.order_by(
+                    nullslast(order_col.asc()),
+                    CognitionConversation.id.asc(),
+                )
+            else:
+                query = query.order_by(
+                    nullslast(order_col.desc()),
+                    CognitionConversation.id.desc(),
+                )
+        elif sort_key in (
+            "num_queries",
+            "num_answers",
+            "num_success",
+            "num_error",
+        ):
+            stats_sq = __conversation_message_stats_subquery(project_id)
+            query = query.outerjoin(
+                stats_sq,
+                CognitionConversation.id == stats_sq.c.conversation_id,
+            )
+            order_map = {
+                "num_queries": func.coalesce(stats_sq.c.num_queries, 0),
+                "num_answers": func.coalesce(stats_sq.c.num_answers, 0),
+                "num_success": func.coalesce(stats_sq.c.num_success, 0),
+                "num_error": func.coalesce(stats_sq.c.num_error, 0),
+            }
+            order_col = order_map[sort_key]
+            if sort_asc:
+                query = query.order_by(
+                    order_col.asc(),
+                    CognitionConversation.id.asc(),
+                )
+            else:
+                query = query.order_by(
+                    order_col.desc(),
                     CognitionConversation.id.desc(),
                 )
         else:
