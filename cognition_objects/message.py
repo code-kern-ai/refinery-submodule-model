@@ -256,9 +256,7 @@ def _message_feedback_overview_where_add(
     elif fv == "negative":
         where_add += "AND mo.feedback_value = 'negative'"
     elif fv == "neutral":
-        where_add += (
-            "AND (mo.feedback_value = 'neutral' OR mo.feedback_value IS NULL)"
-        )
+        where_add += "AND (mo.feedback_value = 'neutral' OR mo.feedback_value IS NULL)"
 
     if start_date and end_date:
         start_date_s = prevent_sql_injection(start_date, isinstance(start_date, str))
@@ -328,15 +326,13 @@ def _message_feedback_overview_from_where(project_id: str, where_add: str) -> st
     """
 
 
-_FV_OR_ERR_EXPR = (
-    "COALESCE(mo.feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END)"
-)
+_FV_OR_ERR_EXPR = "COALESCE(mo.feedback_value, CASE WHEN y.has_error THEN 'ERROR_IN_NEWEST_LOG' ELSE NULL END)"
 _FEEDBACK_OVERVIEW_SORT_SQL: Dict[str, str] = {
-    "message_created": "mo.created_at",
+    "message_created": "LOWER(COALESCE(mo.feedback_message, ''))",
     "created_at": "mo.created_at",
     "feedback_value_or_error": _FV_OR_ERR_EXPR,
     "feedback_value": _FV_OR_ERR_EXPR,
-    "feedback_message": "mo.feedback_message",
+    "feedback_message": "LOWER(COALESCE(mo.feedback_message, ''))",
     "feedback_category": (
         "CASE WHEN mo.feedback_value='negative' THEN mo.feedback_category ELSE NULL END"
     ),
@@ -413,9 +409,13 @@ def get_message_feedback_overview(
         only_with_feedback_message,
     )
     from_where = _message_feedback_overview_from_where(project_id_s, where_add)
-    query = _message_feedback_overview_select_columns() + from_where + """
+    query = (
+        _message_feedback_overview_select_columns()
+        + from_where
+        + """
     ORDER BY mo.created_at DESC
     """
+    )
     if as_query:
         return query
     return general.execute_all(query)
@@ -435,8 +435,8 @@ def get_message_feedback_overview_paginated(
     only_with_feedback_message: bool = False,
 ) -> Dict[str, Any]:
     if _feedback_overview_value_filter_invalid(feedback_value):
-        _, effective_sort_key, effective_sort_dir = _message_feedback_overview_order_by_clause(
-            sort_by, sort_direction
+        _, effective_sort_key, effective_sort_dir = (
+            _message_feedback_overview_order_by_clause(sort_by, sort_direction)
         )
         return {
             "rows": [],
