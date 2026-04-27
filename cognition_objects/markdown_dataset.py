@@ -32,6 +32,7 @@ def __get_enriched_query(
     org_id: str,
     id: Optional[str] = None,
     category_origin: Optional[str] = None,
+    md_file_name_contains: Optional[str] = None,
     query_add: Optional[str] = "",
 ) -> str:
     where_add = ""
@@ -40,6 +41,19 @@ def __get_enriched_query(
         where_add += f" AND md.id = '{id}'"
     elif category_origin:
         where_add += f" AND md.category_origin = '{category_origin}'"
+    if md_file_name_contains:
+        md_file_name_contains = prevent_sql_injection(
+            md_file_name_contains, isinstance(md_file_name_contains, str)
+        )
+        where_add += f"""
+            AND EXISTS (
+                SELECT 1
+                FROM cognition.{Tablenames.MARKDOWN_FILE.value} mf_filter
+                WHERE mf_filter.organization_id = md.organization_id
+                AND mf_filter.dataset_id = md.id
+                AND mf_filter.file_name ILIKE '%{md_file_name_contains}%'
+            )
+        """
     org_id = prevent_sql_injection(org_id, isinstance(org_id, str))
     return f"""
         SELECT 
@@ -87,10 +101,7 @@ def __dataset_list_order_sql(
     raw = (sort_by or "").strip().lower()
     field = raw if raw in _DATASET_LIST_SORT_SQL else "created_at"
     col_sql = _DATASET_LIST_SORT_SQL[field]
-    if (
-        sort_direction
-        and str(sort_direction).strip().upper() == "ASC"
-    ):
+    if sort_direction and str(sort_direction).strip().upper() == "ASC":
         direction = "ASC"
     else:
         direction = "DESC"
@@ -104,6 +115,7 @@ def get_all_paginated_for_category_origin(
     category_origin: Optional[str] = None,
     sort_by: Optional[str] = None,
     sort_direction: Optional[str] = None,
+    md_file_name_contains: Optional[str] = None,
 ) -> Tuple[int, int, List[CognitionMarkdownDataset]]:
     total_count_query = session.query(CognitionMarkdownDataset.id).filter(
         CognitionMarkdownDataset.organization_id == org_id
@@ -111,6 +123,16 @@ def get_all_paginated_for_category_origin(
     if category_origin is not None:
         total_count_query = total_count_query.filter(
             CognitionMarkdownDataset.category_origin == category_origin
+        )
+    if md_file_name_contains:
+        total_count_query = total_count_query.filter(
+            session.query(CognitionMarkdownFile.id)
+            .filter(
+                CognitionMarkdownFile.organization_id == org_id,
+                CognitionMarkdownFile.dataset_id == CognitionMarkdownDataset.id,
+                CognitionMarkdownFile.file_name.ilike(f"%{md_file_name_contains}%"),
+            )
+            .exists()
         )
     total_count = total_count_query.count()
 
@@ -122,6 +144,9 @@ def get_all_paginated_for_category_origin(
     category_origin = prevent_sql_injection(
         category_origin, isinstance(category_origin, str)
     )
+    md_file_name_contains = prevent_sql_injection(
+        md_file_name_contains, isinstance(md_file_name_contains, str)
+    )
     limit = prevent_sql_injection(limit, isinstance(limit, int))
     page = prevent_sql_injection(page, isinstance(page, int))
 
@@ -131,7 +156,10 @@ def get_all_paginated_for_category_origin(
         OFFSET {(page - 1) * limit}
     """
     enriched_query = __get_enriched_query(
-        org_id=org_id, category_origin=category_origin, query_add=query_add
+        org_id=org_id,
+        category_origin=category_origin,
+        md_file_name_contains=md_file_name_contains,
+        query_add=query_add,
     )
     query_results = general.execute_all(enriched_query)
 
