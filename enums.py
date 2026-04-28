@@ -1053,6 +1053,7 @@ class ETLFileType(Enum):
     CSV = "CSV"
     TSV = "TSV"
     JSON = "JSON"
+    EMAIL = "EMAIL"
 
     @classmethod
     def from_string(cls, value: str):
@@ -1090,6 +1091,8 @@ class ETLFileType(Enum):
             ]
         elif self == ETLFileType.JSON:
             return [".json"]
+        elif self == ETLFileType.EMAIL:
+            return [".eml", ".msg"]
         return [".txt"]
 
     @staticmethod
@@ -1131,6 +1134,8 @@ class ETLFileType(Enum):
             return ETLFileType.IMG
         elif changed_value in [".json"]:
             return ETLFileType.JSON
+        elif changed_value in [".eml", ".msg"]:
+            return ETLFileType.EMAIL
         # default is treated like txt so no extension mapping needed
         else:
             return ETLFileType.DEFAULT
@@ -1168,11 +1173,15 @@ class ETLFileType(Enum):
             return ETLFileType.TSV
         elif changed_value in ["application/json"]:
             return ETLFileType.JSON
+        elif changed_value in ["application/vnd.ms-outlook"]:
+            return ETLFileType.EMAIL
         else:
             return ETLFileType.DEFAULT
 
     @classmethod
-    def get_default_extractor(cls, file_type: Optional[ETLFileType] = None) -> ETLExtractorEnum:
+    def get_default_extractor(
+        cls, file_type: Optional[ETLFileType] = None
+    ) -> ETLExtractorEnum:
         if file_type == ETLFileType.MD:
             return ETLExtractorMD.FILESYSTEM
         elif file_type == ETLFileType.PDF:
@@ -1191,11 +1200,15 @@ class ETLFileType(Enum):
             return ETLExtractorCsv.LANGCHAIN
         elif file_type == ETLFileType.JSON:
             return ETLExtractorJson.PANDAS
+        elif file_type == ETLFileType.EMAIL:
+            return ETLExtractorEmail.LANGCHAIN
         elif file_type == ETLFileType.DEFAULT or file_type == ETLFileType.TXT:
             return ETLExtractorTxt.LANGCHAIN
         raise ValueError(f"No default extractor for given file type {file_type}")
 
-    def get_extractor_from_string(self, extractor: Optional[str] = None) -> ETLExtractorEnum:
+    def get_extractor_from_string(
+        self, extractor: Optional[str] = None
+    ) -> ETLExtractorEnum:
         if extractor is None:
             return self.get_default_extractor(self)
         if self == ETLFileType.MD:
@@ -1216,6 +1229,8 @@ class ETLFileType(Enum):
             return ETLExtractorTsv.from_string(extractor)
         elif self == ETLFileType.JSON:
             return ETLExtractorJson.from_string(extractor)
+        elif self == ETLFileType.EMAIL:
+            return ETLExtractorEmail.from_string(extractor)
         elif self == ETLFileType.DEFAULT or self == ETLFileType.TXT:
             return ETLExtractorTxt.from_string(extractor)
 
@@ -1238,6 +1253,8 @@ class ETLFileType(Enum):
             return ETLExtractorTsv.all()
         elif self == ETLFileType.JSON:
             return ETLExtractorJson.all()
+        elif self == ETLFileType.EMAIL:
+            return ETLExtractorEmail.all()
         return ETLExtractorTxt.all()
 
 
@@ -1269,6 +1286,7 @@ class ETLExtractorPDF(EnumKern):
 
 class ETLExtractorWord(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+    OOXML = "OOXML"
 
 
 class ETLExtractorExcel(EnumKern):
@@ -1278,6 +1296,7 @@ class ETLExtractorExcel(EnumKern):
 
 class ETLExtractorPowerpoint(EnumKern):
     LANGCHAIN = "LANGCHAIN"
+    OOXML = "OOXML"
 
 
 class ETLExtractorImg(EnumKern):
@@ -1301,6 +1320,10 @@ class ETLExtractorJson(EnumKern):
     PANDAS = "PANDAS"
 
 
+class ETLExtractorEmail(EnumKern):
+    LANGCHAIN = "LANGCHAIN"
+
+
 ETLExtractorEnum = Union[
     ETLExtractorMD,
     ETLExtractorPDF,
@@ -1312,6 +1335,7 @@ ETLExtractorEnum = Union[
     ETLExtractorCsv,
     ETLExtractorTsv,
     ETLExtractorJson,
+    ETLExtractorEmail,
 ]
 
 
@@ -1367,7 +1391,7 @@ class CognitionIntegrationState(Enum):
     STARTED = "STARTED"
     EXTRACTING = "EXTRACTING"
     ETL_PROCESSING = "ETL_PROCESSING"
-    REFINERY_SYNCING = "REFINERY_SYNCING"  ## e.g. syncing with refinery (records + postprocessing permissions)
+    REFINERY_SYNCING = "REFINERY_SYNCING"  # e.g. syncing with refinery (records + postprocessing permissions)
     FINISHED = "FINISHED"
     FAILED = "FAILED"
 

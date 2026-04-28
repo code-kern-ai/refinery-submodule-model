@@ -231,13 +231,36 @@ def get_full_config_for_sharepoint_integration(
     record: IntegrationSharepoint,
     rows_per_section: Optional[int] = 50,
 ) -> List[Dict[str, Any]]:
+    file_type = enums.ETLFileType.from_mimetype(record.mime_type)
+    fallback_config = {
+        "llm_config": integration.llm_config,
+        "fallback": None,
+        "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
+        "task_config": {
+            "use_cache": False,
+        },
+    }
+
+    if file_type == enums.ETLFileType.WORD:
+        fallback_config["task_config"]["extractor"] = enums.ETLExtractorWord.OOXML.value
+    elif file_type == enums.ETLFileType.POWERPOINT:
+        fallback_config["task_config"][
+            "extractor"
+        ] = enums.ETLExtractorPowerpoint.OOXML.value
+    elif file_type == enums.ETLFileType.PDF:
+        fallback_config["task_config"][
+            "extractor"
+        ] = enums.ETLExtractorPDF.LANGCHAIN.value
+    else:
+        fallback_config = None
+
     full_config = [
         {
             "llm_config": integration.llm_config,
+            "fallback": [fallback_config] if fallback_config else None,
             "task_type": enums.CognitionMarkdownFileState.EXTRACTING.value,
             "task_config": {
                 "use_cache": False,
-                "fallback": None,
             },
         },
         {

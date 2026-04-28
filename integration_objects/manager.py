@@ -1,9 +1,8 @@
 import re
 from typing import List, Optional, Dict, Tuple, Union, Type, Any
 from datetime import datetime
-from sqlalchemy import func, or_, and_
+from sqlalchemy import func, or_
 from sqlalchemy.orm.attributes import flag_modified
-from submodules.s3 import enums
 
 from ..enums import CognitionIntegrationType, IntegrationRecordScope
 from ..business_objects import general
@@ -252,7 +251,7 @@ def get_existing_integration_records(
     scope: IntegrationRecordScope = IntegrationRecordScope.ALL.value,
 ) -> Dict[str, object]:
 
-    records, _ = get_all_by_integration_id(integration_id, scope)
+    records, _ = get_all_by_integration_id(integration_id, scope=scope)
 
     # Match # followed by one or more digits at end of string (strip so whitespace doesn't break it)
     _fragment_re = re.compile(r"#\d+$")
