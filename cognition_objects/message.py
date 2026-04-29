@@ -6,7 +6,7 @@ from submodules.model.business_objects import cross_selling as cross_selling_bo
 from ..business_objects import general
 from ..session import session
 from ..models import CognitionMessage
-from ..util import prevent_sql_injection, to_snake_case
+from ..util import prevent_sql_injection, sql_alchemy_to_dict, to_snake_case
 from .pipeline_version import get_current_version
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -418,7 +418,7 @@ def get_message_feedback_overview(
     )
     if as_query:
         return query
-    return general.execute_all(query)
+    return sql_alchemy_to_dict(general.execute_all(query), for_frontend=False)
 
 
 def get_message_feedback_overview_paginated(
@@ -480,7 +480,7 @@ def get_message_feedback_overview_paginated(
     LIMIT {int(limit)} OFFSET {int(offset)}
     """
     )
-    rows = general.execute_all(data_query)
+    rows = sql_alchemy_to_dict(general.execute_all(data_query), for_frontend=False)
     return {
         "rows": rows,
         "total_count": total_count,
