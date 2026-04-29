@@ -186,19 +186,15 @@ def __normalize_conversation_sort_by(sort_by: Optional[str]) -> str:
 def __resolve_conversation_list_sort_key_and_asc(
     sort_by: Optional[str],
     sort_direction: Optional[str],
-    order_asc: bool,
 ) -> Tuple[str, bool]:
     sort_key = __normalize_conversation_sort_by(sort_by)
-    has_explicit_column = sort_by is not None and str(sort_by).strip() != ""
     has_explicit_direction = (
         sort_direction is not None and str(sort_direction).strip() != ""
     )
     if has_explicit_direction:
         asc = str(sort_direction).strip().upper() == "ASC"
-    elif has_explicit_column:
-        asc = order_asc
     else:
-        asc = order_asc
+        asc = False
     return sort_key, asc
 
 
@@ -348,7 +344,6 @@ def get_all_paginated_by_project_id(
     project_id: str,
     page: int,
     limit: int,
-    order_asc: bool = True,
     user_id: Optional[str] = None,
     filter_dict: Optional[Dict[str, Any]] = None,
     filter_incognito: bool = False,
@@ -396,7 +391,7 @@ def get_all_paginated_by_project_id(
         if subquery is not None:
             query = query.filter(CognitionConversation.id.in_(subquery))
         sort_key, sort_asc = __resolve_conversation_list_sort_key_and_asc(
-            sort_by, sort_direction, order_asc
+            sort_by, sort_direction
         )
         if sort_key == "initial_message":
             first_msg_sq = __first_message_text_subquery(project_id)
