@@ -231,6 +231,7 @@ def get_active_users_after_filter(
     sort_direction: Optional[str] = None,
     offset: Optional[int] = None,
     limit: Optional[int] = None,
+    filter_organization_id: Optional[str] = None,
 ) -> List[User]:
     last_interaction_range = prevent_sql_injection(
         last_interaction_range, isinstance(last_interaction_range, datetime)
@@ -249,6 +250,12 @@ def get_active_users_after_filter(
         ON u.organization_id = o.id
     WHERE u.email IS NOT NULL
     """
+
+    if filter_organization_id:
+        safe_org_id = prevent_sql_injection(
+            filter_organization_id, isinstance(filter_organization_id, str)
+        )
+        query += f"\nAND u.organization_id = '{safe_org_id}'"
 
     if last_interaction_range:
         query += f"\nAND last_interaction >= '{last_interaction_range}'"
