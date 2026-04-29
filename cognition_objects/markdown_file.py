@@ -123,6 +123,30 @@ def __get_enriched_query(
     return query
 
 
+_MARKDOWN_FILE_LIST_SORT_SQL = {
+    "created_at": "mf.created_at",
+    "file_name": "mf.file_name",
+    "extractor": "mf.meta_data->>'extractor'",
+    "state": "COALESCE(et.state, mf.state)",
+    "llm_ops_total": "COALESCE((et.llm_ops->>'totalLlmCalls')::int, -1)",
+    "is_reviewed": "mf.is_reviewed",
+    "scope_readable": "COALESCE(et.meta_data->>'scope_readable', '')",
+}
+
+
+def __markdown_file_list_order_sql(
+    sort_by: Optional[str], sort_direction: Optional[str]
+) -> str:
+    raw = (sort_by or "").strip().lower()
+    field = raw if raw in _MARKDOWN_FILE_LIST_SORT_SQL else "created_at"
+    col_sql = _MARKDOWN_FILE_LIST_SORT_SQL[field]
+    if sort_direction and str(sort_direction).strip().upper() == "ASC":
+        direction = "ASC"
+    else:
+        direction = "DESC"
+    return f"ORDER BY {col_sql} {direction}, mf.id {direction}"
+
+
 def get_all_paginated_for_dataset(
     org_id: str,
     dataset_id: str,
@@ -130,6 +154,8 @@ def get_all_paginated_for_dataset(
     exclude_content: bool,
     only_count_llm_logs: bool,
     limit: Optional[int] = None,
+    sort_by: Optional[str] = None,
+    sort_direction: Optional[str] = None,
 ) -> Tuple[int, int, List[CognitionMarkdownFile]]:
     total_count = (
         session.query(CognitionMarkdownFile.id)
@@ -148,8 +174,8 @@ def get_all_paginated_for_dataset(
     dataset_id = prevent_sql_injection(dataset_id, isinstance(org_id, str))
     limit = prevent_sql_injection(limit, isinstance(limit, int))
     page = prevent_sql_injection(page, isinstance(page, int))
-    query_add = """
-    ORDER BY mf.created_at DESC
+    query_add = f"""
+    {__markdown_file_list_order_sql(sort_by, sort_direction)}
     """
 
     if limit:
