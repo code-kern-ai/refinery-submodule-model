@@ -27,11 +27,7 @@ def get_user_cached_if_not_admin(user_id: str) -> Optional[User]:
 
 
 def get_admin_users() -> List[User]:
-    kernai_admins = (
-        session.query(User)
-        .filter(User.is_admin == True)
-        .all()
-    )
+    kernai_admins = session.query(User).filter(User.is_admin == True).all()
 
     query = """
     SELECT email FROM global.full_admin_access
@@ -252,10 +248,10 @@ def get_active_users_after_filter(
     """
 
     if filter_organization_id:
-        safe_org_id = prevent_sql_injection(
+        filter_organization_id = prevent_sql_injection(
             filter_organization_id, isinstance(filter_organization_id, str)
         )
-        query += f"\nAND u.organization_id = '{safe_org_id}'"
+        query += f"\nAND u.organization_id = '{filter_organization_id}'"
 
     if last_interaction_range:
         query += f"\nAND last_interaction >= '{last_interaction_range}'"
