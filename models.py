@@ -104,14 +104,6 @@ def parent_to_child_relationship(
 # 4. columns added after initial creation
 #
 # -------------------- GLOBAL_ --------------------
-class AppVersion(Base):
-    __tablename__ = Tablenames.APP_VERSION.value
-    service = Column(String, primary_key=True)
-    installed_version = Column(String)  # local/installed Tag
-    remote_version = Column(String)  # latest GitHub Tag
-    last_checked = Column(DateTime)
-
-
 class CommentData(Base):
     __tablename__ = Tablenames.COMMENT_DATA.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
