@@ -407,7 +407,10 @@ def get_extraction_key(
             api_version = llm_config.get("apiVersion", "")
             api_hash = get_hashed_string(api_base, api_version)
             extraction_key = extraction_key / engine / api_hash
-        elif llm_identifier == enums.LLMProvider.OPENAI:
+        elif llm_identifier in (
+            enums.LLMProvider.OPENAI,
+            enums.LLMProvider.PRIVATEMODE_AI,
+        ):
             model = llm_config.get("model")
             extraction_key = extraction_key / model
 
