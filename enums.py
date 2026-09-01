@@ -591,6 +591,7 @@ class StrategyStepType(Enum):
     CURRENT_TIME = "CURRENT_TIME"
     COMPLIANT_WEBSEARCH = "COMPLIANT_WEBSEARCH"
     DATA_BLOCK = "DATA_BLOCK"
+    MAPPING = "MAPPING"
 
     def get_description(self):
         return STEP_DESCRIPTIONS.get(self, "No description available")
@@ -624,6 +625,7 @@ STEP_DESCRIPTIONS = {
     StrategyStepType.CURRENT_TIME: "Get current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "Web search",
     StrategyStepType.DATA_BLOCK: "Create a data block",
+    StrategyStepType.MAPPING: "Map an input value to 0..N outputs",
 }
 
 STEP_WHEN_TO_USE = {
@@ -647,6 +649,7 @@ STEP_WHEN_TO_USE = {
     StrategyStepType.CURRENT_TIME: "When you want to get the current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "When you want to perform a web search",
     StrategyStepType.DATA_BLOCK: "When you want to understand how the project is used",
+    StrategyStepType.MAPPING: "When you want to map a value (e.g. user email) to groups or filter values",
 }
 
 STEP_PROGRESS_TEXTS = {
@@ -671,6 +674,7 @@ STEP_PROGRESS_TEXTS = {
     StrategyStepType.CURRENT_TIME: "Getting current time",
     StrategyStepType.COMPLIANT_WEBSEARCH: "Searching the web",
     StrategyStepType.DATA_BLOCK: "Evaluating data block",
+    StrategyStepType.MAPPING: "Mapping values",
 }
 
 STEP_ERRORS = {
