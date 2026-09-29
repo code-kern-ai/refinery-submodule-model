@@ -67,7 +67,7 @@ def get_all_waiting_by_type(
         session.query(TaskQueue)
         .filter(
             safe_text_with_bindparams(
-                "task_info->>'project_id' = :project_id", project_id=project_id
+                "(task_info->>'project_id')::UUID = :project_id", project_id=project_id
             ),
             TaskQueue.task_type == task_type.value,
             TaskQueue.is_active == False,
@@ -87,7 +87,7 @@ def get_waiting_by_attribute_id(project_id: str, attribute_id: str) -> TaskQueue
                 attribute_id=attribute_id,
             ),
             safe_text_with_bindparams(
-                "task_info->>'project_id' = :project_id", project_id=project_id
+                "(task_info->>'project_id')::UUID = :project_id", project_id=project_id
             ),
             TaskQueue.is_active == False,
         )
@@ -105,7 +105,7 @@ def get_waiting_by_information_source(project_id: str, source_id: str) -> TaskQu
                 source_id=source_id,
             ),
             safe_text_with_bindparams(
-                "task_info->>'project_id' = :project_id", project_id=project_id
+                "(task_info->>'project_id')::UUID = :project_id", project_id=project_id
             ),
             TaskQueue.is_active == False,
         )
@@ -122,7 +122,7 @@ def get_waiting_by_macro_group_execution_ids(
             TaskQueue.task_type == enums.TaskType.RUN_COGNITION_MACRO.value,
             safe_text_in_clause("task_info->>'group_execution_id'", source_ids),
             safe_text_with_bindparams(
-                "task_info->>'project_id' = :project_id", project_id=project_id
+                "(task_info->>'project_id')::UUID = :project_id", project_id=project_id
             ),
         )
         .first()
@@ -137,7 +137,7 @@ def get_by_tokenization(project_id: str) -> TaskQueue:
         .filter(
             TaskQueue.task_type == enums.TaskType.TOKENIZATION.value,
             safe_text_with_bindparams(
-                "task_info->>'project_id' = :project_id", project_id=project_id
+                "(task_info->>'project_id')::UUID = :project_id", project_id=project_id
             ),
         )
         .order_by(TaskQueue.created_at.asc())
