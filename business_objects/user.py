@@ -305,6 +305,10 @@ def get_user_project_access_rows(organization_id: str) -> List[Dict[str, Any]]:
         SELECT
             u.email AS email,
             CASE
+                WHEN NULLIF(btrim(u.sso_provider), '') IS NULL THEN 'E-Mail'
+                ELSE 'SSO'
+            END AS registered_as,
+            CASE
                 WHEN COALESCE(u.is_light_user, false) THEN 'Yes'
                 ELSE 'No'
             END AS light_user,
