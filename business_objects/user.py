@@ -2,8 +2,8 @@ from datetime import datetime
 from . import general, organization, team_member
 from .. import User, enums, Team, TeamMember, TeamResource
 from ..session import session
-from typing import List, Optional
-from sqlalchemy import sql
+from typing import Any, Dict, List, Optional
+from sqlalchemy import sql, text
 
 from ..db_cache import TTLCacheDecorator, CacheEnum
 
@@ -266,6 +266,91 @@ def get_active_users_after_filter(
         query += f"\nLIMIT {limit}"
 
     return general.execute_all(query)
+
+
+def get_user_project_access_rows(organization_id: str) -> List[Dict[str, Any]]:
+    """One row per non-admin user in the organization, ready for the export sheet.
+
+    Engineers receive every cognition project in the organization. Other roles
+    receive the distinct projects linked through their teams. Project names are
+    aggregated in SQL, so callers do not join users and projects in Python.
+    """
+    query = text(
+        """
+        WITH org_projects AS (
+            SELECT string_agg(DISTINCT p.name, chr(10) ORDER BY p.name) AS names
+            FROM cognition.project p
+            WHERE p.organization_id = CAST(:organization_id AS uuid)
+        ),
+        user_projects AS (
+            SELECT tm.user_id,
+                   string_agg(DISTINCT p.name, chr(10) ORDER BY p.name) AS names
+            FROM team_member tm
+            JOIN team t
+                ON t.id = tm.team_id
+                AND t.organization_id = CAST(:organization_id AS uuid)
+            JOIN public.user member_user
+                ON member_user.id = tm.user_id
+                AND member_user.organization_id = CAST(:organization_id AS uuid)
+                AND member_user.role <> :engineer_role
+                AND COALESCE(member_user.is_admin, false) = false
+            JOIN team_resource tr
+                ON tr.team_id = t.id
+                AND tr.resource_type = :resource_type
+            JOIN cognition.project p
+                ON p.id = tr.resource_id
+                AND p.organization_id = CAST(:organization_id AS uuid)
+            GROUP BY tm.user_id
+        )
+        SELECT
+            u.email AS email,
+            CASE
+                WHEN NULLIF(btrim(u.sso_provider), '') IS NULL THEN 'E-Mail'
+                ELSE 'SSO'
+            END AS registered_as,
+            CASE
+                WHEN COALESCE(u.is_light_user, false) THEN 'Yes'
+                ELSE 'No'
+            END AS light_user,
+            CASE u.role
+                WHEN :engineer_role THEN 'Engineer'
+                WHEN :annotator_role THEN 'Annotator'
+                WHEN :expert_role THEN 'Expert'
+                ELSE initcap(lower(u.role))
+            END AS role,
+            u.last_interaction AS last_interaction,
+            COALESCE(
+                CASE
+                    WHEN u.role = :engineer_role THEN org_projects.names
+                    ELSE user_projects.names
+                END,
+                ''
+            ) AS projects
+        FROM public.user u
+        CROSS JOIN org_projects
+        LEFT JOIN user_projects
+            ON user_projects.user_id = u.id
+        WHERE u.organization_id = CAST(:organization_id AS uuid)
+            AND COALESCE(u.is_admin, false) = false
+            AND NOT EXISTS (
+                SELECT 1
+                FROM global.full_admin_access fa
+                WHERE lower(fa.email) = lower(u.email)
+            )
+        ORDER BY u.email NULLS LAST
+        """
+    )
+    result = general.execute(
+        query,
+        {
+            "organization_id": str(organization_id),
+            "resource_type": enums.TeamResourceType.COGNITION_PROJECT.value,
+            "engineer_role": enums.UserRoles.ENGINEER.value,
+            "annotator_role": enums.UserRoles.ANNOTATOR.value,
+            "expert_role": enums.UserRoles.EXPERT.value,
+        },
+    )
+    return [dict(row) for row in result.mappings().all()]
 
 
 def update_last_interaction(user_id: str) -> None:
